@@ -10,16 +10,23 @@ struct
   (* OpenGL constants used. *)
   val (VERTEX_SHADER, _) =
     _symbol "VERTEX_SHADER" public : ( unit -> shader_type ) * ( shader_type -> unit );
+  val VERTEX_SHADER = VERTEX_SHADER ()
+
   val (FRAGMENT_SHADER, _) =
     _symbol "FRAGMENT_SHADER" public : ( unit -> shader_type ) * ( shader_type -> unit );
+  val FRAGMENT_SHADER = FRAGMENT_SHADER ()
+
   val (TRIANGLES, _) =
     _symbol "TRIANGLES" public : ( unit -> draw_mode ) * ( draw_mode -> unit );
-  val (TRIANGLE_FAN, _) =
-    _symbol "TRIANGLE_FAN" public : ( unit -> draw_mode ) * ( draw_mode -> unit );
+  val TRIANGLES = TRIANGLES ()
+
   val (STATIC_DRAW, _) =
     _symbol "STATIC_DRAW" public : ( unit -> update_mode ) * ( update_mode -> unit );
+  val STATIC_DRAW = STATIC_DRAW ()
+
   val (DYNAMIC_DRAW, _) =
     _symbol "DYNAMIC_DRAW" public : ( unit -> update_mode ) * ( update_mode -> unit );
+  val DYNAMIC_DRAW = DYNAMIC_DRAW ()
 
   (* OpenGL functions used. *)
   val loadGlad = _import "loadGlad" public : unit -> unit;
@@ -44,15 +51,13 @@ struct
   val attachShader = _import "attachShader" public : program * shader -> unit;
   val linkProgram = _import "linkProgram" public : program -> unit;
   val useProgram = _import "useProgram" public : program -> unit;
+
+  val deleteShader = _import "deleteShader" public : program -> unit;
   val deleteProgram = _import "deleteProgram" public : program -> unit;
 
   val clearColor =
     _import "clearColor" public : Real32.real * Real32.real * Real32.real * Real32.real -> unit;
   val clear = _import "clear" public : unit -> unit;
-  val drawArrays = _import "drawArrays" public : draw_mode * int * int -> unit;
 
-  val getUniformLocation =
-    _import "getUniformLocation" public : program * string -> int;
-  val uniform4f =
-    _import "uniform4f" public : int * Real32.real * Real32.real * Real32.real * Real32.real -> unit;
+  val drawArrays = _import "drawArrays" public : draw_mode * int * int -> unit;
 end
