@@ -1,0 +1,17 @@
+$(SML_LIB)/basis/basis.mlb
+
+
+
+(* IMPERATIVE SHELL *)
+$(SML_LIB)/basis/mlton.mlb
+$(SML_LIB)/cml/cml.mlb
+
+ann
+  "allowFFI true"
+in
+  ffi/gles3-import.sml
+  ffi/glfw-import.sml
+  ffi/glfw-input.sml
+end
+
+shell/shell.sml
