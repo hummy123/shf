@@ -15,7 +15,7 @@ struct
 
   fun createShader (shaderType, shaderString) =
     let
-      val shader = Gles3.createShader Gles3.VERTEX_SHADER
+      val shader = Gles3.createShader shaderType
       val _ = Gles3.shaderSource (shader, shaderString)
       val _ = Gles3.compileShader shader
     in
@@ -32,19 +32,57 @@ struct
       program
     end
 
-  fun create () =
+  fun create window =
     let
-      (* Set up GLFW. *)
-      val _ = Glfw.init ()
-      val _ = Glfw.windowHint (Glfw.CONTEXT_VERSION_MAJOR (), 3)
-      val _ = Glfw.windowHint (Glfw.DEPRECATED (), Glfw.FALSE ())
-      val _ = Glfw.windowHint (Glfw.SAMPLES (), 4)
-      val window = Glfw.createWindow (1600, 900, "shf")
-      val _ = Glfw.makeContextCurrent window
-      val _ = Gles3.loadGlad ()
+      (* create vertex buffer, program, etc. for text. *)
+      val textVertexBuffer = Gles3.createBuffer ()
+      val xyrgbVertexShader = createShader
+        (Gles3.VERTEX_SHADER, GlShaders.xyrgbVertexShaderString)
 
-    (* todo: create vertex buffer, program, etc. for text. *)
+      val rgbFragmentShader = createShader
+        (Gles3.FRAGMENT_SHADER, GlShaders.rgbFragmentShaderString)
+
+      val textProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
+
+      (* clean up shaders which are no longer needed once progran is linked. *)
+      val _ = Gles3.deleteShader xyrgbVertexShader
+      val _ = Gles3.deleteShader rgbFragmentShader
     in
-      {window = window}
+      { textVertexBuffer = textVertexBuffer
+      , textProgram = textProgram
+      , textDrawLength = 0
+      , window = window
+      }
+    end
+
+  fun uploadText ({textVertexBuffer, ...}: draw_object, vec) =
+    let
+      val _ = Gles3.bindBuffer textVertexBuffer
+      val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
+    in
+      ()
+    end
+
+  fun drawText ({textVertexBuffer, textProgram, textDrawLength, ...}: t) =
+    if textDrawLength > 0 then
+      let
+        val _ = Gles3.bindBuffer textVertexBuffer
+        val _ = Gles3.vertexAttribPointer (0, 2, 5, 0)
+        val _ = Gles3.enableVertexAttribArray 0
+        val _ = Gles3.vertexAttribPointer (1, 3, 5, 8)
+        val _ = Gles3.enableVertexAttribArray 1
+        val _ = Gles3.useProgram textProgram
+        val _ = Gles3.drawArrays (Gles3.TRIANGLES, 0, textDrawLength)
+      in
+        ()
+      end
+    else
+      ()
+
+  fun draw (drawObject: t) =
+    let
+      val _ = drawText drawObject
+    in
+      ()
     end
 end
