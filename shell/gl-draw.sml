@@ -55,7 +55,7 @@ struct
       }
     end
 
-  fun uploadText ({textVertexBuffer, ...}: draw_object, vec) =
+  fun uploadText ({textVertexBuffer, ...}: t, vec) =
     let
       val _ = Gles3.bindBuffer textVertexBuffer
       val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
@@ -67,10 +67,13 @@ struct
     if textDrawLength > 0 then
       let
         val _ = Gles3.bindBuffer textVertexBuffer
+        (* enable xy component from uploaded array *)
         val _ = Gles3.vertexAttribPointer (0, 2, 5, 0)
         val _ = Gles3.enableVertexAttribArray 0
+        (* enable rgb component from uploaded array *)
         val _ = Gles3.vertexAttribPointer (1, 3, 5, 8)
         val _ = Gles3.enableVertexAttribArray 1
+
         val _ = Gles3.useProgram textProgram
         val _ = Gles3.drawArrays (Gles3.TRIANGLES, 0, textDrawLength)
       in
