@@ -1,0 +1,6 @@
+[submodule "lib/brolib-sml"]
+	path = lib/brolib-sml
+	url = https://github.com/hummy123/brolib-sml
+[submodule "lib/cozette-sml"]
+	path = lib/cozette-sml
+	url = https://github.com/hummy123/cozette-sml
