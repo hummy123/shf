@@ -1,6 +1,8 @@
 $(SML_LIB)/basis/basis.mlb
 
-
+(* FUNCTIONAL CORE *)
+lib/brolib-sml/src/line_gap.sml
+lib/cozette-sml/fonts/cozette-ascii.mlb
 
 (* IMPERATIVE SHELL *)
 $(SML_LIB)/basis/mlton.mlb
