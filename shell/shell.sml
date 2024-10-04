@@ -2,20 +2,6 @@ structure Shell =
 struct
   open CML
 
-  fun loop window =
-    case Glfw.windowShouldClose window of
-      false =>
-        let
-          val _ = Gles3.clearColor (0.1, 0.1, 0.1, 0.1)
-          val _ = Gles3.clear ()
-
-          val _ = Glfw.swapBuffers window
-          val _ = Glfw.waitEvents ()
-        in
-          loop window
-        end
-    | true => Glfw.terminate ()
-
   fun main () =
     let
       (* Set up GLFW. *)
@@ -26,8 +12,10 @@ struct
       val window = Glfw.createWindow (1600, 900, "shf")
       val _ = Glfw.makeContextCurrent window
       val _ = Gles3.loadGlad ()
+
+      val _ = GlDraw.loop window
     in
-      loop window
+      ()
     end
 end
 

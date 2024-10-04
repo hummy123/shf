@@ -83,9 +83,28 @@ struct
       ()
 
   fun draw (drawObject: t) =
-    let
-      val _ = drawText drawObject
-    in
-      ()
+    let val _ = drawText drawObject
+    in ()
+    end
+
+  fun helpLoop (shellState as {window, ...}: t) =
+    case Glfw.windowShouldClose window of
+      false =>
+        let
+          val _ = Gles3.clearColor (0.1, 0.1, 0.1, 0.1)
+          val _ = Gles3.clear ()
+
+          val _ = draw shellState
+
+          val _ = Glfw.swapBuffers window
+          val _ = Glfw.waitEvents ()
+        in
+          helpLoop shellState
+        end
+    | true => Glfw.terminate ()
+
+  fun loop window =
+    let val shellState = create window
+    in helpLoop shellState
     end
 end
