@@ -136,14 +136,74 @@ struct
    * to start building from *)
   fun startBuildTextLineGap (startLine, lineGap: LineGap.t, windowWidth, windowHeight) =
     let
+      val lineGap = LineGap.goToLine (startLine, lineGap)
+      val {rightStrings, rightLines, line = curLine, ...} = lineGap
+
+      val acc = case (rightStrings, rightLines) of
+                     (rStrHd::rStrTl, rLnHd::_) =>
+                     let
+                       (* get index of line to start building from *)
+                       val lnPos = startLine - curLine
+                       val startIdx = Vector.sub (rLnHd, lnPos)
+                       val startIdx =
+                       if String.sub (rStrHd, startIdx) = #"\r" andalso startIdx
+                       < String.size rStrHd - 1 andalso String.sub (rStrHd,
+                       startIdx + 1) = #"\n"
+                       then
+                         (* handle \r\n pair *)
+                         startIdx + 2
+                      else startIdx + 1
+                     in
+buildTextString ( startIdx, rStrHd, [], 5, 5, 5
+    , windowWidth, windowHeight, 
+    Real32.fromInt windowWidth, Real32.fromInt windowHeight
+    , 0.0, 0.0, 0.0, rStrTl
+    )
+                     end
+                           | (_, _) =>
+                               (* requested line goes beyond the buffer,
+                                * so just return empty list as there is nothig
+                                * else we can do. *)
+                                []
+    in
+      Vector.concat acc
+    end
+
+  fun startBuildTextLineGap
+    (startLine, lineGap: LineGap.t, windowWidth, windowHeight) =
+    let
+      val lineGap = LineGap.goToLine (startLine, lineGap)
+      val {rightStrings, rightLines, line = curLine, ...} = lineGap
+
       val acc =
-        continueBuildTextLineGap 
-          ( #rightStrings lineGap, [], 5, 5, 5
-          , windowWidth, windowHeight
-          , Real32.fromInt windowWidth
-          , Real32.fromInt windowHeight
-          , 0.0, 0.0, 0.0
-          )
+        case (rightStrings, rightLines) of
+          (rStrHd :: rStrTl, rLnHd :: _) =>
+            let
+              (* get index of line to start building from *)
+              val lnPos = startLine - curLine
+              val startIdx = Vector.sub (rLnHd, lnPos)
+              val startIdx =
+                if
+                  String.sub (rStrHd, startIdx) = #"\r"
+                  andalso startIdx < String.size rStrHd - 1
+                  andalso String.sub (rStrHd, startIdx + 1) = #"\n"
+                then (* handle \r\n pair *) startIdx + 2
+                else startIdx + 1
+            in
+              buildTextString
+                ( startIdx, rStrHd, []
+                , 5, 5, 5
+                , windowWidth, windowHeight
+                , Real32.fromInt windowWidth, Real32.fromInt windowHeight
+                , 0.0, 0.0, 0.0
+                , rStrTl
+                )
+            end
+        | (_, _) =>
+            (* requested line goes beyond the buffer,
+             * so just return empty list as there is nothig
+             * else we can do. *)
+            []
     in
       Vector.concat acc
     end
