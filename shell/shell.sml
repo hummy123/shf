@@ -23,7 +23,7 @@ struct
       val lineGap = ioToLineGap (io, LineGap.empty)
       val _ = TextIO.closeIn io
 
-      val textVec = Buffer.startBuildTextLineGap (0, lineGap, 1920, 1080)
+      val (textVec, _) = Buffer.startBuildTextLineGap (0, lineGap, 1920, 1080)
       val shellState = GlDraw.create window
       val shellState = GlDraw.uploadText (shellState, textVec)
 

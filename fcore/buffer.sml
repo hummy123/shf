@@ -205,6 +205,6 @@ buildTextString ( startIdx, rStrHd, [], 5, 5, 5
              * else we can do. *)
             []
     in
-      Vector.concat acc
+      (Vector.concat acc, lineGap)
     end
 end
