@@ -2,9 +2,9 @@ structure Shell =
 struct
   open CML
 
-  fun ioToString (io, acc) =
+  fun ioToLineGap (io, acc) =
     case TextIO.inputLine io of
-      SOME str => ioToString (io, acc ^ str)
+      SOME str => ioToLineGap (io, LineGap.append (str, acc))
     | NONE => acc
 
   fun main () =
@@ -20,8 +20,7 @@ struct
 
       (* upload text vector *)
       val io = TextIO.openIn "fcore/buffer.sml"
-      val str = ioToString (io, "")
-      val lineGap = LineGap.fromString str
+      val lineGap = ioToLineGap (io, LineGap.empty)
       val _ = TextIO.closeIn io
 
       val textVec = Buffer.startBuildTextLineGap (0, lineGap, 1920, 1080)
