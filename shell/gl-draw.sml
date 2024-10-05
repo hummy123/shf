@@ -55,12 +55,18 @@ struct
       }
     end
 
-  fun uploadText ({textVertexBuffer, ...}: t, vec) =
+  fun uploadText
+    ({textVertexBuffer, textProgram, window, textDrawLength = _}: t, vec) =
     let
       val _ = Gles3.bindBuffer textVertexBuffer
       val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
+      val newTextDrawLength = Vector.length vec div 5
     in
-      ()
+      { textVertexBuffer = textVertexBuffer
+      , textProgram = textProgram
+      , window = window
+      , textDrawLength = newTextDrawLength
+      }
     end
 
   fun drawText ({textVertexBuffer, textProgram, textDrawLength, ...}: t) =
@@ -91,7 +97,7 @@ struct
     case Glfw.windowShouldClose window of
       false =>
         let
-          val _ = Gles3.clearColor (0.1, 0.1, 0.1, 0.1)
+          val _ = Gles3.clearColor (1.0, 1.0, 1.0, 1.0)
           val _ = Gles3.clear ()
 
           val _ = draw shellState

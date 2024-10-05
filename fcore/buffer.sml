@@ -1,5 +1,9 @@
 structure Buffer =
 struct
+  val xSpace = 12
+  val xSpace3 = xSpace * 3
+  val ySpace = 23
+
   (* builds text from a string with char-wrap.
    * char-wrap is a similar concept to word-wrap, 
    * but it breaks on character in the middle of a word.
@@ -17,7 +21,7 @@ struct
           (* if space, then proceed forward one char 
            * without adding to acc *)
           buildTextString
-           ( pos + 1, str, acc, posX + 25, posY, startX
+           ( pos + 1, str, acc, posX + xSpace, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
            , r, g, b, tl
            )
@@ -25,7 +29,7 @@ struct
           (* if tab, proceed forward one char,
            * and jump visually forwards three chars *)
           buildTextString
-           ( pos + 1, str, acc, posX + 75, posY, startX
+           ( pos + 1, str, acc, posX + xSpace3, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
            , r, g, b, tl
            )
@@ -33,9 +37,9 @@ struct
           (* if \n, move down vertically, and move to start horizontally
            * assuming we have not exceeded the window's height.
            * If we have exceeded the window's height, just return acc. *)
-          if posY + 25 < windowHeight then
+          if posY + ySpace < windowHeight then
             buildTextString
-              ( pos + 1, str, acc, startX, posY + 25, startX
+              ( pos + 1, str, acc, startX, posY + ySpace, startX
               , windowWidth, windowHeight, fWindowWidth, fWindowHeight
               , r, g, b, tl
               )
@@ -45,19 +49,19 @@ struct
       | #"\r" =>
           (* same as \n, except we also check if we are in a \r\n pair,
            * and proceed two characters forward if so *)
-          if posY + 25 < windowHeight then
+          if posY + ySpace < windowHeight then
             if
               pos < String.size str - 1
               andalso String.sub (str, pos + 1) = #"\n"
             then 
               buildTextString
-                ( pos + 2, str, acc, startX, posY + 25, startX
+                ( pos + 2, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                 , r, g, b, tl
                 )
             else 
               buildTextString
-                ( pos + 1, str, acc, startX, posY + 25, startX
+                ( pos + 1, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                 , r, g, b, tl
                 )
@@ -70,7 +74,7 @@ struct
           let
             val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
           in
-            if posX + 25 < windowWidth then
+            if posX + xSpace < windowWidth then
               (* if there is horizontal space, place char on the right *)
               let
                 val chrVec = chrFun
@@ -78,12 +82,12 @@ struct
                 val acc = chrVec :: acc
               in
                 buildTextString
-                  ( pos + 1, str, acc, posX + 25, posY, startX
+                  ( pos + 1, str, acc, posX + xSpace, posY, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                   , r, g, b, tl
                   )
               end
-            else if posY + 25 < windowHeight then
+            else if posY + ySpace < windowHeight then
               (* if there is vertical space, place char down below at startX *)
               let
                 val chrVec = chrFun
@@ -94,7 +98,7 @@ struct
                 val acc = chrVec :: acc
               in
                 buildTextString
-                  ( pos + 1, str, acc, startX + 25, posY + 25, startX
+                  ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                   , r, g, b, tl
                   )
@@ -134,7 +138,7 @@ struct
     let
       val acc =
         continueBuildTextLineGap 
-          ( #rightStrings lineGap, [], 10, 10, 10
+          ( #rightStrings lineGap, [], 5, 5, 5
           , windowWidth, windowHeight
           , Real32.fromInt windowWidth
           , Real32.fromInt windowHeight
