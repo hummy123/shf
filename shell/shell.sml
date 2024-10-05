@@ -5,7 +5,7 @@ struct
   fun ioToLineGap (io, acc) =
     case TextIO.inputLine io of
       SOME str => ioToLineGap (io, LineGap.append (str, acc))
-    | NONE => acc
+    | NONE => LineGap.goToStart acc
 
   fun main () =
     let

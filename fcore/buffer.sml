@@ -112,7 +112,7 @@ struct
        * call function to build next string *)
       continueBuildTextLineGap
         ( tl, acc, posX, posY, startX
-        , windowWidth, windowHeight, fWindowWidth, fWindowWidth
+        , windowWidth, windowHeight, fWindowWidth, fWindowHeight
         , r, g, b
         )
 
