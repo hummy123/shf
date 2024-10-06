@@ -1,6 +1,19 @@
 structure Shell =
 struct
   open CML
+  open InputMsg
+
+  fun frameBufferSizeCallback inputMailbox (width, height) =
+    Mailbox.send (inputMailbox, RESIZE_EVENT (width, height))
+
+  fun registerCallbacks (inputMailbox, window) =
+    let
+      val resizeCallback = frameBufferSizeCallback inputMailbox
+      val () = Input.exportFramebufferSizeCallback resizeCallback
+      val () = Input.setFramebufferSizeCallback window
+    in
+      ()
+    end
 
   fun ioToLineGap (io, acc) =
     case TextIO.inputLine io of
@@ -18,16 +31,21 @@ struct
       val _ = Glfw.makeContextCurrent window
       val _ = Gles3.loadGlad ()
 
-      (* upload text vector *)
+      (* load file intol gap buffer and create initial app *)
       val io = TextIO.openIn "fcore/text-builder.sml"
       val lineGap = ioToLineGap (io, LineGap.empty)
       val _ = TextIO.closeIn io
+      val app = AppType.init (lineGap, 1920, 1080)
 
-      val (textVec, _) = TextBuilder.build (0, lineGap, 1920, 1080)
-      val shellState = GlDraw.create window
-      val shellState = GlDraw.uploadText (shellState, textVec)
+      (* create mailboxes for CML communication *)
+      val inputMailbox = Mailbox.mailbox ()
+      val drawMailbox = Mailbox.mailbox ()
 
-      val _ = GlDraw.helpLoop shellState
+      val () = registerCallbacks (inputMailbox, window)
+
+      val _ = CML.spawn (fn () => GlDraw.loop (drawMailbox, window))
+      val _ = CML.spawn (fn () =>
+        UpdateThread.loop (app, inputMailbox, drawMailbox))
     in
       ()
     end

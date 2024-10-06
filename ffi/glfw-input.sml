@@ -17,4 +17,6 @@ struct
 
   val exportFramebufferSizeCallback =
     _export "mltonFramebufferSizeCallback" public : (int * int -> unit) -> unit;
+  val setFramebufferSizeCallback =
+    _import "setFramebufferSizeCallback" public : window -> unit;
 end

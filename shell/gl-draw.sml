@@ -1,5 +1,7 @@
 structure GlDraw =
 struct
+  open CML
+  open DrawMsg
   (* The name doesn't make it clear, but this structure
    * couples GLFW and OpenGL.
    * I'm not sure if I will use native windowing systems
@@ -10,6 +12,7 @@ struct
     { textVertexBuffer: Word32.word
     , textProgram: Word32.word
     , textDrawLength: int
+    , drawMailbox: DrawMsg.t Mailbox.mbox
     , window: MLton.Pointer.t
     }
 
@@ -32,7 +35,7 @@ struct
       program
     end
 
-  fun create window =
+  fun create (drawMailbox, window) =
     let
       (* create vertex buffer, program, etc. for text. *)
       val textVertexBuffer = Gles3.createBuffer ()
@@ -51,19 +54,24 @@ struct
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
       , textDrawLength = 0
+      , drawMailbox = drawMailbox
       , window = window
       }
     end
 
-  fun uploadText
-    ({textVertexBuffer, textProgram, window, textDrawLength = _}: t, vec) =
+  fun uploadText (shellState: t, vec) =
     let
+      val
+        {textVertexBuffer, textProgram, window, drawMailbox, textDrawLength = _} =
+        shellState
+
       val _ = Gles3.bindBuffer textVertexBuffer
       val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
       val newTextDrawLength = Vector.length vec div 5
     in
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
+      , drawMailbox = drawMailbox
       , window = window
       , textDrawLength = newTextDrawLength
       }
@@ -93,10 +101,30 @@ struct
     in ()
     end
 
+
+  fun consumeDrawEvent (shellState, msg) =
+    let
+      val
+        {textVertexBuffer, textProgram, window, drawMailbox, textDrawLength = _} =
+        shellState
+    in
+      case msg of REDRAW_TEXT textVec => uploadText (shellState, textVec)
+    end
+
+  fun consumeDrawEvents (shellState as {drawMailbox, ...}: t) =
+    case Mailbox.recvPoll drawMailbox of
+      NONE => shellState
+    | SOME msg =>
+        let val shellState = consumeDrawEvent (shellState, msg)
+        in consumeDrawEvents shellState
+        end
+
   fun helpLoop (shellState as {window, ...}: t) =
     case Glfw.windowShouldClose window of
       false =>
         let
+          val shellState = consumeDrawEvents shellState
+
           val _ = Gles3.clearColor (1.0, 1.0, 1.0, 1.0)
           val _ = Gles3.clear ()
 
@@ -109,8 +137,8 @@ struct
         end
     | true => Glfw.terminate ()
 
-  fun loop window =
-    let val shellState = create window
+  fun loop (drawMailbox, window) =
+    let val shellState = create (drawMailbox, window)
     in helpLoop shellState
     end
 end
