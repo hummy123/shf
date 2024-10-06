@@ -157,6 +157,7 @@ typedef Pointer Objptr;
 extern "C" {
 #endif
 
+MLLIB_PUBLIC(void mltonFramebufferSizeCallback (Int32 x0, Int32 x1);)
 
 #undef MLLIB_PRIVATE
 #undef MLLIB_PUBLIC

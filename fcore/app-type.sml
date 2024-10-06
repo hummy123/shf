@@ -1,0 +1,4 @@
+structure AppType =
+struct
+
+end

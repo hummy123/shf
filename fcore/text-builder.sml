@@ -1,4 +1,10 @@
-structure Buffer =
+signature TEXT_BUILDER =
+sig
+  val build: int * LineGap.t * int * int
+             -> Real32.real vector * LineGap.t
+end
+
+structure TextBuilder :> TEXT_BUILDER =
 struct
   val xSpace = 12
   val xSpace3 = xSpace * 3
@@ -169,7 +175,7 @@ buildTextString ( startIdx, rStrHd, [], 5, 5, 5
       Vector.concat acc
     end
 
-  fun startBuildTextLineGap
+  fun build
     (startLine, lineGap: LineGap.t, windowWidth, windowHeight) =
     let
       val lineGap = LineGap.goToLine (startLine, lineGap)

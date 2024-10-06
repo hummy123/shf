@@ -19,11 +19,11 @@ struct
       val _ = Gles3.loadGlad ()
 
       (* upload text vector *)
-      val io = TextIO.openIn "fcore/buffer.sml"
+      val io = TextIO.openIn "fcore/text-builder.sml"
       val lineGap = ioToLineGap (io, LineGap.empty)
       val _ = TextIO.closeIn io
 
-      val (textVec, _) = Buffer.startBuildTextLineGap (0, lineGap, 1920, 1080)
+      val (textVec, _) = TextBuilder.build (0, lineGap, 1920, 1080)
       val shellState = GlDraw.create window
       val shellState = GlDraw.uploadText (shellState, textVec)
 

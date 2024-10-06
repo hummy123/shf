@@ -14,4 +14,7 @@ struct
   val (RELEASE, _) =
     _symbol "RELEASE" public : ( unit -> int ) * ( int -> unit );
   val RELEASE = RELEASE ()
+
+  val exportFramebufferSizeCallback =
+    _export "mltonFramebufferSizeCallback" public : (int * int -> unit) -> unit;
 end
