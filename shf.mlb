@@ -5,7 +5,13 @@ lib/brolib-sml/src/line_gap.sml
 lib/cozette-sml/fonts/cozette-ascii.mlb
 
 (* FUNCTIONAL CORE *)
+message-types/input-msg.sml
+message-types/draw-msg.sml
+message-types/mailbox-type.sml
+
+fcore/app-type.sml
 fcore/text-builder.sml
+fcore/app-update.sml
 
 (* IMPERATIVE SHELL *)
 $(SML_LIB)/basis/mlton.mlb
@@ -19,6 +25,7 @@ in
   ffi/glfw-input.sml
 end
 
+shell/update-thread.sml
 shell/gl-shaders.sml
 shell/gl-draw.sml
 shell/shell.sml
