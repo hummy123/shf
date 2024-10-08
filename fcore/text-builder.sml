@@ -15,10 +15,16 @@ struct
   (* builds text from a string with char-wrap.
    * char-wrap is a similar concept to word-wrap, 
    * but it breaks on character in the middle of a word.
+   *
+   * Will likely want multiple versions of these two mutually recursive
+   * functions for each selection and cursor type:
+   * cursor over an individual character, 
+   * range selection where multiple characters are selected, etc.
+   *
    * Todo: 
    * - Possibly add visual horizontal indentation when char-wrap occurs
    *   on an indented line *)
-  fun buildTextString
+  fun buildTextStringAfterCursor
     ( pos, str, acc, posX, posY, startX
     , windowWidth, windowHeight, fWindowWidth, fWindowHeight
     , r, g, b, tl
@@ -28,7 +34,7 @@ struct
         #" " =>
           (* if space, then proceed forward one char 
            * without adding to acc *)
-          buildTextString
+          buildTextStringAfterCursor
            ( pos + 1, str, acc, posX + xSpace, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
            , r, g, b, tl
@@ -36,7 +42,7 @@ struct
       | #"\t" =>
           (* if tab, proceed forward one char,
            * and jump visually forwards three chars *)
-          buildTextString
+          buildTextStringAfterCursor
            ( pos + 1, str, acc, posX + xSpace3, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
            , r, g, b, tl
@@ -46,7 +52,7 @@ struct
            * assuming we have not exceeded the window's height.
            * If we have exceeded the window's height, just return acc. *)
           if posY + ySpace < windowHeight then
-            buildTextString
+            buildTextStringAfterCursor
               ( pos + 1, str, acc, startX, posY + ySpace, startX
               , windowWidth, windowHeight, fWindowWidth, fWindowHeight
               , r, g, b, tl
@@ -62,13 +68,13 @@ struct
               pos < String.size str - 1
               andalso String.sub (str, pos + 1) = #"\n"
             then 
-              buildTextString
+              buildTextStringAfterCursor
                 ( pos + 2, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                 , r, g, b, tl
                 )
             else 
-              buildTextString
+              buildTextStringAfterCursor
                 ( pos + 1, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                 , r, g, b, tl
@@ -89,7 +95,7 @@ struct
                   (posX, posY, fontSize, fontSize, fWindowWidth, fWindowHeight, r, g, b)
                 val acc = chrVec :: acc
               in
-                buildTextString
+                buildTextStringAfterCursor
                   ( pos + 1, str, acc, posX + xSpace, posY, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                   , r, g, b, tl
@@ -105,7 +111,7 @@ struct
                   )
                 val acc = chrVec :: acc
               in
-                buildTextString
+                buildTextStringAfterCursor
                   ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
                   , r, g, b, tl
@@ -118,20 +124,20 @@ struct
     else
       (* if we reached the end of the string, 
        * call function to build next string *)
-      continueBuildTextLineGap
+      continueBuildTextLineGapAfterCursor
         ( tl, acc, posX, posY, startX
         , windowWidth, windowHeight, fWindowWidth, fWindowHeight
         , r, g, b
         )
 
-  and continueBuildTextLineGap
+  and continueBuildTextLineGapAfterCursor
     ( strList, acc, posX, posY, startX
     , windowWidth, windowHeight, fWindowWidth, fWindowHeight
     , r, g, b
     ) =
     case strList of
       hd :: tl =>
-        buildTextString
+        buildTextStringAfterCursor
           ( 0, hd, acc, posX, posY, startX
           , windowWidth, windowHeight, fWindowWidth, fWindowHeight
           , r, g, b, tl
@@ -167,7 +173,7 @@ struct
                 else
                   0
             in
-              buildTextString
+              buildTextStringAfterCursor
                 ( startIdx, rStrHd, []
                 , 5, 5, 5
                 , windowWidth, windowHeight
