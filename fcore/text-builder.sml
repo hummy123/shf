@@ -1,14 +1,16 @@
 signature TEXT_BUILDER =
 sig
+  (* Prerequisite: LineGap is moved to requested line first. *)
   val build: int * LineGap.t * int * int
-             -> Real32.real vector * LineGap.t
+             -> Real32.real vector
 end
 
 structure TextBuilder :> TEXT_BUILDER =
 struct
-  val xSpace = 12
+  val xSpace = 13
   val xSpace3 = xSpace * 3
-  val ySpace = 23
+  val ySpace = 25
+  val fontSize = 30.0
 
   (* builds text from a string with char-wrap.
    * char-wrap is a similar concept to word-wrap, 
@@ -84,7 +86,7 @@ struct
               (* if there is horizontal space, place char on the right *)
               let
                 val chrVec = chrFun
-                  (posX, posY, 25.0, 25.0, fWindowWidth, fWindowHeight, r, g, b)
+                  (posX, posY, fontSize, fontSize, fWindowWidth, fWindowHeight, r, g, b)
                 val acc = chrVec :: acc
               in
                 buildTextString
@@ -97,7 +99,7 @@ struct
               (* if there is vertical space, place char down below at startX *)
               let
                 val chrVec = chrFun
-                  ( startX, posY + 25, 25.0, 25.0
+                  ( startX, posY + ySpace, fontSize, fontSize
                   , fWindowWidth, fWindowHeight
                   , r, g, b
                   )
@@ -147,15 +149,23 @@ struct
           (rStrHd :: rStrTl, rLnHd :: _) =>
             let
               (* get index of line to start building from *)
-              val lnPos = startLine - curLine
-              val startIdx = Vector.sub (rLnHd, lnPos)
               val startIdx =
-                if
-                  String.sub (rStrHd, startIdx) = #"\r"
-                  andalso startIdx < String.size rStrHd - 1
-                  andalso String.sub (rStrHd, startIdx + 1) = #"\n"
-                then (* handle \r\n pair *) startIdx + 2
-                else startIdx + 1
+                if startLine > curLine then
+                  let
+                    val lnPos = startLine - curLine - 1
+                    val startIdx = Vector.sub (rLnHd, lnPos)
+                  in
+                    if
+                      String.sub (rStrHd, startIdx) = #"\r"
+                      andalso startIdx < String.size rStrHd - 1
+                      andalso String.sub (rStrHd, startIdx + 1) = #"\n"
+                    then 
+                      (* handle \r\n pair *) 
+                      startIdx + 2
+                    else startIdx + 1
+                  end
+                else
+                  0
             in
               buildTextString
                 ( startIdx, rStrHd, []
@@ -172,6 +182,6 @@ struct
              * else we can do. *)
             []
     in
-      (Vector.concat acc, lineGap)
+      Vector.concat acc
     end
 end

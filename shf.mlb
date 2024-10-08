@@ -10,6 +10,7 @@ message-types/draw-msg.sml
 message-types/mailbox-type.sml
 
 fcore/app-type.sml
+fcore/app-with.sml
 fcore/text-builder.sml
 fcore/app-update.sml
 

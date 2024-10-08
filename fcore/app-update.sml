@@ -8,12 +8,13 @@ struct
 
   fun resizeText (app: app_type, newWidth, newHeight) =
     let
-      val {buffer, windowWidth, windowHeight} = app
-      val (textVec, newBuffer) =
-        TextBuilder.build (0, buffer, newWidth, newHeight)
+      val {buffer, windowWidth, windowHeight, startLine} = app
 
-      val newApp =
-        {buffer = newBuffer, windowWidth = newWidth, windowHeight = newHeight}
+      val newBuffer = LineGap.goToLine (startLine, buffer)
+      val textVec =
+        TextBuilder.build (startLine, newBuffer, newWidth, newHeight)
+
+      val newApp = AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight)
       val msg = REDRAW_TEXT textVec
     in
       (newApp, [DRAW msg])
