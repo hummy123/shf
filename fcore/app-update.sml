@@ -12,7 +12,7 @@ struct
 
       val newBuffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
-        (startLine, 2, newBuffer, newWidth, newHeight)
+        (startLine, cursorIdx, newBuffer, newWidth, newHeight)
 
       val newApp = AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight)
     in
