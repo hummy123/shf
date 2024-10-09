@@ -11,13 +11,12 @@ struct
       val {buffer, windowWidth, windowHeight, startLine, cursorIdx} = app
 
       val newBuffer = LineGap.goToLine (startLine, buffer)
-      val textVec = TextBuilder.build
+      val drawMsg = TextBuilder.build
         (startLine, cursorIdx, newBuffer, newWidth, newHeight)
 
       val newApp = AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight)
-      val msg = REDRAW_TEXT textVec
     in
-      (newApp, [DRAW msg])
+      (newApp, drawMsg)
     end
 
   fun update (app, msg) =

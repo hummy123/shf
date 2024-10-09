@@ -2,7 +2,7 @@ signature TEXT_BUILDER =
 sig
   (* Prerequisite: LineGap is moved to requested line first. *)
   val build: int * int * LineGap.t * int * int
-             -> Real32.real vector
+             -> MailboxType.t list
 end
 
 structure TextBuilder :> TEXT_BUILDER =
@@ -12,7 +12,7 @@ struct
   val ySpace = 25
   val fontSize = 30.0
 
-  fun buildTextAccToDrawMsg (textAcc, cursorAcc) =
+  fun accToDrawMsg (textAcc, cursorAcc) =
     let
       open MailboxType
       open DrawMsg
@@ -41,7 +41,7 @@ struct
   fun buildTextStringAfterCursor
     ( pos, str, acc, posX, posY, startX
     , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-    , r, g, b, tl
+    , r, g, b, tl, cursorAcc
     ) =
     if pos < String.size str then
       case String.sub (str, pos) of
@@ -51,7 +51,7 @@ struct
           buildTextStringAfterCursor
            ( pos + 1, str, acc, posX + xSpace, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-           , r, g, b, tl
+           , r, g, b, tl, cursorAcc
            )
       | #"\t" =>
           (* if tab, proceed forward one char,
@@ -59,7 +59,7 @@ struct
           buildTextStringAfterCursor
            ( pos + 1, str, acc, posX + xSpace3, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-           , r, g, b, tl
+           , r, g, b, tl, cursorAcc
            )
       | #"\n" =>
           (* if \n, move down vertically, and move to start horizontally
@@ -69,11 +69,11 @@ struct
             buildTextStringAfterCursor
               ( pos + 1, str, acc, startX, posY + ySpace, startX
               , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-              , r, g, b, tl
+              , r, g, b, tl, cursorAcc
               )
           else
             (* return if there is no more vertical space after line break *)
-            acc
+            accToDrawMsg (acc, cursorAcc)
       | #"\r" =>
           (* same as \n, except we also check if we are in a \r\n pair,
            * and proceed two characters forward if so *)
@@ -85,17 +85,17 @@ struct
               buildTextStringAfterCursor
                 ( pos + 2, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                , r, g, b, tl
+                , r, g, b, tl, cursorAcc
                 )
             else 
               buildTextStringAfterCursor
                 ( pos + 1, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                , r, g, b, tl
+                , r, g, b, tl, cursorAcc
                 )
           else
             (* return if there is no more vertical space after line break *)
-            acc
+            accToDrawMsg (acc, cursorAcc)
       | chr =>
           (* for any other character, add it to acc if there is space,
            * and proceed forward one character in the string *)
@@ -112,7 +112,7 @@ struct
                 buildTextStringAfterCursor
                   ( pos + 1, str, acc, posX + xSpace, posY, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                  , r, g, b, tl
+                  , r, g, b, tl, cursorAcc
                   )
               end
             else if posY + ySpace < windowHeight then
@@ -128,12 +128,12 @@ struct
                 buildTextStringAfterCursor
                   ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                  , r, g, b, tl
+                  , r, g, b, tl, cursorAcc
                   )
               end
             else
               (* return if no space horizontally or vertically *)
-              acc
+              accToDrawMsg (acc, cursorAcc)
           end
     else
       (* if we reached the end of the string, 
@@ -141,22 +141,22 @@ struct
       continueBuildTextLineGapAfterCursor
         ( tl, acc, posX, posY, startX
         , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-        , r, g, b
+        , r, g, b, cursorAcc
         )
 
   and continueBuildTextLineGapAfterCursor
     ( strList, acc, posX, posY, startX
     , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-    , r, g, b
+    , r, g, b, cursorAcc
     ) =
     case strList of
       hd :: tl =>
         buildTextStringAfterCursor
           ( 0, hd, acc, posX, posY, startX
           , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-          , r, g, b, tl
+          , r, g, b, tl, cursorAcc
           )
-    | [] => acc
+    | [] => accToDrawMsg (acc, cursorAcc)
 
   (* same as buildTextStringAfterCursor, except this keeps track of absolute
    * index and cursor pos too *)
@@ -187,7 +187,7 @@ struct
               , r, g, b, tl, absIdx + 1, cursorPos
               )
           else
-            acc
+            accToDrawMsg (acc, [])
       | #"\r" =>
           if posY + ySpace < windowHeight then
             if
@@ -206,7 +206,7 @@ struct
                 , r, g, b, tl, absIdx + 1, cursorPos
                 )
           else
-            acc
+            accToDrawMsg (acc, [])
       | chr =>
           let
             val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
@@ -239,7 +239,7 @@ struct
                   )
               end
             else
-              acc
+              accToDrawMsg (acc, [])
           end
     else
       continueBuildTextLineGapBeforeCursor
@@ -251,7 +251,7 @@ struct
   and buildTextStringWithinCursor
     ( pos, str, acc, posX, posY, startX
     , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-    , r, g, b, tl, absIdx, cursorPos
+    , r, g, b, tl, absIdx, cursorPos, cursorAcc
     ) =
     if pos < String.size str then
       case String.sub (str, pos) of
@@ -259,23 +259,23 @@ struct
           buildTextStringWithinCursor
            ( pos + 1, str, acc, posX + xSpace, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-           , r, g, b, tl, absIdx + 1, cursorPos
+           , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc
            )
       | #"\t" =>
           buildTextStringWithinCursor
            ( pos + 1, str, acc, posX + xSpace3, posY, startX
            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-           , r, g, b, tl, absIdx + 1, cursorPos
+           , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc
            )
       | #"\n" =>
           if posY + ySpace < windowHeight then
             buildTextStringWithinCursor
               ( pos + 1, str, acc, startX, posY + ySpace, startX
               , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-              , r, g, b, tl, absIdx + 1, cursorPos
+              , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc
               )
           else
-            acc
+            accToDrawMsg (acc, cursorAcc)
       | #"\r" =>
           if posY + ySpace < windowHeight then
             if
@@ -285,16 +285,16 @@ struct
               buildTextStringWithinCursor
                 ( pos + 2, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                , r, g, b, tl, absIdx + 1, cursorPos
+                , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc
                 )
             else 
               buildTextStringWithinCursor
                 ( pos + 1, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                , r, g, b, tl, absIdx + 1, cursorPos
+                , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc
                 )
           else
-            acc
+            accToDrawMsg (acc, cursorAcc)
       | chr =>
           let
             val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
@@ -308,7 +308,7 @@ struct
                 buildTextStringWithinCursor
                   ( pos + 1, str, acc, posX + xSpace, posY, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                  , r, g, b, tl, absIdx + 1, cursorPos
+                  , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc
                   )
               end
             else if posY + ySpace < windowHeight then
@@ -323,11 +323,11 @@ struct
                 buildTextStringWithinCursor
                   ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
                   , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                  , r, g, b, tl, absIdx + 1, cursorPos
+                  , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc
                   )
               end
             else
-              acc
+              accToDrawMsg (acc, cursorAcc)
           end
     else
       (* we have built cursor now, so can call after-cursor function
@@ -335,7 +335,7 @@ struct
       continueBuildTextLineGapAfterCursor
         ( tl, acc, posX, posY, startX
         , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-        , r, g, b
+        , r, g, b, cursorAcc
         )
 
   and continueBuildTextLineGapBeforeCursor
@@ -357,50 +357,54 @@ struct
         buildTextStringWithinCursor
           ( 0, hd, acc, posX, posY, startX
           , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-          , r, g, b, tl, absIdx, cursorPos
+          , r, g, b, tl, absIdx, cursorPos, []
           )
-    | [] => acc
+    | [] => accToDrawMsg (acc, [])
 
   fun build
     (startLine, cursorPos, lineGap: LineGap.t, windowWidth, windowHeight) =
     let
       val lineGap = LineGap.goToLine (startLine, lineGap)
       val {rightStrings, rightLines, line = curLine, idx = curIdx, ...} = lineGap
+    in
+      case (rightStrings, rightLines) of
+        (rStrHd :: rStrTl, rLnHd :: _) =>
+          let
+            (* get index of line to start building from *)
+            val startIdx =
+              if startLine > curLine then
+                let
+                  val lnPos = startLine - curLine - 1
+                  val startIdx = Vector.sub (rLnHd, lnPos)
+                in
+                  if
+                    String.sub (rStrHd, startIdx) = #"\r"
+                    andalso startIdx < String.size rStrHd - 1
+                    andalso String.sub (rStrHd, startIdx + 1) = #"\n"
+                  then 
+                    (* handle \r\n pair *) 
+                    startIdx + 2
+                  else startIdx + 1
+                end
+              else
+                0
 
-      val acc =
-        case (rightStrings, rightLines) of
-          (rStrHd :: rStrTl, rLnHd :: _) =>
-            let
-              (* get index of line to start building from *)
-              val startIdx =
-                if startLine > curLine then
-                  let
-                    val lnPos = startLine - curLine - 1
-                    val startIdx = Vector.sub (rLnHd, lnPos)
-                  in
-                    if
-                      String.sub (rStrHd, startIdx) = #"\r"
-                      andalso startIdx < String.size rStrHd - 1
-                      andalso String.sub (rStrHd, startIdx + 1) = #"\n"
-                    then 
-                      (* handle \r\n pair *) 
-                      startIdx + 2
-                    else startIdx + 1
-                  end
-                else
-                  0
+              val absIdx = curIdx + startIdx
 
-                val absIdx = curIdx + startIdx
-
-                val f =
-                  if cursorPos < curIdx + String.size rStrHd then
-                    (* if cursor is within string *)
-                    buildTextStringWithinCursor
-                  else
-                    (* if cursor is after string *)
-                    buildTextStringBeforeCursor
-            in
-              f
+          in
+            if cursorPos < curIdx + String.size rStrHd then
+              (* if cursor is within string *)
+              buildTextStringWithinCursor
+                ( startIdx, rStrHd, []
+                , 5, 5, 5
+                , windowWidth, windowHeight
+                , Real32.fromInt windowWidth, Real32.fromInt windowHeight
+                , 0.67, 0.51, 0.83
+                , rStrTl, absIdx, cursorPos, []
+                )
+            else
+              (* if cursor is after string *)
+              buildTextStringBeforeCursor
                 ( startIdx, rStrHd, []
                 , 5, 5, 5
                 , windowWidth, windowHeight
@@ -408,13 +412,11 @@ struct
                 , 0.67, 0.51, 0.83
                 , rStrTl, absIdx, cursorPos
                 )
-            end
-        | (_, _) =>
-            (* requested line goes beyond the buffer,
-             * so just return empty list as there is nothig
-             * else we can do. *)
-            []
-    in
-      Vector.concat acc
+          end
+      | (_, _) =>
+          (* requested line goes beyond the buffer,
+           * so just return empty list as there is nothig
+           * else we can do. *)
+          []
     end
 end
