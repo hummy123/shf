@@ -12,6 +12,20 @@ struct
   val ySpace = 25
   val fontSize = 30.0
 
+  fun buildTextAccToDrawMsg (textAcc, cursorAcc) =
+    let
+      open MailboxType
+      open DrawMsg
+
+      val textAcc = Vector.concat textAcc
+      val cursorAcc = Vector.concat cursorAcc
+
+      val textMsg = REDRAW_TEXT textAcc
+      val cursorMsg = REDRAW_CURSOR cursorAcc
+    in
+      [DRAW textMsg, DRAW cursorMsg]
+    end
+
   (* builds text from a string with char-wrap.
    * char-wrap is a similar concept to word-wrap, 
    * but it breaks on character in the middle of a word.

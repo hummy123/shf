@@ -12,6 +12,11 @@ struct
     { textVertexBuffer: Word32.word
     , textProgram: Word32.word
     , textDrawLength: int
+
+    , cursorVertexBuffer: Word32.word
+    , cursorProgram: Word32.word
+    , cursorDrawLength: int
+
     , drawMailbox: DrawMsg.t Mailbox.mbox
     , window: MLton.Pointer.t
     }
@@ -47,6 +52,10 @@ struct
 
       val textProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
 
+      (* create cursor buffer, program, etc. *)
+      val cursorVertexBuffer = Gles3.createBuffer ()
+      val cursorProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
+
       (* clean up shaders which are no longer needed once progran is linked. *)
       val _ = Gles3.deleteShader xyrgbVertexShader
       val _ = Gles3.deleteShader rgbFragmentShader
@@ -54,6 +63,9 @@ struct
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
       , textDrawLength = 0
+      , cursorVertexBuffer = cursorVertexBuffer
+      , cursorProgram = cursorProgram
+      , cursorDrawLength = 0
       , drawMailbox = drawMailbox
       , window = window
       }
@@ -62,8 +74,15 @@ struct
   fun uploadText (shellState: t, vec) =
     let
       val
-        {textVertexBuffer, textProgram, window, drawMailbox, textDrawLength = _} =
-        shellState
+        { textVertexBuffer
+        , textProgram
+        , textDrawLength = _
+        , cursorVertexBuffer
+        , cursorProgram
+        , cursorDrawLength
+        , window
+        , drawMailbox
+        } = shellState
 
       val _ = Gles3.bindBuffer textVertexBuffer
       val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
@@ -71,16 +90,47 @@ struct
     in
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
+      , textDrawLength = newTextDrawLength
+      , cursorVertexBuffer = cursorVertexBuffer
+      , cursorProgram = cursorProgram
+      , cursorDrawLength = cursorDrawLength
       , drawMailbox = drawMailbox
       , window = window
-      , textDrawLength = newTextDrawLength
       }
     end
 
-  fun drawText ({textVertexBuffer, textProgram, textDrawLength, ...}: t) =
-    if textDrawLength > 0 then
+  fun uploadCursor (shellState: t, vec) =
+    let
+      val
+        { textVertexBuffer
+        , textProgram
+        , textDrawLength
+        , cursorVertexBuffer
+        , cursorProgram
+        , cursorDrawLength = _
+        , window
+        , drawMailbox
+        } = shellState
+
+      val _ = Gles3.bindBuffer cursorVertexBuffer
+      val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
+      val newCursorDrawLength = Vector.length vec div 5
+    in
+      { textVertexBuffer = textVertexBuffer
+      , textProgram = textProgram
+      , textDrawLength = textDrawLength
+      , cursorVertexBuffer = cursorVertexBuffer
+      , cursorProgram = cursorProgram
+      , cursorDrawLength = newCursorDrawLength
+      , drawMailbox = drawMailbox
+      , window = window
+      }
+    end
+
+  fun drawXyrgb (vertexBuffer, program, drawLength) =
+    if drawLength > 0 then
       let
-        val _ = Gles3.bindBuffer textVertexBuffer
+        val _ = Gles3.bindBuffer vertexBuffer
         (* enable xy component from uploaded array *)
         val _ = Gles3.vertexAttribPointer (0, 2, 5, 0)
         val _ = Gles3.enableVertexAttribArray 0
@@ -88,8 +138,8 @@ struct
         val _ = Gles3.vertexAttribPointer (1, 3, 5, 8)
         val _ = Gles3.enableVertexAttribArray 1
 
-        val _ = Gles3.useProgram textProgram
-        val _ = Gles3.drawArrays (Gles3.TRIANGLES, 0, textDrawLength)
+        val _ = Gles3.useProgram program
+        val _ = Gles3.drawArrays (Gles3.TRIANGLES, 0, drawLength)
       in
         ()
       end
@@ -97,18 +147,36 @@ struct
       ()
 
   fun draw (drawObject: t) =
-    let val _ = drawText drawObject
-    in ()
+    let
+      val
+        { textVertexBuffer
+        , textDrawLength
+        , textProgram
+        , cursorVertexBuffer
+        , cursorDrawLength
+        , cursorProgram
+        , ...
+        } = drawObject
+      val _ = drawXyrgb (cursorVertexBuffer, cursorProgram, cursorDrawLength)
+      val _ = drawXyrgb (textVertexBuffer, textProgram, textDrawLength)
+    in
+      ()
     end
-
 
   fun consumeDrawEvent (shellState, msg) =
     let
       val
-        {textVertexBuffer, textProgram, window, drawMailbox, textDrawLength = _} =
-        shellState
+        { textVertexBuffer
+        , textProgram
+        , window
+        , drawMailbox
+        , textDrawLength = _
+        , ...
+        } = shellState
     in
-      case msg of REDRAW_TEXT textVec => uploadText (shellState, textVec)
+      case msg of
+        REDRAW_TEXT textVec => uploadText (shellState, textVec)
+      | REDRAW_CURSOR cursorVec => uploadCursor (shellState, cursorVec)
     end
 
   fun consumeDrawEvents (shellState as {drawMailbox, ...}: t) =
