@@ -178,7 +178,7 @@ struct
                 , 5, 5, 5
                 , windowWidth, windowHeight
                 , Real32.fromInt windowWidth, Real32.fromInt windowHeight
-                , 0.0, 0.0, 0.0
+                , 0.67, 0.51, 0.83
                 , rStrTl
                 )
             end

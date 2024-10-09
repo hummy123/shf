@@ -125,7 +125,7 @@ struct
         let
           val shellState = consumeDrawEvents shellState
 
-          val _ = Gles3.clearColor (1.0, 1.0, 1.0, 1.0)
+          val _ = Gles3.clearColor (0.087, 0.095, 0.13, 1.0)
           val _ = Gles3.clear ()
 
           val _ = draw shellState
