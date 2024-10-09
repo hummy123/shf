@@ -26,6 +26,34 @@ struct
       [DRAW textMsg, DRAW cursorMsg]
     end
 
+  fun buildCursor (posX, posY, fWindowWidth, fWindowHeight) =
+    let
+      val top = Real32.fromInt posX
+      val left = Real32.fromInt posY
+      val right = left + fontSize
+      val bottom = top + fontSize
+
+      val halfHeight = fWindowHeight / 2.0
+      val top = (~(top - halfHeight)) / halfHeight
+      val bottom = (~(bottom - halfHeight)) / halfHeight
+
+      val halfWidth = fWindowWidth / 2.0
+      val left = (left - halfWidth) / halfWidth
+      val right = (right - halfWidth) / halfWidth
+
+      val vec =
+       #[ left, top, 1.0, 1.0, 1.0
+        , right, top, 1.0, 1.0, 1.0
+        , left, bottom, 1.0, 1.0, 1.0
+
+        , left, bottom, 1.0, 1.0, 1.0
+        , right, bottom, 1.0, 1.0, 1.0
+        , right, top, 1.0, 1.0, 1.0
+        ]
+    in
+      [vec]
+    end
+
   (* builds text from a string with char-wrap.
    * char-wrap is a similar concept to word-wrap, 
    * but it breaks on character in the middle of a word.
@@ -298,6 +326,11 @@ struct
       | chr =>
           let
             val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
+            val cursorAcc = 
+              if absIdx <> cursorPos then
+                buildCursor (posX, posY, fWindowWidth, fWindowHeight)
+              else 
+                cursorAcc
           in
             if posX + xSpace < windowWidth then
               let

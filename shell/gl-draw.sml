@@ -157,6 +157,7 @@ struct
         , cursorProgram
         , ...
         } = drawObject
+
       val _ = drawXyrgb (cursorVertexBuffer, cursorProgram, cursorDrawLength)
       val _ = drawXyrgb (textVertexBuffer, textProgram, textDrawLength)
     in

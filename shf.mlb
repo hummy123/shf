@@ -11,7 +11,11 @@ message-types/mailbox-type.sml
 
 fcore/app-type.sml
 fcore/app-with.sml
-fcore/text-builder.sml
+ann
+  "allowVectorExps true"
+in
+  fcore/text-builder.sml
+end
 fcore/app-update.sml
 
 (* IMPERATIVE SHELL *)
