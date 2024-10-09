@@ -328,9 +328,9 @@ struct
             val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
             val cursorAcc = 
               if absIdx <> cursorPos then
-                buildCursor (posX, posY, fWindowWidth, fWindowHeight)
-              else 
                 cursorAcc
+              else 
+                buildCursor (posX, posY, fWindowWidth, fWindowHeight)
           in
             if posX + xSpace < windowWidth then
               let
