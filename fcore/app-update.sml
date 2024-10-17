@@ -19,6 +19,16 @@ struct
       (newApp, drawMsg)
     end
 
+  fun handleChr (app, chr) =
+    let
+      val chr = Char.toString chr ^ "\n"
+      val () = print chr
+    in
+      (app, [])
+    end
+
   fun update (app, msg) =
-    case msg of RESIZE_EVENT (width, height) => resizeText (app, width, height)
+    case msg of
+      RESIZE_EVENT (width, height) => resizeText (app, width, height)
+    | CHAR_EVENT chr => handleChr (app, chr)
 end
