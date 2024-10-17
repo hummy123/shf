@@ -37,9 +37,26 @@ struct
       (newApp, drawMsg)
     end
 
+  fun moveLeft (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.viH (buffer, cursorIdx)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+      val drawMsg = TextBuilder.build
+        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
+    in
+      (newApp, drawMsg)
+    end
+
   fun handleChr (app: app_type, chr) =
     case chr of
-      #"l" => moveRight app
+      #"h" => moveLeft app
+    | #"l" => moveRight app
     | _ => (app, [])
 
   fun update (app, msg) =
