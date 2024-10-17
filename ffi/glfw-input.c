@@ -16,3 +16,11 @@ void setFramebufferSizeCallback(GLFWwindow* window) {
   glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 }
 
+void charCallback(GLFWwindow* window, unsigned int codepoint) {
+  mltonCharCallback(codepoint);
+}
+
+void setCharCallback(GLFWwindow* window) {
+  glfwSetCharCallback(window, charCallback);
+}
+

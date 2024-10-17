@@ -158,6 +158,7 @@ extern "C" {
 #endif
 
 MLLIB_PUBLIC(void mltonFramebufferSizeCallback (Int32 x0, Int32 x1);)
+MLLIB_PUBLIC(void mltonCharCallback (Word32 x0);)
 
 #undef MLLIB_PRIVATE
 #undef MLLIB_PUBLIC

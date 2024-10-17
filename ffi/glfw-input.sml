@@ -19,4 +19,9 @@ struct
     _export "mltonFramebufferSizeCallback" public : (int * int -> unit) -> unit;
   val setFramebufferSizeCallback =
     _import "setFramebufferSizeCallback" public : window -> unit;
+
+  val exportCharCallback =
+    _export "mltonCharCallback" public : (Word32.word -> unit) -> unit;
+  val setCharCallback =
+    _import "setCharCallback" public : window -> unit;
 end

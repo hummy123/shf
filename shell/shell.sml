@@ -6,11 +6,23 @@ struct
   fun frameBufferSizeCallback inputMailbox (width, height) =
     Mailbox.send (inputMailbox, RESIZE_EVENT (width, height))
 
+  fun charCallback word =
+    let
+      val word = Word32.toInt word
+      val chr = Char.chr word
+      val s = Char.toString chr ^ "\n"
+    in
+      print s
+    end
+
   fun registerCallbacks (inputMailbox, window) =
     let
       val resizeCallback = frameBufferSizeCallback inputMailbox
       val () = Input.exportFramebufferSizeCallback resizeCallback
       val () = Input.setFramebufferSizeCallback window
+
+      val () = Input.exportCharCallback charCallback
+      val () = Input.setCharCallback window
     in
       ()
     end
