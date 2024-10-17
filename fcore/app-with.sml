@@ -14,4 +14,17 @@ struct
       , cursorIdx = cursorIdx
       }
     end
+
+  fun bufferAndCursorIdx (app: app_type, newBuffer, newCursorIdx) =
+    let
+      val {buffer = _, cursorIdx = _, windowWidth, windowHeight, startLine} =
+        app
+    in
+      { buffer = newBuffer
+      , cursorIdx = newCursorIdx
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      , startLine = startLine
+      }
+    end
 end

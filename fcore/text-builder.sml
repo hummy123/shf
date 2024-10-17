@@ -286,17 +286,34 @@ struct
     if pos < String.size str then
       case String.sub (str, pos) of
         #" " =>
-          buildTextStringWithinCursor
-           ( pos + 1, str, acc, posX + xSpace, posY, startX
-           , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-           , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc, hr, hg, hb
-           )
+          (* if inside cursor, then create cursorAcc;
+           * else, just skip as usual *)
+          if absIdx <> cursorPos then
+            (* not in cursur *)
+            buildTextStringWithinCursor
+             ( pos + 1, str, acc, posX + xSpace, posY, startX
+             , windowWidth, windowHeight, fWindowWidth, fWindowHeight
+             , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc, hr, hg, hb
+             )
+          else
+            (* in cursor *)
+            let
+              val cursorAcc = buildCursor (posX, posY, fWindowWidth, fWindowHeight, r, g ,b)
+            in
+              buildTextStringAfterCursor
+                ( pos + 1, str, acc, posX + xSpace, posY, startX
+                , windowWidth, windowHeight, fWindowWidth, fWindowHeight
+                , r, g, b, tl, cursorAcc
+                )
+            end
       | #"\t" =>
+          (* todo: draw cursor if cursor is on tab
+           * but this is not a priority right now *)
           buildTextStringWithinCursor
-           ( pos + 1, str, acc, posX + xSpace3, posY, startX
-           , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-           , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc, hr, hg, hb
-           )
+            ( pos + 1, str, acc, posX + xSpace3, posY, startX
+            , windowWidth, windowHeight, fWindowWidth, fWindowHeight
+            , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc, hr, hg, hb
+            )
       | #"\n" =>
           if posY + ySpace < windowHeight then
             buildTextStringWithinCursor
