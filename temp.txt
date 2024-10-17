@@ -1,0 +1,6 @@
+signature TEXT_BUILDER =
+sig
+  (* Prerequisite: LineGap is moved to requested line first. *)
+  val build: int * int * LineGap.t * int * int
+             -> MailboxType.t list
+enda

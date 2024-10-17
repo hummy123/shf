@@ -21,27 +21,18 @@ struct
 
   fun moveRight (app: app_type) =
     let
-      (* todo: proper implementation of moveRight
-       * currently, we also retrieve the newCursorIdx improperly.
-       * To do it properly, we have to look inside LineGap
-       * instead of just incrementing cursorIdx by 1.
-       * So:
-       * - Find newCursorIdx from LineGap
-       * *)
-
       val {buffer, windowWidth, windowHeight, startLine, cursorIdx} = app
 
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
-      val newBuffer = LineGap.goToIdx (cursorIdx, buffer)
-      (* todo: call to retrieve newCursorIdx should be below *)
-      val newCursorIdx = cursorIdx + 1
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.viL (buffer, cursorIdx)
 
       (* move LineGap to first line displayed on screen, and build new text *)
-      val newBuffer = LineGap.goToLine (startLine, newBuffer)
+      val buffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, newBuffer, windowWidth, windowHeight)
+        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
-      val newApp = AppWith.bufferAndCursorIdx (app, newBuffer, newCursorIdx)
+      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
     in
       (newApp, drawMsg)
     end

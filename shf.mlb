@@ -16,6 +16,7 @@ ann
 in
   fcore/text-builder.sml
 end
+fcore/cursor.sml
 fcore/app-update.sml
 
 (* IMPERATIVE SHELL *)
