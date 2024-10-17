@@ -18,7 +18,7 @@ struct
               (case tl of
                  _ :: _ =>
                    (* if there is another string after current head, we can increment cursorIdx *)
-                   bufferIdx + String.size hd - 1
+                   cursorIdx + 1
                | _ =>
                    (* if there is no string after current head, return original cursorIdx *)
                    cursorIdx)
