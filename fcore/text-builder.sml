@@ -326,15 +326,25 @@ struct
             else
               (* in cursor position, so build cursorAcc 
                * and call AfterCursor function *)
-              let
-                val cursorAcc = buildCursor (posX, posY, fWindowWidth, fWindowHeight, r, g ,b)
-              in
-                buildTextStringAfterCursor
-                  ( pos + 1, str, acc, startX, posY + ySpace, startX
-                  , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                  , r, g, b, tl, cursorAcc
-                  )
-              end
+               if pos = String.size str - 1 andalso tl = [] then
+                 (* if we are at end of lineGap, we want to build cursorAcc
+                  * at different coordinates than usual *)
+                 let
+                   val cursorAcc = 
+                     buildCursor (startX, posY + ySpace, fWindowWidth, fWindowHeight, r, g, b)
+                 in
+                   accToDrawMsg (acc, cursorAcc)
+                 end
+               else
+                 let
+                   val cursorAcc = buildCursor (posX, posY, fWindowWidth, fWindowHeight, r, g ,b)
+                 in
+                   buildTextStringAfterCursor
+                     ( pos + 1, str, acc, startX, posY + ySpace, startX
+                     , windowWidth, windowHeight, fWindowWidth, fWindowHeight
+                     , r, g, b, tl, cursorAcc
+                     )
+                 end
           else
             accToDrawMsg (acc, cursorAcc)
       | #"\r" =>

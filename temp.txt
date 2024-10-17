@@ -5,4 +5,3 @@ sig
   val build: int * int * LineGap.t * int * int
              -> MailboxType.t list
 enda
-
