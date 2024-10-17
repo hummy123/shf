@@ -227,7 +227,7 @@ struct
               buildTextStringBeforeCursor
                 ( pos + 2, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                , r, g, b, tl, absIdx + 1, cursorPos, hr, hg, hb
+                , r, g, b, tl, absIdx + 2, cursorPos, hr, hg, hb
                 )
             else 
               buildTextStringBeforeCursor
@@ -332,7 +332,7 @@ struct
               buildTextStringWithinCursor
                 ( pos + 2, str, acc, startX, posY + ySpace, startX
                 , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-                , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc, hr, hg, hb
+                , r, g, b, tl, absIdx + 2, cursorPos, cursorAcc, hr, hg, hb
                 )
             else 
               buildTextStringWithinCursor
