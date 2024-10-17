@@ -316,11 +316,25 @@ struct
             )
       | #"\n" =>
           if posY + ySpace < windowHeight then
-            buildTextStringWithinCursor
-              ( pos + 1, str, acc, startX, posY + ySpace, startX
-              , windowWidth, windowHeight, fWindowWidth, fWindowHeight
-              , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc, hr, hg, hb
-              )
+            if absIdx <> cursorPos then
+              (* not in cursor position, so iterate like normal *)
+              buildTextStringWithinCursor
+                ( pos + 1, str, acc, startX, posY + ySpace, startX
+                , windowWidth, windowHeight, fWindowWidth, fWindowHeight
+                , r, g, b, tl, absIdx + 1, cursorPos, cursorAcc, hr, hg, hb
+                )
+            else
+              (* in cursor position, so build cursorAcc 
+               * and call AfterCursor function *)
+              let
+                val cursorAcc = buildCursor (posX, posY, fWindowWidth, fWindowHeight, r, g ,b)
+              in
+                buildTextStringAfterCursor
+                  ( pos + 1, str, acc, startX, posY + ySpace, startX
+                  , windowWidth, windowHeight, fWindowWidth, fWindowHeight
+                  , r, g, b, tl, cursorAcc
+                  )
+              end
           else
             accToDrawMsg (acc, cursorAcc)
       | #"\r" =>
