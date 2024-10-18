@@ -8,7 +8,7 @@ struct
 
   fun resizeText (app: app_type, newWidth, newHeight) =
     let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx} = app
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
 
       val newBuffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
@@ -21,7 +21,7 @@ struct
 
   fun moveRight (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx} = app
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
 
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -39,7 +39,7 @@ struct
 
   fun moveLeft (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx} = app
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.viH (buffer, cursorIdx)
