@@ -95,7 +95,13 @@ struct
                    #"\n" =>
                      if strIdx > 1 then
                        (* if there are at least two chars before strIdx *)
-                       cursorIdx - 2
+                       if String.sub (hd, strIdx - 2) = #"\n" then
+                         (* if there is double line break like \n\n, 
+                          * we would like to move the cursor 
+                          * to the second linebreak *)
+                         cursorIdx - 1
+                       else
+                         cursorIdx - 2
                      else
                        (* only one char before strIdx which is \n 
                         * if there is a string at the leftStrings, can decrement by 2 *)
@@ -116,9 +122,15 @@ struct
                      (case lastChr of
                         #"\n" =>
                           if String.size lHd > 2 then
-                            (* if there is at least one character before \n 
-                             * then decrement cursorIdx by 2 *)
-                            cursorIdx - 2
+                            (* if there at least one character before \n
+                             * then decrement cursorIdx by 2
+                             * or decrement cursorIdx by 1 
+                             * if we are in a double linebreak
+                             * if we are not in a double linebreak *)
+                            if String.sub (lHd, strIdx - 2) = #"\n" then
+                              cursorIdx - 1
+                            else
+                              cursorIdx - 2
                           else
                             (* this string only contains \n
                              * but there is a small possibility tltl
@@ -128,7 +140,12 @@ struct
                              * If not, increment cursorIdx by 1,
                              * landing on newline. *)
                             (case lTl of
-                               _ :: _ => cursorIdx - 2
+                               ltlHd :: _ =>
+                                 if
+                                   String.sub (ltlHd, String.size ltlHd - 1)
+                                   = #"\n"
+                                 then cursorIdx - 1
+                                 else cursorIdx - 2
                              | [] => cursorIdx - 1)
                       | _ =>
                           (* next char is not newline, 
