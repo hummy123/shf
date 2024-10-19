@@ -213,6 +213,44 @@ struct
           end
     | (_, _) => distanceFromLine
 
+  fun helpGetCursorColumnBranch (strIdx, strHd, lnHd, leftStrings, leftLines) =
+    if String.sub (strHd, strIdx) = #"\n" then
+      (* If we are at newline, column is 0 *)
+      0
+    else if Vector.length lnHd = 1 then
+      (* check if the one line idx in the vector 
+       * is before the strIdx *)
+      let
+        val lineIdx = Vector.sub (lnHd, 0)
+      in
+        if lineIdx < strIdx then strIdx - lineIdx
+        else helpGetCursorColumn (strIdx, leftStrings, leftLines)
+      end
+    else if Vector.length lnHd > 1 then
+      let
+        (* check if strIdx is inside line vector, 
+         * and perform binary search if so *)
+        val low = Vector.sub (lnHd, 0)
+      in
+        if low < strIdx then
+          (* strIdx is less than low, so use bin search
+           * to find lineIdx that is lower than strIdx *)
+          let
+            val lineIdx = binSearch (strIdx - 1, lnHd)
+            (* linebreakPos = index of linebreak before strIdx *)
+            val linebreakPos = Vector.sub (lnHd, lineIdx)
+          in
+            strIdx - linebreakPos - 1
+          end
+        else
+          (* line before strIdx must be in leftStrings/lines *)
+          helpGetCursorColumn (strIdx, leftStrings, leftLines)
+      end
+    else
+      (* lnHd has length of 0, so most recent 
+       * line break must be in leftStrings/lines *)
+      helpGetCursorColumn (strIdx, leftStrings, leftLines)
+
   (* Prerequisite: lineGap is moved to cursorIdx *)
   fun getCursorColumn (lineGap: LineGap.t, cursorIdx) =
     let
@@ -221,47 +259,35 @@ struct
         lineGap
     in
       case (rightStrings, rightLines) of
-        (strHd :: _, lnHd :: _) =>
+        (strHd :: strTl, lnHd :: lnTl) =>
           let
             (* convert absolute cursorIdx to idx relative to hd string *)
             val strIdx = cursorIdx - bufferIdx
           in
-            if String.sub (strHd, strIdx) = #"\n" then
-              (* If we are at newline, column is 0 *)
-              0
-            else if Vector.length lnHd = 1 then
-              (* check if the one line idx in the vector 
-               * is before the strIdx *)
-              let
-                val lineIdx = Vector.sub (lnHd, 0)
-              in
-                if lineIdx < strIdx then strIdx - lineIdx
-                else helpGetCursorColumn (strIdx, leftStrings, leftLines)
-              end
-            else if Vector.length lnHd > 1 then
-              let
-                (* check if strIdx is inside line vector, 
-                 * and perform binary search if so *)
-                val low = Vector.sub (lnHd, 0)
-              in
-                if low < strIdx then
-                  (* strIdx is less than low, so use bin search
-                   * to find lineIdx that is lower than strIdx *)
-                  let
-                    val lineIdx = binSearch (strIdx - 1, lnHd)
-                    (* linebreakPos = index of linebreak before strIdx *)
-                    val linebreakPos = Vector.sub (lnHd, lineIdx)
-                  in
-                    strIdx - linebreakPos - 1
-                  end
-                else
-                  (* line before strIdx must be in leftStrings/lines *)
-                  helpGetCursorColumn (strIdx, leftStrings, leftLines)
-              end
+            if strIdx < String.size strHd then
+              (* strIdx is in this string *)
+              helpGetCursorColumnBranch
+                (strIdx, strHd, lnHd, leftStrings, leftLines)
             else
-              (* lnHd has length of 0, so most recent 
-               * line break must be in leftStrings/lines *)
-              helpGetCursorColumn (strIdx, leftStrings, leftLines)
+              (* strIdx must be in the strTl *)
+              (case (strTl, lnTl) of
+                 (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
+                   let
+                     val strIdx = strIdx - String.size strHd
+                     val leftStrings = strHd :: leftStrings
+                     val leftLines = lnHd :: leftLines
+                   in
+                     helpGetCursorColumnBranch
+                       (strIdx, nestStrHd, nestLnHd, leftStrings, leftLines)
+                   end
+               | (_, _) =>
+                   helpGetCursorColumnBranch
+                     ( String.size strHd - 1
+                     , strHd
+                     , lnHd
+                     , leftStrings
+                     , leftLines
+                     ))
           end
       | (_, _) => helpGetCursorColumn (0, leftStrings, leftLines)
     end
