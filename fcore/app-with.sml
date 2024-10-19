@@ -22,23 +22,23 @@ struct
       }
     end
 
-  fun bufferAndCursorIdx (app: app_type, newBuffer, newCursorIdx) =
+  fun bufferAndCursorIdx (app: app_type, newBuffer, newCursorIdx, newColumn) =
     let
       val
         { buffer = _
         , cursorIdx = _
+        , preferredColumn = _
         , windowWidth
         , windowHeight
         , startLine
-        , preferredColumn
         } = app
     in
       { buffer = newBuffer
       , cursorIdx = newCursorIdx
+      , preferredColumn = newColumn
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       , startLine = startLine
-      , preferredColumn = preferredColumn
       }
     end
 end

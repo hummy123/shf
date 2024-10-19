@@ -26,13 +26,15 @@ struct
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.viL (buffer, cursorIdx)
+      val preferredColumn = Cursor.getCursorColumn (buffer, cursorIdx)
 
       (* move LineGap to first line displayed on screen, and build new text *)
       val buffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
         (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
+      val newApp =
+        AppWith.bufferAndCursorIdx (app, buffer, cursorIdx, preferredColumn)
     in
       (newApp, drawMsg)
     end
@@ -43,12 +45,14 @@ struct
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.viH (buffer, cursorIdx)
+      val preferredColumn = Cursor.getCursorColumn (buffer, cursorIdx)
 
       val buffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
         (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
+      val newApp =
+        AppWith.bufferAndCursorIdx (app, buffer, cursorIdx, preferredColumn)
     in
       (newApp, drawMsg)
     end

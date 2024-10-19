@@ -141,4 +141,111 @@ struct
           end
       | [] => cursorIdx
     end
+
+  (* below functions, until and including getCursorColumn, 
+   * are all for helping to calculate the cursor's column 
+   * compared to the line the cursor is currently positioned in *)
+  fun reverseLinearSearch (findNum, idx, lines) =
+    if idx < 0 then
+      idx
+    else
+      let
+        val curVal = Vector.sub (lines, idx)
+      in
+        if curVal < findNum then idx
+        else reverseLinearSearch (findNum, idx, lines)
+      end
+
+  fun helpBinSearch (findNum, lines, low, high) =
+    let
+      val mid = low + ((high - low) div 2)
+    in
+      if high >= low then
+        let
+          val midVal = Vector.sub (lines, mid)
+        in
+          if midVal = findNum then
+            mid
+          else if midVal < findNum then
+            helpBinSearch (findNum, lines, mid + 1, high)
+          else
+            helpBinSearch (findNum, lines, low, mid - 1)
+        end
+      else
+        reverseLinearSearch (findNum, mid, lines)
+    end
+
+  fun binSearch (findNum, lines) =
+    helpBinSearch (findNum, lines, 0, Vector.length lines - 1)
+
+  fun helpGetCursorColumn (distanceFromLine, strList, lineList) =
+    case (strList, lineList) of
+      (strHd :: strTl, lnHd :: lnTl) =>
+        if Vector.length lnHd = 0 then
+          (* lnHd is empty, so line is not here *)
+          helpGetCursorColumn
+            (distanceFromLine + String.size strHd, strTl, lnTl)
+        else
+          (* lnHd is not empty, meaning last lineIdx is closest linebreak *)
+          let
+            val lineIdx = Vector.sub (lnHd, Vector.length lnHd - 1)
+            (* number of chars after the lineIdx *)
+            val idxAfterLn = String.size strHd - lineIdx
+          in
+            distanceFromLine + idxAfterLn - 1
+          end
+    | (_, _) => distanceFromLine
+
+  (* Prerequisite: lineGap is moved to cursorIdx *)
+  fun getCursorColumn (lineGap: LineGap.t, cursorIdx) =
+    let
+      val
+        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
+        lineGap
+    in
+      case (rightStrings, rightLines) of
+        (strHd :: _, lnHd :: _) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if String.sub (strHd, strIdx) = #"\n" then
+              (* If we are at newline, column is 0 *)
+              0
+            else if Vector.length lnHd = 1 then
+              (* check if the one line idx in the vector 
+               * is before the strIdx *)
+              let
+                val lineIdx = Vector.sub (lnHd, 0)
+              in
+                if lineIdx < strIdx then strIdx - lineIdx
+                else helpGetCursorColumn (strIdx, leftStrings, leftLines)
+              end
+            else if Vector.length lnHd > 1 then
+              let
+                (* check if strIdx is inside line vector, 
+                 * and perform binary search if so *)
+                val low = Vector.sub (lnHd, 0)
+              in
+                if low < strIdx then
+                  (* strIdx is less than low, so use bin search
+                   * to find lineIdx that is lower than strIdx *)
+                  let
+                    val lineIdx = binSearch (strIdx - 1, lnHd)
+                    (* linebreakPos = index of linebreak before strIdx *)
+                    val linebreakPos = Vector.sub (lnHd, lineIdx)
+                  in
+                    strIdx - linebreakPos - 1
+                  end
+                else
+                  (* line before strIdx must be in leftStrings/lines *)
+                  helpGetCursorColumn (strIdx, leftStrings, leftLines)
+              end
+            else
+              (* lnHd has length of 0, so most recent 
+               * line break must be in leftStrings/lines *)
+              helpGetCursorColumn (strIdx, leftStrings, leftLines)
+          end
+      | (_, _) => helpGetCursorColumn (0, leftStrings, leftLines)
+    end
 end
