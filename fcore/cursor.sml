@@ -361,16 +361,16 @@ struct
                    (* no more strings so return last idx *) 
                    absIdx)
       | _ =>
-          if lineColumn <> preferredColumn orelse not hasPassedLine then
+          if lineColumn = preferredColumn andalso hasPassedLine then
+            (* we're at the preferredColumn so return absIdx *)
+            absIdx
+          else
             (* we're not in the preferred column, so keep iterating *)
             helpViJString
               ( strPos + 1, str, absIdx + 1
               , lineColumn + 1, preferredColumn, hasPassedLine
               , strTl, lineTl
               )
-          else
-            (* we're at the preferredColumn so return absIdx *)
-            absIdx
 
   and helpViJList
     (absIdx, lineColumn, preferredColumn, hasPassedLine, strings, lines) =
@@ -436,16 +436,19 @@ struct
                    in
                      if String.sub (nestStrHd, strIdx) = #"\n" then
                        helpViJString
-                         (strIdx + 1, strHd, cursorIdx + 1, 0, 0, true, strTl, lnTl)
+                         ( strIdx + 1, nestStrHd, cursorIdx + 1
+                         , 0, 0, true
+                         , nestStrTl, nestLnTl
+                         )
                      else
                        (* not in linebreak *)
                        let
                          val lineColumn = getCursorColumn (lineGap, cursorIdx)
                        in
                          helpViJString
-                           ( strIdx + 1, strHd, cursorIdx + 1
+                           ( strIdx + 1, nestStrHd, cursorIdx + 1
                            , lineColumn, lineColumn, false
-                           , strTl, lnTl
+                           , nestStrTl, nestStrTl
                            )
                        end
                    end
