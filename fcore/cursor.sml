@@ -297,80 +297,80 @@ struct
     , lineColumn, preferredColumn, hasPassedLine
     , strTl, lineTl
     ) =
-    if strPos = String.size str then
-      helpViJList
-        (absIdx, lineColumn, preferredColumn, hasPassedLine, strTl, lineTl)
-    else
-      case String.sub (str, strPos) of
-        #"\n" =>
-          if
-            hasPassedLine
-          then
-            (* reached end of line twice, 
-             * but line has fewer chars than preferredColumn 
-             * note: if in double \n\n linebreak,
-             * then return absIdx of second linebreak. *)
-            if strPos = String.size str - 1 then
-              if String.sub (str, strPos + 1) = #"\n" then
-                (* we are in double linebreak *)
-                absIdx + 1
+      if strPos = String.size str then
+        helpViJList
+          (absIdx, lineColumn, preferredColumn, hasPassedLine, strTl, lineTl)
+      else
+        case String.sub (str, strPos) of
+          #"\n" =>
+            if
+              hasPassedLine
+            then
+              (* reached end of line twice, 
+               * but line has fewer chars than preferredColumn 
+               * note: if in double \n\n linebreak,
+               * then return absIdx of second linebreak. *)
+              if strPos = String.size str - 1 then
+                if String.sub (str, strPos + 1) = #"\n" then
+                  (* we are in double linebreak *)
+                  absIdx + 1
+                else
+                  (* not in double linebreak *)
+                  absIdx - 1
               else
-                (* not in double linebreak *)
-                absIdx - 1
-            else
-              (* this is last chr of string; must check string's tl next *)
-              (case strTl of
-                 hd :: tl =>
-                   if String.sub (hd, 0) = #"\n" then
-                     (* in double linebreak *)
-                     absIdx + 1
-                   else
-                     (* not in double linebreak *)
-                     absIdx - 1
-               | [] => 
-                   (* no more strings so return last idx *) 
-                   absIdx - 1)
-          else 
-            (* reached end of line once;
-             * have to check if this is a double linebreak,
-             * and return idx of second linebreak if so *) 
-            if strPos < String.size str - 1 then
-              if String.sub (str, strPos + 1) = #"\n" then
-                absIdx + 1
+                (* this is last chr of string; must check string's tl next *)
+                (case strTl of
+                   hd :: tl =>
+                     if String.sub (hd, 0) = #"\n" then
+                       (* in double linebreak *)
+                       absIdx + 1
+                     else
+                       (* not in double linebreak *)
+                       absIdx - 1
+                 | [] => 
+                     (* no more strings so return last idx *) 
+                     absIdx - 1)
+            else 
+              (* reached end of line once;
+               * have to check if this is a double linebreak,
+               * and return idx of second linebreak if so *) 
+              if strPos < String.size str - 1 then
+                if String.sub (str, strPos + 1) = #"\n" then
+                  absIdx + 1
+                else
+                  helpViJString
+                    ( strPos + 1, str, absIdx + 1
+                    , 0, preferredColumn, true
+                    , strTl, lineTl
+                   )
               else
-                helpViJString
-                  ( strPos + 1, str, absIdx + 1
-                  , 0, preferredColumn, true
-                  , strTl, lineTl
-                 )
+                (* this is last chr of string; must check string's tl next *)
+                (case strTl of
+                   hd :: tl =>
+                     if String.sub (hd, 0) = #"\n" then
+                       (* in double linebreak *)
+                       absIdx + 1
+                     else
+                       (* not in double linebreak *)
+                       helpViJString
+                         ( strPos + 1, str, absIdx + 1
+                         , 0, preferredColumn, true
+                         , strTl, lineTl
+                         )
+                 | [] => 
+                     (* no more strings so return last idx *) 
+                     absIdx)
+        | _ =>
+            if lineColumn = preferredColumn andalso hasPassedLine then
+              (* we're at the preferredColumn so return absIdx *)
+              absIdx
             else
-              (* this is last chr of string; must check string's tl next *)
-              (case strTl of
-                 hd :: tl =>
-                   if String.sub (hd, 0) = #"\n" then
-                     (* in double linebreak *)
-                     absIdx + 1
-                   else
-                     (* not in double linebreak *)
-                     helpViJString
-                       ( strPos + 1, str, absIdx + 1
-                       , 0, preferredColumn, true
-                       , strTl, lineTl
-                       )
-               | [] => 
-                   (* no more strings so return last idx *) 
-                   absIdx)
-      | _ =>
-          if lineColumn = preferredColumn andalso hasPassedLine then
-            (* we're at the preferredColumn so return absIdx *)
-            absIdx
-          else
-            (* we're not in the preferred column, so keep iterating *)
-            helpViJString
-              ( strPos + 1, str, absIdx + 1
-              , lineColumn + 1, preferredColumn, hasPassedLine
-              , strTl, lineTl
-              )
+              (* we're not in the preferred column, so keep iterating *)
+              helpViJString
+                ( strPos + 1, str, absIdx + 1
+                , lineColumn + 1, preferredColumn, hasPassedLine
+                , strTl, lineTl
+                )
 
   and helpViJList
     (absIdx, lineColumn, preferredColumn, hasPassedLine, strings, lines) =
@@ -449,6 +449,194 @@ struct
                            ( strIdx + 1, nestStrHd, cursorIdx + 1
                            , lineColumn, lineColumn, false
                            , nestStrTl, nestStrTl
+                           )
+                       end
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) => 
+          (* nowhere to go rightward, so return cursorIdx *) 
+          cursorIdx
+    end
+
+  fun helpViKString
+    ( strPos, str, absIdx
+    , lineColumn, preferredColumn, hasPassedLine
+    , strTl, lineHd, lineTl
+    ) =
+      if strPos < 0 then
+        helpViKList
+          (absIdx, lineColumn, preferredColumn, hasPassedLine, strTl, lineTl)
+      else
+        case String.sub (str, strPos) of
+          #"\n" =>
+            if
+              hasPassedLine
+            then
+              (* reached end of line twice, 
+               * but line has fewer chars than preferredColumn 
+               * note: if in double \n\n linebreak,
+               * then return absIdx of second linebreak. *)
+              if strPos > 0 then
+                (* check for double linebreak in string *)
+                if String.sub (str, strPos - 1) = #"\n" then
+                  (* in double linebreak *)
+                  absIdx 
+                else 
+                  (* not in double linebreak *)
+                  absIdx - 1 
+              else
+                (* check for double linebreak in tl *)
+                (case strTl of
+                  hd :: _ =>
+                    if String.sub (hd, String.size hd - 1) = #"\n" then
+                      (* in double linebreak *)
+                      absIdx 
+                    else
+                      (* not in double linebreak *)
+                      absIdx - 1 
+                  | [] =>
+                      (* tl is empty, so return start *)
+                      0)
+            else 
+              (* reached start of line once;
+               * have to check if this is a double linebreak,
+               * and return idx of second linebreak if so *) 
+              if strPos > 0 then
+                if String.sub (str, strPos - 1) = #"\n" then
+                  absIdx 
+                else
+                  let
+                    (* have to calculate column of current line
+                     * so we know which line to stop searching at *)
+                    val lineColumn =
+                      helpGetCursorColumnBranch
+                        (strPos - 1, str, lineHd, strTl, lineTl)
+                  in
+                    helpViKString
+                      ( strPos - 1, str, absIdx - 1
+                      , lineColumn, preferredColumn, true
+                      , strTl, lineHd, lineTl
+                     )
+                  end
+              else
+                (* this is first chr of string; must check string's tl next *)
+                (case strTl of
+                   hd :: tl =>
+                     if String.sub (hd, String.size hd - 1) = #"\n" then
+                       (* in double linebreak *)
+                       absIdx
+                     else
+                       (* not in double linebreak *)
+                       let
+                         val lineColumn =
+                           helpGetCursorColumnBranch
+                             (strPos - 1, str, lineHd, strTl, lineTl)
+                       in
+                         helpViKString
+                           ( strPos - 1, str, absIdx - 1
+                           , lineColumn, preferredColumn, true
+                           , strTl, lineHd, lineTl
+                           )
+                       end
+                 | [] => 
+                     (* no more strings so return last idx *) 
+                     absIdx)
+        | _ =>
+            if lineColumn <= preferredColumn andalso hasPassedLine then
+              (* We're at or before the preferredColumn so return absIdx
+               * context: current line may have fewer columns  
+               * than our preferred column value.
+               * If this is the case, we want to check
+               * "is lineColumn equal to or before preferredColumn?". *)
+              absIdx
+            else
+              (* we're not in the preferred column, so keep iterating *)
+              helpViKString
+                ( strPos - 1, str, absIdx - 1
+                , lineColumn - 1, preferredColumn, hasPassedLine
+                , strTl, lineHd, lineTl
+                )
+
+  and helpViKList
+    (absIdx, lineColumn, preferredColumn, hasPassedLine, strings, lines) =
+    case (strings, lines) of
+      (strHd :: strTl, lineHd :: lineTl) =>
+        (* todo: possibly check if we have passed line,
+         * and if so, if there are any line breaks in the lineHd
+         * which we could use to skip searching part of the string. 
+         * However, this will likely have worse cache locality 
+         * as we switch to searching in string to searcing in line vector
+         * so perhaps not. *)
+        helpViKString
+          ( String.size strHd - 1, strHd, absIdx
+          , lineColumn, preferredColumn, hasPassedLine
+          , strTl, lineHd, lineTl
+          )
+    | (_, _) => 
+        (* empty, so return start of previous string *) 
+        absIdx + 1
+
+  fun viK (lineGap: LineGap.t, cursorIdx) =
+    let
+      val
+        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
+        lineGap
+    in
+      case (rightStrings, rightLines) of
+        (strHd :: strTl, lnHd :: lnTl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size strHd then
+              (* strIdx is in this string *)
+              if String.sub (strHd, strIdx) = #"\n" then
+                (* if we are at a newline 
+                 * note:
+                 * don't need to check if we are a double linebreak,
+                 * because cursor navigation functions already check
+                 * for that condition at the end. 
+                 * So there is no way at the start of a navigation function
+                 * that cursor is in a double linebreak incorrectly. *)
+                helpViKString
+                  (strIdx - 1, strHd, cursorIdx - 1, 0, 0, true, strTl, lnHd, lnTl)
+              else
+                (* not at newline 
+                 * so get column number and start iterating *)
+                let
+                  val lineColumn = getCursorColumn (lineGap, cursorIdx)
+                in
+                  helpViKString
+                    ( strIdx - 1, strHd, cursorIdx - 1
+                    , lineColumn, lineColumn, false
+                    , strTl, lnHd, lnTl
+                    )
+                end
+            else
+              (* strIdx must be in the strTl *)
+              (case (strTl, lnTl) of
+                 (nestStrHd :: _, nestLnHd :: _) =>
+                   let
+                     val strIdx = strIdx - String.size strHd
+                     val leftStrings = strHd :: leftStrings
+                     val leftLines = lnHd :: leftLines
+                   in
+                     if String.sub (nestStrHd, strIdx) = #"\n" then
+                       helpViKString
+                         ( strIdx - 1, nestStrHd, cursorIdx - 1
+                         , 0, 0, true
+                         , leftStrings, nestLnHd, leftLines
+                         )
+                     else
+                       (* not in linebreak *)
+                       let
+                         val lineColumn = getCursorColumn (lineGap, cursorIdx)
+                       in
+                         helpViKString
+                           ( strIdx - 1, nestStrHd, cursorIdx - 1
+                           , lineColumn, lineColumn, false
+                           , leftStrings, nestLnHd, leftLines
                            )
                        end
                    end
