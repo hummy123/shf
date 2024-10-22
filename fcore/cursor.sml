@@ -743,11 +743,11 @@ struct
                   if String.sub (strHd, strIdx - 1) = #"\n" then
                     (* if in double linebreak *)
                     helpVi0String 
-                      (strIdx - 2, strHd, cursorIdx - 2, strTl, lnTl)
+                      (strIdx - 2, strHd, cursorIdx - 2, leftStrings, leftLines)
                   else
                     (* not in double linebreak *)
                     helpVi0String 
-                      (strIdx - 1, strHd, cursorIdx - 1, strTl, lnTl)
+                      (strIdx - 1, strHd, cursorIdx - 1, leftStrings, leftLines)
                 else
                   (* check leftStrings to see if we are in a double linebreak *)
                   (case (leftStrings, leftLines) of
@@ -757,11 +757,14 @@ struct
                         helpVi0String 
                           (String.size lStrHd - 2, lStrHd, cursorIdx - 2, lStrTl, lLnTl)
                        else
+                         (* in single linebreak *)
                         helpVi0String 
-                          (strIdx - 1, strHd, cursorIdx - 1, strTl, lnTl)
+                          (strIdx - 1, strHd, cursorIdx - 1, leftStrings, leftLines)
                    | (_, _) =>
                        helpViKString
-                         (strIdx - 1, strHd, cursorIdx - 1, 0, 0, true, strTl, lnHd, lnTl))
+                         ( strIdx - 1, strHd, cursorIdx - 1
+                         , 0, 0, true, leftStrings, lnHd, leftLines 
+                         ))
               else
                 (* not at newline 
                  * so get column number and start iterating *)
@@ -771,24 +774,52 @@ struct
                   helpViKString
                     ( strIdx - 1, strHd, cursorIdx - 1
                     , lineColumn, lineColumn, false
-                    , strTl, lnHd, lnTl
+                    , leftStrings, lnHd, leftLines
                     )
                 end
             else
               (* strIdx must be in the strTl *)
               (case (strTl, lnTl) of
-                 (nestStrHd :: _, nestLnHd :: _) =>
+                 (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
                    let
                      val strIdx = strIdx - String.size strHd
-                     val leftStrings = strHd :: leftStrings
-                     val leftLines = lnHd :: leftLines
                    in
                      if String.sub (nestStrHd, strIdx) = #"\n" then
-                       helpViKString
-                         ( strIdx - 1, nestStrHd, cursorIdx - 1
-                         , 0, 0, true
-                         , leftStrings, nestLnHd, leftLines
-                         )
+                       if strIdx > 0 then
+                         (* if can check for double linebreak in nestStrHd *)
+                         if String.sub (nestStrHd, strIdx - 1) = #"\n" then
+                           (* is in double linebreak *)
+                           let
+                             val leftStrings = strHd :: leftStrings
+                             val leftLines = lnHd :: leftLines
+                           in
+                             helpVi0String 
+                               ( strIdx - 2, nestStrHd, cursorIdx - 2
+                               , leftStrings, leftLines 
+                               )
+                           end
+                         else
+                           (* is in single linebreak *)
+                           helpVi0String 
+                             ( strIdx - 1, nestStrHd, cursorIdx - 1
+                             , leftStrings, leftLines 
+                             )
+                       else
+                         (* must check strHd for second linebreak *)
+                         if 
+                           String.sub (strHd, String.size strHd - 1) = #"\n"
+                         then
+                           (* is in double linebreak *)
+                           helpVi0String
+                             ( String.size strHd - 2, nestStrHd, cursorIdx - 2
+                             , leftStrings, leftLines 
+                             )
+                         else
+                           (* is in single linebreak *)
+                           helpVi0String
+                             ( String.size strHd - 1, nestStrHd, cursorIdx - 1
+                             , leftStrings, leftLines 
+                             )
                      else
                        (* not in linebreak *)
                        let
@@ -797,7 +828,7 @@ struct
                          helpViKString
                            ( strIdx - 1, nestStrHd, cursorIdx - 1
                            , lineColumn, lineColumn, false
-                           , leftStrings, nestLnHd, leftLines
+                           , strHd :: leftStrings, nestLnHd, lnHd :: leftLines
                            )
                        end
                    end
