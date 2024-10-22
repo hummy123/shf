@@ -1,5 +1,151 @@
 structure Cursor =
 struct
+  fun helpVi0String (strPos, str, absIdx, strTl, lineTl) =
+    if strPos < 0 then
+      helpVi0List (strTl, lineTl, absIdx)
+    else
+      case String.sub (str, strPos) of
+        #"\n" =>
+          absIdx + 1
+      | _ =>
+          helpVi0String (strPos - 1, str, absIdx - 1, strTl, lineTl)
+
+  and helpVi0List (strings, lines, absIdx) =
+    case (strings, lines) of
+      (strHd::strTl, lineHd::lineTl) =>
+        helpVi0String
+          ( String.size strHd - 1, strHd, absIdx
+          , strTl, lineTl
+          )
+    | (_, _) =>
+        (* this case means strings and lines are empty
+         * and empty means we are at first line
+         * so we can return 0 *)
+        0
+
+  fun vi0 (lineGap: LineGap.t, cursorIdx) =
+    let
+      val
+        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
+        lineGap
+    in
+      case (rightStrings, rightLines) of
+        (strHd :: strTl, lnHd :: lnTl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size strHd then
+              (* strIdx is in this string *)
+              if String.sub (strHd, strIdx) = #"\n" then
+                (* don't need to do anything if we are already at newline;
+                 * just return current cursorIdx *)
+                 cursorIdx
+              else
+                (* not at newline so start iterating *)
+                helpVi0String
+                  ( strIdx - 1, strHd, cursorIdx - 1
+                  , strTl, lnTl
+                  )
+            else
+              (* strIdx must be in the strTl *)
+              (case (strTl, lnTl) of
+                 (nestStrHd :: _, nestLnHd :: _) =>
+                   let
+                     val strIdx = strIdx - String.size strHd
+                   in
+                     if String.sub (nestStrHd, strIdx) = #"\n" then
+                       (* already at linebreak so return same cursorIdx *)
+                       cursorIdx
+                     else
+                       (* not in linebreak *)
+                       helpVi0String
+                         ( strIdx - 1, nestStrHd, cursorIdx - 1
+                         , strHd :: leftStrings, lnHd :: leftLines
+                         )
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) => 
+          (* nowhere to go, so return cursorIdx *) 
+          cursorIdx
+    end
+
+  fun helpViDlrString (strPos, str, absIdx, strTl, lineTl) =
+    if strPos = String.size str then
+      helpViDlrList (strTl, lineTl, absIdx)
+    else
+      case String.sub (str, strPos) of
+        #"\n" =>
+          absIdx - 1
+      | _ =>
+          helpViDlrString (strPos + 1, str, absIdx + 1, strTl, lineTl)
+
+  and helpViDlrList (strings, lines, absIdx) =
+    case (strings, lines) of
+      (strHd::strTl, lineHd::lineTl) =>
+        helpViDlrString
+          (0, strHd, absIdx , strTl, lineTl)
+    | (_, _) =>
+        (* this case means strings and lines are empty
+         * and empty means we have reached end of lineGap
+         * so we can return last chr *)
+        absIdx - 1
+        
+  fun viDlr(lineGap: LineGap.t, cursorIdx) =
+    let
+      val
+        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
+        lineGap
+    in
+      case (rightStrings, rightLines) of
+        (strHd :: strTl, lnHd :: lnTl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size strHd then
+              if String.sub (strHd, strIdx) <> #"\n" then
+                (* not in double linebreak *)
+                helpViDlrString
+                  (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
+              else
+                (* check if we are in double linebreak *)
+                if strIdx - 1 >= 0 then
+                  if String.sub (strHd, strIdx - 1) = #"\n" then
+                    (* we are in double linebreak, so do nothing *)
+                    cursorIdx
+                  else
+                    (* not in double linebreak, so iterate *)
+                    helpViDlrString
+                      (strIdx + 1, strHd, cursorIdx + 1 , strTl, lnTl)
+                else
+                  (* check if double linebreak in strTl *)
+                  (case strTl of
+                    nestStrHd :: _ =>
+                      if String.sub (nestStrHd, 0) = #"\n" then
+                        cursorIdx
+                      else
+                        helpViDlrString
+                          (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
+                  | [] => cursorIdx)
+            else
+              (* strIdx must be in the strTl *)
+              (case (strTl, lnTl) of
+                 (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
+                   let
+                     val strIdx = strIdx - String.size strHd
+                   in
+                     helpViDlrString 
+                       (strIdx + 1, nestStrHd, cursorIdx + 1, nestStrTl, nestLnTl)
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) => 
+          (* nowhere to go, so return cursorIdx *) 
+          cursorIdx
+    end
+
   (* Prerequisite: lineGap is moved to requested idx first 
    * todo: check if we are in a \r\n pair, but this is not a priority *)
   fun viL (lineGap: LineGap.t, cursorIdx) =
@@ -484,7 +630,7 @@ struct
                   absIdx 
                 else 
                   (* not in double linebreak *)
-                  absIdx - 1 
+                  absIdx - 1
               else
                 (* check for double linebreak in tl *)
                 (case strTl of
@@ -592,15 +738,30 @@ struct
             if strIdx < String.size strHd then
               (* strIdx is in this string *)
               if String.sub (strHd, strIdx) = #"\n" then
-                (* if we are at a newline 
-                 * note:
-                 * don't need to check if we are a double linebreak,
-                 * because cursor navigation functions already check
-                 * for that condition at the end. 
-                 * So there is no way at the start of a navigation function
-                 * that cursor is in a double linebreak incorrectly. *)
-                helpViKString
-                  (strIdx - 1, strHd, cursorIdx - 1, 0, 0, true, strTl, lnHd, lnTl)
+                (* if we are at a newline  *)
+                if strIdx > 0 then
+                  if String.sub (strHd, strIdx - 1) = #"\n" then
+                    (* if in double linebreak *)
+                    helpVi0String 
+                      (strIdx - 2, strHd, cursorIdx - 2, strTl, lnTl)
+                  else
+                    (* not in double linebreak *)
+                    helpVi0String 
+                      (strIdx - 1, strHd, cursorIdx - 1, strTl, lnTl)
+                else
+                  (* check leftStrings to see if we are in a double linebreak *)
+                  (case (leftStrings, leftLines) of
+                     (lStrHd :: lStrTl, lLnHd :: lLnTl) =>
+                       if String.sub (lStrHd, String.size lStrHd - 1) = #"\n" then
+                         (* in double linebreak *)
+                        helpVi0String 
+                          (String.size lStrHd - 2, lStrHd, cursorIdx - 2, lStrTl, lLnTl)
+                       else
+                        helpVi0String 
+                          (strIdx - 1, strHd, cursorIdx - 1, strTl, lnTl)
+                   | (_, _) =>
+                       helpViKString
+                         (strIdx - 1, strHd, cursorIdx - 1, 0, 0, true, strTl, lnHd, lnTl))
               else
                 (* not at newline 
                  * so get column number and start iterating *)
@@ -644,152 +805,6 @@ struct
           end
       | (_, _) => 
           (* nowhere to go rightward, so return cursorIdx *) 
-          cursorIdx
-    end
-
-  fun helpVi0String (strPos, str, absIdx, strTl, lineTl) =
-    if strPos < 0 then
-      helpVi0List (strTl, lineTl, absIdx)
-    else
-      case String.sub (str, strPos) of
-        #"\n" =>
-          absIdx + 1
-      | _ =>
-          helpVi0String (strPos - 1, str, absIdx - 1, strTl, lineTl)
-
-  and helpVi0List (strings, lines, absIdx) =
-    case (strings, lines) of
-      (strHd::strTl, lineHd::lineTl) =>
-        helpVi0String
-          ( String.size strHd - 1, strHd, absIdx
-          , strTl, lineTl
-          )
-    | (_, _) =>
-        (* this case means strings and lines are empty
-         * and empty means we are at first line
-         * so we can return 0 *)
-        0
-
-  fun vi0 (lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (strHd :: strTl, lnHd :: lnTl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size strHd then
-              (* strIdx is in this string *)
-              if String.sub (strHd, strIdx) = #"\n" then
-                (* don't need to do anything if we are already at newline;
-                 * just return current cursorIdx *)
-                 cursorIdx
-              else
-                (* not at newline so start iterating *)
-                helpVi0String
-                  ( strIdx - 1, strHd, cursorIdx - 1
-                  , strTl, lnTl
-                  )
-            else
-              (* strIdx must be in the strTl *)
-              (case (strTl, lnTl) of
-                 (nestStrHd :: _, nestLnHd :: _) =>
-                   let
-                     val strIdx = strIdx - String.size strHd
-                   in
-                     if String.sub (nestStrHd, strIdx) = #"\n" then
-                       (* already at linebreak so return same cursorIdx *)
-                       cursorIdx
-                     else
-                       (* not in linebreak *)
-                       helpVi0String
-                         ( strIdx - 1, nestStrHd, cursorIdx - 1
-                         , strHd :: leftStrings, lnHd :: leftLines
-                         )
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => 
-          (* nowhere to go, so return cursorIdx *) 
-          cursorIdx
-    end
-
-  fun helpViDlrString (strPos, str, absIdx, strTl, lineTl) =
-    if strPos = String.size str then
-      helpViDlrList (strTl, lineTl, absIdx)
-    else
-      case String.sub (str, strPos) of
-        #"\n" =>
-          absIdx - 1
-      | _ =>
-          helpViDlrString (strPos + 1, str, absIdx + 1, strTl, lineTl)
-
-  and helpViDlrList (strings, lines, absIdx) =
-    case (strings, lines) of
-      (strHd::strTl, lineHd::lineTl) =>
-        helpViDlrString
-          (0, strHd, absIdx , strTl, lineTl)
-    | (_, _) =>
-        (* this case means strings and lines are empty
-         * and empty means we have reached end of lineGap
-         * so we can return last chr *)
-        absIdx - 1
-        
-  fun viDlr(lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (strHd :: strTl, lnHd :: lnTl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size strHd then
-              if String.sub (strHd, strIdx) <> #"\n" then
-                (* not in double linebreak *)
-                helpViDlrString
-                  (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
-              else
-                (* check if we are in double linebreak *)
-                if strIdx - 1 >= 0 then
-                  if String.sub (strHd, strIdx - 1) = #"\n" then
-                    (* we are in double linebreak, so do nothing *)
-                    cursorIdx
-                  else
-                    (* not in double linebreak, so iterate *)
-                    helpViDlrString
-                      (strIdx + 1, strHd, cursorIdx + 1 , strTl, lnTl)
-                else
-                  (* check if double linebreak in strTl *)
-                  (case strTl of
-                    nestStrHd :: _ =>
-                      if String.sub (nestStrHd, 0) = #"\n" then
-                        cursorIdx
-                      else
-                        helpViDlrString
-                          (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
-                  | [] => cursorIdx)
-            else
-              (* strIdx must be in the strTl *)
-              (case (strTl, lnTl) of
-                 (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
-                   let
-                     val strIdx = strIdx - String.size strHd
-                   in
-                     helpViDlrString 
-                       (strIdx + 1, nestStrHd, cursorIdx + 1, nestStrTl, nestLnTl)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => 
-          (* nowhere to go, so return cursorIdx *) 
           cursorIdx
     end
 end
