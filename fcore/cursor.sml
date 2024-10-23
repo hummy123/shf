@@ -838,4 +838,142 @@ struct
           (* nowhere to go rightward, so return cursorIdx *) 
           cursorIdx
     end
+
+  (*
+   * nvim's motion.txt document describes a word as:
+   * - A sequence of (letters, digits and underscores)
+   * - or a sequence of other non-blank characters
+   * - separated by white space (space, tab, <EOL>)
+   *)
+  datatype word_type =
+    ALPHA_NUM
+  | SPACE
+  | NON_BLANK
+
+  fun getWordType chr =
+    if Char.isAlphaNum chr orelse chr = #"_" then
+      ALPHA_NUM
+    else if Char.isSpace chr then
+      SPACE
+    else
+      NON_BLANK
+
+  fun helpNextWordString 
+    ( strPos, str, absIdx 
+    , strTl, lineTl 
+    , wordType, hasPassedSpace) =
+    if strPos = String.size str then
+      helpNextWordList 
+        (strTl, lineTl, absIdx, wordType, hasPassedSpace)
+    else
+      let
+        val chr = String.sub (str, strPos)
+      in
+        if Char.isAlphaNum chr orelse chr = #"_" then
+          case wordType of
+            ALPHA_NUM =>
+              (* current chr is ALPHA_NUM
+               * and previous chr was also ALPHA_NUM
+               * so continue iterating *)
+              helpNextWordString
+                ( strPos + 1, str, absIdx + 1
+                , strTl, lineTl 
+                , ALPHA_NUM, hasPassedSpace
+                )
+          | SPACE=>
+              (* we moved from SPACE to ALPHA_NUM, 
+               * meaning we may have reached a new word. *)
+              if hasPassedSpace then
+                absIdx
+              else
+                helpNextWordString
+                  ( strPos + 1, str, absIdx + 1
+                  , strTl, lineTl 
+                  , ALPHA_NUM, true
+                  )
+          | NON_BLANK=>
+              (* moved from NON_BLANK to ALPHA_NUM,
+               * meaning we reached new word *)
+               absIdx
+        else if Char.isSpace chr then
+          (* nothing to do on space, except keep iterating *)
+          helpNextWordString
+            ( strPos + 1, str, absIdx + 1
+            , strTl, lineTl 
+            , SPACE, true
+            )
+        else
+          (* chr is NON_BLANK. *)
+          case wordType of
+            NON_BLANK =>
+              (* moved from non-blank to non-blank
+               * so keep iterating *)
+              helpNextWordString
+                ( strPos + 1, str, absIdx + 1
+                , strTl, lineTl
+                , NON_BLANK, hasPassedSpace
+                )
+          | ALPHA_NUM => 
+              (* moved from ALPHA_NUM to non-blank
+               * so we have reached new word *)
+              absIdx
+          | SPACE =>
+              (* from space to non-blank *)
+              if hasPassedSpace then
+                absIdx
+              else
+                helpNextWordString
+                  ( strPos + 1, str, absIdx + 1
+                  , strTl, lineTl
+                  , NON_BLANK, true
+                  )
+      end
+
+  and helpNextWordList (strings, lines, absIdx, wordType, hasPassedSpace) =
+    case (strings, lines) of
+      (strHd::strTl, lineHd::lineTl) =>
+        helpNextWordString
+          ( 0, strHd, absIdx, strTl, lineTl, wordType, hasPassedSpace )
+    | (_, _) =>
+        (* reached end of lineGap; 
+         * return last valid chr position *)
+        absIdx - 1
+
+  fun startNextWord (shd, strIdx, absIdx, stl, ltl) =
+    let
+      val chr = String.sub (shd, strIdx)
+      val wordType = getWordType chr
+      val isSpace = wordType = SPACE
+    in
+      helpNextWordString 
+        (strIdx + 1, shd, absIdx + 1, stl, ltl, wordType, isSpace)
+    end
+
+  fun nextWord (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
+    in
+      case (rightStrings, rightLines) of
+          (shd :: stl, lhd :: ltl) =>
+            let
+              (* convert absolute cursorIdx to idx relative to hd string *)
+              val strIdx = cursorIdx - bufferIdx
+            in
+              if strIdx < String.size shd then
+                (* strIdx is in this string *)
+                startNextWord (shd, strIdx, cursorIdx, stl, ltl)
+              else
+                (* strIdx is in tl *)
+                (case (stl, ltl) of
+                    (stlhd :: stltl, ltlhd :: ltltl) =>
+                      let
+                        val strIdx = strIdx - String.size shd
+                      in
+                        startNextWord 
+                          (stlhd, strIdx, cursorIdx, stltl, ltltl)
+                      end
+                  | (_, _) => cursorIdx)
+            end
+        | (_, _) => cursorIdx
+    end
 end
