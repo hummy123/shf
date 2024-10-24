@@ -858,82 +858,172 @@ struct
     else
       NON_BLANK
 
-  fun helpNextWordString 
-    ( strPos, str, absIdx 
-    , strTl, lineTl 
-    , prevWordType, hasPassedSpace) =
-      if strPos = String.size str then
-        helpNextWordList 
-          (strTl, lineTl, absIdx, prevWordType, hasPassedSpace)
-      else
-        let
-          val chr = String.sub (str, strPos)
-        in
-          if Char.isAlphaNum chr orelse chr = #"_" then
-            case prevWordType of
-              ALPHA_NUM =>
-                (* current chr is ALPHA_NUM
-                 * and previous chr was also ALPHA_NUM
-                 * so continue iterating *)
-                helpNextWordString
-                  ( strPos + 1, str, absIdx + 1
-                  , strTl, lineTl 
-                  , ALPHA_NUM, hasPassedSpace
-                  )
-            | SPACE =>
-                (* we moved from SPACE to ALPHA_NUM, 
-                 * meaning we may have reached a new word. *)
-                if hasPassedSpace then
-                  absIdx
-                else
-                  helpNextWordString
-                    ( strPos + 1, str, absIdx + 1
-                    , strTl, lineTl 
-                    , ALPHA_NUM, true
-                    )
-            | NON_BLANK=>
-                (* moved from NON_BLANK to ALPHA_NUM,
-                 * meaning we reached new word *)
-                 absIdx
-          else if Char.isSpace chr then
+  fun isNextChrSpace (strPos, str, strTl) =
+    if strPos + 1 < String.size str then
+      let
+        val chr = String.sub (str, strPos + 1)
+      in
+        Char.isSpace chr
+      end
+    else
+      case strTl of
+        hd :: _ => 
+          let
+            val chr = String.sub (hd, 0)
+          in
+            Char.isSpace chr
+          end
+      | [] => false
+
+  fun notIsNextChrSpace (strPos, str, strTl) =
+    let
+      val isSpace = isNextChrSpace (strPos, str, strTl)
+    in
+      not isSpace
+    end
+
+  fun isNextChrNonBlank (strPos, str, strTl) =
+    if strPos + 1 < String.size str then
+      let
+        val chr = String.sub (str, strPos + 1)
+        val isNotBlank = 
+          Char.isSpace chr 
+          orelse Char.isAlphaNum chr 
+          orelse chr = #"_"
+      in
+        not isNotBlank
+      end
+    else
+      case strTl of
+        hd :: _ =>
+          let
+            val chr = String.sub (hd, 0)
+            val isNotBlank =
+              Char.isSpace chr
+              orelse Char.isAlphaNum chr
+              orelse chr = #"_"
+          in
+            not isNotBlank
+          end
+      | [] => false
+
+  fun isNextChrAlphaNum (strPos, str, stl) =
+    if strPos + 1 < String.size str then
+      let
+        val chr = String.sub (str, strPos + 1)
+      in
+        Char.isAlphaNum chr orelse chr = #"_"
+      end
+    else
+      case stl of
+        hd :: _ =>
+          let
+            val chr = String.sub (str, 0)
+          in
+            Char.isAlphaNum chr orelse chr = #"_"
+          end
+      | [] => false
+
+  fun isPrevChrSpace (strPos, str, strTl) =
+    if strPos > 0 then
+      let
+        val prevChr = String.sub (str, strPos - 1)
+      in
+        Char.isSpace prevChr
+      end
+    else
+      case strTl of
+        hd :: _ =>
+          let
+            val prevChr = String.sub (hd, String.size hd - 1)
+          in
+            Char.isSpace prevChr
+          end
+      | [] => false
+
+  fun notIsPrevChrSpace (strPos, str, strTl) =
+    let
+      val isSpace = isPrevChrSpace (strPos, str, strTl)
+    in
+      not isSpace
+    end
+
+  fun isPrevChrAlphaNum (strPos, str, strTl) =
+    if strPos > 0 then
+      let
+        val chr = String.sub (str, strPos - 1)
+      in
+        Char.isAlphaNum chr orelse chr = #"_"
+      end
+    else
+      case strTl of
+        hd :: _ =>
+          let
+            val chr = String.sub (hd, String.size hd - 1)
+          in
+            Char.isAlphaNum chr orelse chr = #"_"
+          end
+      | [] => false
+
+  fun isPrevChrNonBlank (strPos, str, strTl) =
+    if strPos > 0 then
+      let
+        val chr = String.sub (str, strPos - 1)
+        val isNotBlank = 
+          Char.isSpace chr 
+          orelse Char.isAlphaNum chr 
+          orelse chr = #"_"
+      in
+        not isNotBlank
+      end
+    else
+      case strTl of
+        hd :: _ =>
+          let
+            val chr = String.sub (hd, String.size hd - 1)
+            val isNotBlank = 
+              Char.isSpace chr 
+              orelse Char.isAlphaNum chr 
+              orelse chr = #"_"
+          in
+            not isNotBlank
+          end
+      | [] => false
+
+  fun helpNextWordString (strPos, str, absIdx , strTl, lineTl) =
+    if strPos = String.size str then
+      helpNextWordList (strTl, lineTl, absIdx)
+    else
+      let
+        val chr = String.sub (str, strPos)
+      in
+        if Char.isAlphaNum chr orelse chr = #"_" then
+          if isNextChrNonBlank (strPos, str, strTl) then
+            absIdx + 1
+          else
+            helpNextWordString
+              (strPos + 1, str, absIdx + 1, strTl, lineTl)
+        else if Char.isSpace chr then
+          if notIsNextChrSpace (strPos, str, strTl) then
+            absIdx + 1
+          else
             (* nothing to do on space, except keep iterating *)
             helpNextWordString
-              ( strPos + 1, str, absIdx + 1
-              , strTl, lineTl 
-              , SPACE, true
-              )
+              (strPos + 1, str, absIdx + 1, strTl, lineTl)
+        else
+          (* chr is NON_BLANK. *)
+          if isNextChrAlphaNum (strPos, str, strTl) then
+            absIdx + 1
           else
-            (* chr is NON_BLANK. *)
-            case prevWordType of
-              NON_BLANK =>
-                (* moved from non-blank to non-blank
-                 * so keep iterating *)
-                helpNextWordString
-                  ( strPos + 1, str, absIdx + 1
-                  , strTl, lineTl
-                  , NON_BLANK, hasPassedSpace
-                  )
-            | ALPHA_NUM => 
-                (* moved from ALPHA_NUM to non-blank
-                 * so we have reached new word *)
-                absIdx
-            | SPACE =>
-                (* from space to non-blank *)
-                if hasPassedSpace then
-                  absIdx
-                else
-                  helpNextWordString
-                    ( strPos + 1, str, absIdx + 1
-                    , strTl, lineTl
-                    , NON_BLANK, true
-                    )
-        end
+            helpNextWordString
+              (strPos + 1, str, absIdx + 1, strTl, lineTl)
+      end
 
-  and helpNextWordList (strings, lines, absIdx, prevWordType, hasPassedSpace) =
+  and helpNextWordList (strings, lines, absIdx) =
     case (strings, lines) of
       (strHd::strTl, lineHd::lineTl) =>
         helpNextWordString
-          ( 0, strHd, absIdx, strTl, lineTl, prevWordType, hasPassedSpace )
+          (0, strHd, absIdx, strTl, lineTl)
     | (_, _) =>
         (* reached end of lineGap; 
          * return last valid chr position *)
@@ -942,11 +1032,9 @@ struct
   fun startNextWord (shd, strIdx, absIdx, stl, ltl) =
     let
       val chr = String.sub (shd, strIdx)
-      val wordType = getWordType chr
-      val isSpace = wordType = SPACE
     in
       helpNextWordString 
-        (strIdx + 1, shd, absIdx + 1, stl, ltl, wordType, isSpace)
+        (strIdx, shd, absIdx, stl, ltl)
     end
 
   fun nextWord (lineGap: LineGap.t, cursorIdx) =
@@ -976,23 +1064,6 @@ struct
             end
         | (_, _) => cursorIdx
     end
-
-  fun isPrevChrSpace (strPos, str, strTl) =
-    if strPos > 0 then
-      let
-        val prevChr = String.sub (str, strPos - 1)
-      in
-        Char.isSpace prevChr
-      end
-    else
-      case strTl of
-        hd :: _ =>
-          let
-            val prevChr = String.sub (hd, String.size hd - 1)
-          in
-            Char.isSpace prevChr
-          end
-      | [] => true
 
   fun helpPrevWordString 
     (strPos, str, absIdx, strTl, lineTl, lastWordType) =
@@ -1141,65 +1212,6 @@ struct
           end
       | (_, _) => cursorIdx
     end
-
-  fun isNextChrSpace (strPos, str, strTl) =
-    if strPos - 1 < String.size str then
-      let
-        val chr = String.sub (str, strPos + 1)
-      in
-        Char.isSpace chr
-      end
-    else
-      case strTl of
-        hd :: _ => 
-          let
-            val chr = String.sub (hd, 0)
-          in
-            Char.isSpace chr
-          end
-      | [] => false
-
-  fun isNextChrNonBlank (strPos, str, strTl) =
-    if strPos - 1 < String.size str then
-      let
-        val chr = String.sub (str, strPos + 1)
-        val isNotBlank = 
-          Char.isSpace chr 
-          orelse Char.isAlphaNum chr 
-          orelse chr = #"_"
-      in
-        not isNotBlank
-      end
-    else
-      case strTl of
-        hd :: _ =>
-          let
-            val chr = String.sub (hd, 0)
-            val isNotBlank =
-              Char.isSpace chr
-              orelse Char.isAlphaNum chr
-              orelse chr = #"_"
-          in
-            not isNotBlank
-          end
-      | [] => false
-
-  fun isNextChrAlphaNum (strPos, str, stl) =
-    if strPos - 1 < String.size str then
-      let
-        val chr = String.sub (str, strPos + 1)
-      in
-        Char.isAlphaNum chr orelse chr = #"_"
-      end
-    else
-      case stl of
-        hd :: _ =>
-          let
-            val chr = String.sub (str, strPos + 1)
-          in
-            Char.isAlphaNum chr orelse chr = #"_"
-          end
-      | [] => false
 
   fun helpEndOfWordString 
     (strPos, str, absIdx, stl, ltl) =
