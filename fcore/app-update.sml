@@ -132,6 +132,22 @@ struct
     in
       (newApp, drawMsg)
     end
+    
+  fun prevWord (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.prevWord (buffer, cursorIdx)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+      val drawMsg = TextBuilder.build
+        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
+    in
+      (newApp, drawMsg)
+    end
 
   fun handleChr (app: app_type, chr) =
     case chr of
@@ -142,6 +158,7 @@ struct
     | #"0" => moveToLineStart app
     | #"$" => moveToLineEnd app
     | #"w" => nextWord app
+    | #"b" => prevWord app
     | _ => (app, [])
 
   fun update (app, msg) =
