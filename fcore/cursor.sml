@@ -839,25 +839,6 @@ struct
           cursorIdx
     end
 
-  (*
-   * nvim's motion.txt document describes a word as:
-   * - A sequence of (letters, digits and underscores)
-   * - or a sequence of other non-blank characters
-   * - separated by white space (space, tab, <EOL>)
-   *)
-  datatype word_type =
-    ALPHA_NUM
-  | SPACE
-  | NON_BLANK
-
-  fun getWordType chr =
-    if Char.isAlphaNum chr orelse chr = #"_" then
-      ALPHA_NUM
-    else if Char.isSpace chr then
-      SPACE
-    else
-      NON_BLANK
-
   fun isNextChrSpace (strPos, str, strTl) =
     if strPos + 1 < String.size str then
       let
@@ -1062,31 +1043,31 @@ struct
     end
 
   fun helpPrevWordString (strPos, str, absIdx, strTl, lineTl) =
-      if strPos < 0 then
-        helpPrevWordList (strTl, lineTl, absIdx)
-      else
-        let
-          val chr = String.sub (str, strPos)
-        in
-          if Char.isAlphaNum chr orelse chr = #"_" then
-            if isPrevChrSpace (strPos, str, strTl) 
-            orelse isPrevChrNonBlank (strPos, str, strTl) then
-              absIdx
-            else
-              helpPrevWordString 
-                (strPos - 1, str, absIdx - 1, strTl, lineTl)
-          else if Char.isSpace chr then
+    if strPos < 0 then
+      helpPrevWordList (strTl, lineTl, absIdx)
+    else
+      let
+        val chr = String.sub (str, strPos)
+      in
+        if Char.isAlphaNum chr orelse chr = #"_" then
+          if isPrevChrSpace (strPos, str, strTl) 
+          orelse isPrevChrNonBlank (strPos, str, strTl) then
+            absIdx
+          else
             helpPrevWordString 
               (strPos - 1, str, absIdx - 1, strTl, lineTl)
+        else if Char.isSpace chr then
+          helpPrevWordString 
+            (strPos - 1, str, absIdx - 1, strTl, lineTl)
+        else
+          (* is NON_BLANK *)
+          if isPrevChrSpace (strPos, str, strTl)
+          orelse isPrevChrAlphaNum (strPos, str, strTl) then
+            absIdx
           else
-            (* is NON_BLANK *)
-            if isPrevChrSpace (strPos, str, strTl)
-            orelse isPrevChrAlphaNum (strPos, str, strTl) then
-              absIdx
-            else
-              helpPrevWordString 
-                (strPos - 1, str, absIdx - 1, strTl, lineTl)
-        end
+            helpPrevWordString 
+              (strPos - 1, str, absIdx - 1, strTl, lineTl)
+      end
 
   and helpPrevWordList (strings, lines, absIdx) =
     case (strings, lines) of
@@ -1150,33 +1131,32 @@ struct
       | (_, _) => cursorIdx
     end
 
-  fun helpEndOfWordString 
-    (strPos, str, absIdx, stl, ltl) =
-      if strPos = String.size str then
-        helpEndOfWordList (stl, ltl, absIdx)
-      else
-        let
-          val chr = String.sub (str, strPos)
-        in
-          if Char.isAlphaNum chr orelse chr = #"_" then
-            if isNextChrSpace (strPos, str, stl) 
-            orelse isNextChrNonBlank (strPos, str, stl) then
-              absIdx
-            else
-              helpEndOfWordString
-                (strPos + 1, str, absIdx + 1, stl, ltl)
-          else if Char.isSpace chr then
+  fun helpEndOfWordString (strPos, str, absIdx, stl, ltl) =
+    if strPos = String.size str then
+      helpEndOfWordList (stl, ltl, absIdx)
+    else
+      let
+        val chr = String.sub (str, strPos)
+      in
+        if Char.isAlphaNum chr orelse chr = #"_" then
+          if isNextChrSpace (strPos, str, stl) 
+          orelse isNextChrNonBlank (strPos, str, stl) then
+            absIdx
+          else
             helpEndOfWordString
               (strPos + 1, str, absIdx + 1, stl, ltl)
+        else if Char.isSpace chr then
+          helpEndOfWordString
+            (strPos + 1, str, absIdx + 1, stl, ltl)
+        else
+          (* is NON_BLANK *)
+          if isNextChrSpace (strPos, str, stl) 
+          orelse isNextChrAlphaNum (strPos, str, stl) then
+            absIdx
           else
-            (* is NON_BLANK *)
-            if isNextChrSpace (strPos, str, stl) 
-            orelse isNextChrAlphaNum (strPos, str, stl) then
-              absIdx
-            else
-              helpEndOfWordString 
-                (strPos + 1, str, absIdx + 1, stl, ltl)
-        end
+            helpEndOfWordString 
+              (strPos + 1, str, absIdx + 1, stl, ltl)
+      end
 
   and helpEndOfWordList (strings, lines, absIdx) =
     case (strings, lines) of
@@ -1188,22 +1168,13 @@ struct
   fun startEndOfWord (shd, strIdx, absIdx, stl, ltl) =
     (* we want to start iterating from next char after strIdx *)
     if strIdx - 1 < String.size shd then
-      let
-        val nextChr = String.sub (shd, strIdx + 1)
-      in
-        helpEndOfWordString 
-          (strIdx + 1, shd, absIdx + 1, stl, ltl)
-      end
+      helpEndOfWordString 
+        (strIdx + 1, shd, absIdx + 1, stl, ltl)
     else
       case (stl, ltl) of
         (stlhd::stltl, ltlhd::ltltl) =>
-          let
-            val nextChr = String.sub (stlhd, 0)
-            val wordType = getWordType nextChr
-          in
-            helpEndOfWordString
-              (0, stlhd, absIdx + 1, stltl, ltltl)
-          end
+          helpEndOfWordString
+            (0, stlhd, absIdx + 1, stltl, ltltl)
       | (_, _) =>
           (* tl is empty; just return absIdx *)
           absIdx
