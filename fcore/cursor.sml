@@ -1030,12 +1030,8 @@ struct
         absIdx - 1
 
   fun startNextWord (shd, strIdx, absIdx, stl, ltl) =
-    let
-      val chr = String.sub (shd, strIdx)
-    in
-      helpNextWordString 
-        (strIdx, shd, absIdx, stl, ltl)
-    end
+    helpNextWordString 
+      (strIdx, shd, absIdx, stl, ltl)
 
   fun nextWord (lineGap: LineGap.t, cursorIdx) =
     let
@@ -1065,90 +1061,38 @@ struct
         | (_, _) => cursorIdx
     end
 
-  fun helpPrevWordString 
-    (strPos, str, absIdx, strTl, lineTl, lastWordType) =
+  fun helpPrevWordString (strPos, str, absIdx, strTl, lineTl) =
       if strPos < 0 then
-        helpPrevWordList 
-          (strTl, lineTl, absIdx, lastWordType)
+        helpPrevWordList (strTl, lineTl, absIdx)
       else
         let
           val chr = String.sub (str, strPos)
         in
           if Char.isAlphaNum chr orelse chr = #"_" then
-            case lastWordType of
-              ALPHA_NUM =>
-                (* check if prev chr is space;
-                 * if it is, return current idx
-                 * and if not, keep iterating *)
-                 if isPrevChrSpace (strPos, str, strTl) then
-                   absIdx 
-                 else
-                   helpPrevWordString
-                    ( strPos - 1, str, absIdx - 1
-                    , strTl, lineTl, ALPHA_NUM
-                    )
-            | SPACE =>
-                (* last chr checked was space
-                 * and this chr is ALPHA_NUM 
-                 * so keep iterating *)
-                 helpPrevWordString
-                  ( strPos - 1, str, absIdx - 1
-                  , strTl, lineTl, ALPHA_NUM
-                  )
-            | NON_BLANK =>
-                (* last chr was NON_BLANK
-                 * and this chr is ALPHA_NUM
-                 * and this change is a word break.
-                 * So return idx of last chr. *)
-                 absIdx + 1
+            if isPrevChrSpace (strPos, str, strTl) 
+            orelse isPrevChrNonBlank (strPos, str, strTl) then
+              absIdx
+            else
+              helpPrevWordString 
+                (strPos - 1, str, absIdx - 1, strTl, lineTl)
           else if Char.isSpace chr then
-            case lastWordType of
-              SPACE =>
-                (* nothing to do on double space, 
-                 * except keep iterating *)
-                 helpPrevWordString
-                  ( strPos - 1, str, absIdx - 1
-                  , strTl, lineTl, SPACE
-                  )
-            | _ =>
-                (* last chr was either ALPHA_NUM or NON_BLANK
-                 * and current chr is space
-                 * so we have word break.
-                 * thus, return start of last word *)
-                absIdx + 1
+            helpPrevWordString 
+              (strPos - 1, str, absIdx - 1, strTl, lineTl)
           else
             (* is NON_BLANK *)
-            case lastWordType of
-              NON_BLANK =>
-                (* last and current wordType is same
-                 * so keep iterating *)
-                 if isPrevChrSpace (strPos, str, strTl) then
-                   absIdx
-                 else
-                   helpPrevWordString
-                    ( strPos - 1, str, absIdx - 1
-                    , strTl, lineTl, NON_BLANK
-                    )
-            | ALPHA_NUM =>
-                (* word break since we last chr was ALPHA_NUM
-                 * and this one is NON_BLANK 
-                 * so return idx of last chr *)
-                 absIdx + 1
-            | SPACE =>
-                (* space means keep iterating *)
-               helpPrevWordString
-                ( strPos - 1, str, absIdx - 1
-                , strTl, lineTl, NON_BLANK
-                )
+            if isPrevChrSpace (strPos, str, strTl)
+            orelse isPrevChrAlphaNum (strPos, str, strTl) then
+              absIdx
+            else
+              helpPrevWordString 
+                (strPos - 1, str, absIdx - 1, strTl, lineTl)
         end
 
-  and helpPrevWordList (strings, lines, absIdx, lastWordType) =
+  and helpPrevWordList (strings, lines, absIdx) =
     case (strings, lines) of
       (strHd::strTl, lineHd::lineTl) =>
         helpPrevWordString
-          ( String.size strHd - 1, strHd, absIdx
-          , strTl, lineTl, lastWordType 
-          )
+          (String.size strHd - 1, strHd, absIdx, strTl, lineTl)
     | (_, _) =>
         (* reached start of lineGap; 
          * return 0 which is start idx *)
@@ -1159,23 +1103,16 @@ struct
      * and ignore the character the cursor is at 
      * so check previous character *)
     if strIdx > 0 then
-      let
-        val prevChr = String.sub (shd, strIdx - 1)
-        val prevWordType = getWordType prevChr
-      in
-        helpPrevWordString 
-          (strIdx - 1, shd, absIdx - 1, stl, ltl, prevWordType)
-      end
+      helpPrevWordString 
+        (strIdx - 1, shd, absIdx - 1, stl, ltl)
     else
       case (stl, ltl) of
         (stlhd::stltl, ltlhd::ltltl) =>
           let
             val prevIdx = String.size stlhd - 1
-            val prevChr = String.sub (stlhd, prevIdx)
-            val prevWordType = getWordType prevChr
           in
             helpPrevWordString
-              (prevIdx, stlhd, absIdx - 1, stltl, ltltl, prevWordType)
+              (prevIdx, stlhd, absIdx - 1, stltl, ltltl)
           end
       | (_, _) =>
           (* tl is empty; just return idx 0 *)
