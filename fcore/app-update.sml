@@ -132,6 +132,22 @@ struct
     in
       (newApp, drawMsg)
     end
+
+  fun nextWORD (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.nextWORD (buffer, cursorIdx)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+      val drawMsg = TextBuilder.build
+        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
+    in
+      (newApp, drawMsg)
+    end
     
   fun prevWord (app: app_type) =
     let
@@ -139,6 +155,22 @@ struct
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.prevWord (buffer, cursorIdx)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+      val drawMsg = TextBuilder.build
+        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
+    in
+      (newApp, drawMsg)
+    end
+
+  fun prevWORD (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.prevWORD (buffer, cursorIdx)
 
       val buffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
@@ -165,6 +197,23 @@ struct
       (newApp, drawMsg)
     end
 
+  fun endOfWORD (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.endOfWORD (buffer, cursorIdx)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+      val drawMsg = TextBuilder.build
+        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
+    in
+      (newApp, drawMsg)
+    end
+
+
   fun handleChr (app: app_type, chr) =
     case chr of
       #"h" => moveLeft app
@@ -174,8 +223,11 @@ struct
     | #"0" => moveToLineStart app
     | #"$" => moveToLineEnd app
     | #"w" => nextWord app
+    | #"W" => nextWORD app
     | #"b" => prevWord app
+    | #"B" => prevWORD app
     | #"e" => endOfWord app
+    | #"E" => endOfWORD app
     | _ => (app, [])
 
   fun update (app, msg) =
