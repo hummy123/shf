@@ -443,9 +443,7 @@ struct
     else
       case String.sub (str, strPos) of
         #"\n" =>
-          if
-            hasPassedLine
-          then
+          if hasPassedLine then
             (* reached end of line twice, 
              * but line has fewer chars than preferredColumn 
              * note: if in double \n\n linebreak,
@@ -939,31 +937,6 @@ struct
             helpNextWord (strPos + 1, str, absIdx + 1, strTl, lineTl)
       end
 
-  fun nextWord (lineGap: LineGap.t, cursorIdx) =
-    let
-      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              helpNextWord (strIdx, shd, cursorIdx, stl, ltl)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let val strIdx = strIdx - String.size shd
-                   in helpNextWord (strIdx, shd, cursorIdx, stl, ltl)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
-
   fun helpNextWORD (strPos, str, absIdx, strTl, lineTl) =
     if strPos = String.size str then
       case (strTl, lineTl) of
@@ -986,9 +959,7 @@ struct
           helpNextWORD (strPos + 1, str, absIdx + 1, strTl, lineTl)
       end
 
-  (* equivalent of vi's W, 
-   * which goes to next WORD rather than word *)
-  fun nextWORD (lineGap: LineGap.t, cursorIdx) =
+  fun toNextWord (lineGap: LineGap.t, cursorIdx, fNext) =
     let
       val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
     in
@@ -1000,18 +971,26 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              helpNextWORD (strIdx, shd, cursorIdx, stl, ltl)
+              fNext (strIdx, shd, cursorIdx, stl, ltl)
             else
               (* strIdx is in tl *)
               (case (stl, ltl) of
                  (stlhd :: stltl, ltlhd :: ltltl) =>
                    let val strIdx = strIdx - String.size shd
-                   in helpNextWORD (strIdx, shd, cursorIdx, stl, ltl)
+                   in fNext (strIdx, shd, cursorIdx, stl, ltl)
                    end
                | (_, _) => cursorIdx)
           end
       | (_, _) => cursorIdx
     end
+
+  (* equivalent 'f vi's 'w' command *)
+  fun nextWord (lineGap, cursorIdx) =
+    toNextWord (lineGap, cursorIdx, helpNextWord)
+
+  (* equivalent 'f vi's 'W' command *)
+  fun nextWORD (lineGap, cursorIdx) =
+    toNextWord (lineGap, cursorIdx, helpNextWORD)
 
   fun helpPrevWord (strPos, str, absIdx, strTl, lineTl) =
     if strPos < 0 then
@@ -1026,16 +1005,12 @@ struct
       let
         val chr = String.sub (str, strPos)
       in
-        if
-          Char.isAlphaNum chr orelse chr = #"_"
-        then
+        if Char.isAlphaNum chr orelse chr = #"_" then
           if isPrevChrSpace (strPos, str, strTl)
             orelse isPrevChrNonBlank (strPos, str, strTl)
           then absIdx
           else helpPrevWord (strPos - 1, str, absIdx - 1, strTl, lineTl)
-        else if
-          Char.isSpace chr
-        then
+        else if Char.isSpace chr then
           helpPrevWord (strPos - 1, str, absIdx - 1, strTl, lineTl)
         else 
           (* is NON_BLANK *) 
@@ -1046,55 +1021,6 @@ struct
           else
             helpPrevWord (strPos - 1, str, absIdx - 1, strTl, lineTl)
       end
-
-  fun startPrevWord (shd, strIdx, absIdx, stl, ltl) =
-    (* we want to start iterating from previous character
-     * and ignore the character the cursor is at 
-     * so check previous character *)
-    if strIdx > 0 then
-      helpPrevWord (strIdx - 1, shd, absIdx - 1, stl, ltl)
-    else
-      case (stl, ltl) of
-        (stlhd :: stltl, ltlhd :: ltltl) =>
-          let val prevIdx = String.size stlhd - 1
-          in helpPrevWord (prevIdx, stlhd, absIdx - 1, stltl, ltltl)
-          end
-      | (_, _) => 
-          (* tl is empty; just return idx 0 *) 
-          0
-
-  (* equivalent of vi's `b` command *)
-  fun prevWord (lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, rightLines, leftStrings, leftLines, idx = bufferIdx, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              startPrevWord (shd, strIdx, cursorIdx, leftStrings, leftLines)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let
-                     val strIdx = strIdx - String.size shd
-                     val leftStrings = shd :: leftStrings
-                     val leftLines = lhd :: leftLines
-                   in
-                     startPrevWord
-                       (stlhd, strIdx, cursorIdx, leftStrings, leftLines)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
 
   fun helpPrevWORD (strPos, str, absIdx, strTl, lineTl) =
     if strPos < 0 then
@@ -1120,24 +1046,23 @@ struct
               (strPos - 1, str, absIdx - 1, strTl, lineTl)
       end
 
-  fun startPrevWORD (shd, strIdx, absIdx, stl, ltl) =
+  fun startPrevWord (shd, strIdx, absIdx, stl, ltl, fPrev) =
     (* we want to start iterating from previous character
      * and ignore the character the cursor is at 
      * so check previous character *)
     if strIdx > 0 then
-      helpPrevWORD (strIdx - 1, shd, absIdx - 1, stl, ltl)
+      fPrev (strIdx - 1, shd, absIdx - 1, stl, ltl)
     else
       case (stl, ltl) of
         (stlhd :: stltl, ltlhd :: ltltl) =>
           let val prevIdx = String.size stlhd - 1
-          in helpPrevWORD (prevIdx, stlhd, absIdx - 1, stltl, ltltl)
+          in fPrev (prevIdx, stlhd, absIdx - 1, stltl, ltltl)
           end
       | (_, _) => 
           (* tl is empty; just return idx 0 *) 
           0
 
-  (* equivalent of vi's `B` command *)
-  fun prevWORD (lineGap: LineGap.t, cursorIdx) =
+  fun toPrevWord (lineGap: LineGap.t, cursorIdx, fPrev) =
     let
       val
         {rightStrings, rightLines, leftStrings, leftLines, idx = bufferIdx, ...} =
@@ -1151,7 +1076,8 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              startPrevWORD (shd, strIdx, cursorIdx, leftStrings, leftLines)
+              startPrevWord 
+                (shd, strIdx, cursorIdx, leftStrings, leftLines, fPrev)
             else
               (* strIdx is in tl *)
               (case (stl, ltl) of
@@ -1161,13 +1087,21 @@ struct
                      val leftStrings = shd :: leftStrings
                      val leftLines = lhd :: leftLines
                    in
-                     startPrevWORD
-                       (stlhd, strIdx, cursorIdx, leftStrings, leftLines)
+                     startPrevWord
+                       (stlhd, strIdx, cursorIdx, leftStrings, leftLines, fPrev)
                    end
                | (_, _) => cursorIdx)
           end
       | (_, _) => cursorIdx
     end
+
+  (* equivalent of vi's 'b' command *)
+  fun prevWord (lineGap, cursorIdx) =
+    toPrevWord (lineGap, cursorIdx, helpPrevWord)
+
+  (* equivalent of vi's 'B' command *)
+  fun prevWORD (lineGap, cursorIdx) =
+    toPrevWord (lineGap, cursorIdx, helpPrevWORD)
 
   fun helpEndOfWord (strPos, str, absIdx, stl, ltl) =
     if strPos = String.size str then
@@ -1178,16 +1112,12 @@ struct
       let
         val chr = String.sub (str, strPos)
       in
-        if
-          Char.isAlphaNum chr orelse chr = #"_"
-        then
+        if Char.isAlphaNum chr orelse chr = #"_" then
           if isNextChrSpace (strPos, str, stl)
             orelse isNextChrNonBlank (strPos, str, stl)
           then absIdx
           else helpEndOfWord (strPos + 1, str, absIdx + 1, stl, ltl)
-        else if
-          Char.isSpace chr
-        then
+        else if Char.isSpace chr then
           helpEndOfWord (strPos + 1, str, absIdx + 1, stl, ltl)
         else 
           (* is NON_BLANK *) 
@@ -1198,45 +1128,6 @@ struct
           else
             helpEndOfWord (strPos + 1, str, absIdx + 1, stl, ltl)
       end
-
-  fun startEndOfWord (shd, strIdx, absIdx, stl, ltl) =
-    (* we want to start iterating from next char after strIdx *)
-    if strIdx - 1 < String.size shd then
-      helpEndOfWord (strIdx + 1, shd, absIdx + 1, stl, ltl)
-    else
-      case (stl, ltl) of
-        (stlhd :: stltl, ltlhd :: ltltl) =>
-          helpEndOfWord (0, stlhd, absIdx + 1, stltl, ltltl)
-      | (_, _) => 
-          (* tl is empty; just return absIdx *) 
-          absIdx
-
-  (* equivalent of vi's `e` command *)
-  fun endOfWord (lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, rightLines, leftStrings, leftLines, idx = bufferIdx, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              startEndOfWord (shd, strIdx, cursorIdx, rightStrings, rightLines)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let val strIdx = strIdx - String.size shd
-                   in startEndOfWord (stlhd, strIdx, cursorIdx, stltl, ltltl)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
 
   fun helpEndOfWORD (strPos, str, absIdx, stl, ltl) =
     if strPos = String.size str then
@@ -1256,20 +1147,19 @@ struct
             helpEndOfWORD (strPos + 1, str, absIdx + 1, stl, ltl)
       end
 
-  fun startEndOfWORD (shd, strIdx, absIdx, stl, ltl) =
+  fun startEndOfWord (shd, strIdx, absIdx, stl, ltl, fEnd) =
     (* we want to start iterating from next char after strIdx *)
     if strIdx - 1 < String.size shd then
-      helpEndOfWORD (strIdx + 1, shd, absIdx + 1, stl, ltl)
+      fEnd (strIdx + 1, shd, absIdx + 1, stl, ltl)
     else
       case (stl, ltl) of
         (stlhd :: stltl, ltlhd :: ltltl) =>
-          helpEndOfWORD (0, stlhd, absIdx + 1, stltl, ltltl)
+          fEnd (0, stlhd, absIdx + 1, stltl, ltltl)
       | (_, _) => 
           (* tl is empty; just return absIdx *) 
           absIdx
 
-  (* equivalent of vi's `E` command *)
-  fun endOfWORD (lineGap: LineGap.t, cursorIdx) =
+  fun toEndOfWord (lineGap: LineGap.t, cursorIdx, fEnd) =
     let
       val
         {rightStrings, rightLines, leftStrings, leftLines, idx = bufferIdx, ...} =
@@ -1282,16 +1172,28 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              startEndOfWORD (shd, strIdx, cursorIdx, rightStrings, rightLines)
+              startEndOfWord
+                (shd, strIdx, cursorIdx, rightStrings, rightLines, fEnd)
             else
               (* strIdx is in tl *)
               (case (stl, ltl) of
                  (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let val strIdx = strIdx - String.size shd
-                   in startEndOfWORD (stlhd, strIdx, cursorIdx, stltl, ltltl)
+                   let 
+                     val strIdx = strIdx - String.size shd
+                   in 
+                     startEndOfWord 
+                       (stlhd, strIdx, cursorIdx, stltl, ltltl, fEnd)
                    end
                | (_, _) => cursorIdx)
           end
       | (_, _) => cursorIdx
     end
+
+  (* equivalent of vi's `e` command *)
+  fun endOfWord (lineGap, cursorIdx) = 
+    toEndOfWord (lineGap, cursorIdx, helpEndOfWord)
+
+  (* equivalent of vi's `E` command *)
+  fun endOfWORD (lineGap, cursorIdx) = 
+    toEndOfWord (lineGap, cursorIdx, helpEndOfWORD)
 end
