@@ -1,27 +1,19 @@
 structure Cursor =
 struct
-  fun helpVi0String (strPos, str, absIdx, strTl, lineTl) =
+  fun helpVi0 (strPos, str, absIdx, strTl, lineTl) =
     if strPos < 0 then
-      helpVi0List (strTl, lineTl, absIdx)
+      case (strTl, lineTl) of
+        (shd :: stl, lhd :: ltl) =>
+          helpVi0 
+            (String.size shd - 1, shd, absIdx, stl, ltl)
+      | (_, _) => 
+          0
     else
       case String.sub (str, strPos) of
         #"\n" =>
           absIdx + 1
       | _ =>
-          helpVi0String (strPos - 1, str, absIdx - 1, strTl, lineTl)
-
-  and helpVi0List (strings, lines, absIdx) =
-    case (strings, lines) of
-      (strHd::strTl, lineHd::lineTl) =>
-        helpVi0String
-          ( String.size strHd - 1, strHd, absIdx
-          , strTl, lineTl
-          )
-    | (_, _) =>
-        (* this case means strings and lines are empty
-         * and empty means we are at first line
-         * so we can return 0 *)
-        0
+          helpVi0 (strPos - 1, str, absIdx - 1, strTl, lineTl)
 
   fun vi0 (lineGap: LineGap.t, cursorIdx) =
     let
@@ -43,7 +35,7 @@ struct
                  cursorIdx
               else
                 (* not at newline so start iterating *)
-                helpVi0String
+                helpVi0
                   ( strIdx - 1, strHd, cursorIdx - 1
                   , strTl, lnTl
                   )
@@ -59,7 +51,7 @@ struct
                        cursorIdx
                      else
                        (* not in linebreak *)
-                       helpVi0String
+                       helpVi0
                          ( strIdx - 1, nestStrHd, cursorIdx - 1
                          , strHd :: leftStrings, lnHd :: leftLines
                          )
@@ -71,28 +63,22 @@ struct
           cursorIdx
     end
 
-  fun helpViDlrString (strPos, str, absIdx, strTl, lineTl) =
+  fun helpViDlr (strPos, str, absIdx, strTl, lineTl) =
     if strPos = String.size str then
-      helpViDlrList (strTl, lineTl, absIdx)
+      case (strTl, lineTl) of
+        (shd :: stl, lhd :: ltl) =>
+          helpViDlr
+            (0, shd, absIdx, stl, ltl)
+      | (_, _) =>
+          absIdx - 1
     else
       case String.sub (str, strPos) of
         #"\n" =>
           absIdx - 1
       | _ =>
-          helpViDlrString (strPos + 1, str, absIdx + 1, strTl, lineTl)
+          helpViDlr (strPos + 1, str, absIdx + 1, strTl, lineTl)
 
-  and helpViDlrList (strings, lines, absIdx) =
-    case (strings, lines) of
-      (strHd::strTl, lineHd::lineTl) =>
-        helpViDlrString
-          (0, strHd, absIdx , strTl, lineTl)
-    | (_, _) =>
-        (* this case means strings and lines are empty
-         * and empty means we have reached end of lineGap
-         * so we can return last chr *)
-        absIdx - 1
-        
-  fun viDlr(lineGap: LineGap.t, cursorIdx) =
+  fun viDlr (lineGap: LineGap.t, cursorIdx) =
     let
       val
         {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
@@ -107,7 +93,7 @@ struct
             if strIdx < String.size strHd then
               if String.sub (strHd, strIdx) <> #"\n" then
                 (* not in double linebreak *)
-                helpViDlrString
+                helpViDlr
                   (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
               else
                 (* check if we are in double linebreak *)
@@ -117,7 +103,7 @@ struct
                     cursorIdx
                   else
                     (* not in double linebreak, so iterate *)
-                    helpViDlrString
+                    helpViDlr
                       (strIdx + 1, strHd, cursorIdx + 1 , strTl, lnTl)
                 else
                   (* check if double linebreak in strTl *)
@@ -126,7 +112,7 @@ struct
                       if String.sub (nestStrHd, 0) = #"\n" then
                         cursorIdx
                       else
-                        helpViDlrString
+                        helpViDlr
                           (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
                   | [] => cursorIdx)
             else
@@ -136,7 +122,7 @@ struct
                    let
                      val strIdx = strIdx - String.size strHd
                    in
-                     helpViDlrString 
+                     helpViDlr 
                        (strIdx + 1, nestStrHd, cursorIdx + 1, nestStrTl, nestLnTl)
                    end
                | (_, _) => cursorIdx)
@@ -438,14 +424,28 @@ struct
       | (_, _) => helpGetCursorColumn (0, leftStrings, leftLines)
     end
 
-  fun helpViJString
+  fun helpViJ
     ( strPos, str, absIdx
     , lineColumn, preferredColumn, hasPassedLine
     , strTl, lineTl
     ) =
       if strPos = String.size str then
-        helpViJList
-          (absIdx, lineColumn, preferredColumn, hasPassedLine, strTl, lineTl)
+        case (strTl, lineTl) of
+          (shd :: stl, lhd :: ltl) =>
+            (* todo: possibly check if we have passed line,
+             * and if so, if there are any line breaks in the lineHd
+             * which we could use to skip searching part of the string. 
+             * However, this will likely have worse cache locality 
+             * as we switch to searching in string to searcing in line vector
+             * so perhaps not. *)
+          helpViJ
+            ( 0, shd, absIdx
+            , lineColumn, preferredColumn, hasPassedLine
+            , stl, ltl
+            )
+      | (_, _) => 
+          (* empty, so return end of previous string *) 
+          absIdx - 1
       else
         case String.sub (str, strPos) of
           #"\n" =>
@@ -484,7 +484,7 @@ struct
                 if String.sub (str, strPos + 1) = #"\n" then
                   absIdx + 1
                 else
-                  helpViJString
+                  helpViJ
                     ( strPos + 1, str, absIdx + 1
                     , 0, preferredColumn, true
                     , strTl, lineTl
@@ -498,7 +498,7 @@ struct
                        absIdx + 1
                      else
                        (* not in double linebreak *)
-                       helpViJString
+                       helpViJ
                          ( strPos + 1, str, absIdx + 1
                          , 0, preferredColumn, true
                          , strTl, lineTl
@@ -512,30 +512,11 @@ struct
               absIdx
             else
               (* we're not in the preferred column, so keep iterating *)
-              helpViJString
+              helpViJ
                 ( strPos + 1, str, absIdx + 1
                 , lineColumn + 1, preferredColumn, hasPassedLine
                 , strTl, lineTl
                 )
-
-  and helpViJList
-    (absIdx, lineColumn, preferredColumn, hasPassedLine, strings, lines) =
-    case (strings, lines) of
-      (strHd :: strTl, lineHd :: lineTl) =>
-        (* todo: possibly check if we have passed line,
-         * and if so, if there are any line breaks in the lineHd
-         * which we could use to skip searching part of the string. 
-         * However, this will likely have worse cache locality 
-         * as we switch to searching in string to searcing in line vector
-         * so perhaps not. *)
-        helpViJString
-          ( 0, strHd, absIdx
-          , lineColumn, preferredColumn, hasPassedLine
-          , strTl, lineTl
-          )
-    | (_, _) => 
-        (* empty, so return end of previous string *) 
-        absIdx - 1
 
   fun viJ (lineGap: LineGap.t, cursorIdx) =
     let
@@ -559,7 +540,7 @@ struct
                  * for that condition at the end. 
                  * So there is no way at the start of a navigation function
                  * that cursor is in a double linebreak incorrectly. *)
-                helpViJString
+                helpViJ
                   (strIdx + 1, strHd, cursorIdx + 1, 0, 0, true, strTl, lnTl)
               else
                 (* not at newline 
@@ -567,7 +548,7 @@ struct
                 let
                   val lineColumn = getCursorColumn (lineGap, cursorIdx)
                 in
-                  helpViJString
+                  helpViJ
                     ( strIdx + 1, strHd, cursorIdx + 1
                     , lineColumn, lineColumn, false
                     , strTl, lnTl
@@ -581,7 +562,7 @@ struct
                      val strIdx = strIdx - String.size strHd
                    in
                      if String.sub (nestStrHd, strIdx) = #"\n" then
-                       helpViJString
+                       helpViJ
                          ( strIdx + 1, nestStrHd, cursorIdx + 1
                          , 0, 0, true
                          , nestStrTl, nestLnTl
@@ -591,7 +572,7 @@ struct
                        let
                          val lineColumn = getCursorColumn (lineGap, cursorIdx)
                        in
-                         helpViJString
+                         helpViJ
                            ( strIdx + 1, nestStrHd, cursorIdx + 1
                            , lineColumn, lineColumn, false
                            , nestStrTl, nestStrTl
@@ -605,14 +586,22 @@ struct
           cursorIdx
     end
 
-  fun helpViKString
+  fun helpViK
     ( strPos, str, absIdx
     , lineColumn, preferredColumn, hasPassedLine
     , strTl, lineHd, lineTl
     ) =
       if strPos < 0 then
-        helpViKList
-          (absIdx, lineColumn, preferredColumn, hasPassedLine, strTl, lineTl)
+        case (strTl, lineTl) of
+          (shd :: stl, lhd :: ltl) =>
+            helpViK
+              ( String.size shd - 1, shd, absIdx
+              , lineColumn, preferredColumn, hasPassedLine
+              , stl, lhd, ltl
+              )
+        | (_, _) => 
+            (* empty, so return start of previous string *) 
+            absIdx + 1
       else
         case String.sub (str, strPos) of
           #"\n" =>
@@ -659,7 +648,7 @@ struct
                       helpGetCursorColumnBranch
                         (strPos - 1, str, lineHd, strTl, lineTl)
                   in
-                    helpViKString
+                    helpViK
                       ( strPos - 1, str, absIdx - 1
                       , lineColumn, preferredColumn, true
                       , strTl, lineHd, lineTl
@@ -679,7 +668,7 @@ struct
                            helpGetCursorColumnBranch
                              (strPos - 1, str, lineHd, strTl, lineTl)
                        in
-                         helpViKString
+                         helpViK
                            ( strPos - 1, str, absIdx - 1
                            , lineColumn, preferredColumn, true
                            , strTl, lineHd, lineTl
@@ -698,30 +687,11 @@ struct
               absIdx
             else
               (* we're not in the preferred column, so keep iterating *)
-              helpViKString
+              helpViK
                 ( strPos - 1, str, absIdx - 1
                 , lineColumn - 1, preferredColumn, hasPassedLine
                 , strTl, lineHd, lineTl
                 )
-
-  and helpViKList
-    (absIdx, lineColumn, preferredColumn, hasPassedLine, strings, lines) =
-    case (strings, lines) of
-      (strHd :: strTl, lineHd :: lineTl) =>
-        (* todo: possibly check if we have passed line,
-         * and if so, if there are any line breaks in the lineHd
-         * which we could use to skip searching part of the string. 
-         * However, this will likely have worse cache locality 
-         * as we switch to searching in string to searcing in line vector
-         * so perhaps not. *)
-        helpViKString
-          ( String.size strHd - 1, strHd, absIdx
-          , lineColumn, preferredColumn, hasPassedLine
-          , strTl, lineHd, lineTl
-          )
-    | (_, _) => 
-        (* empty, so return start of previous string *) 
-        absIdx + 1
 
   fun viK (lineGap: LineGap.t, cursorIdx) =
     let
@@ -742,11 +712,11 @@ struct
                 if strIdx > 0 then
                   if String.sub (strHd, strIdx - 1) = #"\n" then
                     (* if in double linebreak *)
-                    helpVi0String 
+                    helpVi0 
                       (strIdx - 2, strHd, cursorIdx - 2, leftStrings, leftLines)
                   else
                     (* not in double linebreak *)
-                    helpVi0String 
+                    helpVi0 
                       (strIdx - 1, strHd, cursorIdx - 1, leftStrings, leftLines)
                 else
                   (* check leftStrings to see if we are in a double linebreak *)
@@ -754,14 +724,14 @@ struct
                      (lStrHd :: lStrTl, lLnHd :: lLnTl) =>
                        if String.sub (lStrHd, String.size lStrHd - 1) = #"\n" then
                          (* in double linebreak *)
-                        helpVi0String 
+                        helpVi0 
                           (String.size lStrHd - 2, lStrHd, cursorIdx - 2, lStrTl, lLnTl)
                        else
                          (* in single linebreak *)
-                        helpVi0String 
+                        helpVi0 
                           (strIdx - 1, strHd, cursorIdx - 1, leftStrings, leftLines)
                    | (_, _) =>
-                       helpViKString
+                       helpViK
                          ( strIdx - 1, strHd, cursorIdx - 1
                          , 0, 0, true, leftStrings, lnHd, leftLines 
                          ))
@@ -771,7 +741,7 @@ struct
                 let
                   val lineColumn = getCursorColumn (lineGap, cursorIdx)
                 in
-                  helpViKString
+                  helpViK
                     ( strIdx - 1, strHd, cursorIdx - 1
                     , lineColumn, lineColumn, false
                     , leftStrings, lnHd, leftLines
@@ -793,14 +763,14 @@ struct
                              val leftStrings = strHd :: leftStrings
                              val leftLines = lnHd :: leftLines
                            in
-                             helpVi0String 
+                             helpVi0 
                                ( strIdx - 2, nestStrHd, cursorIdx - 2
                                , leftStrings, leftLines 
                                )
                            end
                          else
                            (* is in single linebreak *)
-                           helpVi0String 
+                           helpVi0 
                              ( strIdx - 1, nestStrHd, cursorIdx - 1
                              , leftStrings, leftLines 
                              )
@@ -810,13 +780,13 @@ struct
                            String.sub (strHd, String.size strHd - 1) = #"\n"
                          then
                            (* is in double linebreak *)
-                           helpVi0String
+                           helpVi0
                              ( String.size strHd - 2, nestStrHd, cursorIdx - 2
                              , leftStrings, leftLines 
                              )
                          else
                            (* is in single linebreak *)
-                           helpVi0String
+                           helpVi0
                              ( String.size strHd - 1, nestStrHd, cursorIdx - 1
                              , leftStrings, leftLines 
                              )
@@ -825,7 +795,7 @@ struct
                        let
                          val lineColumn = getCursorColumn (lineGap, cursorIdx)
                        in
-                         helpViKString
+                         helpViK
                            ( strIdx - 1, nestStrHd, cursorIdx - 1
                            , lineColumn, lineColumn, false
                            , strHd :: leftStrings, nestLnHd, lnHd :: leftLines
@@ -971,9 +941,15 @@ struct
           end
       | [] => false
 
-  fun helpNextWordString (strPos, str, absIdx , strTl, lineTl) =
+  fun helpNextWord (strPos, str, absIdx , strTl, lineTl) =
     if strPos = String.size str then
-      helpNextWordList (strTl, lineTl, absIdx)
+      case (strTl, lineTl) of
+        (shd :: stl, lhd :: ltl) =>
+          helpNextWord (0, shd, absIdx, stl, ltl)
+      | (_, _) =>
+          (* reached end of lineGap; 
+           * return last valid chr position *)
+          absIdx - 1
     else
       let
         val chr = String.sub (str, strPos)
@@ -982,36 +958,26 @@ struct
           if isNextChrNonBlank (strPos, str, strTl) then
             absIdx + 1
           else
-            helpNextWordString
+            helpNextWord
               (strPos + 1, str, absIdx + 1, strTl, lineTl)
         else if Char.isSpace chr then
           if notIsNextChrSpace (strPos, str, strTl) then
             absIdx + 1
           else
             (* nothing to do on space, except keep iterating *)
-            helpNextWordString
+            helpNextWord
               (strPos + 1, str, absIdx + 1, strTl, lineTl)
         else
           (* chr is NON_BLANK. *)
           if isNextChrAlphaNum (strPos, str, strTl) then
             absIdx + 1
           else
-            helpNextWordString
+            helpNextWord
               (strPos + 1, str, absIdx + 1, strTl, lineTl)
       end
 
-  and helpNextWordList (strings, lines, absIdx) =
-    case (strings, lines) of
-      (strHd::strTl, lineHd::lineTl) =>
-        helpNextWordString
-          (0, strHd, absIdx, strTl, lineTl)
-    | (_, _) =>
-        (* reached end of lineGap; 
-         * return last valid chr position *)
-        absIdx - 1
-
   fun startNextWord (shd, strIdx, absIdx, stl, ltl) =
-    helpNextWordString 
+    helpNextWord 
       (strIdx, shd, absIdx, stl, ltl)
 
   fun nextWord (lineGap: LineGap.t, cursorIdx) =
@@ -1042,9 +1008,16 @@ struct
         | (_, _) => cursorIdx
     end
 
-  fun helpPrevWordString (strPos, str, absIdx, strTl, lineTl) =
+  fun helpPrevWord (strPos, str, absIdx, strTl, lineTl) =
     if strPos < 0 then
-      helpPrevWordList (strTl, lineTl, absIdx)
+      case (strTl, lineTl) of
+        (shd :: stl, lhd :: ltl) =>
+          helpPrevWord
+            (String.size shd - 1, shd, absIdx, stl, ltl)
+      | (_, _) =>
+          (* reached start of lineGap; 
+           * return 0 which is start idx *)
+          0
     else
       let
         val chr = String.sub (str, strPos)
@@ -1054,10 +1027,10 @@ struct
           orelse isPrevChrNonBlank (strPos, str, strTl) then
             absIdx
           else
-            helpPrevWordString 
+            helpPrevWord 
               (strPos - 1, str, absIdx - 1, strTl, lineTl)
         else if Char.isSpace chr then
-          helpPrevWordString 
+          helpPrevWord 
             (strPos - 1, str, absIdx - 1, strTl, lineTl)
         else
           (* is NON_BLANK *)
@@ -1065,26 +1038,16 @@ struct
           orelse isPrevChrAlphaNum (strPos, str, strTl) then
             absIdx
           else
-            helpPrevWordString 
+            helpPrevWord 
               (strPos - 1, str, absIdx - 1, strTl, lineTl)
       end
-
-  and helpPrevWordList (strings, lines, absIdx) =
-    case (strings, lines) of
-      (strHd::strTl, lineHd::lineTl) =>
-        helpPrevWordString
-          (String.size strHd - 1, strHd, absIdx, strTl, lineTl)
-    | (_, _) =>
-        (* reached start of lineGap; 
-         * return 0 which is start idx *)
-        0
 
   fun startPrevWord (shd, strIdx, absIdx, stl, ltl) =
     (* we want to start iterating from previous character
      * and ignore the character the cursor is at 
      * so check previous character *)
     if strIdx > 0 then
-      helpPrevWordString 
+      helpPrevWord 
         (strIdx - 1, shd, absIdx - 1, stl, ltl)
     else
       case (stl, ltl) of
@@ -1092,7 +1055,7 @@ struct
           let
             val prevIdx = String.size stlhd - 1
           in
-            helpPrevWordString
+            helpPrevWord
               (prevIdx, stlhd, absIdx - 1, stltl, ltltl)
           end
       | (_, _) =>
@@ -1131,9 +1094,13 @@ struct
       | (_, _) => cursorIdx
     end
 
-  fun helpEndOfWordString (strPos, str, absIdx, stl, ltl) =
+  fun helpEndOfWord (strPos, str, absIdx, stl, ltl) =
     if strPos = String.size str then
-      helpEndOfWordList (stl, ltl, absIdx)
+      case (stl, ltl) of
+        (shd :: stl, lhd :: ltl) =>
+          helpEndOfWord (0, shd, absIdx, stl, ltl)
+      | (_, _) => 
+          absIdx - 1
     else
       let
         val chr = String.sub (str, strPos)
@@ -1143,10 +1110,10 @@ struct
           orelse isNextChrNonBlank (strPos, str, stl) then
             absIdx
           else
-            helpEndOfWordString
+            helpEndOfWord
               (strPos + 1, str, absIdx + 1, stl, ltl)
         else if Char.isSpace chr then
-          helpEndOfWordString
+          helpEndOfWord
             (strPos + 1, str, absIdx + 1, stl, ltl)
         else
           (* is NON_BLANK *)
@@ -1154,26 +1121,19 @@ struct
           orelse isNextChrAlphaNum (strPos, str, stl) then
             absIdx
           else
-            helpEndOfWordString 
+            helpEndOfWord 
               (strPos + 1, str, absIdx + 1, stl, ltl)
       end
-
-  and helpEndOfWordList (strings, lines, absIdx) =
-    case (strings, lines) of
-      (shd :: stl, lhd :: ltl) =>
-        helpEndOfWordString (0, shd, absIdx, stl, ltl)
-    | (_, _) => 
-        absIdx - 1
 
   fun startEndOfWord (shd, strIdx, absIdx, stl, ltl) =
     (* we want to start iterating from next char after strIdx *)
     if strIdx - 1 < String.size shd then
-      helpEndOfWordString 
+      helpEndOfWord 
         (strIdx + 1, shd, absIdx + 1, stl, ltl)
     else
       case (stl, ltl) of
         (stlhd::stltl, ltlhd::ltltl) =>
-          helpEndOfWordString
+          helpEndOfWord
             (0, stlhd, absIdx + 1, stltl, ltltl)
       | (_, _) =>
           (* tl is empty; just return absIdx *)
