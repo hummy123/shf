@@ -19,13 +19,15 @@ struct
       (newApp, drawMsg)
     end
 
-  fun moveRight (app: app_type) =
+  fun moveBackward (app: app_type, fMove) =
     let
       val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
 
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.viL (buffer, cursorIdx)
+      val cursorIdx = fMove (buffer, cursorIdx)
+
+      (* todo: get new startLine if cursor has moved out of screen *)
 
       (* move LineGap to first line displayed on screen, and build new text *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -37,13 +39,17 @@ struct
       (newApp, drawMsg)
     end
 
-  fun moveLeft (app: app_type) =
+  fun moveFowrards (app: app_type, fMove) =
     let
       val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
 
+      (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.viH (buffer, cursorIdx)
+      val cursorIdx = fMove (buffer, cursorIdx)
 
+      (* todo: get new startLine if cursor has moved out of screen *)
+
+      (* move LineGap to first line displayed on screen, and build new text *)
       val buffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
         (startLine, cursorIdx, buffer, windowWidth, windowHeight)
@@ -52,182 +58,21 @@ struct
     in
       (newApp, drawMsg)
     end
-
-  fun moveDown (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.viJ (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
-  fun moveUp (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.viK (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
-  fun moveToLineStart (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.vi0 (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
-  fun moveToLineEnd (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.viDlr (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-    
-  fun nextWord (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.nextWord (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
-  fun nextWORD (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.nextWORD (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-    
-  fun prevWord (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.prevWord (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
-  fun prevWORD (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.prevWORD (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
-  fun endOfWord (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.endOfWord (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
-  fun endOfWORD (app: app_type) =
-    let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
-
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.endOfWORD (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx)
-    in
-      (newApp, drawMsg)
-    end
-
 
   fun handleChr (app: app_type, chr) =
     case chr of
-      #"h" => moveLeft app
-    | #"j" => moveDown app
-    | #"k" => moveUp app
-    | #"l" => moveRight app
-    | #"0" => moveToLineStart app
-    | #"$" => moveToLineEnd app
-    | #"w" => nextWord app
-    | #"W" => nextWORD app
-    | #"b" => prevWord app
-    | #"B" => prevWORD app
-    | #"e" => endOfWord app
-    | #"E" => endOfWORD app
+      #"h" => moveBackward (app, Cursor.viH) 
+    | #"j" => moveFowrards (app, Cursor.viJ)
+    | #"k" => moveBackward (app, Cursor.viK)
+    | #"l" => moveFowrards (app, Cursor.viL)
+    | #"0" => moveBackward (app, Cursor.vi0)
+    | #"$" => moveFowrards (app, Cursor.viDlr)
+    | #"w" => moveFowrards (app, Cursor.nextWord)
+    | #"W" => moveFowrards (app, Cursor.nextWORD)
+    | #"b" => moveBackward (app, Cursor.prevWord)
+    | #"B" => moveBackward (app, Cursor.prevWORD)
+    | #"e" => moveFowrards (app, Cursor.endOfWord)
+    | #"E" => moveFowrards (app, Cursor.endOfWORD)
     | _ => (app, [])
 
   fun update (app, msg) =
