@@ -1196,4 +1196,70 @@ struct
   (* equivalent of vi's `E` command *)
   fun endOfWORD (lineGap, cursorIdx) = 
     toEndOfWord (lineGap, cursorIdx, helpEndOfWORD)
+
+  fun helpFirstNonSpaceChr 
+    (strPos, str, absIdx, stl, ltl) =
+      if strPos = String.size str then
+        case (stl, ltl) of
+          (shd :: stl, lhd :: ltl) =>
+            helpFirstNonSpaceChr
+              (0, shd, absIdx, stl, ltl)
+        | (_, _) =>
+            absIdx - 1
+      else
+        let
+          val chr = String.sub (str, strPos)
+        in
+          if Char.isSpace chr then
+            helpFirstNonSpaceChr 
+              (strPos + 1, str, absIdx + 1, stl, ltl)
+          else
+            absIdx
+        end
+
+  fun startFirstNonSpaceChr
+    (shd, strIdx, absIdx, stl, ltl) =
+      if strIdx  < String.size shd then
+        helpFirstNonSpaceChr
+          (strIdx, shd, absIdx, stl, ltl)
+      else
+        case (stl, ltl) of
+          (stlhd :: stltl, ltlhd :: ltltl) =>
+            helpFirstNonSpaceChr
+              (0, stlhd, absIdx, stltl, ltltl)
+        | (_, _) => 
+            (* tl is empty; just return absIdx *) 
+            absIdx
+
+  (* Prerequisite: 
+   * LineGap has been moved to start of line (provided with vi0). *)
+  fun firstNonSpaceChr (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
+    in
+      case (rightStrings, rightLines) of
+        (shd :: stl, lhd :: ltl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size shd then
+              (* strIdx is in this string *)
+              startFirstNonSpaceChr 
+                (shd, strIdx, cursorIdx, stl, ltl)
+            else
+              (* strIdx is in tl *)
+              (case (stl, ltl) of
+                 (stlhd :: stltl, ltlhd :: ltltl) =>
+                   let 
+                     val strIdx = strIdx - String.size shd
+                   in 
+                     startFirstNonSpaceChr 
+                       (stlhd, strIdx, cursorIdx, stltl, ltltl)
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) =>
+          cursorIdx
+    end
 end
