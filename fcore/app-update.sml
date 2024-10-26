@@ -252,7 +252,7 @@ struct
         handleNextChr (1, app, Cursor.tillNextChr, newCmd)
     | #"T" => 
         (* to just before chr, backward *) 
-        clearMode app
+        handleNextChr (1, app, Cursor.tillPrevChr, newCmd)
     | #"y" => 
         (* yank *) 
         clearMode app

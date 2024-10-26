@@ -1290,35 +1290,6 @@ struct
           (* tl is empty; just return absIdx *) 
           absIdx
 
-  fun nextChr (lineGap: LineGap.t, cursorIdx, chr, fStart) =
-    let
-      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              fStart
-                (shd, strIdx, cursorIdx, stl, ltl, chr)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let 
-                     val strIdx = strIdx - String.size shd
-                   in 
-                     fStart
-                       (shd, strIdx, cursorIdx, stltl, ltltl, chr)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
-
   fun helpTillNextChr (strPos, str, absIdx, stl, ltl, origIdx, findChr, lastNonLine) =
     if strPos = String.size str then
       case (stl, ltl) of
@@ -1360,6 +1331,36 @@ struct
           (* tl is empty; just return absIdx *) 
           absIdx
 
+
+  fun nextChr (lineGap: LineGap.t, cursorIdx, chr, fStart) =
+    let
+      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
+    in
+      case (rightStrings, rightLines) of
+        (shd :: stl, lhd :: ltl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size shd then
+              (* strIdx is in this string *)
+              fStart
+                (shd, strIdx, cursorIdx, stl, ltl, chr)
+            else
+              (* strIdx is in tl *)
+              (case (stl, ltl) of
+                 (stlhd :: stltl, ltlhd :: ltltl) =>
+                   let 
+                     val strIdx = strIdx - String.size shd
+                   in 
+                     fStart
+                       (shd, strIdx, cursorIdx, stltl, ltltl, chr)
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) => cursorIdx
+    end
+
   fun tillNextChr (lineGap, cursorIdx, chr) =
     nextChr (lineGap, cursorIdx, chr, startTillNextChr)
 
@@ -1395,7 +1396,54 @@ struct
           (* tl is empty; return 0 for lineGap start *) 
           0
 
-  fun toPrevChr (lineGap: LineGap.t, cursorIdx, chr) =
+  fun helpTillPrevChr (strPos, str, absIdx, stl, ltl, origIdx, findChr, lastNonLine) =
+    if strPos < 0 then
+      case (stl, ltl) of
+        (shd :: stl, lhd :: ltl) => 
+          helpTillPrevChr 
+            ( String.size shd - 1, shd, absIdx, stl, ltl
+            , origIdx, findChr, lastNonLine
+            )
+      | (_, _) => 
+          origIdx
+    else 
+      let
+        val chr = String.sub (str, strPos)
+      in
+        if chr = findChr then
+          absIdx + 1
+        else
+          let
+            val lastNonLine =
+                if chr = #"\n" orelse chr = #"\r" then
+                  lastNonLine
+                else
+                  absIdx
+          in
+            helpTillPrevChr
+              ( strPos - 1, str, absIdx - 1
+              , stl, ltl, origIdx, findChr, lastNonLine
+              )
+          end
+      end
+
+  fun startTillPrevChr (shd, strIdx, absIdx, stl, ltl, findChr) =
+    (* we want to start iterating from Prev char after strIdx *)
+    if strIdx > 0 then
+      helpTillPrevChr 
+        (strIdx - 1, shd, absIdx - 1, stl, ltl, absIdx, findChr, absIdx)
+    else
+      case (stl, ltl) of
+        (stlhd :: stltl, ltlhd :: ltltl) =>
+          helpTillPrevChr
+            ( String.size stlhd - 1, stlhd, absIdx - 1
+            , stltl, ltltl, absIdx, findChr, absIdx
+            )
+      | (_, _) => 
+          (* tl is empty; return 0 for lineGap start *) 
+          0
+
+  fun prevChr (lineGap: LineGap.t, cursorIdx, chr, fStart) =
     let
       val {rightStrings, rightLines, idx = bufferIdx, leftStrings, leftLines, ...} = lineGap
     in
@@ -1407,7 +1455,7 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              startToPrevChr 
+              fStart
                 (shd, strIdx, cursorIdx, leftStrings, leftLines, chr)
             else
               (* strIdx is in tl *)
@@ -1418,11 +1466,17 @@ struct
                      val leftStrings = shd :: leftStrings
                      val leftLines = lhd :: leftLines
                    in 
-                     startToPrevChr 
+                     fStart
                        (shd, strIdx, cursorIdx, leftStrings, leftLines, chr)
                    end
                | (_, _) => cursorIdx)
           end
       | (_, _) => cursorIdx
     end
+
+  fun toPrevChr (lineGap, cursorIdx, chr) =
+    prevChr (lineGap, cursorIdx, chr, startToPrevChr)
+
+  fun tillPrevChr (lineGap, cursorIdx, chr) =
+    prevChr (lineGap, cursorIdx, chr, startTillPrevChr)
 end
