@@ -1290,7 +1290,7 @@ struct
           (* tl is empty; just return absIdx *) 
           absIdx
 
-  fun toNextChr (lineGap: LineGap.t, cursorIdx, chr) =
+  fun nextChr (lineGap: LineGap.t, cursorIdx, chr, fStart) =
     let
       val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
     in
@@ -1302,7 +1302,7 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              startToNextChr 
+              fStart
                 (shd, strIdx, cursorIdx, stl, ltl, chr)
             else
               (* strIdx is in tl *)
@@ -1311,7 +1311,7 @@ struct
                    let 
                      val strIdx = strIdx - String.size shd
                    in 
-                     startToNextChr 
+                     fStart
                        (shd, strIdx, cursorIdx, stltl, ltltl, chr)
                    end
                | (_, _) => cursorIdx)
@@ -1360,37 +1360,14 @@ struct
           (* tl is empty; just return absIdx *) 
           absIdx
 
-  fun tillNextChr (lineGap: LineGap.t, cursorIdx, chr) =
-    let
-      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              startTillNextChr 
-                (shd, strIdx, cursorIdx, stl, ltl, chr)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let 
-                     val strIdx = strIdx - String.size shd
-                   in 
-                     startTillNextChr 
-                       (shd, strIdx, cursorIdx, stltl, ltltl, chr)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
+  fun tillNextChr (lineGap, cursorIdx, chr) =
+    nextChr (lineGap, cursorIdx, chr, startTillNextChr)
+
+  fun toNextChr (lineGap, cursorIdx, chr) =
+    nextChr (lineGap, cursorIdx, chr, startToNextChr)
 
   fun helpToPrevChr (strPos, str, absIdx, stl, ltl, origIdx, findChr) =
-    if strPos = 0 then
+    if strPos < 0 then
       case (stl, ltl) of
         (shd :: stl, lhd :: ltl) => 
           helpToPrevChr 
