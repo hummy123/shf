@@ -4,10 +4,17 @@ struct
 
   fun bufferAndSize (app: app_type, newBuffer, newWidth, newHeight) =
     let
-      val {buffer = _, windowWidth = _, windowHeight = _, startLine, cursorIdx} =
-        app
+      val
+        { mode
+        , buffer = _
+        , windowWidth = _
+        , windowHeight = _
+        , startLine
+        , cursorIdx
+        } = app
     in
-      { buffer = newBuffer
+      { mode = mode
+      , buffer = newBuffer
       , windowWidth = newWidth
       , windowHeight = newHeight
       , startLine = startLine
@@ -17,10 +24,12 @@ struct
 
   fun bufferAndCursorIdx (app: app_type, newBuffer, newCursorIdx) =
     let
-      val {buffer = _, cursorIdx = _, windowWidth, windowHeight, startLine} =
+      val
+        {mode, buffer = _, cursorIdx = _, windowWidth, windowHeight, startLine} =
         app
     in
-      { buffer = newBuffer
+      { mode = mode
+      , buffer = newBuffer
       , cursorIdx = newCursorIdx
       , windowWidth = windowWidth
       , windowHeight = windowHeight
