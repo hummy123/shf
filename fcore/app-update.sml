@@ -264,7 +264,7 @@ struct
         handleNextChr (count, app, Cursor.toNextChr, newCmd)
     | #"F" => 
         (* to chr, backward *) 
-        clearMode app
+        handleNextChr (count, app, Cursor.toPrevChr, newCmd)
     | #"g" => 
         (* go *) 
         clearMode app
