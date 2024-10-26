@@ -122,14 +122,15 @@ struct
     | #"j" => moveForwards (app, count, Cursor.viJ)
     | #"k" => moveBackward (app, count, Cursor.viK)
     | #"l" => moveForwards (app, count, Cursor.viL)
-    | #"0" => moveBackward (app, 1, Cursor.vi0)
-    | #"$" => moveForwards (app, 1, Cursor.viDlr)
     | #"w" => moveForwards (app, count, Cursor.nextWord)
     | #"W" => moveForwards (app, count, Cursor.nextWORD)
     | #"b" => moveBackward (app, count, Cursor.prevWord)
     | #"B" => moveBackward (app, count, Cursor.prevWORD)
     | #"e" => moveForwards (app, count, Cursor.endOfWord)
     | #"E" => moveForwards (app, count, Cursor.endOfWORD)
+    (* can only move to start or end of line once *)
+    | #"0" => moveBackward (app, 1, Cursor.vi0)
+    | #"$" => moveForwards (app, 1, Cursor.viDlr)
     | #"^" => firstNonSpaceChr app
     | _ =>
         (* user may be entering a cmd with more than one chr
@@ -144,6 +145,46 @@ struct
         in
           (newApp, [])
         end
+
+  (* useful reference as list of non-terminal commands *)
+  fun parseAfterCount (strPos, str, count, app, newCmd) =
+    (* we are trying to parse multi-char but non-terminal strings here.
+     * For example, we don't want to parse 3w which is a terminal commmand
+     * to go 3 words forwards
+     * but we do want to parse 3d which is a non-terminal command
+     * which can be made terminal by adding "w" or "e" at the end. 
+     * *)
+    case String.sub (str, strPos + 1) of
+      #"t" =>
+        (* to just before char, forward *)
+        0
+    | #"T" =>
+        (* to just before chr, backward *)
+        0
+    | #"y" =>
+        (* yank *)
+        0
+    | #"d" =>
+        (* delete *)
+        0
+    | #"f" =>
+        (* to chr, forward *)
+        0
+    | #"F" =>
+        (* to chr, backward *)
+        0
+    | #"g" =>
+        (* go *)
+        0
+    | #"c" =>
+        (* change *)
+        0
+    | #"/" =>
+        (* search *)
+        0
+    | _ =>
+        (* isn't a non-terminal cmd *)
+        0
 
   fun parseNormalModeCommand (app, str, newCmd) =
     if String.size str = 0 then
@@ -166,6 +207,7 @@ struct
           | CHAR_EVENT chr => handleChr (app, count, chr, str)
         else
           (* todo: continue parsing. *)
+          (* parseAfterCount (numLength, str, count, app, newCmd) *)
           raise Match
       end
 
