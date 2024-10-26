@@ -137,8 +137,33 @@ struct
     | #"B" => moveBackward (app, count, Cursor.prevWORD)
     | #"e" => moveForwards (app, count, Cursor.endOfWord)
     | #"E" => moveForwards (app, count, Cursor.endOfWORD)
-    (* can only move to start or end of line once *)
-    | #"0" => moveBackward (app, 1, Cursor.vi0)
+    (* can only move to start or end of line once 
+     * so hardcode count as 1 *)
+    | #"0" => 
+        (* 0 is a bit of a special case.
+         * If 0 is pressed without any preceding characters,
+         * then it should move cursor to the start of the line.
+         * However, if a number was pressed previously before 0 was,
+         * then this means user is entering a count.
+         * In that case, we append 0 to the string. *)
+        if String.size str > 0 then
+          let
+            val lastChr = String.sub (str, String.size str - 1)
+          in
+            if Char.isDigit lastChr then
+              let
+                val chr = Char.toString chr
+                val str = str ^ chr
+                val mode = NORMAL_MODE str
+                val newApp = AppWith.mode (app, mode)
+              in
+                (newApp, [])
+              end
+            else
+              moveBackward (app, 1, Cursor.vi0)
+          end
+        else
+          moveBackward (app, 1, Cursor.vi0)
     | #"$" => moveForwards (app, 1, Cursor.viDlr)
     | #"^" => firstNonSpaceChr app
     (* multi-char commands which can be appended *)
