@@ -112,9 +112,18 @@ struct
       let
         val chr = String.sub (str, pos)
       in
-        if chr >= #"0" andalso chr <= #"9" then getNumLength (pos + 1, str)
+        if Char.isDigit chr then getNumLength (pos + 1, str)
         else pos
       end
+
+  fun appendChr (app: app_type, chr, str) =
+    let
+      val str = str ^ Char.toString chr
+      val mode = NORMAL_MODE str
+      val newApp = AppWith.mode (app, mode)
+    in
+      (newApp, [])
+    end
 
   fun handleChr (app: app_type, count, chr, str) =
     case chr of
@@ -132,13 +141,23 @@ struct
     | #"0" => moveBackward (app, 1, Cursor.vi0)
     | #"$" => moveForwards (app, 1, Cursor.viDlr)
     | #"^" => firstNonSpaceChr app
+    (* multi-char commands which can be appended *)
+    | #"t" => appendChr (app, chr, str)
+    | #"T" => appendChr (app, chr, str)
+    | #"y" => appendChr (app, chr, str)
+    | #"d" => appendChr (app, chr, str)
+    | #"f" => appendChr (app, chr, str)
+    | #"F" => appendChr (app, chr, str)
+    | #"g" => appendChr (app, chr, str)
+    | #"c" => appendChr (app, chr, str)
     | _ =>
         (* user may be entering a cmd with more than one chr
          * such as "2dw" to delete two word
          * so add current chr to mode, and save it in the app state *)
         let
           val str =
-            if chr >= #"0" andalso chr <= #"9" then str ^ Char.toString chr
+            if Char.isDigit chr 
+            then str ^ Char.toString chr
             else ""
           val mode = NORMAL_MODE str
           val newApp = AppWith.mode (app, mode)
@@ -146,7 +165,52 @@ struct
           (newApp, [])
         end
 
+  fun helpMoveToChrNext (app: app_type, buffer, cursorIdx, count, fMove, chr) =
+    if count = 0 then
+      let
+        val {windowWidth, windowHeight, startLine, ...} = app
+        (* todo: get new startLine if cursor has moved out of screen *)
+
+        (* move LineGap to first line displayed on screen, and build new text *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+        val drawMsg = TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+        val mode = NORMAL_MODE ""
+        val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx, mode)
+      in
+        (newApp, drawMsg)
+      end
+    else
+      let
+        (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val cursorIdx = fMove (buffer, cursorIdx, chr)
+      in
+        helpMoveToChrNext (app, buffer, cursorIdx, count - 1, fMove, chr)
+      end
+
+  fun moveToChrNext (app: app_type, count, fMove, chr) =
+    let val {cursorIdx, buffer, ...} = app
+    in helpMoveToChrNext (app, buffer, cursorIdx, count, fMove, chr)
+    end
+
+  (* temp placeholder function *)
+  fun clearMode app =
+    let
+      val mode = NORMAL_MODE ""
+      val newApp = AppWith.mode (app, mode)
+    in
+      (newApp, [])
+    end
+
+  fun handleNextChr (count, app, fMove, newCmd) =
+    case newCmd of
+      CHAR_EVENT chr => moveToChrNext (app, count, fMove, chr)
+    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+
   (* useful reference as list of non-terminal commands *)
+  (* todo: actually parse, checking if there are further strings or input *)
   fun parseAfterCount (strPos, str, count, app, newCmd) =
     (* we are trying to parse multi-char but non-terminal strings here.
      * For example, we don't want to parse 3w which is a terminal commmand
@@ -154,43 +218,51 @@ struct
      * but we do want to parse 3d which is a non-terminal command
      * which can be made terminal by adding "w" or "e" at the end. 
      * *)
-    case String.sub (str, strPos + 1) of
+    case String.sub (str, strPos) of
       #"t" =>
-        (* to just before char, forward *)
-        0
-    | #"T" =>
-        (* to just before chr, backward *)
-        0
-    | #"y" =>
-        (* yank *)
-        0
-    | #"d" =>
-        (* delete *)
-        0
+        (* to just before char, forward 
+         * tillNextChr with count of 1 has same effect
+         * as tillNextChr with any count above 1
+         * so just hardcode 1 *)
+        handleNextChr (1, app, Cursor.tillNextChr, newCmd)
+    | #"T" => 
+        (* to just before chr, backward *) 
+        clearMode app
+    | #"y" => 
+        (* yank *) 
+        clearMode app
+    | #"d" => 
+        (* delete *) 
+        clearMode app
     | #"f" =>
         (* to chr, forward *)
-        0
-    | #"F" =>
-        (* to chr, backward *)
-        0
-    | #"g" =>
-        (* go *)
-        0
-    | #"c" =>
-        (* change *)
-        0
-    | #"/" =>
-        (* search *)
-        0
+        handleNextChr (count, app, Cursor.toNextChr, newCmd)
+    | #"F" => 
+        (* to chr, backward *) 
+        clearMode app
+    | #"g" => 
+        (* go *) 
+        clearMode app
+    | #"c" => 
+        (* change *) 
+        clearMode app
     | _ =>
-        (* isn't a non-terminal cmd *)
-        0
+        (* isn't a non-terminal cmd
+         * this case should never happen*)
+        clearMode app
 
   fun parseNormalModeCommand (app, str, newCmd) =
     if String.size str = 0 then
       case newCmd of
         RESIZE_EVENT (width, height) => resizeText (app, width, height)
       | CHAR_EVENT chr => handleChr (app, 1, chr, str)
+    else if String.size str = 1 then
+      case newCmd of
+        RESIZE_EVENT (width, height) => resizeText (app, width, height)
+      | CHAR_EVENT chr =>
+          (case Int.fromString str of
+             SOME count => handleChr (app, count, chr, str)
+           | NONE => parseAfterCount (0, str, 1, app, newCmd))
     else
       let
         val numLength = getNumLength (0, str)
@@ -205,10 +277,12 @@ struct
           case newCmd of
             RESIZE_EVENT (width, height) => resizeText (app, width, height)
           | CHAR_EVENT chr => handleChr (app, count, chr, str)
+        else if numLength + 1 < String.size str then
+          (* continue parsing. *)
+          parseAfterCount (numLength + 1, str, count, app, newCmd)
         else
-          (* todo: continue parsing. *)
-          (* parseAfterCount (numLength, str, count, app, newCmd) *)
-          raise Match
+          (* continue parsing. *)
+          parseAfterCount (numLength, str, count, app, newCmd)
       end
 
   fun updateNormalMode (app, str, msg) = parseNormalModeCommand (app, str, msg)

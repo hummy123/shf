@@ -1262,4 +1262,72 @@ struct
       | (_, _) =>
           cursorIdx
     end
+
+  fun helpNextChr (strPos, str, absIdx, stl, ltl, origIdx, findChr, fResult) =
+    if strPos = String.size str then
+      case (stl, ltl) of
+        (shd :: stl, lhd :: ltl) => 
+          helpNextChr 
+            (0, shd, absIdx, stl, ltl, origIdx, findChr, fResult)
+      | (_, _) => 
+          origIdx
+    else 
+      if String.sub (str, strPos) = findChr then
+        fResult absIdx 
+      else
+        helpNextChr
+          (strPos + 1, str, absIdx + 1, stl, ltl, origIdx, findChr, fResult)
+
+  fun startNextChr (shd, strIdx, absIdx, stl, ltl, findChr, fResult) =
+    (* we want to start iterating from next char after strIdx *)
+    if strIdx - 1 < String.size shd then
+      helpNextChr 
+        (strIdx + 1, shd, absIdx + 1, stl, ltl, absIdx, findChr, fResult)
+    else
+      case (stl, ltl) of
+        (stlhd :: stltl, ltlhd :: ltltl) =>
+          helpNextChr
+            (0, stlhd, absIdx + 1, stltl, ltltl, absIdx, findChr, fResult)
+      | (_, _) => 
+          (* tl is empty; just return absIdx *) 
+          absIdx
+
+  fun nextChr (lineGap: LineGap.t, cursorIdx, chr, fResult) =
+    let
+      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
+    in
+      case (rightStrings, rightLines) of
+        (shd :: stl, lhd :: ltl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size shd then
+              (* strIdx is in this string *)
+              startNextChr 
+                (shd, strIdx, cursorIdx, stl, ltl, chr, fResult)
+            else
+              (* strIdx is in tl *)
+              (case (stl, ltl) of
+                 (stlhd :: stltl, ltlhd :: ltltl) =>
+                   let 
+                     val strIdx = strIdx - String.size shd
+                   in 
+                     startNextChr 
+                       (shd, strIdx, cursorIdx, stl, ltl, chr, fResult)
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) => cursorIdx
+    end
+
+  fun tillNextChrResult absIdx = absIdx - 1
+
+  fun tillNextChr (lineGap, cursorIdx, chr) =
+    nextChr (lineGap, cursorIdx, chr, tillNextChrResult)
+
+  fun toNextChrResult absIdx = absIdx
+
+  fun toNextChr (lineGap, cursorIdx, chr) =
+    nextChr (lineGap, cursorIdx, chr, toNextChrResult)
 end
