@@ -1411,7 +1411,7 @@ struct
         val chr = String.sub (str, strPos)
       in
         if chr = findChr then
-          absIdx + 1
+          lastNonLine
         else
           let
             val lastNonLine =
