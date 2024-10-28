@@ -2,6 +2,26 @@ structure AppWith =
 struct
   open AppType
 
+  fun startLine (app: app_type, startLine, newBuffer) =
+    let
+      val
+        { startLine = _
+        , buffer = _
+        , mode
+        , windowWidth
+        , windowHeight
+        , cursorIdx
+        } = app
+    in
+      { startLine = startLine
+      , buffer = newBuffer
+      , mode = mode
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      , cursorIdx = cursorIdx
+      }
+    end
+
   fun bufferAndSize (app: app_type, newBuffer, newWidth, newHeight) =
     let
       val

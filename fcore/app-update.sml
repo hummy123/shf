@@ -25,13 +25,15 @@ struct
         val {windowWidth, windowHeight, startLine, ...} = app
 
         (* move LineGap to first line displayed on screen, and build new text *)
-        val buffer = LineGap.goToLine (startLine, buffer)
+        val buffer = 
+          LineGap.goToLine (startLine, buffer)
 
         val startLine = TextWindow.getStartLine
           (buffer, startLine, cursorIdx, windowWidth, windowHeight)
 
-        val drawMsg = TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+        val drawMsg = 
+          TextBuilder.build
+            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
         val mode = NORMAL_MODE ""
         val newApp = AppWith.bufferAndCursorIdx
@@ -132,6 +134,20 @@ struct
       (newApp, [])
     end
 
+  fun moveLine (app: app_type, f) =
+    let
+      val {cursorIdx, buffer, windowWidth, windowHeight, startLine, ...} = app
+      val startLine = f (startLine, 1)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+      val newApp = AppWith.startLine (app, startLine, buffer)
+
+      val drawMsg = TextBuilder.build
+        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+    in
+      (newApp, drawMsg)
+    end
+
   fun handleChr (app: app_type, count, chr, str) =
     case chr of
       #"h" => moveBackward (app, count, Cursor.viH)
@@ -144,6 +160,9 @@ struct
     | #"B" => moveBackward (app, count, Cursor.prevWORD)
     | #"e" => moveForwards (app, count, Cursor.endOfWord)
     | #"E" => moveForwards (app, count, Cursor.endOfWORD)
+    (* PLACEHOLDER *)
+    | #"," => moveLine (app, op+)
+    | #"." => moveLine (app, op-)
     (* can only move to start or end of line once 
      * so hardcode count as 1 *)
     | #"0" =>
