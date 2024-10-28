@@ -19,7 +19,7 @@ struct
       (newApp, drawMsg)
     end
 
-  fun helpMoveBackward (app: app_type, buffer, cursorIdx, count, fMove) =
+  fun helpMove (app: app_type, buffer, cursorIdx, count, fMove) =
     if count = 0 then
       let
         val {windowWidth, windowHeight, startLine, ...} = app
@@ -50,50 +50,12 @@ struct
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val cursorIdx = fMove (buffer, cursorIdx)
       in
-        helpMoveBackward (app, buffer, cursorIdx, count - 1, fMove)
+        helpMove (app, buffer, cursorIdx, count - 1, fMove)
       end
 
-  fun moveBackward (app: app_type, count, fMove) =
+  fun move (app: app_type, count, fMove) =
     let val {cursorIdx, buffer, ...} = app
-    in helpMoveBackward (app, buffer, cursorIdx, count, fMove)
-    end
-
-  fun helpMoveForwards (app: app_type, buffer, cursorIdx, count, fMove) =
-    if count = 0 then
-      let
-        val {windowWidth, windowHeight, startLine, ...} = app
-
-        (* move LineGap to first line displayed on screen *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        (* get new startLine which may move screen depending on cursor movements *)
-        val startLine = TextWindow.getStartLine
-          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
-        (* move buffer to new startLine as required by TextBuilder.build *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        val drawMsg = TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-        val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, mode, startLine)
-      in
-        (newApp, drawMsg)
-      end
-    else
-      let
-        (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val cursorIdx = fMove (buffer, cursorIdx)
-      in
-        helpMoveForwards (app, buffer, cursorIdx, count - 1, fMove)
-      end
-
-  fun moveForwards (app: app_type, count, fMove) =
-    let val {cursorIdx, buffer, ...} = app
-    in helpMoveForwards (app, buffer, cursorIdx, count, fMove)
+    in helpMove (app, buffer, cursorIdx, count, fMove)
     end
 
   fun firstNonSpaceChr (app: app_type) =
@@ -107,8 +69,6 @@ struct
       (* move cursorIdx to first character on line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.firstNonSpaceChr (buffer, cursorIdx)
-
-      (* todo: get new startLine if cursor has moved out of screen *)
 
       (* move LineGap to first line displayed on screen, and build new text *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -140,35 +100,18 @@ struct
       (newApp, [])
     end
 
-  fun moveLine (app: app_type, f) =
-    let
-      val {cursorIdx, buffer, windowWidth, windowHeight, startLine, ...} = app
-      val startLine = f (startLine, 1)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val newApp = AppWith.startLine (app, startLine, buffer)
-
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-    in
-      (newApp, drawMsg)
-    end
-
   fun handleChr (app: app_type, count, chr, str) =
     case chr of
-      #"h" => moveBackward (app, count, Cursor.viH)
-    | #"j" => moveForwards (app, count, Cursor.viJ)
-    | #"k" => moveBackward (app, count, Cursor.viK)
-    | #"l" => moveForwards (app, count, Cursor.viL)
-    | #"w" => moveForwards (app, count, Cursor.nextWord)
-    | #"W" => moveForwards (app, count, Cursor.nextWORD)
-    | #"b" => moveBackward (app, count, Cursor.prevWord)
-    | #"B" => moveBackward (app, count, Cursor.prevWORD)
-    | #"e" => moveForwards (app, count, Cursor.endOfWord)
-    | #"E" => moveForwards (app, count, Cursor.endOfWORD)
-    (* PLACEHOLDER *)
-    | #"," => moveLine (app, op+)
-    | #"." => moveLine (app, op-)
+      #"h" => move (app, count, Cursor.viH)
+    | #"j" => move (app, count, Cursor.viJ)
+    | #"k" => move (app, count, Cursor.viK)
+    | #"l" => move (app, count, Cursor.viL)
+    | #"w" => move (app, count, Cursor.nextWord)
+    | #"W" => move (app, count, Cursor.nextWORD)
+    | #"b" => move (app, count, Cursor.prevWord)
+    | #"B" => move (app, count, Cursor.prevWORD)
+    | #"e" => move (app, count, Cursor.endOfWord)
+    | #"E" => move (app, count, Cursor.endOfWORD)
     (* can only move to start or end of line once 
      * so hardcode count as 1 *)
     | #"0" =>
@@ -192,11 +135,11 @@ struct
                 (newApp, [])
               end
             else
-              moveBackward (app, 1, Cursor.vi0)
+              move (app, 1, Cursor.vi0)
           end
         else
-          moveBackward (app, 1, Cursor.vi0)
-    | #"$" => moveForwards (app, 1, Cursor.viDlr)
+          move (app, 1, Cursor.vi0)
+    | #"$" => move (app, 1, Cursor.viDlr)
     | #"^" => firstNonSpaceChr app
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
@@ -219,16 +162,24 @@ struct
           (newApp, [])
         end
 
-  fun helpMoveToChrNext (app: app_type, buffer, cursorIdx, count, fMove, chr) =
+  fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
       let
         val {windowWidth, windowHeight, startLine, ...} = app
-        (* todo: get new startLine if cursor has moved out of screen *)
 
-        (* move LineGap to first line displayed on screen, and build new text *)
+        (* move LineGap to first line displayed on screen *)
         val buffer = LineGap.goToLine (startLine, buffer)
-        val drawMsg = TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+        (* get new startLine which may move screen depending on cursor movements *)
+        val startLine = TextWindow.getStartLine
+          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
+        (* move buffer to new startLine as required by TextBuilder.build *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+
+        val drawMsg = 
+          TextBuilder.build
+            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
         val mode = NORMAL_MODE ""
         val newApp = AppWith.bufferAndCursorIdx
@@ -242,12 +193,12 @@ struct
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val cursorIdx = fMove (buffer, cursorIdx, chr)
       in
-        helpMoveToChrNext (app, buffer, cursorIdx, count - 1, fMove, chr)
+        helpMoveToChr (app, buffer, cursorIdx, count - 1, fMove, chr)
       end
 
-  fun moveToChrNext (app: app_type, count, fMove, chr) =
+  fun moveToChr (app: app_type, count, fMove, chr) =
     let val {cursorIdx, buffer, ...} = app
-    in helpMoveToChrNext (app, buffer, cursorIdx, count, fMove, chr)
+    in helpMoveToChr (app, buffer, cursorIdx, count, fMove, chr)
     end
 
   (* temp placeholder function *)
@@ -259,17 +210,17 @@ struct
       (newApp, [])
     end
 
-  fun handleNextChr (count, app, fMove, newCmd) =
+  fun handleMoveToChr (count, app, fMove, newCmd) =
     case newCmd of
-      CHAR_EVENT chr => moveToChrNext (app, count, fMove, chr)
+      CHAR_EVENT chr => moveToChr (app, count, fMove, chr)
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
 
   fun handleGo (count, app, newCmd) =
     case newCmd of
       CHAR_EVENT chr =>
         (case chr of
-           #"e" => moveBackward (app, count, Cursor.endOfPrevWord)
-         | #"E" => moveBackward (app, count, Cursor.endOfPrevWORD)
+           #"e" => move (app, count, Cursor.endOfPrevWord)
+         | #"E" => move (app, count, Cursor.endOfPrevWORD)
          | _ => clearMode app)
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
 
@@ -288,20 +239,28 @@ struct
          * tillNextChr with count of 1 has same effect
          * as tillNextChr with any count above 1
          * so just hardcode 1 *)
-        handleNextChr (1, app, Cursor.tillNextChr, newCmd)
+        handleMoveToChr (1, app, Cursor.tillNextChr, newCmd)
     | #"T" =>
         (* to just before chr, backward *)
-        handleNextChr (1, app, Cursor.tillPrevChr, newCmd)
-    | #"y" => (* yank *) clearMode app
-    | #"d" => (* delete *) clearMode app
+        handleMoveToChr (1, app, Cursor.tillPrevChr, newCmd)
+    | #"y" => 
+        (* yank *) 
+        clearMode app
+    | #"d" => 
+        (* delete *) 
+        clearMode app
     | #"f" =>
         (* to chr, forward *)
-        handleNextChr (count, app, Cursor.toNextChr, newCmd)
+        handleMoveToChr (count, app, Cursor.toNextChr, newCmd)
     | #"F" =>
         (* to chr, backward *)
-        handleNextChr (count, app, Cursor.toPrevChr, newCmd)
-    | #"g" => (* go *) handleGo (count, app, newCmd)
-    | #"c" => (* change *) clearMode app
+        handleMoveToChr (count, app, Cursor.toPrevChr, newCmd)
+    | #"g" => 
+        (* go *) 
+        handleGo (count, app, newCmd)
+    | #"c" => 
+        (* change *) 
+        clearMode app
     | _ =>
         (* isn't a non-terminal cmd
          * this case should never happen*)
