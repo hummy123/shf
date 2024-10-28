@@ -234,6 +234,15 @@ struct
       CHAR_EVENT chr => moveToChrNext (app, count, fMove, chr)
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
 
+  fun handleGo (count, app, newCmd) =
+    case newCmd of
+      CHAR_EVENT chr => 
+        (case chr of
+           #"e" => moveBackward (app, count, Cursor.endOfPrevWord)
+         | #"E" => moveBackward (app, count, Cursor.endOfPrevWORD)
+         | _ => clearMode app)
+    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+
   (* useful reference as list of non-terminal commands *)
   (* todo: actually parse, checking if there are further strings or input *)
   fun parseAfterCount (strPos, str, count, app, newCmd) =
@@ -267,7 +276,7 @@ struct
         handleNextChr (count, app, Cursor.toPrevChr, newCmd)
     | #"g" => 
         (* go *) 
-        clearMode app
+        handleGo (count, app, newCmd)
     | #"c" => 
         (* change *) 
         clearMode app
