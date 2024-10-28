@@ -39,6 +39,68 @@ struct
             lineNum - 1
       end
 
+  fun getStartLineAfter 
+     ( sIdx, shd, lineNum, absIdx, cursorIdx, stl
+     , maxWidth, maxHeight, curWidth, curHeight
+     , origLine
+     ) =
+      if sIdx = String.size shd then
+        case stl of
+          hd :: tl =>
+            getStartLineAfter 
+              ( 0, hd, lineNum, absIdx, cursorIdx, tl
+              , maxWidth, maxHeight, curWidth, curHeight
+              , origLine
+              )
+        | [] =>
+            origLine
+      else
+        if absIdx = cursorIdx then
+          origLine
+        else
+          let
+            val chr = String.sub (shd, sIdx)
+          in
+            if chr = #"\n" then
+              if curHeight + (ySpace * 3) >= maxHeight then
+                getStartLineAfter 
+                  ( sIdx + 1, shd, lineNum + 1, absIdx + 1, cursorIdx, stl
+                  , maxWidth, maxHeight, 0, 0
+                  , origLine + 1
+                  )
+              else
+                getStartLineAfter 
+                  ( sIdx + 1, shd, lineNum + 1, absIdx + 1, cursorIdx, stl
+                  , maxWidth, maxHeight, 0, curHeight + ySpace
+                  , origLine
+                  )
+            else 
+              if curWidth + xSpace <= maxWidth then
+                let
+                  val curWidth = curWidth + xSpace
+                in
+                  getStartLineAfter 
+                    ( sIdx + 1, shd, lineNum, absIdx + 1, cursorIdx, stl
+                    , maxWidth, maxHeight, curWidth, curHeight
+                    , origLine
+                    )
+                end
+              else
+                (* have to create visual line break *)
+                if curHeight + (ySpace * 3) >= maxHeight then
+                  getStartLineAfter
+                    ( sIdx + 1, shd, lineNum + 1, absIdx + 1, cursorIdx, stl
+                    , maxWidth, maxHeight, 0, 0
+                    , origLine + 1
+                    )
+                else
+                  getStartLineAfter
+                    ( sIdx + 1, shd, lineNum + 1, absIdx + 1, cursorIdx, stl
+                    , maxWidth, maxHeight, 0, 0
+                    , origLine
+                    )
+          end
+
   (* Prerequisite: LineGap is moved to oldLine first. *)
   fun getStartLine (lineGap: LineGap.t, oldLine, cursorIdx, maxWidth, maxHeight) =
     let
@@ -70,7 +132,12 @@ struct
                 (startIdx + 1, rStrHd, oldLine, absIdx + 1, cursorIdx, leftStrings)
             else if cursorIdx > absIdx then
               (* possibly move downwards *)
-              oldLine
+              let val _ = print "start 133\n" in
+              getStartLineAfter 
+                 ( startIdx, rStrHd, oldLine, absIdx, cursorIdx, rStrTl
+                 , maxWidth, maxHeight, 0, 0
+                 , oldLine
+                 ) end
             else
               (* keep current line *)
               Int.max (oldLine - 1, 0)

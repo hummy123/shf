@@ -23,12 +23,13 @@ struct
     if count = 0 then
       let
         val {windowWidth, windowHeight, startLine, ...} = app
-        (* todo: get new startLine if cursor has moved out of screen *)
-        val startLine = TextWindow.getStartLine
-          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
 
         (* move LineGap to first line displayed on screen, and build new text *)
         val buffer = LineGap.goToLine (startLine, buffer)
+
+        val startLine = TextWindow.getStartLine
+          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
         val drawMsg = TextBuilder.build
           (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
@@ -60,6 +61,10 @@ struct
 
         (* move LineGap to first line displayed on screen, and build new text *)
         val buffer = LineGap.goToLine (startLine, buffer)
+
+        val startLine = TextWindow.getStartLine
+          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
         val drawMsg = TextBuilder.build
           (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
