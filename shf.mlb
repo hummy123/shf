@@ -11,11 +11,15 @@ message-types/mailbox-type.sml
 
 fcore/app-type.sml
 fcore/app-with.sml
+
+fcore/text-constants.sml
 ann
   "allowVectorExps true"
 in
   fcore/text-builder.sml
 end
+fcore/text-window.sml
+
 fcore/cursor.sml
 fcore/app-update.sml
 

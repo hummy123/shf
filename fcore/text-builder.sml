@@ -7,10 +7,7 @@ end
 
 structure TextBuilder :> TEXT_BUILDER =
 struct
-  val xSpace = 13
-  val xSpace3 = xSpace * 3
-  val ySpace = 25
-  val fontSize = 30.0
+  open TextConstants
 
   fun accToDrawMsg (textAcc, cursorAcc) =
     let
@@ -480,7 +477,6 @@ struct
   fun build
     (startLine, cursorPos, lineGap: LineGap.t, windowWidth, windowHeight) =
     let
-      val lineGap = LineGap.goToLine (startLine, lineGap)
       val {rightStrings, rightLines, line = curLine, idx = curIdx, ...} = lineGap
     in
       case (rightStrings, rightLines) of
@@ -504,9 +500,7 @@ struct
                 end
               else
                 0
-
               val absIdx = curIdx + startIdx
-
           in
             if cursorPos < curIdx + String.size rStrHd then
               (* if cursor is within string *)

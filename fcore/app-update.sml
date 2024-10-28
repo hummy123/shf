@@ -24,6 +24,8 @@ struct
       let
         val {windowWidth, windowHeight, startLine, ...} = app
         (* todo: get new startLine if cursor has moved out of screen *)
+        val startLine = TextWindow.getStartLine
+          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
 
         (* move LineGap to first line displayed on screen, and build new text *)
         val buffer = LineGap.goToLine (startLine, buffer)
@@ -31,7 +33,8 @@ struct
           (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
         val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx, mode)
+        val newApp = AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, mode, startLine)
       in
         (newApp, drawMsg)
       end
@@ -61,7 +64,8 @@ struct
           (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
         val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx, mode)
+        val newApp = AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, mode, startLine)
       in
         (newApp, drawMsg)
       end
@@ -99,7 +103,8 @@ struct
         (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
       val mode = NORMAL_MODE ""
-      val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx, mode)
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine)
     in
       (newApp, drawMsg)
     end
@@ -109,11 +114,8 @@ struct
     if pos = String.size str then
       pos
     else
-      let
-        val chr = String.sub (str, pos)
-      in
-        if Char.isDigit chr then getNumLength (pos + 1, str)
-        else pos
+      let val chr = String.sub (str, pos)
+      in if Char.isDigit chr then getNumLength (pos + 1, str) else pos
       end
 
   fun appendChr (app: app_type, chr, str) =
@@ -139,7 +141,7 @@ struct
     | #"E" => moveForwards (app, count, Cursor.endOfWORD)
     (* can only move to start or end of line once 
      * so hardcode count as 1 *)
-    | #"0" => 
+    | #"0" =>
         (* 0 is a bit of a special case.
          * If 0 is pressed without any preceding characters,
          * then it should move cursor to the start of the line.
@@ -180,10 +182,7 @@ struct
          * such as "2dw" to delete two word
          * so add current chr to mode, and save it in the app state *)
         let
-          val str =
-            if Char.isDigit chr 
-            then str ^ Char.toString chr
-            else ""
+          val str = if Char.isDigit chr then str ^ Char.toString chr else ""
           val mode = NORMAL_MODE str
           val newApp = AppWith.mode (app, mode)
         in
@@ -202,7 +201,8 @@ struct
           (startLine, cursorIdx, buffer, windowWidth, windowHeight)
 
         val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx (app, buffer, cursorIdx, mode)
+        val newApp = AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, mode, startLine)
       in
         (newApp, drawMsg)
       end
@@ -236,7 +236,7 @@ struct
 
   fun handleGo (count, app, newCmd) =
     case newCmd of
-      CHAR_EVENT chr => 
+      CHAR_EVENT chr =>
         (case chr of
            #"e" => moveBackward (app, count, Cursor.endOfPrevWord)
          | #"E" => moveBackward (app, count, Cursor.endOfPrevWORD)
@@ -259,27 +259,19 @@ struct
          * as tillNextChr with any count above 1
          * so just hardcode 1 *)
         handleNextChr (1, app, Cursor.tillNextChr, newCmd)
-    | #"T" => 
-        (* to just before chr, backward *) 
+    | #"T" =>
+        (* to just before chr, backward *)
         handleNextChr (1, app, Cursor.tillPrevChr, newCmd)
-    | #"y" => 
-        (* yank *) 
-        clearMode app
-    | #"d" => 
-        (* delete *) 
-        clearMode app
+    | #"y" => (* yank *) clearMode app
+    | #"d" => (* delete *) clearMode app
     | #"f" =>
         (* to chr, forward *)
         handleNextChr (count, app, Cursor.toNextChr, newCmd)
-    | #"F" => 
-        (* to chr, backward *) 
+    | #"F" =>
+        (* to chr, backward *)
         handleNextChr (count, app, Cursor.toPrevChr, newCmd)
-    | #"g" => 
-        (* go *) 
-        handleGo (count, app, newCmd)
-    | #"c" => 
-        (* change *) 
-        clearMode app
+    | #"g" => (* go *) handleGo (count, app, newCmd)
+    | #"c" => (* change *) clearMode app
     | _ =>
         (* isn't a non-terminal cmd
          * this case should never happen*)

@@ -22,7 +22,8 @@ struct
       }
     end
 
-  fun bufferAndCursorIdx (app: app_type, newBuffer, newCursorIdx, newMode) =
+  fun bufferAndCursorIdx
+    (app: app_type, newBuffer, newCursorIdx, newMode, newStartLine) =
     let
       val
         { mode = _
@@ -30,15 +31,15 @@ struct
         , cursorIdx = _
         , windowWidth
         , windowHeight
-        , startLine
+        , startLine = _
         } = app
     in
       { mode = newMode
       , buffer = newBuffer
       , cursorIdx = newCursorIdx
+      , startLine = newStartLine
       , windowWidth = windowWidth
       , windowHeight = windowHeight
-      , startLine = startLine
       }
     end
 
