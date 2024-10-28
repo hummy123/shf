@@ -65,7 +65,7 @@ struct
               if curHeight + (ySpace * 3) >= maxHeight then
                 getStartLineAfter 
                   ( sIdx + 1, shd, lineNum + 1, absIdx + 1, cursorIdx, stl
-                  , maxWidth, maxHeight, 0, 0
+                  , maxWidth, maxHeight, 0, curHeight + ySpace
                   , origLine + 1
                   )
               else
@@ -90,13 +90,13 @@ struct
                 if curHeight + (ySpace * 3) >= maxHeight then
                   getStartLineAfter
                     ( sIdx + 1, shd, lineNum + 1, absIdx + 1, cursorIdx, stl
-                    , maxWidth, maxHeight, 0, 0
+                    , maxWidth, maxHeight, 0, curHeight + ySpace
                     , origLine + 1
                     )
                 else
                   getStartLineAfter
                     ( sIdx + 1, shd, lineNum + 1, absIdx + 1, cursorIdx, stl
-                    , maxWidth, maxHeight, 0, 0
+                    , maxWidth, maxHeight, 0, curHeight + ySpace
                     , origLine
                     )
           end
@@ -132,12 +132,11 @@ struct
                 (startIdx + 1, rStrHd, oldLine, absIdx + 1, cursorIdx, leftStrings)
             else if cursorIdx > absIdx then
               (* possibly move downwards *)
-              let val _ = print "start 133\n" in
               getStartLineAfter 
                  ( startIdx, rStrHd, oldLine, absIdx, cursorIdx, rStrTl
                  , maxWidth, maxHeight, 0, 0
                  , oldLine
-                 ) end
+                 )
             else
               (* keep current line *)
               Int.max (oldLine - 1, 0)
