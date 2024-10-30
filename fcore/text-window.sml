@@ -144,4 +144,121 @@ struct
       | (_, _) => 
           oldLine
     end
+
+  fun helpCentreCursor (strPos, str, lineNum, stl, maxW, halfH, curW, curH) =
+    if strPos < 0 then
+      case stl of
+        hd :: tl =>
+          helpCentreCursor 
+            (String.size hd - 1, hd, lineNum, tl, maxW, halfH, curW, curH)
+      | [] =>
+          (* return 0 for start of buffer *)
+          0
+    else
+      let
+        val chr = String.sub (str, strPos)
+      in
+        if chr = #"\n" then
+          if curH + (ySpace * 3) >= halfH then
+            (* if we exceeded half the screen *)
+            lineNum
+          else
+            helpCentreCursor 
+              ( strPos - 1, str, lineNum - 1, stl, maxW, halfH
+              , 0, curH + ySpace
+              )
+        else 
+          if curW + xSpace <= maxW then
+            let
+              val curW = curW + xSpace
+            in
+              helpCentreCursor 
+                ( strPos - 1, str, lineNum, stl, maxW, halfH
+                , curW + xSpace, curH
+                )
+            end
+          else
+            (* have to create visual line break *)
+            if curH + (ySpace * 3) >= halfH then
+              (* if at limit, return current line lineNum *)
+              lineNum
+            else
+              helpCentreCursor 
+                ( strPos - 1, str, lineNum - 1, stl, maxW, halfH
+                , 0, curH + ySpace
+                )
+      end
+
+  (* search for prev \n, and once found,
+   * call function to return startLine where cursor is centered *)
+  fun getCursorStartLine (strPos, str, lineNum, stl, maxW, halfH) =
+    if strPos < 0 then
+      case stl of
+        hd :: tl =>
+          getCursorStartLine
+            (String.size hd - 1, str, lineNum, tl, maxW, halfH)
+      | [] =>
+          0
+    else
+      let
+        val chr = String.sub (str, strPos)
+      in
+        if chr = #"\n" then
+          (* \n found *)
+          helpCentreCursor
+            (strPos - 1, str, lineNum - 1, stl, maxW, halfH, xSpace, ySpace)
+        else
+          getCursorStartLine
+            (strPos - 1, str, lineNum, stl, maxW, halfH)
+      end
+
+  (* Prerequisite: LineGap is moved to cursor *)
+  fun getStartLineWithCursorCentered 
+    (lineGap: LineGap.t, cursorIdx, origLine, maxWidth, maxHeight) =
+      let
+        val {rightStrings, rightLines, idx = bufferIdx, line = bufferLine, leftStrings, ...} = lineGap
+      in
+        case (rightStrings, rightLines) of
+          (shd :: stl, lhd :: ltl) =>
+            let
+              (* convert absolute cursorIdx to idx relative to hd string *)
+              val strIdx = cursorIdx - bufferIdx
+            in
+              if strIdx < String.size shd then
+                (* strIdx is in hd *)
+                let
+                  val lineNum = 
+                    if Vector.length lhd = 0 then
+                      bufferLine
+                    else if Vector.length lhd = 1 then
+                      let
+                        val lineIdx = Vector.sub (lhd, 0)
+                      in
+                        if lineIdx < strIdx then
+                          bufferLine + 1
+                        else
+                          bufferLine
+                      end
+                    else
+                      let
+                        val firstLineIdx = Vector.sub (lhd, 0)
+                      in
+                        if firstLineIdx > strIdx then
+                          bufferLine
+                        else if firstLineIdx < strIdx then
+                          Cursor.binSearch (strIdx - 1, lhd) + bufferLine
+                        else
+                          bufferLine + 1
+                      end
+                in
+                  getCursorStartLine 
+                    (strIdx, shd, lineNum, leftStrings, maxWidth, maxHeight div 2)
+                end
+              else
+                (* todo: strIdx is in tl *)
+                raise Match
+            end
+        | (_, _) =>
+            origLine
+      end
 end

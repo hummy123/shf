@@ -19,6 +19,26 @@ struct
       (newApp, drawMsg)
     end
 
+  fun centreToCursor (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, startLine = origLine, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val startLine = TextWindow.getStartLineWithCursorCentered 
+        (buffer, cursorIdx, origLine, windowWidth, windowHeight)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+
+      val drawMsg = 
+        TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+    in
+      (newApp, drawMsg)
+    end
+
   fun moveToStart (app: app_type) =
     let
       val {buffer, windowWidth, windowHeight, startLine, ...} = app
@@ -131,6 +151,7 @@ struct
     | #"B" => move (app, count, Cursor.prevWORD)
     | #"e" => move (app, count, Cursor.endOfWord)
     | #"E" => move (app, count, Cursor.endOfWORD)
+    | #"z" => centreToCursor app
     (* can only move to start or end of line once 
      * so hardcode count as 1 *)
     | #"0" =>
