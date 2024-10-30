@@ -196,7 +196,7 @@ struct
       case stl of
         hd :: tl =>
           getCursorStartLine
-            (String.size hd - 1, str, lineNum, tl, maxW, halfH)
+            (String.size hd - 1, hd, lineNum, tl, maxW, halfH)
       | [] =>
           0
     else
@@ -210,6 +210,30 @@ struct
         else
           getCursorStartLine
             (strPos - 1, str, lineNum, stl, maxW, halfH)
+      end
+
+  fun getLineNum (strIdx, lhd, bufferLine) =
+    if Vector.length lhd = 0 then
+      bufferLine
+    else if Vector.length lhd = 1 then
+      let
+        val lineIdx = Vector.sub (lhd, 0)
+      in
+        if lineIdx < strIdx then
+          bufferLine + 1
+        else
+          bufferLine
+      end
+    else
+      let
+        val firstLineIdx = Vector.sub (lhd, 0)
+      in
+        if firstLineIdx > strIdx then
+          bufferLine
+        else if firstLineIdx < strIdx then
+          Cursor.binSearch (strIdx - 1, lhd) + bufferLine
+        else
+          bufferLine + 1
       end
 
   (* Prerequisite: LineGap is moved to cursor *)
@@ -227,36 +251,26 @@ struct
               if strIdx < String.size shd then
                 (* strIdx is in hd *)
                 let
-                  val lineNum = 
-                    if Vector.length lhd = 0 then
-                      bufferLine
-                    else if Vector.length lhd = 1 then
-                      let
-                        val lineIdx = Vector.sub (lhd, 0)
-                      in
-                        if lineIdx < strIdx then
-                          bufferLine + 1
-                        else
-                          bufferLine
-                      end
-                    else
-                      let
-                        val firstLineIdx = Vector.sub (lhd, 0)
-                      in
-                        if firstLineIdx > strIdx then
-                          bufferLine
-                        else if firstLineIdx < strIdx then
-                          Cursor.binSearch (strIdx - 1, lhd) + bufferLine
-                        else
-                          bufferLine + 1
-                      end
+                  val lineNum = getLineNum (strIdx, lhd, bufferLine)
                 in
                   getCursorStartLine 
                     (strIdx, shd, lineNum, leftStrings, maxWidth, maxHeight)
                 end
               else
-                (* todo: strIdx is in tl *)
-                raise Match
+                (* strIdx is in tl *)
+                case (stl, ltl) of
+                  (stlhd :: stltl, ltlhd :: _) =>
+                    let
+                      val strIdx = strIdx - String.size shd
+                      val bufferLine = bufferLine + Vector.length lhd
+                      val lineNum = getLineNum (strIdx, ltlhd, bufferLine)
+                      val leftStrings = shd :: leftStrings
+                    in
+                      getCursorStartLine 
+                        (strIdx, stlhd, lineNum, leftStrings, maxWidth, maxHeight)
+                    end
+                | (_, _) =>
+                    origLine
             end
         | (_, _) =>
             origLine
