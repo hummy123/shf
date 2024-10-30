@@ -252,7 +252,7 @@ struct
                       end
                 in
                   getCursorStartLine 
-                    (strIdx, shd, lineNum, leftStrings, maxWidth, maxHeight div 2)
+                    (strIdx, shd, lineNum, leftStrings, maxWidth, maxHeight)
                 end
               else
                 (* todo: strIdx is in tl *)

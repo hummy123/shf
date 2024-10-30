@@ -25,7 +25,7 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val startLine = TextWindow.getStartLineWithCursorCentered 
-        (buffer, cursorIdx, origLine, windowWidth, windowHeight)
+        (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
       val buffer = LineGap.goToLine (startLine, buffer)
 
@@ -41,7 +41,7 @@ struct
 
   fun moveToStart (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, startLine, ...} = app
+      val {buffer, windowWidth, windowHeight, ...} = app
 
       val cursorIdx = 0
       val startLine = 0
@@ -54,6 +54,32 @@ struct
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
         (app, buffer, cursorIdx, mode, startLine)
+    in
+      (newApp, drawMsg)
+    end
+
+  fun moveToEnd (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, ...} = app
+
+      val buffer = LineGap.goToEnd buffer
+      val {line = bufferLine, idx = bufferIdx, ...} = buffer
+
+      val bufferIdx = bufferIdx - 1
+      val bufferLine = bufferLine - 1
+
+      val buffer = LineGap.goToIdx (bufferIdx, buffer)
+      val bufferLine = TextWindow.getStartLineWithCursorCentered 
+        (buffer, bufferIdx, bufferLine, windowWidth, windowHeight)
+
+      val buffer = LineGap.goToLine (bufferLine, buffer)
+      val drawMsg = 
+        TextBuilder.build
+          (bufferLine, bufferIdx, buffer, windowWidth, windowHeight)
+
+      val mode = NORMAL_MODE ""
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, bufferIdx, mode, bufferLine)
     in
       (newApp, drawMsg)
     end
@@ -181,6 +207,11 @@ struct
           move (app, 1, Cursor.vi0)
     | #"$" => move (app, 1, Cursor.viDlr)
     | #"^" => firstNonSpaceChr app
+    | #"G" => 
+        (* if str has a size larger than 0,
+         * interpret as "go to line" command;
+         * else, interpret as a command to move to end *)
+        moveToEnd app
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
