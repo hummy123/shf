@@ -19,6 +19,25 @@ struct
       (newApp, drawMsg)
     end
 
+  fun moveToStart (app: app_type) =
+    let
+      val {buffer, windowWidth, windowHeight, startLine, ...} = app
+
+      val cursorIdx = 0
+      val startLine = 0
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val drawMsg = 
+        TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val mode = NORMAL_MODE ""
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine)
+    in
+      (newApp, drawMsg)
+    end
+
   fun helpMove (app: app_type, buffer, cursorIdx, count, fMove) =
     if count = 0 then
       let
@@ -221,6 +240,7 @@ struct
         (case chr of
            #"e" => move (app, count, Cursor.endOfPrevWord)
          | #"E" => move (app, count, Cursor.endOfPrevWORD)
+         | #"g" => moveToStart app
          | _ => clearMode app)
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
 
