@@ -1632,6 +1632,54 @@ struct
                 )
           end
 
+  fun startMatchPair (strIdx, shd, stl, cursorIdx) =
+    let
+      val chr = String.sub (shd, strIdx)
+    in
+      (case chr of
+         #"(" =>
+          helpMatchPairNext
+            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+            , #"(", 1, #")", 0
+            )
+       | #")" =>
+          helpMatchPairPrev
+            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+            , #"(", 0, #")", 1
+            )
+       | #"[" =>
+          helpMatchPairNext
+            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+            , #"[", 1, #"]", 0
+            )
+       | #"]" =>
+          helpMatchPairPrev
+            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+            , #"[", 0, #"]", 1
+            )
+       | #"{" =>
+          helpMatchPairNext
+            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+            , #"{", 1, #"}", 0
+            )
+       | #"}" =>
+          helpMatchPairPrev
+            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+            , #"{", 0, #"}", 1
+            )
+       | #"<" =>
+          helpMatchPairNext
+            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+            , #"<", 1, #">", 0
+            )
+       | #">" =>
+          helpMatchPairPrev
+            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+            , #"<", 0, #">", 1
+            )
+       | _ => cursorIdx)
+    end
+
   fun matchPair (lineGap: LineGap.t, cursorIdx) =
     let
       val {rightStrings, idx = bufferIdx, leftStrings, ...} = lineGap
@@ -1644,52 +1692,7 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              let
-                val chr = String.sub (shd, strIdx)
-              in
-                (case chr of
-                   #"(" =>
-                    helpMatchPairNext
-                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-                      , #"(", 1, #")", 0
-                      )
-                 | #")" =>
-                    helpMatchPairPrev
-                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-                      , #"(", 0, #")", 1
-                      )
-                 | #"[" =>
-                    helpMatchPairNext
-                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-                      , #"[", 1, #"]", 0
-                      )
-                 | #"]" =>
-                    helpMatchPairPrev
-                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-                      , #"[", 0, #"]", 1
-                      )
-                 | #"{" =>
-                    helpMatchPairNext
-                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-                      , #"{", 1, #"}", 0
-                      )
-                 | #"}" =>
-                    helpMatchPairPrev
-                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-                      , #"{", 0, #"}", 1
-                      )
-                 | #"<" =>
-                    helpMatchPairNext
-                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-                      , #"<", 1, #">", 0
-                      )
-                 | #">" =>
-                    helpMatchPairPrev
-                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-                      , #"<", 0, #">", 1
-                      )
-                 | _ => cursorIdx)
-              end
+              startMatchPair (strIdx, shd, stl, cursorIdx)
             else
               (* strIdx is in tl *)
               (case stl of
@@ -1698,7 +1701,7 @@ struct
                      val strIdx = strIdx - String.size shd
                      val leftStrings = shd :: leftStrings
                    in 
-                     (print "match pair throw err\n"; raise Match)
+                      startMatchPair (strIdx, stlhd, leftStrings, cursorIdx)
                    end
                | [] => cursorIdx)
           end
