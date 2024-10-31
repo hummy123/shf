@@ -1596,7 +1596,7 @@ struct
           val closeNum = if chr = closeChr then closeNum + 1 else closeNum
         in
           if openNum = closeNum then
-            absIdx
+              absIdx
           else
             helpMatchPairNext
               ( strPos + 1, str, absIdx + 1, stl, origIdx
@@ -1611,7 +1611,7 @@ struct
         if strPos < 0 then
           case stl of
             hd :: tl =>
-              helpMatchPairNext
+              helpMatchPairPrev
                 ( String.size hd - 1, hd, absIdx, tl, origIdx
                 , openChr, openNum, closeChr, closeNum
                 )
@@ -1632,53 +1632,49 @@ struct
                 )
           end
 
-  fun startMatchPair (strIdx, shd, stl, cursorIdx) =
-    let
-      val chr = String.sub (shd, strIdx)
-    in
-      (case chr of
-         #"(" =>
-          helpMatchPairNext
-            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-            , #"(", 1, #")", 0
-            )
-       | #")" =>
-          helpMatchPairPrev
-            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-            , #"(", 0, #")", 1
-            )
-       | #"[" =>
-          helpMatchPairNext
-            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-            , #"[", 1, #"]", 0
-            )
-       | #"]" =>
-          helpMatchPairPrev
-            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-            , #"[", 0, #"]", 1
-            )
-       | #"{" =>
-          helpMatchPairNext
-            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-            , #"{", 1, #"}", 0
-            )
-       | #"}" =>
-          helpMatchPairPrev
-            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-            , #"{", 0, #"}", 1
-            )
-       | #"<" =>
-          helpMatchPairNext
-            ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
-            , #"<", 1, #">", 0
-            )
-       | #">" =>
-          helpMatchPairPrev
-            ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
-            , #"<", 0, #">", 1
-            )
-       | _ => cursorIdx)
-    end
+  fun startMatchPair (strIdx, shd, leftStrings, rightStrings, cursorIdx) =
+    case String.sub (shd, strIdx) of
+      #"(" =>
+       helpMatchPairNext
+         ( strIdx + 1, shd, cursorIdx + 1, rightStrings, cursorIdx
+         , #"(", 1, #")", 0
+         )
+    | #")" =>
+       helpMatchPairPrev
+         ( strIdx - 1, shd, cursorIdx - 1, leftStrings, cursorIdx
+         , #"(", 0, #")", 1
+         )
+    | #"[" =>
+       helpMatchPairNext
+         ( strIdx + 1, shd, cursorIdx + 1, rightStrings, cursorIdx
+         , #"[", 1, #"]", 0
+         )
+    | #"]" =>
+       helpMatchPairPrev
+         ( strIdx - 1, shd, cursorIdx - 1, leftStrings, cursorIdx
+         , #"[", 0, #"]", 1
+         )
+    | #"{" =>
+       helpMatchPairNext
+         ( strIdx + 1, shd, cursorIdx + 1, rightStrings, cursorIdx
+         , #"{", 1, #"}", 0
+         )
+    | #"}" =>
+       helpMatchPairPrev
+         ( strIdx - 1, shd, cursorIdx - 1, leftStrings, cursorIdx
+         , #"{", 0, #"}", 1
+         )
+    | #"<" =>
+       helpMatchPairNext
+         ( strIdx + 1, shd, cursorIdx + 1, rightStrings, cursorIdx
+         , #"<", 1, #">", 0
+         )
+    | #">" =>
+       helpMatchPairPrev
+         ( strIdx - 1, shd, cursorIdx - 1, leftStrings, cursorIdx
+         , #"<", 0, #">", 1
+         )
+    | _ => cursorIdx
 
   fun matchPair (lineGap: LineGap.t, cursorIdx) =
     let
@@ -1692,7 +1688,7 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              startMatchPair (strIdx, shd, stl, cursorIdx)
+              startMatchPair (strIdx, shd, leftStrings, stl, cursorIdx)
             else
               (* strIdx is in tl *)
               (case stl of
@@ -1701,7 +1697,7 @@ struct
                      val strIdx = strIdx - String.size shd
                      val leftStrings = shd :: leftStrings
                    in 
-                      startMatchPair (strIdx, stlhd, leftStrings, cursorIdx)
+                      startMatchPair (strIdx, stlhd, leftStrings, stltl, cursorIdx)
                    end
                | [] => cursorIdx)
           end
