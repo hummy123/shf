@@ -1575,4 +1575,133 @@ struct
 
   fun tillPrevChr (lineGap, cursorIdx, chr) =
     prevChr (lineGap, cursorIdx, chr, startTillPrevChr)
+
+  fun helpMatchPairNext 
+    ( strPos, str, absIdx, stl, origIdx
+    , openChr, openNum, closeChr, closeNum
+    ) =
+      if strPos = String.size str then
+        case stl of
+          hd :: tl =>
+            helpMatchPairNext
+              ( 0, hd, absIdx, tl, origIdx
+              , openChr, openNum, closeChr, closeNum
+              )
+        | [] =>
+            origIdx
+      else
+        let
+          val chr = String.sub (str, strPos)
+          val openNum = if chr = openChr then openNum + 1 else openNum
+          val closeNum = if chr = closeChr then closeNum + 1 else closeNum
+        in
+          if openNum = closeNum then
+            absIdx
+          else
+            helpMatchPairNext
+              ( strPos + 1, str, absIdx + 1, stl, origIdx
+              , openChr, openNum, closeChr, closeNum
+              )
+        end
+
+    fun helpMatchPairPrev
+      ( strPos, str, absIdx, stl, origIdx
+      , openChr, openNum, closeChr, closeNum
+      ) =
+        if strPos < 0 then
+          case stl of
+            hd :: tl =>
+              helpMatchPairNext
+                ( String.size hd - 1, hd, absIdx, tl, origIdx
+                , openChr, openNum, closeChr, closeNum
+                )
+          | [] =>
+              origIdx
+        else
+          let
+            val chr = String.sub (str, strPos)
+            val openNum = if chr = openChr then openNum + 1 else openNum
+            val closeNum = if chr = closeChr then closeNum + 1 else closeNum
+          in
+            if openNum = closeNum then
+              absIdx
+            else
+              helpMatchPairPrev
+                ( strPos - 1, str, absIdx - 1, stl, origIdx
+                , openChr, openNum, closeChr, closeNum
+                )
+          end
+
+  fun matchPair (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, idx = bufferIdx, leftStrings, ...} = lineGap
+    in
+      case rightStrings of
+        shd :: stl =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size shd then
+              (* strIdx is in this string *)
+              let
+                val chr = String.sub (shd, strIdx)
+              in
+                (case chr of
+                   #"(" =>
+                    helpMatchPairNext
+                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+                      , #"(", 1, #")", 0
+                      )
+                 | #")" =>
+                    helpMatchPairPrev
+                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+                      , #"(", 0, #")", 1
+                      )
+                 | #"[" =>
+                    helpMatchPairNext
+                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+                      , #"[", 1, #"]", 0
+                      )
+                 | #"]" =>
+                    helpMatchPairPrev
+                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+                      , #"[", 0, #"]", 1
+                      )
+                 | #"{" =>
+                    helpMatchPairNext
+                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+                      , #"{", 1, #"}", 0
+                      )
+                 | #"}" =>
+                    helpMatchPairPrev
+                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+                      , #"{", 0, #"}", 1
+                      )
+                 | #"<" =>
+                    helpMatchPairNext
+                      ( strIdx + 1, shd, cursorIdx + 1, stl, cursorIdx
+                      , #"<", 1, #">", 0
+                      )
+                 | #">" =>
+                    helpMatchPairPrev
+                      ( strIdx - 1, shd, cursorIdx - 1, stl, cursorIdx
+                      , #"<", 0, #">", 1
+                      )
+                 | _ => cursorIdx)
+              end
+            else
+              (* strIdx is in tl *)
+              (case stl of
+                 stlhd :: stltl =>
+                   let 
+                     val strIdx = strIdx - String.size shd
+                     val leftStrings = shd :: leftStrings
+                   in 
+                     (print "match pair throw err\n"; raise Match)
+                   end
+               | [] => cursorIdx)
+          end
+      | [] => cursorIdx
+    end
 end

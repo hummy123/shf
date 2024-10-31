@@ -123,6 +123,33 @@ struct
     in helpMove (app, buffer, cursorIdx, count, fMove)
     end
 
+  fun moveToMatchingPair (app: app_type) =
+    let
+      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+
+      (* move LineGap and buffer to start of line *)
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.matchPair (buffer, cursorIdx)
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      (* todo: 
+       *   check if cursorIdx is visible on screen first,
+       *   and only get new startLine if it is not visible *)
+      val startLine = TextWindow.getStartLineWithCursorCentered 
+        (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+
+      val drawMsg = 
+        TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+    in
+      (newApp, drawMsg)
+    end
+
   fun firstNonSpaceChr (app: app_type) =
     let
       val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
@@ -212,6 +239,7 @@ struct
          * interpret as "go to line" command;
          * else, interpret as a command to move to end *)
         moveToEnd app
+    | #"%" => moveToMatchingPair app
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
