@@ -275,4 +275,54 @@ struct
         | (_, _) =>
             origLine
       end
+
+  fun helpIsCursorVisible
+    (strPos, str, stl, absIdx, maxW, maxH, curW, curH, newCursorIdx) =
+      if strPos = String.size str then
+        case stl of
+          hd :: tl =>
+            helpIsCursorVisible
+              (0, hd, tl, absIdx, maxW, maxH, curW, curH)
+        | [] =>
+            true
+      else
+        if absIdx = newCursorIdx then
+          true
+        else
+          let
+            val chr = String.sub (str, strPos)
+          in
+            if chr = #"\n" then
+              if curH + (ySpace * 3) >= maxH then
+                false
+              else
+                helpIsCursorVisible
+                  ( strPos + 1, str, stl, absIdx + 1
+                  , maxW, maxH, 0, curH + ySpace, newCursorIdx
+                  )
+            else 
+              if curWidth + xSpace <= maxWidth then
+                helpIsCursorVisible
+                  ( strPos + 1, str, stl, absIdx + 1
+                  , maxW, maxH, curW + xSpace, curH, newCursorIdx
+                  )
+              else
+                (* have to create visual line break *)
+                if curHeight + (ySpace * 3) >= maxHeight then
+                  false
+                else
+                  helpIsCursorVisible
+                    ( strPos + 1, str, stl, absIdx + 1
+                    , maxW, maxH, 0, curH + ySpace, newCursorIdx
+                    )
+          end
+
+  fun startIsCursorVisible 
+    (strIdx, shd, stl, absIdx, maxW, maxH, newCursorIdx) =
+    raise Match
+
+  (* Prerequisite: move LineGap.t to oldLine *)
+  fun isCursorVisible 
+    (lineGap: LineGap.t, newCursorIdx, oldLine) =
+    raise Match
 end
