@@ -448,7 +448,7 @@ struct
              * but line has fewer chars than preferredColumn 
              * note: if in double \n\n linebreak,
              * then return absIdx of second linebreak. *)
-            if strPos = String.size str - 1 then
+            if strPos < String.size str - 1 then
               if String.sub (str, strPos + 1) = #"\n" then
                 (* we are in double linebreak *)
                 absIdx + 1
