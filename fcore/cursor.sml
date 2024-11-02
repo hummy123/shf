@@ -1703,4 +1703,43 @@ struct
           end
       | [] => cursorIdx
     end
+
+  (* Prerequisite: move lineGap to reqLine *)
+  fun getLineStartIdx (lineGap: LineGap.t, reqLine) =
+    let
+      val {rightLines, line = bufferLine, idx = bufferIdx, ...} = lineGap
+    in
+      case rightLines of
+        hd :: tl =>
+          (* reqLine exists in lineGap, so retrieve it *)
+          let
+            val relativeLine = reqLine - bufferLine - 1
+            val lineIdx = Vector.sub (hd, relativeLine)
+          in
+            bufferIdx + lineIdx + 1
+          end
+      | [] =>
+          (* reqLine does not exist in lineGap, so just go to start of last line *)
+          let
+            val {leftStrings, rightStrings, leftLines, ...} = lineGap
+          in
+            (case rightStrings of
+              hd :: _ =>
+                helpVi0 
+                  (~1, hd, bufferIdx - 1, leftStrings, leftLines)
+            | [] =>
+                (case (leftStrings, leftLines) of
+                  (lshd :: lstl, llhd :: lltl) =>
+                    let
+                      val result = helpVi0 
+                        (String.size lshd - 1, lshd, bufferIdx - 1, lstl, lltl)
+                    in
+                      if result = bufferIdx then
+                        bufferIdx - 1
+                      else
+                        result
+                    end
+                | (_, _) => 0))
+          end
+    end
 end

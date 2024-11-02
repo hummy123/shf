@@ -84,6 +84,30 @@ struct
       (newApp, drawMsg)
     end
 
+  fun moveToLine (app: app_type, reqLine) =
+    let
+      val {windowWidth, windowHeight, buffer, startLine = origLine, ...} = app
+      val buffer = LineGap.goToLine (reqLine, buffer)
+
+      (* get idx of first chr after linebreak *)
+      val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val startLine = TextWindow.getStartLineWithCursorCentered 
+        (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+
+      val drawMsg = 
+        TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+    in
+      (newApp, drawMsg)
+    end
+
   fun helpMove (app: app_type, buffer, cursorIdx, count, fMove) =
     if count = 0 then
       let
@@ -258,7 +282,10 @@ struct
         (* if str has a size larger than 0,
          * interpret as "go to line" command;
          * else, interpret as a command to move to end *)
-        moveToEnd app
+         if String.size str = 0 then
+           moveToEnd app
+         else
+           moveToLine (app, count)
     | #"%" => moveToMatchingPair app
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
