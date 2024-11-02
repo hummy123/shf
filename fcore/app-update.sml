@@ -131,23 +131,43 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.matchPair (buffer, cursorIdx)
 
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      (* todo: 
-       *   check if cursorIdx is visible on screen first,
-       *   and only get new startLine if it is not visible *)
-      val startLine = TextWindow.getStartLineWithCursorCentered 
-        (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
-
       val buffer = LineGap.goToLine (startLine, buffer)
-
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
-
-      val drawMsg = 
-        TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
     in
-      (newApp, drawMsg)
+      if TextWindow.isCursorVisible 
+        (buffer, cursorIdx, startLine, windowWidth, windowHeight)
+      then
+        (* if visible, just need to redraw; no need to get line *)
+        let
+          val buffer = LineGap.goToLine (startLine, buffer)
+
+          val newApp = AppWith.bufferAndCursorIdx
+            (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+
+          val drawMsg = 
+            TextBuilder.build
+              (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+        in
+          (newApp, drawMsg)
+        end
+      else
+        (* not visible, so need to get startLine where cursor is visible *)
+        let
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val startLine = 
+            TextWindow.getStartLineWithCursorCentered 
+            (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
+
+          val buffer = LineGap.goToLine (startLine, buffer)
+
+          val newApp = AppWith.bufferAndCursorIdx
+            (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+
+          val drawMsg = 
+            TextBuilder.build
+              (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+        in
+          (newApp, drawMsg)
+        end
     end
 
   fun firstNonSpaceChr (app: app_type) =

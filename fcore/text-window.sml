@@ -278,11 +278,11 @@ struct
 
   fun helpIsCursorVisible
     (strPos, str, stl, absIdx, maxW, maxH, curW, curH, newCursorIdx) =
-      if strPos = String.size str then
-        case stl of
-          hd :: tl =>
-            helpIsCursorVisible
-              (0, hd, tl, absIdx, maxW, maxH, curW, curH)
+      if strPos = String.size str then 
+        case stl of 
+         hd :: tl =>
+           helpIsCursorVisible
+             (0, hd, tl, absIdx, maxW, maxH, curW, curH, newCursorIdx)
         | [] =>
             true
       else
@@ -301,14 +301,14 @@ struct
                   , maxW, maxH, 0, curH + ySpace, newCursorIdx
                   )
             else 
-              if curWidth + xSpace <= maxWidth then
+              if curW + xSpace <= maxW then
                 helpIsCursorVisible
                   ( strPos + 1, str, stl, absIdx + 1
                   , maxW, maxH, curW + xSpace, curH, newCursorIdx
                   )
               else
                 (* have to create visual line break *)
-                if curHeight + (ySpace * 3) >= maxHeight then
+                if curH + (ySpace * 3) >= maxH then
                   false
                 else
                   helpIsCursorVisible
@@ -318,11 +318,40 @@ struct
           end
 
   fun startIsCursorVisible 
-    (strIdx, shd, stl, absIdx, maxW, maxH, newCursorIdx) =
-    raise Match
+    (curIdx, shd, stl, lhd, startLine, curLine, maxW, maxH, newCursorIdx) =
+      let
+        val relativeLine = (curLine + Vector.length lhd) - startLine
+        val lineIdx = Cursor.binSearch (relativeLine, lhd)
+        val absIdx = curIdx + lineIdx
+      in
+        helpIsCursorVisible
+          (lineIdx, shd, stl, absIdx, maxW, maxH, 0, 0, newCursorIdx)
+      end
 
-  (* Prerequisite: move LineGap.t to oldLine *)
-  fun isCursorVisible 
-    (lineGap: LineGap.t, newCursorIdx, oldLine) =
-    raise Match
+  (* Prerequisite: move LineGap.t to startLine *)
+  fun isCursorVisible (lineGap: LineGap.t, newCursorIdx, startLine, maxW, maxH) =
+    let 
+      val {rightStrings, rightLines, line = curLine, idx = curIdx, ...} = lineGap
+    in
+      case (rightStrings, rightLines) of
+        (shd :: stl, lhd :: ltl) =>
+          if startLine < curLine + Vector.length lhd then
+            (* startLine in this node *)
+            startIsCursorVisible 
+              ( curIdx, shd, stl, lhd, startLine, curLine
+              , maxW, maxH, newCursorIdx
+              )
+          else
+            (* startLine is in stl *)
+            (case (stl, ltl) of
+              (stlhd :: stltl, ltlhd :: ltltl) =>
+                startIsCursorVisible
+                  ( curIdx, stlhd, stltl, ltlhd, startLine, curLine
+                  , maxW, maxH, newCursorIdx
+                  )
+            | (_, _) => 
+                true)
+      | (_, _) => 
+          true
+    end
 end
