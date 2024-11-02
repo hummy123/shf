@@ -319,14 +319,18 @@ struct
 
   fun startIsCursorVisible 
     (curIdx, shd, stl, lhd, startLine, curLine, maxW, maxH, newCursorIdx) =
-      let
-        val relativeLine = (curLine + Vector.length lhd) - startLine
-        val lineIdx = Cursor.binSearch (relativeLine, lhd)
-        val absIdx = curIdx + lineIdx
-      in
+      if startLine = curLine then
         helpIsCursorVisible
-          (lineIdx, shd, stl, absIdx, maxW, maxH, 0, 0, newCursorIdx)
-      end
+          (0, shd, stl, curIdx, maxW, maxH, 0, 0, newCursorIdx)
+      else
+        let
+          val relativeLine = (curLine + Vector.length lhd) - startLine
+          val lineIdx = Vector.sub (lhd, relativeLine)
+          val absIdx = curIdx + lineIdx
+        in
+          helpIsCursorVisible
+            (lineIdx, shd, stl, absIdx, maxW, maxH, 0, 0, newCursorIdx)
+        end
 
   (* Prerequisite: move LineGap.t to startLine *)
   fun isCursorVisible (lineGap: LineGap.t, newCursorIdx, startLine, maxW, maxH) =
