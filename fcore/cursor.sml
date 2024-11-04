@@ -1707,39 +1707,39 @@ struct
   (* Prerequisite: move lineGap to reqLine *)
   fun getLineStartIdx (lineGap: LineGap.t, reqLine) =
     let
-      val {rightLines, line = bufferLine, idx = bufferIdx, ...} = lineGap
+      val {rightStrings, rightLines, line = bufferLine, idx = bufferIdx, ...} = lineGap
     in
-      case rightLines of
-        hd :: tl =>
+      case (rightStrings, rightLines) of
+        (shd :: stl, lhd :: ltl) =>
           (* reqLine exists in lineGap, so retrieve it *)
           let
             val relativeLine = reqLine - bufferLine - 1
-            val lineIdx = Vector.sub (hd, relativeLine)
+            val lineIdx = Vector.sub (lhd, relativeLine)
           in
-            bufferIdx + lineIdx + 1
+            if lineIdx = String.size shd - 1 andalso List.null stl then
+              (* if is end of buffer, return last idx in buffer; * else, 
+               * increment by 1 as we want to go to first char after line break *)
+              bufferIdx + lineIdx
+            else
+              bufferIdx + lineIdx + 1
           end
-      | [] =>
+      | (_, _) =>
           (* reqLine does not exist in lineGap, so just go to start of last line *)
           let
-            val {leftStrings, rightStrings, leftLines, ...} = lineGap
+            val {leftStrings, leftLines, ...} = lineGap
           in
-            (case rightStrings of
-              hd :: _ =>
-                helpVi0 
-                  (~1, hd, bufferIdx - 1, leftStrings, leftLines)
-            | [] =>
-                (case (leftStrings, leftLines) of
-                  (lshd :: lstl, llhd :: lltl) =>
-                    let
-                      val result = helpVi0 
-                        (String.size lshd - 1, lshd, bufferIdx - 1, lstl, lltl)
-                    in
-                      if result = bufferIdx then
-                        bufferIdx - 1
-                      else
-                        result
-                    end
-                | (_, _) => 0))
+            (case (leftStrings, leftLines) of
+              (lshd :: lstl, llhd :: lltl) =>
+                let
+                  val result = helpVi0 
+                    (String.size lshd - 1, lshd, bufferIdx - 1, lstl, lltl)
+                in
+                  if result = bufferIdx then
+                    bufferIdx - 1
+                  else
+                    result
+                end
+            | (_, _) => 0)
           end
     end
 end
