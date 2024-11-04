@@ -69,8 +69,13 @@ struct
       val bufferLine = bufferLine - 1
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
-      val bufferLine = TextWindow.getStartLineWithCursorCentered 
-        (buffer, bufferIdx, bufferLine, windowWidth, windowHeight)
+      val bufferLine = 
+        let
+          val maxHeight = windowHeight - (TextConstants.ySpace * 2)
+        in
+          TextWindow.getStartLineWithCursorCentered 
+            (buffer, bufferIdx, bufferLine, windowWidth, maxHeight)
+        end
 
       val buffer = LineGap.goToLine (bufferLine, buffer)
       val drawMsg = 
@@ -85,28 +90,31 @@ struct
     end
 
   fun moveToLine (app: app_type, reqLine) =
-    let
-      val {windowWidth, windowHeight, buffer, startLine = origLine, ...} = app
-      val buffer = LineGap.goToLine (reqLine, buffer)
+    if reqLine = 0 then
+      moveToStart app
+    else
+      let
+        val {windowWidth, windowHeight, buffer, startLine = origLine, ...} = app
+        val buffer = LineGap.goToLine (reqLine, buffer)
 
-      (* get idx of first chr after linebreak *)
-      val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
+        (* get idx of first chr after linebreak *)
+        val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
 
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val startLine = TextWindow.getStartLineWithCursorCentered 
-        (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val startLine = TextWindow.getStartLineWithCursorCentered 
+          (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
-      val buffer = LineGap.goToLine (startLine, buffer)
+        val buffer = LineGap.goToLine (startLine, buffer)
 
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+        val newApp = AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
-      val drawMsg = 
-        TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-    in
-      (newApp, drawMsg)
-    end
+        val drawMsg = 
+          TextBuilder.build
+            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+      in
+        (newApp, drawMsg)
+      end
 
   fun helpMove (app: app_type, buffer, cursorIdx, count, fMove) =
     if count = 0 then
@@ -285,7 +293,7 @@ struct
          if String.size str = 0 then
            moveToEnd app
          else
-           moveToLine (app, count)
+           moveToLine (app, count - 1)
     | #"%" => moveToMatchingPair app
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
