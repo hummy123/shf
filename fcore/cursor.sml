@@ -182,6 +182,68 @@ struct
           cursorIdx
     end
 
+  fun helpViH (strIdx, hd, cursorIdx, leftStrings) =
+    if strIdx > 0 then
+      (* bounds check: can access prev char in hd *)
+      if String.sub (hd, strIdx - 1) = #"\n" then
+        (* prev char is line break *)
+        if strIdx - 1 > 0 then
+          (* bounds check: can access two chars back in hd *)
+          if String.sub (hd, strIdx - 2) = #"\n" then
+            (* line break followed by line break
+             * so it is fine to decrement by 1 *)
+            cursorIdx - 1
+          else
+            (* non-line break followed by line break 
+             * so we have to decrement by two,
+             * skipping over line break *)
+             cursorIdx - 2
+        else
+          (* need to check two chars back in leftStrings *)
+          (case leftStrings of
+            lhd :: ltl =>
+              if String.sub (lhd, String.size lhd - 1) = #"\n" then
+                (* double line break *)
+                cursorIdx - 1
+              else
+                (* non-line break precedes line break *)
+                cursorIdx - 2
+          | [] => cursorIdx - 1)
+      else
+        (* prev char is not line break so we can decrement by 1 *)
+        cursorIdx - 1
+    else
+      (* prev char is in leftStrings *)
+      (case leftStrings of
+        lhd :: ltl =>
+          if String.sub (lhd, String.size lhd - 1) = #"\n" then
+            (* one line break *)
+            if String.size lhd > 1 then
+              (* bounds check: prev-prev chr is in lhd *)
+              if String.sub (lhd, String.size lhd - 2) = #"\n" then
+                (* double line break *)
+                cursorIdx - 1
+              else
+                (* non-line break precedes line break *)
+                cursorIdx - 2
+            else
+              (* prev-prev chr is in ltl *)
+              (case ltl of
+                ltlhd :: _ =>
+                  if 
+                    String.sub (ltlhd, String.size ltlhd - 1) = #"\n"
+                  then
+                    (* double line break *)
+                    cursorIdx - 1
+                  else
+                    (* non-line break precedes line break *)
+                    cursorIdx - 2
+              | [] => cursorIdx - 1)
+          else
+            (* no line break *)
+            cursorIdx - 1
+      | [] => 0)
+
   (* Prerequisite: lineGap is moved to requested idx first 
    * Implementation is mostly the same as the viL function, 
    * except we focus on decrementing instead,
@@ -198,76 +260,17 @@ struct
             (* convert absolute cursorIdx to idx relative to hd string *)
             val strIdx = cursorIdx - bufferIdx
           in
-            if strIdx > 0 then
-              (* if there is at least one char before this index *)
-              let
-                val prevChr = String.sub (hd, strIdx - 1)
-              in
-                (case prevChr of
-                   #"\n" =>
-                     if strIdx > 1 then
-                       (* if there are at least two chars before strIdx *)
-                       if String.sub (hd, strIdx - 2) = #"\n" then
-                         (* if there is double line break like \n\n, 
-                          * we would like to move the cursor 
-                          * to the second linebreak *)
-                         cursorIdx - 1
-                       else
-                         cursorIdx - 2
-                     else
-                       (* only one char before strIdx which is \n 
-                        * if there is a string at the leftStrings, can decrement by 2 *)
-                       (case leftStrings of
-                          _ :: _ => cursorIdx - 2
-                        | [] => cursorIdx - 1)
-                 | _ => cursorIdx - 1)
-              end
+            if strIdx < String.size hd then
+              helpViH (strIdx, hd, cursorIdx, leftStrings)
             else
-              (* no chars before this idx; have to check leftStrings *)
               (case leftStrings of
-                 lHd :: lTl =>
-                   (* if there is another string after current head, 
-                    * we can increment cursorIdx 
-                    * however, first we need to check if next char is \n. *)
-                   let
-                     val lastChr = String.sub (lHd, String.size lHd - 1)
-                   in
-                     (case lastChr of
-                        #"\n" =>
-                          if String.size lHd > 2 then
-                            (* if there at least one character before \n
-                             * then decrement cursorIdx by 2
-                             * or decrement cursorIdx by 1 
-                             * if we are in a double linebreak
-                             * if we are not in a double linebreak *)
-                            if String.sub (lHd, strIdx - 2) = #"\n" then
-                              cursorIdx - 1
-                            else
-                              cursorIdx - 2
-                          else
-                            (* this string only contains \n
-                             * but there is a small possibility tltl
-                             * contains another string.
-                             * If it does, we can increment cursorIdx by 2,
-                             * moving past newline.
-                             * If not, increment cursorIdx by 1,
-                             * landing on newline. *)
-                            (case lTl of
-                               ltlHd :: _ =>
-                                 if
-                                   String.sub (ltlHd, String.size ltlHd - 1)
-                                   = #"\n"
-                                 then cursorIdx - 1
-                                 else cursorIdx - 2
-                             | [] => cursorIdx - 1)
-                      | _ =>
-                          (* next char is not newline, 
-                           * so we can just decrement by 1 *)
-                          cursorIdx - 1)
-                   end
-               | [] =>
-                   (* if there is no string after current head, return original cursorIdx *)
-                   cursorIdx)
+                lhd :: ltl =>
+                  let
+                    val strIdx = strIdx - String.size hd
+                  in
+                    helpViH (strIdx, lhd, cursorIdx, ltl)
+                  end
+              | [] => 0)
           end
       | [] => cursorIdx
     end
