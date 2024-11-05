@@ -6,6 +6,14 @@ struct
   open DrawMsg
   open InputMsg
 
+  fun clearMode app =
+    let
+      val mode = NORMAL_MODE ""
+      val newApp = AppWith.mode (app, mode)
+    in
+      (newApp, [])
+    end
+
   fun resizeText (app: app_type, newWidth, newHeight) =
     let
       val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
@@ -170,8 +178,6 @@ struct
       then
         (* if visible, just need to redraw; no need to get line *)
         let
-          val buffer = LineGap.goToLine (startLine, buffer)
-
           val newApp = AppWith.bufferAndCursorIdx
             (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
@@ -224,6 +230,72 @@ struct
         (app, buffer, cursorIdx, mode, startLine)
     in
       (newApp, drawMsg)
+    end
+
+  (* equivalent of vi's 'x' command *)
+  fun deleteChr (app: app_type, count) =
+    let
+      val {buffer, cursorIdx, startLine, windowWidth, windowHeight, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      (* Explanation of how Vi's 'x' command behaves:
+       * If the cursor is at the end of the file, 
+       * then it is decremented by 1.
+       * If the character after the cursor is a line break,
+       * then it is also decremented by 1.
+       * If the character before the cursor is a linee break, the cursor stays
+       * where it is.
+       * If the chracter AT the cursor is a line break and the characater
+       * AFTER the cursor is also a line break, then nothing is deleted. 
+       * Otherwise, the same cursor is returned.
+       * All decrement cases do not decrement when the cursor is 0. *)
+      val cursorIsStart = Cursor.isCursorAtStartOfLine (buffer, cursorIdx)
+      val nextIsEnd = Cursor.isNextChrEndOfLine (buffer, cursorIdx)
+    in
+      if nextIsEnd andalso cursorIsStart then
+        (* vi simply doesn't do anything on 'x' command
+         * when cursor is at start of line, and next chr is line break *)
+        clearMode app
+      else if cursorIsStart then
+        let val _ = print "260\n" in
+        clearMode app end
+      else if nextIsEnd then
+         let
+          (* delete char at cursor and then decrement cursorIdx by 1
+           * if cursorIdx is not 0 *)
+           val newBuffer = LineGap.delete (cursorIdx, 1, buffer)
+           val cursorIdx = 
+             if Cursor.isPrevChrStartOfLine (newBuffer, cursorIdx)
+             orelse cursorIdx = 0 then
+               cursorIdx
+             else cursorIdx - 1
+
+           val newBuffer = LineGap.goToLine (startLine, newBuffer)
+           val newApp = AppWith.bufferAndCursorIdx
+             (app, newBuffer, cursorIdx, NORMAL_MODE "", startLine)
+
+           val drawMsg = 
+             TextBuilder.build
+               (startLine, cursorIdx, newBuffer, windowWidth, windowHeight)
+         in
+           (newApp, drawMsg)
+         end
+      else if Cursor.isPrevChrStartOfLine (buffer, cursorIdx) then
+        clearMode app
+      else
+        let
+          val newBuffer = LineGap.delete (cursorIdx, 1, buffer)
+
+          val newBuffer = LineGap.goToLine (startLine, newBuffer)
+          val newApp = AppWith.bufferAndCursorIdx
+            (app, newBuffer, cursorIdx, NORMAL_MODE "", startLine)
+
+          val drawMsg = 
+            TextBuilder.build
+              (startLine, cursorIdx, newBuffer, windowWidth, windowHeight)
+      in
+        (newApp, drawMsg)
+      end
     end
 
   (* number of characters which are integers *)
@@ -295,6 +367,7 @@ struct
          else
            moveToLine (app, count - 1)
     | #"%" => moveToMatchingPair app
+    | #"x" => deleteChr (app, count)
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
@@ -353,15 +426,6 @@ struct
   fun moveToChr (app: app_type, count, fMove, chr) =
     let val {cursorIdx, buffer, ...} = app
     in helpMoveToChr (app, buffer, cursorIdx, count, fMove, chr)
-    end
-
-  (* temp placeholder function *)
-  fun clearMode app =
-    let
-      val mode = NORMAL_MODE ""
-      val newApp = AppWith.mode (app, mode)
-    in
-      (newApp, [])
     end
 
   fun handleMoveToChr (count, app, fMove, newCmd) =

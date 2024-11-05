@@ -31,7 +31,8 @@ struct
                 cursorIdx
               else
                 (* not at newline so start iterating *)
-                helpVi0 (strIdx - 1, strHd, cursorIdx - 1, strTl, lnTl)
+                helpVi0 
+                  (strIdx - 1, strHd, cursorIdx - 1, leftStrings, leftLines)
             else
               (* strIdx must be in the strTl *)
               (case (strTl, lnTl) of
@@ -977,18 +978,18 @@ struct
               (case (stl, ltl) of
                  (stlhd :: stltl, ltlhd :: ltltl) =>
                    let val strIdx = strIdx - String.size shd
-                   in fNext (strIdx, shd, cursorIdx, stltl, ltltl)
+                   in fNext (strIdx, stlhd, cursorIdx, stltl, ltltl)
                    end
                | (_, _) => cursorIdx)
           end
       | (_, _) => cursorIdx
     end
 
-  (* equivalent 'f vi's 'w' command *)
+  (* equivalent of vi's 'w' command *)
   fun nextWord (lineGap, cursorIdx) =
     toNextWord (lineGap, cursorIdx, helpNextWord)
 
-  (* equivalent 'f vi's 'W' command *)
+  (* equivalent of vi's 'W' command *)
   fun nextWORD (lineGap, cursorIdx) =
     toNextWord (lineGap, cursorIdx, helpNextWORD)
 
@@ -1741,5 +1742,98 @@ struct
                 end
             | (_, _) => 0)
           end
+    end
+
+  (* Prerequisite: lineGap is moved to cursorIdx *)
+  fun isCursorAtStartOfLine (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, idx = bufferIdx, ...} = lineGap
+    in
+      case rightStrings of
+        hd :: tl =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size hd then
+              (* chr is in hd *)
+              String.sub (hd, strIdx) = #"\n"
+            else
+              (* chr is in tl *)
+              (case tl of
+                tlhd :: _ =>
+                  let
+                    val strIdx = strIdx - String.size hd
+                  in
+                    String.sub (tlhd, strIdx) = #"\n"
+                  end
+              | [] => true)
+          end
+      | [] => true
+    end
+
+  (* Prerequisite: lineGap is moved to cursorIdx *)
+  fun isPrevChrStartOfLine (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, idx = bufferIdx, leftStrings, ...} = lineGap
+    in
+      case rightStrings of
+        hd :: tl =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx > 0 then
+              (* prev chr is in hd *)
+              String.sub (hd, strIdx - 1) = #"\n"
+            else
+              (* prev chr if in leftStrings *)
+              (case leftStrings of
+                lhd :: _ =>
+                  String.sub (lhd, String.size lhd - 1) = #"\n"
+              | [] =>
+                  (* cursorIdx = 0 which means we are at start of file/line *)
+                  true)
+          end
+      | [] =>
+          true
+    end
+
+  fun helpIsNextChrEndOfLine (strIdx, hd, tl) =
+    if strIdx + 1 < String.size hd then
+      (* next chr is in this string *)
+      String.sub (hd, strIdx + 1) = #"\n"
+    else
+      (* next chr, if it exists, is in tl *)
+      (case tl of
+        tlhd :: _ =>
+          String.sub (tlhd, 0) = #"\n"
+      | [] => 
+          true)
+
+  (* Prerequisite: lineGap is moved to cursorIdx *)
+  fun isNextChrEndOfLine (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, idx = bufferIdx, ...} = lineGap
+    in
+      case rightStrings of
+        hd :: tl =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size hd then
+              helpIsNextChrEndOfLine (strIdx, hd, tl)
+            else
+              (* strIdx is in tl *)
+              (case tl of
+                tlhd :: tltl =>
+                  helpIsNextChrEndOfLine (strIdx, tlhd, tltl)
+              | [] =>
+                  (* strIdx is at end of lineGap
+                   * which also means at end of line *)
+                   true)
+          end
+      | [] => true
     end
 end
