@@ -244,33 +244,30 @@ struct
             cursorIdx - 1
       | [] => 0)
 
-  (* Prerequisite: lineGap is moved to requested idx first 
-   * Implementation is mostly the same as the viL function, 
-   * except we focus on decrementing instead,
-   * and we examing leftStrings list instead of tail of rightStrings
-   * if head of rightStrings is empty or does not have the idx we want.
-   * todo: check if we are in a \r\n pair, but this is not a priority *)
+  (* Prerequisite: lineGap is moved to requested idx first. *)
   fun viH (lineGap: LineGap.t, cursorIdx) =
     let
       val {rightStrings, leftStrings, idx = bufferIdx, ...} = lineGap
     in
       case rightStrings of
-        hd :: _ =>
+        hd :: tl =>
           let
             (* convert absolute cursorIdx to idx relative to hd string *)
             val strIdx = cursorIdx - bufferIdx
           in
             if strIdx < String.size hd then
+              (* strIdx in hd *)
               helpViH (strIdx, hd, cursorIdx, leftStrings)
             else
-              (case leftStrings of
-                lhd :: ltl =>
+              (* strIdx in tl *)
+              (case tl of
+                tlhd :: tltl =>
                   let
                     val strIdx = strIdx - String.size hd
                   in
-                    helpViH (strIdx, lhd, cursorIdx, ltl)
+                    helpViH (strIdx, tllhd, cursorIdx, hd :: leftStrings)
                   end
-              | [] => 0)
+              | [] => cursorIdx)
           end
       | [] => cursorIdx
     end
