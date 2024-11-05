@@ -520,75 +520,27 @@ struct
       case String.sub (str, strPos) of
         #"\n" =>
           if hasPassedLine then
-            (* reached end of line twice, 
+            (* reached line break twice, 
              * but line has fewer chars than preferredColumn 
-             * note: if in double \n\n linebreak,
-             * then return absIdx of second linebreak. *)
-            if strPos > 0 then
-              (* check for double linebreak in string *)
-              if String.sub (str, strPos - 1) = #"\n" then
-                (* in double linebreak *)
-                absIdx
-              else
-                (* not in double linebreak *)
-                absIdx - 1
-            else
-              (* check for double linebreak in tl *)
-              (case strTl of
-                 hd :: _ =>
-                   if String.sub (hd, String.size hd - 1) = #"\n" then
-                     (* in double linebreak *)
-                     absIdx
-                   else
-                     (* not in double linebreak *)
-                     absIdx - 1
-               | [] => 
-                   (* tl is empty, so return start *) 
-                   0)
+             * so go back to chr immediately after this second line break *)
+             absIdx + 1
           else 
             (* reached start of line once;
             * have to check if this is a double linebreak,
             * and return idx of second linebreak if so *) 
-            if strPos > 0 then
-              if String.sub (str, strPos - 1) = #"\n" then
-                absIdx
-              else
-                let
-                  (* have to calculate column of current line
-                   * so we know which line to stop searching at *)
-                  val lineColumn = 
-                    helpGetCursorColumnBranch
-                      (strPos - 1, str, lineHd, strTl, lineTl)
-                in
-                  helpViK
-                    ( strPos - 1, str, absIdx - 1
-                    , lineColumn, preferredColumn, true
-                    , strTl, lineHd, lineTl
-                    )
-                end
-          else
-            (* this is first chr of string; must check string's tl next *)
-            (case strTl of
-               hd :: tl =>
-                 if String.sub (hd, String.size hd - 1) = #"\n" then
-                   (* in double linebreak *)
-                   absIdx
-                 else
-                   (* not in double linebreak *)
-                   let
-                     val lineColumn = 
-                       helpGetCursorColumnBranch
-                         (strPos - 1, str, lineHd, strTl, lineTl)
-                   in
-                     helpViK
-                       ( strPos - 1, str, absIdx - 1
-                       , lineColumn, preferredColumn, true
-                       , strTl, lineHd, lineTl
-                       )
-                   end
-             | [] => 
-                 (* no more strings so return last idx *) 
-                 absIdx)
+            let
+              (* have to calculate column of current line
+               * so we know which line to stop searching at *)
+              val lineColumn = 
+                helpGetCursorColumnBranch
+                  (strPos - 1, str, lineHd, strTl, lineTl)
+            in
+              helpViK
+                ( strPos - 1, str, absIdx - 1
+                , lineColumn, preferredColumn, true
+                , strTl, lineHd, lineTl
+                )
+            end
       | _ =>
           if lineColumn <= preferredColumn andalso hasPassedLine then
             (* We're at or before the preferredColumn so return absIdx
@@ -605,6 +557,28 @@ struct
               , strTl, lineHd, lineTl
               )
 
+  fun startViK (lg, strIdx, shd, cursorIdx, leftStrings, lhd, leftLines) =
+    if String.sub (shd, strIdx) = #"\n" then
+      if strIdx - 1 > 0 then
+        helpVi0 
+          (strIdx - 2, shd, cursorIdx - 2, leftStrings, leftLines)
+      else
+        case (leftStrings, leftLines) of
+          (lshd :: lstl, llhd :: lltl) =>
+            helpVi0
+              (String.size lshd - 1, lshd, cursorIdx - 2, lstl, lltl)
+        | (_, _) => 0
+    else
+      let
+        val lineColumn = getCursorColumn (lg, cursorIdx)
+      in
+        helpViK
+          ( strIdx, shd, cursorIdx
+          , lineColumn, lineColumn, false
+          , leftStrings, lhd, leftLines
+          )
+      end
+
   fun viK (lineGap: LineGap.t, cursorIdx) =
     let
       val
@@ -619,105 +593,21 @@ struct
           in
             if strIdx < String.size strHd then
               (* strIdx is in this string *)
-              if String.sub (strHd, strIdx) = #"\n" then
-                (* if we are at a newline  *)
-                if strIdx > 0 then
-                  if String.sub (strHd, strIdx - 1) = #"\n" then
-                    (* if in double linebreak *)
-                    helpVi0
-                      (strIdx - 2, strHd, cursorIdx - 2, leftStrings, leftLines)
-                  else
-                    (* not in double linebreak *)
-                    helpVi0
-                      (strIdx - 1, strHd, cursorIdx - 1, leftStrings, leftLines)
-                else
-                  (* check leftStrings to see if we are in a double linebreak *)
-                  (case (leftStrings, leftLines) of
-                     (lStrHd :: lStrTl, lLnHd :: lLnTl) =>
-                       if String.sub (lStrHd, String.size lStrHd - 1) = #"\n" then
-                         (* in double linebreak *)
-                         helpVi0
-                           ( String.size lStrHd - 2, lStrHd, cursorIdx - 2
-                           , lStrTl, lLnTl
-                           )
-                       else
-                         (* in single linebreak *)
-                         helpVi0
-                           ( strIdx - 1, strHd, cursorIdx - 1
-                           , leftStrings, leftLines
-                           )
-                   | (_, _) =>
-                       helpViK
-                         ( strIdx - 1, strHd, cursorIdx - 1
-                         , 0, 0, true
-                         , leftStrings, lnHd, leftLines
-                         ))
-              else
-                (* not at newline 
-                 * so get column number and start iterating *)
-                let
-                  val lineColumn = getCursorColumn (lineGap, cursorIdx)
-                in
-                  helpViK
-                    ( strIdx - 1, strHd, cursorIdx - 1
-                    , lineColumn, lineColumn, false
-                    , leftStrings, lnHd, leftLines
-                    )
-                end
+              startViK
+                (lineGap, strIdx, strHd, cursorIdx, leftStrings, lnHd, leftLines)
             else
               (* strIdx must be in the strTl *)
               (case (strTl, lnTl) of
                  (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
                    let
                      val strIdx = strIdx - String.size strHd
+                     val leftStrings = strHd :: leftStrings
+                     val leftLines = lnHd :: leftLines
                    in
-                     if String.sub (nestStrHd, strIdx) = #"\n" then
-                       if strIdx > 0 then
-                         (* if can check for double linebreak in nestStrHd *)
-                         if String.sub (nestStrHd, strIdx - 1) = #"\n" then
-                           (* is in double linebreak *)
-                           let
-                             val leftStrings = strHd :: leftStrings
-                             val leftLines = lnHd :: leftLines
-                           in
-                             helpVi0
-                               ( strIdx - 2, nestStrHd, cursorIdx - 2
-                               , leftStrings, leftLines
-                               )
-                           end
-                         else
-                           (* is in single linebreak *)
-                           helpVi0
-                             ( strIdx - 1, nestStrHd, cursorIdx - 1
-                             , leftStrings, leftLines
-                             )
-                       else 
-                         (* must check strHd for second linebreak *) 
-                         if String.sub (strHd, String.size strHd - 1) = #"\n" then
-                           (* is in double linebreak *)
-                           helpVi0
-                             ( String.size strHd - 2, nestStrHd, cursorIdx - 2
-                             , leftStrings, leftLines
-                             )
-                       else
-                         (* is in single linebreak *)
-                         helpVi0
-                           ( String.size strHd - 1, nestStrHd, cursorIdx - 1
-                           , leftStrings, leftLines
-                           )
-                     else
-                       (* not in linebreak *)
-                       let
-                         val lineColumn = getCursorColumn (lineGap, cursorIdx)
-                       in
-                         helpViK
-                           ( strIdx - 1, nestStrHd, cursorIdx - 1
-                           , lineColumn, lineColumn, false
-                           , strHd :: leftStrings
-                           , nestLnHd
-                           , lnHd :: leftLines
-                           )
-                       end
+                      startViK
+                        ( lineGap, strIdx, nestStrHd, cursorIdx
+                        , leftStrings, nestLnHd, leftLines
+                        )
                    end
                | (_, _) => cursorIdx)
           end
