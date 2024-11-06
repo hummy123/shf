@@ -559,16 +559,89 @@ struct
 
   fun startViK (lg, strIdx, shd, cursorIdx, leftStrings, lhd, leftLines) =
     if String.sub (shd, strIdx) = #"\n" then
-      if strIdx - 1 > 0 then
-        helpVi0 
-          (strIdx - 2, shd, cursorIdx - 2, leftStrings, leftLines)
-      else
+      if strIdx > 0 then
+        (* strIdx - 1 is in shd *)
+        if String.sub (shd, strIdx - 1) = #"\n" then
+          (* strIdx - 1 is \n *)
+          if strIdx - 1 > 0 then
+            (* strIdx - 2 is in shd *)
+            if String.sub (shd, strIdx - 2) = #"\n" then
+              (* \n -> \n *)
+              cursorIdx - 1
+            else
+              (* graphical-chr -> \n *)
+              helpVi0 
+                (strIdx - 2, shd, cursorIdx - 2, leftStrings, leftLines)
+          else
+            (* strIdx - 2 is in leftStrings *)
+            case (leftStrings, leftLines) of
+              (lshd :: lstl, llhd :: lltl) =>
+                if String.sub (lshd, String.size lshd - 1) = #"\n" then
+                  (* \n -> \n *)
+                  cursorIdx - 1
+                else
+                  (* graphical-chr -> \n *)
+                  helpVi0 
+                    (String.size lshd - 2, lshd, cursorIdx - 2, lstl, lltl)
+            | (_, _) => 
+                cursorIdx - 1
+        else
+          (* strIdx - 1 is not \n *)
+          let
+            val lineColumn = getCursorColumn (lg, cursorIdx)
+          in
+            helpViK 
+              ( strIdx, shd, cursorIdx
+              , lineColumn, lineColumn, false
+              , leftStrings, lhd, leftLines
+              )
+          end
+      else 
+        (* strIdx - 1 is in leftStrings *)
         case (leftStrings, leftLines) of
           (lshd :: lstl, llhd :: lltl) =>
-            helpVi0
-              (String.size lshd - 1, lshd, cursorIdx - 2, lstl, lltl)
-        | (_, _) => 0
+            if String.sub (lshd, String.size lshd - 1) = #"\n" then
+              (* ? -> \n *)
+              if String.size lshd > 1 then
+                (* if strIdx - 2 is in lshd *)
+                if String.sub (lshd, String.size lshd - 2) = #"\n" then
+                  (* \n -> \n *)
+                  cursorIdx - 1
+                else
+                  (* graphical-chr -> \n *)
+                  helpVi0 
+                    (String.size lshd - 2, lshd, cursorIdx - 2, lstl, lltl)
+              else
+                (* strIdx - 2 is in lstl *)
+                (case (lstl, lltl) of
+                  (stlhd :: stltl, ltlhd :: ltltl) =>
+                    if String.sub (stlhd, String.size stlhd - 1) = #"\n" then
+                      (* \n -> \n *)
+                      cursorIdx - 1
+                    else
+                      (* graphical-chr -> \n *)
+                      helpVi0 
+                        ( String.size stlhd - 2, stlhd
+                        , cursorIdx - 2, stltl, ltltl
+                        )
+                | (_, _) => 
+                    cursorIdx - 1)
+            else
+              (* does not start with \n 
+               * so start viK normally *)
+              let
+                val lineColumn = getCursorColumn (lg, cursorIdx)
+              in
+                 helpViK
+                   ( strIdx, shd, cursorIdx
+                   , lineColumn, lineColumn, false
+                   , leftStrings, lhd, leftLines
+                   )
+              end
+        | (_, _) => cursorIdx
     else
+      (* strIdx does not start with \n
+       * so start viK normally*)
       let
         val lineColumn = getCursorColumn (lg, cursorIdx)
       in
