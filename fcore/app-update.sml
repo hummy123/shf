@@ -257,8 +257,7 @@ struct
          * when cursor is at start of line, and next chr is line break *)
         clearMode app
       else if cursorIsStart then
-        let val _ = print "260\n" in
-        clearMode app end
+        clearMode app
       else if nextIsEnd then
          let
           (* delete char at cursor and then decrement cursorIdx by 1
@@ -280,8 +279,6 @@ struct
          in
            (newApp, drawMsg)
          end
-      else if Cursor.isPrevChrStartOfLine (buffer, cursorIdx) then
-        clearMode app
       else
         let
           val newBuffer = LineGap.delete (cursorIdx, 1, buffer)
