@@ -262,34 +262,34 @@ struct
          let
           (* delete char at cursor and then decrement cursorIdx by 1
            * if cursorIdx is not 0 *)
-           val newBuffer = LineGap.delete (cursorIdx, 1, buffer)
+           val buffer = LineGap.delete (cursorIdx, 1, buffer)
            val cursorIdx = 
-             if Cursor.isPrevChrStartOfLine (newBuffer, cursorIdx)
+             if Cursor.isPrevChrStartOfLine (buffer, cursorIdx)
              orelse cursorIdx = 0 then
                cursorIdx
              else cursorIdx - 1
 
-           val newBuffer = LineGap.goToLine (startLine, newBuffer)
+           val buffer = LineGap.goToLine (startLine, buffer)
            val newApp = AppWith.bufferAndCursorIdx
-             (app, newBuffer, cursorIdx, NORMAL_MODE "", startLine)
+             (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
            val drawMsg = 
              TextBuilder.build
-               (startLine, cursorIdx, newBuffer, windowWidth, windowHeight)
+               (startLine, cursorIdx, buffer, windowWidth, windowHeight)
          in
            (newApp, drawMsg)
          end
       else
         let
-          val newBuffer = LineGap.delete (cursorIdx, 1, buffer)
+          val buffer = LineGap.delete (cursorIdx, 1, buffer)
 
-          val newBuffer = LineGap.goToLine (startLine, newBuffer)
+          val buffer = LineGap.goToLine (startLine, buffer)
           val newApp = AppWith.bufferAndCursorIdx
-            (app, newBuffer, cursorIdx, NORMAL_MODE "", startLine)
+            (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
           val drawMsg = 
             TextBuilder.build
-              (startLine, cursorIdx, newBuffer, windowWidth, windowHeight)
+              (startLine, cursorIdx, buffer, windowWidth, windowHeight)
       in
         (newApp, drawMsg)
       end

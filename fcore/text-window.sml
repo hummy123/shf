@@ -20,23 +20,24 @@ struct
       | [] =>
           0
     else
-      let
-        val chr = String.sub (shd, sIdx)
-      in
-        if chr = #"\n" then
-          if absIdx <> cursorIdx then
-            getStartLineBefore
-              (sIdx - 1, shd, lineNum - 1, absIdx - 1, cursorIdx, stl)
+      if absIdx <= cursorIdx then
+        lineNum
+      else
+        let
+          val chr = String.sub (shd, sIdx)
+        in
+          if chr = #"\n" then
+            if isPrevChrLn (shd, sIdx, stl) then
+              (* \n -> \n *)
+              getStartLineBefore
+                (sIdx - 1, shd, lineNum - 1, absIdx - 1, cursorIdx, stl)
+            else
+              (* graphical-chr -> \n *)
+              getStartLineBefore
+                (sIdx - 1, shd, lineNum, absIdx - 1, cursorIdx, stl)
           else
-            (* we have found cursor, and it is at \n *)
-            lineNum - 1
-        else
-          if absIdx <> cursorIdx then
             getStartLineBefore
               (sIdx - 1, shd, lineNum, absIdx - 1, cursorIdx, stl)
-          else
-            (* we have found cursor; return line *)
-            lineNum - 1
       end
 
   fun getStartLineAfter 
