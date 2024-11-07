@@ -146,7 +146,7 @@ struct
               cursorIdx + 2
             else
               (* non-line break followed by non-line break *)
-              cursorIdx
+              cursorIdx + 1
         | [] => 
             cursorIdx)
 
