@@ -2,15 +2,6 @@ structure TextWindow =
 struct
   open TextConstants
 
-  fun isPrevChrLn (str, strPos, strTl) =
-    if strPos > 0 then
-      String.sub (str, strPos - 1) = #"\n"
-    else
-      case strTl of
-        hd :: _ =>
-          String.sub (hd, String.size hd - 1) = #"\n"
-      | [] => false
-
   fun getStartLineBefore (sIdx, shd, lineNum, absIdx, cursorIdx, stl) =
     if sIdx < 0 then
       case stl of
@@ -20,21 +11,15 @@ struct
       | [] =>
           0
     else
-      if absIdx <= cursorIdx then
-        lineNum
+      if absIdx = cursorIdx then
+        Int.max (lineNum - 1, 0)
       else
         let
           val chr = String.sub (shd, sIdx)
         in
           if chr = #"\n" then
-            if isPrevChrLn (shd, sIdx, stl) then
-              (* \n -> \n *)
-              getStartLineBefore
-                (sIdx - 1, shd, lineNum - 1, absIdx - 1, cursorIdx, stl)
-            else
-              (* graphical-chr -> \n *)
-              getStartLineBefore
-                (sIdx - 1, shd, lineNum, absIdx - 1, cursorIdx, stl)
+            getStartLineBefore
+              (sIdx - 1, shd, lineNum - 1, absIdx - 1, cursorIdx, stl)
           else
             getStartLineBefore
               (sIdx - 1, shd, lineNum, absIdx - 1, cursorIdx, stl)
