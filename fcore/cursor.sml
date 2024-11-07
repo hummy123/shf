@@ -566,16 +566,12 @@ struct
           (* \n -> \n *)
           cursorIdx
         else
-          (* non-graphical-chr -> \n *)
-          let
-            val lineColumn = getCursorColumn (lg, cursorIdx)
-          in
-            helpViK 
-              ( strIdx, shd, cursorIdx
-              , lineColumn, lineColumn, false
-              , leftStrings, lhd, leftLines
-              )
-          end
+          (* non-graphical-chr -> \n 
+           * Since we know strIdx - 1 is \n
+           * that means we are at start of line
+           * so we can simply go to the end of the previous line *)
+           helpVi0 
+             (strIdx - 2, shd, cursorIdx - 2, leftStrings, leftLines)
       else 
         (* strIdx - 1 is in leftStrings *)
         case (leftStrings, leftLines) of
