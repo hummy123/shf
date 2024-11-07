@@ -337,7 +337,13 @@ struct
         val lineIdx = Vector.sub (lnHd, 0)
       in
         if lineIdx < strIdx then strIdx - lineIdx
-        else helpGetCursorColumn (strIdx, leftStrings, leftLines)
+        else 
+          case (leftStrings, leftLines) of
+            (lshd :: lstl, llhd :: lltl) =>
+              helpGetCursorColumn (strIdx + String.size lshd, lstl, lltl)
+          | (_, _) =>
+              strIdx + 1
+          end
       end
     else if Vector.length lnHd > 1 then
       let
@@ -471,21 +477,31 @@ struct
           let
             (* convert absolute cursorIdx to idx relative to hd string *)
             val strIdx = cursorIdx - bufferIdx
-            val lineColumn = getCursorColumn (lineGap, cursorIdx)
           in
             if strIdx < String.size strHd then
               (* strIdx is in this string *)
-               helpViJ
-                 ( strIdx, strHd, cursorIdx
-                 , lineColumn, lineColumn, false
-                 , strTl, lnTl, false
-                 )
+              let
+                val lineColumn = 
+                  helpGetCursorColumnBranch
+                    (strIdx, strHd, lnHd, leftStrings, leftLines)
+              in
+                helpViJ
+                  ( strIdx, strHd, cursorIdx
+                  , lineColumn, lineColumn, false
+                  , strTl, lnTl, false
+                  )
+              end
             else
               (* strIdx must be in the strTl *)
               (case (strTl, lnTl) of
                  (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
                    let
                      val strIdx = strIdx - String.size strHd
+                     val leftStrings = strHd :: leftStrings
+                     val leftLines = lnHd :: leftLines
+                     val lineColumn = 
+                       helpGetCursorColumnBranch
+                         (strIdx, nestStrHd, nestLnHd, leftStrings, leftLines)
                    in
                      helpViJ
                        ( strIdx, nestStrHd, cursorIdx
@@ -588,7 +604,9 @@ struct
       (* strIdx does not start with \n
        * so start viK normally*)
       let
-        val lineColumn = getCursorColumn (lg, cursorIdx) + 1
+        val lineColumn = 
+          helpGetCursorColumnBranch 
+            (strIdx, shd, lhd, leftStrings, leftLines) + 1
       in
         helpViK
           ( strIdx, shd, cursorIdx
