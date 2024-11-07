@@ -326,90 +326,75 @@ struct
           end
     | (_, _) => distanceFromLine
 
-  fun helpGetCursorColumnBranch (strIdx, strHd, lnHd, leftStrings, leftLines) =
-    if String.sub (strHd, strIdx) = #"\n" then
-      (* If we are at newline, column is 0 *)
-      0
-    else if Vector.length lnHd = 1 then
-      (* check if the one line idx in the vector 
-       * is before the strIdx *)
+  fun helpGetCursorColumnLeft (leftStrings, leftLines, cursorIdx) =
+    case (leftStrings, leftLines) of
+      (lshd :: lstl, llhd :: lltl) =>
+        let
+          val cursorIdx = cursorIdx - String.size lshd
+        in
+          if Vector.length llhd > 0 then
+            let
+              val lnIdx = 
+                Vector.sub (llhd, Vector.length llhd - 1)
+            in
+              lnIdx + cursorIdx
+            end
+          else
+            helpGetCursorColumnLeft (lstl, lltl, cursorIdx)
+        end
+    | (_, _) => 
+        let
+          val _ = print "347\n"
+          val _ = print ("cIdx: " ^ Int.toString cursorIdx ^ "\n")
+        in
+        Int.max (cursorIdx, 0)
+        end
+
+  fun getCursorColumn (strIdx, strHd, lnHd, leftStrings, leftLines, cursorIdx) =
+    if Vector.length lnHd > 0 then
       let
-        val lineIdx = Vector.sub (lnHd, 0)
+        val firstLn = Vector.sub (lnHd, 0)
       in
-        if lineIdx < strIdx then strIdx - lineIdx
-        else 
-          case (leftStrings, leftLines) of
-            (lshd :: lstl, llhd :: lltl) =>
-              helpGetCursorColumn (strIdx + String.size lshd, lstl, lltl)
-          | (_, _) =>
-              strIdx + 1
-          end
-      end
-    else if Vector.length lnHd > 1 then
-      let
-        (* check if strIdx is inside line vector, 
-         * and perform binary search if so *)
-        val low = Vector.sub (lnHd, 0)
-      in
-        if low < strIdx then
-          (* strIdx is less than low, so use bin search
-           * to find lineIdx that is lower than strIdx *)
+        if firstLn > strIdx then
+          (* search left strings/lines *)
           let
-            val lineIdx = binSearch (strIdx - 1, lnHd)
-            (* linebreakPos = index of linebreak before strIdx *)
-            val linebreakPos = Vector.sub (lnHd, lineIdx)
+            val _ = print "361\n"
+            val lineIdx = 
+              helpGetCursorColumnLeft
+                (leftStrings, leftLines, cursorIdx - strIdx)
           in
-            strIdx - linebreakPos - 1
+            cursorIdx - lineIdx
+          end
+        else if firstLn < strIdx then
+          (* binary search in here 
+           * because we know lnHd definitely contains
+           * a lineIdx less or equal to strIdx *)
+          let
+            val _ = print "373\n"
+            val lnIdx = binSearch (strIdx, lnHd)
+            val lnIdx = Vector.sub (lnHd, lnIdx)
+          in
+            if lnIdx < strIdx then
+              (print "378\n"; strIdx - lnIdx - 1)
+            else
+              (* firstLn = strIdx *)
+              (print "381\n";0)
           end
         else
-          (* line before strIdx must be in leftStrings/lines *)
-          helpGetCursorColumn (strIdx, leftStrings, leftLines)
+          (* firstLn = strIdx
+           * meaning that we are already at a line break
+           * and that the column is 0 *)
+           (print "387\n";0)
       end
     else
-      (* lnHd has length of 0, so most recent 
-       * line break must be in leftStrings/lines *)
-      helpGetCursorColumn (strIdx, leftStrings, leftLines)
-
-  (* Prerequisite: lineGap is moved to cursorIdx *)
-  fun getCursorColumn (lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (strHd :: strTl, lnHd :: lnTl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size strHd then
-              (* strIdx is in this string *)
-              helpGetCursorColumnBranch
-                (strIdx, strHd, lnHd, leftStrings, leftLines)
-            else
-              (* strIdx must be in the strTl *)
-              (case (strTl, lnTl) of
-                 (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
-                   let
-                     val strIdx = strIdx - String.size strHd
-                     val leftStrings = strHd :: leftStrings
-                     val leftLines = lnHd :: leftLines
-                   in
-                     helpGetCursorColumnBranch
-                       (strIdx, nestStrHd, nestLnHd, leftStrings, leftLines)
-                   end
-               | (_, _) =>
-                   helpGetCursorColumnBranch
-                     ( String.size strHd - 1
-                     , strHd
-                     , lnHd
-                     , leftStrings
-                     , leftLines
-                     ))
-          end
-      | (_, _) => helpGetCursorColumn (0, leftStrings, leftLines)
-    end
+      let
+        val _ = print "391\n"
+        val lineIdx = 
+          helpGetCursorColumnLeft
+            (leftStrings, leftLines, cursorIdx - strIdx)
+      in
+        cursorIdx - lineIdx
+      end
 
   fun helpViJ
     ( strPos, str, absIdx
@@ -482,8 +467,10 @@ struct
               (* strIdx is in this string *)
               let
                 val lineColumn = 
-                  helpGetCursorColumnBranch
-                    (strIdx, strHd, lnHd, leftStrings, leftLines)
+                  getCursorColumn
+                    ( strIdx, strHd, lnHd
+                    , leftStrings, leftLines, cursorIdx
+                    )
               in
                 helpViJ
                   ( strIdx, strHd, cursorIdx
@@ -500,8 +487,10 @@ struct
                      val leftStrings = strHd :: leftStrings
                      val leftLines = lnHd :: leftLines
                      val lineColumn = 
-                       helpGetCursorColumnBranch
-                         (strIdx, nestStrHd, nestLnHd, leftStrings, leftLines)
+                       getCursorColumn
+                         ( strIdx, nestStrHd, nestLnHd
+                         , leftStrings, leftLines, cursorIdx
+                         )
                    in
                      helpViJ
                        ( strIdx, nestStrHd, cursorIdx
@@ -548,8 +537,8 @@ struct
               (* have to calculate column of current line
                * so we know which line to stop searching at *)
               val lineColumn = 
-                helpGetCursorColumnBranch
-                  (strPos - 1, str, lineHd, strTl, lineTl)
+                getCursorColumn
+                  (strPos - 1, str, lineHd, strTl, lineTl, absIdx - 1)
             in
               helpViK
                 ( strPos - 1, str, absIdx - 1
@@ -573,40 +562,87 @@ struct
               , strTl, lineHd, lineTl
               )
 
-  fun startViK (lg, strIdx, shd, cursorIdx, leftStrings, lhd, leftLines) =
+  fun startViK (strIdx, shd, cursorIdx, leftStrings, lhd, leftLines) =
     if String.sub (shd, strIdx) = #"\n" then
-      (* ? -> \n *)
+      (* ? -> ? -> \n *)
       if strIdx > 0 then
         (* strIdx - 1 is in shd *)
         if String.sub (shd, strIdx - 1) = #"\n" then
-          (* \n -> \n *)
-          cursorIdx
+          (* ? -> \n -> \n *)
+          if strIdx > 1 then
+            (* strIdx - 2 is in shd *)
+            if String.sub (shd, strIdx - 2) = #"\n" then
+              (* \n -> \n -> \n 
+               * so it is safe to decrement cursorIdx by 1 *)
+              cursorIdx - 1
+            else
+              (* graphical-chr -> \n -> \n 
+               * so go to beginning of line, 
+               * starting from graphical-chr *)
+              helpVi0
+                (strIdx - 2, shd, cursorIdx - 2, leftStrings, leftLines)
+          else
+            (* strIdx - 2 is in leftStrings *)
+            case (leftStrings, leftLines) of
+              (lshd :: lstl, llhd :: lltl) =>
+                if String.sub (lshd, String.size lshd - 1) = #"\n" then
+                (* \n -> \n -> \n 
+                 * so it is safe to decrement cursorIdx by 1 *)
+                 cursorIdx - 1
+                else
+                (* graphical-chr -> \n -> \n 
+                 * so go to beginning of line, 
+                 * starting from graphical-chr *)
+                 helpVi0
+                   (String.size lshd - 1, lshd, cursorIdx - 2, lstl, lltl)
+            | (_, _) =>
+                (* nothing to the left, so we are at start of buffer *)
+                0
         else
-          (* non-graphical-chr -> \n 
-           * Since we know strIdx - 1 is \n
-           * that means we are at start of line
-           * so we can simply go to the end of the previous line *)
-           helpVi0 
-             (strIdx - 2, shd, cursorIdx - 2, leftStrings, leftLines)
-      else 
+          (* ? -> graphical-chr -> \n 
+           * Don't expect this case to happen
+           * but if it does, go to start of line. *)
+           helpVi0 (strIdx - 1, shd, cursorIdx - 1, leftStrings, leftLines)
+      else
         (* strIdx - 1 is in leftStrings *)
         case (leftStrings, leftLines) of
           (lshd :: lstl, llhd :: lltl) =>
             if String.sub (lshd, String.size lshd - 1) = #"\n" then
-              (* \n -> \n *)
-              cursorIdx
+              (* ? -> \n -> \n *)
+              if String.size lshd > 1 then
+                (* cursorIdx - 2 is in this string *)
+                if String.sub (lshd, String.size lshd - 2) = #"\n" then
+                  (* \n -> \n -> \n *)
+                  cursorIdx - 1
+                else
+                  (* graphical-chr -> \n -> \n *)
+                  helpVi0
+                    (String.size lshd - 2, lshd, cursorIdx - 2, lstl, lltl)
+              else
+                (* cursorIdx - 2 is in lstl *)
+                (case (lstl, lltl) of
+                  (stlhd :: stltl, ltlhd :: lltl) =>
+                    if String.sub (stlhd, String.size stlhd - 1) = #"\n" then
+                      (* \n -> \n -> \n *)
+                      cursorIdx - 1
+                    else
+                      (* graphical-chr -> \n -> \n *)
+                      helpVi0
+                        (String.size stlhd - 1, stlhd, cursorIdx - 2, lstl, lltl)
+                | (_, _) => 0)
             else
-              (* graphical-chr -> \n *)
-              helpVi0 
-                (String.size lshd - 2, lshd, cursorIdx - 2, lstl, lltl)
-        | (_, _) => cursorIdx
+              (* ? -> graphical-chr -> \n *)
+               helpVi0 (String.size lshd - 1, lshd, cursorIdx - 1, leftStrings, leftLines)
+        | (_, _) =>
+            (* leftStrings is empty so go to start of buffer *)
+            0
     else
-      (* strIdx does not start with \n
-       * so start viK normally*)
+      (* ? -> ? -> graphical-chr 
+       * Normal case where we call startViK. *)
       let
         val lineColumn = 
-          helpGetCursorColumnBranch 
-            (strIdx, shd, lhd, leftStrings, leftLines) + 1
+          getCursorColumn
+            (strIdx, shd, lhd, leftStrings, leftLines, cursorIdx)
       in
         helpViK
           ( strIdx, shd, cursorIdx
@@ -622,13 +658,26 @@ struct
         lineGap
     in
       case (rightStrings, rightLines) of
-        (strHd :: _, lnHd :: _) =>
+        (shd :: stl, lhd :: ltl) =>
           let
             (* convert absolute cursorIdx to idx relative to hd string *)
             val strIdx = cursorIdx - bufferIdx
           in
-            startViK
-              (lineGap, strIdx - 1, strHd, cursorIdx - 1, leftStrings, lnHd, leftLines)
+            if strIdx < String.size shd then
+              startViK
+                (strIdx, shd, cursorIdx, leftStrings, lhd, leftLines)
+            else
+              case (stl, ltl) of
+                (stlhd :: stltl, ltlhd :: ltltl) =>
+                  let
+                    val strIdx = strIdx - String.size shd
+                    val leftStrings = shd :: leftStrings
+                    val leftLines = lhd :: leftLines
+                  in
+                    startViK
+                      (strIdx, stlhd, cursorIdx, leftStrings, ltlhd, leftLines)
+                  end
+              | (_, _) => cursorIdx
           end
       | (_, _) => 
           (* nowhere to go rightward, so return cursorIdx *) 
@@ -1100,7 +1149,7 @@ struct
             if strIdx < String.size shd then
               (* strIdx is in this string *)
               startEndOfWord
-                (shd, strIdx, cursorIdx, rightStrings, rightLines, fEnd)
+                (shd, strIdx, cursorIdx, stl, ltl, fEnd)
             else
               (* strIdx is in tl *)
               (case (stl, ltl) of
