@@ -343,12 +343,7 @@ struct
             helpGetCursorColumnLeft (lstl, lltl, cursorIdx)
         end
     | (_, _) => 
-        let
-          val _ = print "347\n"
-          val _ = print ("cIdx: " ^ Int.toString cursorIdx ^ "\n")
-        in
         Int.max (cursorIdx, 0)
-        end
 
   fun getCursorColumn (strIdx, strHd, lnHd, leftStrings, leftLines, cursorIdx) =
     if Vector.length lnHd > 0 then
@@ -358,42 +353,45 @@ struct
         if firstLn > strIdx then
           (* search left strings/lines *)
           let
-            val _ = print "361\n"
             val lineIdx = 
               helpGetCursorColumnLeft
                 (leftStrings, leftLines, cursorIdx - strIdx)
           in
-            cursorIdx - lineIdx
+            if lineIdx = 0 then
+              cursorIdx
+            else
+              cursorIdx - lineIdx - 1
           end
         else if firstLn < strIdx then
           (* binary search in here 
            * because we know lnHd definitely contains
            * a lineIdx less or equal to strIdx *)
           let
-            val _ = print "373\n"
             val lnIdx = binSearch (strIdx, lnHd)
             val lnIdx = Vector.sub (lnHd, lnIdx)
           in
             if lnIdx < strIdx then
-              (print "378\n"; strIdx - lnIdx - 1)
+              strIdx - lnIdx - 1
             else
               (* firstLn = strIdx *)
-              (print "381\n";0)
+              0
           end
         else
           (* firstLn = strIdx
            * meaning that we are already at a line break
            * and that the column is 0 *)
-           (print "387\n";0)
+           0
       end
     else
       let
-        val _ = print "391\n"
         val lineIdx = 
           helpGetCursorColumnLeft
             (leftStrings, leftLines, cursorIdx - strIdx)
       in
-        cursorIdx - lineIdx
+        if lineIdx = 0 then
+          cursorIdx
+        else
+          cursorIdx - lineIdx - 1
       end
 
   fun helpViJ
