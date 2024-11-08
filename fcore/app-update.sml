@@ -396,6 +396,27 @@ struct
       buildTextAndClear (app, buffer, cursorIdx)
     end
 
+  fun deleteToFirstNonSpaceChr (app: app_type) =
+    let
+      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+
+      (* move LineGap and buffer to start of line *)
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val otherIdx = Cursor.vi0 (buffer, cursorIdx)
+
+      (* move cursorIdx to first character on line *)
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val otherIdx = Cursor.firstNonSpaceChr (buffer, otherIdx)
+
+      val low = Int.min (cursorIdx, otherIdx)
+      val high = Int.max (cursorIdx, otherIdx)
+      val length = high - low
+
+      val buffer = LineGap.delete (low, length, buffer)
+    in
+      buildTextAndClear (app, buffer, low)
+    end
+
   fun helpDeleteToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
       buildTextAndClearAfterChr (app, buffer, cursorIdx)
@@ -526,14 +547,8 @@ struct
           | #"e" => delete (app, count, Cursor.endOfWord)
           | #"E" => delete (app, count, Cursor.endOfWORD)
           | #"0" => delete (app, 1, Cursor.vi0)
-          (* todo for '$': 
-           * Cursor.viDlr takes us to last chr on line
-           * but it leaves last chr on line alone.
-           * Have to increment by 1. *)
           | #"$" => deleteToEndOfLine app
-          (* todo: requires custom delete function
-          | #"^" => firstNonSpaceChr app
-          *)
+          | #"^" => deleteToFirstNonSpaceChr app
           (* non-terminal commands which require appending chr *)
           | #"t" => appendChr (app, chr, str)
           | #"T" => appendChr (app, chr, str)
