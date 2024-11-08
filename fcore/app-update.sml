@@ -444,6 +444,103 @@ struct
     | KEY_ESC => clearMode app
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
 
+  fun helpDelete (app: app_type, buffer, cursorIdx, count, fMove) =
+    if count = 0 then
+      let
+        val {windowWidth, windowHeight, startLine, ...} = app
+
+        (* move LineGap to first line displayed on screen *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+
+        (* get new startLine which may move screen depending on cursor movements *)
+        val startLine = TextWindow.getStartLine
+          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
+        (* move buffer to new startLine as required by TextBuilder.build *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+
+        val drawMsg = 
+          TextBuilder.build
+            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+        val mode = NORMAL_MODE ""
+        val newApp = AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, mode, startLine)
+      in
+        (newApp, drawMsg)
+      end
+    else
+      let
+        (* get otherIdx, where cursor will want to go after motion. *)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val otherIdx = fMove (buffer, cursorIdx)
+
+        (* Because some motions like 'b' take us backwards,
+         * and some motions like 'w' take us forwards,
+         * we need to find out which idx is lower and higher
+         * for proper deletion and seeing where to set cursorIdx to *)
+        val low = Int.min (cursorIdx, otherIdx)
+        val high = Int.max (cursorIdx, otherIdx)
+        val length = high - low
+
+        val buffer = LineGap.delete (low, length, buffer)
+
+        (* todo: possibly decrement cursorIdx by 1 
+         * if deleting put cursorIdx past end of file.
+         * else, if deleting put cursorIdx before 0,
+         * ensure that it is clipped to 0.
+         * else, leave cursorIdx alone.
+         * *)
+      in
+        helpDelete (app, buffer, low, count - 1, fMove)
+      end
+
+  fun delete (app: app_type, count, fMove) =
+    helpDelete (app, #buffer app, #cursorIdx app, count, fMove)
+
+  fun parseDelete (strPos, str, count, app, newCmd) =
+    if strPos = String.size str - 1 then
+      (* have to check newCmd *)
+      case newCmd of
+        CHAR_EVENT chr =>
+          (case chr of
+            (* terminal commands: require no input after *)
+            #"h" => delete (app, count, Cursor.viH)
+          | #"j" => delete (app, count, Cursor.viJ)
+          | #"k" => delete (app, count, Cursor.viK)
+          | #"l" => delete (app, count, Cursor.viL)
+          | #"w" => delete (app, count, Cursor.nextWord)
+          | #"W" => delete (app, count, Cursor.nextWORD)
+          | #"b" => delete (app, count, Cursor.prevWord)
+          | #"B" => delete (app, count, Cursor.prevWORD)
+          | #"e" => delete (app, count, Cursor.endOfWord)
+          | #"E" => delete (app, count, Cursor.endOfWORD)
+          | #"0" => delete (app, count, Cursor.vi0)
+          (* todo for '$': 
+           * Cursor.viDlr takes us to last chr on line
+           * but it leaves last chr on line alone.
+           * Have to increment by 1. *)
+          | #"$" => delete (app, count, Cursor.viDlr)
+          (* todo: requires custom delete function
+          | #"^" => firstNonSpaceChr app
+          *)
+          (* non-terminal commands which require appending chr *)
+          | #"t" => appendChr (app, chr, str)
+          | #"T" => appendChr (app, chr, str)
+          | #"y" => appendChr (app, chr, str)
+          | #"d" => appendChr (app, chr, str)
+          | #"f" => appendChr (app, chr, str)
+          | #"F" => appendChr (app, chr, str)
+          | #"g" => appendChr (app, chr, str)
+          | #"c" => appendChr (app, chr, str)
+          (* invalid command: reset mode *)
+          | _ => clearMode app)
+      | KEY_ESC => clearMode app
+      | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+    else
+      (* have to continue parsing string *)
+      (print "app-update.sml line 527 temp\n"; clearMode app)
+
   (* useful reference as list of non-terminal commands *)
   (* todo: actually parse, checking if there are further strings or input *)
   fun parseAfterCount (strPos, str, count, app, newCmd) =
@@ -468,7 +565,7 @@ struct
         clearMode app
     | #"d" => 
         (* delete *) 
-        clearMode app
+        parseDelete (strPos, str, count, app, newCmd)
     | #"f" =>
         (* to chr, forward *)
         handleMoveToChr (count, app, Cursor.toNextChr, newCmd)
