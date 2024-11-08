@@ -233,7 +233,7 @@ struct
     end
 
   (* equivalent of vi's 'x' command *)
-  fun helpDeleteChr (app: app_type, buffer, cursorIdx, count) =
+  fun helpRemoveChr (app: app_type, buffer, cursorIdx, count) =
     if count = 0 then
       let
         val {startLine, windowWidth, windowHeight, ...} = app
@@ -270,9 +270,9 @@ struct
           (* vi simply doesn't do anything on 'x' command
            * when cursor is at start of line, and next chr is line break 
            * so skip to end of loop by passing count of 0 *)
-          helpDeleteChr (app, buffer, cursorIdx, 0)
+          helpRemoveChr (app, buffer, cursorIdx, 0)
         else if cursorIsStart then
-          helpDeleteChr (app, buffer, cursorIdx, 0)
+          helpRemoveChr (app, buffer, cursorIdx, 0)
         else if nextIsEnd then
           let
            (* delete char at cursor and then decrement cursorIdx by 1
@@ -284,18 +284,18 @@ struct
                 cursorIdx
               else cursorIdx - 1
           in
-            helpDeleteChr (app, buffer, cursorIdx, count - 1)
+            helpRemoveChr (app, buffer, cursorIdx, count - 1)
           end
        else
          let
            val buffer = LineGap.delete (cursorIdx, 1, buffer)
          in
-            helpDeleteChr (app, buffer, cursorIdx, count - 1)
+            helpRemoveChr (app, buffer, cursorIdx, count - 1)
          end
       end
 
-  fun deleteChr (app: app_type, count) =
-    helpDeleteChr (app, #buffer app, #cursorIdx app, count)
+  fun removeChr (app: app_type, count) =
+    helpRemoveChr (app, #buffer app, #cursorIdx app, count)
 
   (* number of characters which are integers *)
   fun getNumLength (pos, str) =
@@ -366,7 +366,7 @@ struct
          else
            moveToLine (app, count - 1)
     | #"%" => moveToMatchingPair app
-    | #"x" => deleteChr (app, count)
+    | #"x" => removeChr (app, count)
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
