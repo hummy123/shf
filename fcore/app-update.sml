@@ -233,67 +233,68 @@ struct
     end
 
   (* equivalent of vi's 'x' command *)
-  fun deleteChr (app: app_type, count) =
-    let
-      val {buffer, cursorIdx, startLine, windowWidth, windowHeight, ...} = app
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+  fun helpDeleteChr (app: app_type, buffer, cursorIdx, count) =
+    if count = 0 then
+      let
+        val {startLine, windowWidth, windowHeight, ...} = app
 
-      (* Explanation of how Vi's 'x' command behaves:
-       * If the cursor is at the end of the file, 
-       * then it is decremented by 1.
-       * If the character after the cursor is a line break,
-       * then it is also decremented by 1.
-       * If the character before the cursor is a linee break, the cursor stays
-       * where it is.
-       * If the chracter AT the cursor is a line break and the characater
-       * AFTER the cursor is also a line break, then nothing is deleted. 
-       * Otherwise, the same cursor is returned.
-       * All decrement cases do not decrement when the cursor is 0. *)
-      val cursorIsStart = Cursor.isCursorAtStartOfLine (buffer, cursorIdx)
-      val nextIsEnd = Cursor.isNextChrEndOfLine (buffer, cursorIdx)
-    in
-      if nextIsEnd andalso cursorIsStart then
-        (* vi simply doesn't do anything on 'x' command
-         * when cursor is at start of line, and next chr is line break *)
-        clearMode app
-      else if cursorIsStart then
-        clearMode app
-      else if nextIsEnd then
-         let
-          (* delete char at cursor and then decrement cursorIdx by 1
-           * if cursorIdx is not 0 *)
-           val buffer = LineGap.delete (cursorIdx, 1, buffer)
-           val cursorIdx = 
-             if Cursor.isPrevChrStartOfLine (buffer, cursorIdx)
-             orelse cursorIdx = 0 then
-               cursorIdx
-             else cursorIdx - 1
+        val buffer = LineGap.goToLine (startLine, buffer)
+        val newApp = AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
-           val buffer = LineGap.goToLine (startLine, buffer)
-           val newApp = AppWith.bufferAndCursorIdx
-             (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
-
-           val drawMsg = 
-             TextBuilder.build
-               (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-         in
-           (newApp, drawMsg)
-         end
-      else
-        let
-          val buffer = LineGap.delete (cursorIdx, 1, buffer)
-
-          val buffer = LineGap.goToLine (startLine, buffer)
-          val newApp = AppWith.bufferAndCursorIdx
-            (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
-
-          val drawMsg = 
-            TextBuilder.build
-              (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+        val drawMsg = 
+          TextBuilder.build
+            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
       in
         (newApp, drawMsg)
       end
-    end
+    else
+      let
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+        (* Explanation of how Vi's 'x' command behaves:
+         * If the cursor is at the end of the file, 
+         * then it is decremented by 1.
+         * If the character after the cursor is a line break,
+         * then it is also decremented by 1.
+         * If the character before the cursor is a linee break, the cursor stays
+         * where it is.
+         * If the chracter AT the cursor is a line break and the characater
+         * AFTER the cursor is also a line break, then nothing is deleted. 
+         * Otherwise, the same cursor is returned.
+         * All decrement cases do not decrement when the cursor is 0. *)
+        val cursorIsStart = Cursor.isCursorAtStartOfLine (buffer, cursorIdx)
+        val nextIsEnd = Cursor.isNextChrEndOfLine (buffer, cursorIdx)
+      in
+        if nextIsEnd andalso cursorIsStart then
+          (* vi simply doesn't do anything on 'x' command
+           * when cursor is at start of line, and next chr is line break *)
+          clearMode app
+        else if cursorIsStart then
+          clearMode app
+        else if nextIsEnd then
+          let
+           (* delete char at cursor and then decrement cursorIdx by 1
+            * if cursorIdx is not 0 *)
+            val buffer = LineGap.delete (cursorIdx, 1, buffer)
+            val cursorIdx = 
+              if Cursor.isPrevChrStartOfLine (buffer, cursorIdx)
+              orelse cursorIdx = 0 then
+                cursorIdx
+              else cursorIdx - 1
+          in
+            helpDeleteChr (app, buffer, cursorIdx, count - 1)
+          end
+       else
+         let
+           val buffer = LineGap.delete (cursorIdx, 1, buffer)
+         in
+            helpDeleteChr (app, buffer, cursorIdx, count - 1)
+         end
+      end
+
+  fun deleteChr (app: app_type, count) =
+    helpDeleteChr (app, #buffer app, #cursorIdx app, count)
 
   (* number of characters which are integers *)
   fun getNumLength (pos, str) =
