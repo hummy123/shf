@@ -1713,4 +1713,35 @@ struct
           end
       | [] => true
     end
+
+  (* Prerequisite: lineGap is moved to cursorIdx *)
+  fun clipIdxAfterDelete (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, idx = bufferIdx, ...} = lineGap
+    in
+      case rightStrings of
+        hd :: tl =>
+          let
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size hd then
+              cursorIdx
+            else
+              (* strIdx is in tl *)
+              (case tl of
+                tlhd :: tltl =>
+                let
+                  val strIdx = strIdx - String.size hd
+                in
+                  if strIdx < String.size tlhd then
+                    cursorIdx
+                  else
+                    bufferIdx + String.size hd + String.size tlhd - 1
+                end
+              | [] =>
+                  bufferIdx + String.size hd - 1)
+          end
+      | [] =>
+          Int.max (bufferIdx - 1, 0)
+    end
 end

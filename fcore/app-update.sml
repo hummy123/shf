@@ -340,7 +340,15 @@ struct
 
   fun helpDelete (app: app_type, buffer, cursorIdx, count, fMove) =
     if count = 0 then
-      buildTextAndClear (app, buffer, cursorIdx)
+      let
+        (* If we have deleted from the buffer so that cursorIdx
+         * is no longer a valid idx,
+         * clip cursorIdx to the end. *)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val cursorIdx = Cursor.clipIdxAfterDelete (buffer, cursorIdx)
+      in
+        buildTextAndClear (app, buffer, cursorIdx)
+      end
     else
       let
         (* get otherIdx, where cursor will want to go after motion. *)
