@@ -552,19 +552,35 @@ struct
           (* non-terminal commands which require appending chr *)
           | #"t" => appendChr (app, chr, str)
           | #"T" => appendChr (app, chr, str)
-          | #"y" => appendChr (app, chr, str)
           | #"d" => appendChr (app, chr, str)
           | #"f" => appendChr (app, chr, str)
           | #"F" => appendChr (app, chr, str)
           | #"g" => appendChr (app, chr, str)
-          | #"c" => appendChr (app, chr, str)
           (* invalid command: reset mode *)
           | _ => clearMode app)
       | KEY_ESC => clearMode app
       | RESIZE_EVENT (width, height) => resizeText (app, width, height)
     else
       (* have to continue parsing string *)
-      (print "app-update.sml line 527 temp\n"; clearMode app)
+      case String.sub (str, strPos + 1) of
+        #"t" => 
+          (* todo: delete till chr, forwards *)
+          appendChr (app, chr, str)
+      | #"T" => 
+          (* todo: delete till chr, backwards *)
+          appendChr (app, chr, str)
+      | #"d" => 
+          (* todo: delete whole line *)
+          appendChr (app, chr, str)
+      | #"f" => 
+          (* todo: delete to chr, forwards *)
+          appendChr (app, chr, str)
+      | #"F" => 
+          (* todo: delete to chr, backwards *)
+          appendChr (app, chr, str)
+      | #"g" => 
+          (* todo: same events as handleGo *)
+          appendChr (app, chr, str)
 
   (* useful reference as list of non-terminal commands *)
   fun parseAfterCount (strPos, str, count, app, newCmd) =
