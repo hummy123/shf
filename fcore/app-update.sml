@@ -72,6 +72,8 @@ struct
       (newApp, drawMsg)
     end
 
+  (* movement functions *)
+
   fun moveToStart (app: app_type) =
     let
       val {buffer, windowWidth, windowHeight, ...} = app
@@ -226,7 +228,64 @@ struct
       buildTextAndClear (app, buffer, cursorIdx)
     end
 
-  (* equivalent of vi's 'x' command *)
+  fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
+    if count = 0 then
+      let
+        val {windowWidth, windowHeight, startLine, ...} = app
+
+        (* move LineGap to first line displayed on screen *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+
+        (* get new startLine which may move screen depending on cursor movements *)
+        val startLine = TextWindow.getStartLine
+          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
+        (* move buffer to new startLine as required by TextBuilder.build *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+
+        val drawMsg = 
+          TextBuilder.build
+            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+        val mode = NORMAL_MODE ""
+        val newApp = AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, mode, startLine)
+      in
+        (newApp, drawMsg)
+      end
+    else
+      let
+        (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val cursorIdx = fMove (buffer, cursorIdx, chr)
+      in
+        helpMoveToChr (app, buffer, cursorIdx, count - 1, fMove, chr)
+      end
+
+  fun moveToChr (app: app_type, count, fMove, chr) =
+    let val {cursorIdx, buffer, ...} = app
+    in helpMoveToChr (app, buffer, cursorIdx, count, fMove, chr)
+    end
+
+  fun handleMoveToChr (count, app, fMove, newCmd) =
+    case newCmd of
+      CHAR_EVENT chr => moveToChr (app, count, fMove, chr)
+    | KEY_ESC => clearMode app
+    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+
+  fun handleGo (count, app, newCmd) =
+    case newCmd of
+      CHAR_EVENT chr =>
+        (case chr of
+           #"e" => move (app, count, Cursor.endOfPrevWord)
+         | #"E" => move (app, count, Cursor.endOfPrevWORD)
+         | #"g" => moveToStart app
+         | _ => clearMode app)
+    | KEY_ESC => clearMode app
+    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+
+  (* text-delete functions *)
+  (** equivalent of vi's 'x' command **)
   fun helpRemoveChr (app: app_type, buffer, cursorIdx, count) =
     if count = 0 then
       buildTextAndClear (app, buffer, cursorIdx)
@@ -279,7 +338,41 @@ struct
   fun removeChr (app: app_type, count) =
     helpRemoveChr (app, #buffer app, #cursorIdx app, count)
 
-  (* number of characters which are integers *)
+  fun helpDelete (app: app_type, buffer, cursorIdx, count, fMove) =
+    if count = 0 then
+      buildTextAndClear (app, buffer, cursorIdx)
+    else
+      let
+        (* get otherIdx, where cursor will want to go after motion. *)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val otherIdx = fMove (buffer, cursorIdx)
+
+        (* Because some motions like 'b' take us backwards,
+         * and some motions like 'w' take us forwards,
+         * we need to find out which idx is lower and higher
+         * for proper deletion and seeing where to set cursorIdx to *)
+        val low = Int.min (cursorIdx, otherIdx)
+        val high = Int.max (cursorIdx, otherIdx)
+        val length = high - low
+
+        val buffer = LineGap.delete (low, length, buffer)
+
+        (* todo: possibly decrement cursorIdx by 1 
+         * if deleting put cursorIdx past end of file.
+         * else, if deleting put cursorIdx before 0,
+         * ensure that it is clipped to 0.
+         * else, leave cursorIdx alone.
+         * *)
+      in
+        helpDelete (app, buffer, low, count - 1, fMove)
+      end
+
+  fun delete (app: app_type, count, fMove) =
+    helpDelete (app, #buffer app, #cursorIdx app, count, fMove)
+
+
+  (* command-parsing functions *)
+  (** number of characters which are integers *)
   fun getNumLength (pos, str) =
     if pos = String.size str then
       pos
@@ -370,116 +463,6 @@ struct
           (newApp, [])
         end
 
-  fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
-    if count = 0 then
-      let
-        val {windowWidth, windowHeight, startLine, ...} = app
-
-        (* move LineGap to first line displayed on screen *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        (* get new startLine which may move screen depending on cursor movements *)
-        val startLine = TextWindow.getStartLine
-          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
-        (* move buffer to new startLine as required by TextBuilder.build *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        val drawMsg = 
-          TextBuilder.build
-            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-        val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, mode, startLine)
-      in
-        (newApp, drawMsg)
-      end
-    else
-      let
-        (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val cursorIdx = fMove (buffer, cursorIdx, chr)
-      in
-        helpMoveToChr (app, buffer, cursorIdx, count - 1, fMove, chr)
-      end
-
-  fun moveToChr (app: app_type, count, fMove, chr) =
-    let val {cursorIdx, buffer, ...} = app
-    in helpMoveToChr (app, buffer, cursorIdx, count, fMove, chr)
-    end
-
-  fun handleMoveToChr (count, app, fMove, newCmd) =
-    case newCmd of
-      CHAR_EVENT chr => moveToChr (app, count, fMove, chr)
-    | KEY_ESC => clearMode app
-    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-
-  fun handleGo (count, app, newCmd) =
-    case newCmd of
-      CHAR_EVENT chr =>
-        (case chr of
-           #"e" => move (app, count, Cursor.endOfPrevWord)
-         | #"E" => move (app, count, Cursor.endOfPrevWORD)
-         | #"g" => moveToStart app
-         | _ => clearMode app)
-    | KEY_ESC => clearMode app
-    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-
-  fun helpDelete (app: app_type, buffer, cursorIdx, count, fMove) =
-    if count = 0 then
-      let
-        val {windowWidth, windowHeight, startLine, ...} = app
-
-        (* move LineGap to first line displayed on screen *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        (* get new startLine which may move screen depending on cursor movements *)
-        val startLine = TextWindow.getStartLine
-          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
-        (* move buffer to new startLine as required by TextBuilder.build *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        val drawMsg = 
-          TextBuilder.build
-            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-        val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, mode, startLine)
-      in
-        (newApp, drawMsg)
-      end
-    else
-      let
-        (* get otherIdx, where cursor will want to go after motion. *)
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val otherIdx = fMove (buffer, cursorIdx)
-
-        (* Because some motions like 'b' take us backwards,
-         * and some motions like 'w' take us forwards,
-         * we need to find out which idx is lower and higher
-         * for proper deletion and seeing where to set cursorIdx to *)
-        val low = Int.min (cursorIdx, otherIdx)
-        val high = Int.max (cursorIdx, otherIdx)
-        val length = high - low
-
-        val buffer = LineGap.delete (low, length, buffer)
-
-        (* todo: possibly decrement cursorIdx by 1 
-         * if deleting put cursorIdx past end of file.
-         * else, if deleting put cursorIdx before 0,
-         * ensure that it is clipped to 0.
-         * else, leave cursorIdx alone.
-         * *)
-      in
-        helpDelete (app, buffer, low, count - 1, fMove)
-      end
-
-  fun delete (app: app_type, count, fMove) =
-    helpDelete (app, #buffer app, #cursorIdx app, count, fMove)
-
   fun parseDelete (strPos, str, count, app, newCmd) =
     if strPos = String.size str - 1 then
       (* have to check newCmd *)
@@ -497,12 +480,12 @@ struct
           | #"B" => delete (app, count, Cursor.prevWORD)
           | #"e" => delete (app, count, Cursor.endOfWord)
           | #"E" => delete (app, count, Cursor.endOfWORD)
-          | #"0" => delete (app, count, Cursor.vi0)
+          | #"0" => delete (app, 1, Cursor.vi0)
           (* todo for '$': 
            * Cursor.viDlr takes us to last chr on line
            * but it leaves last chr on line alone.
            * Have to increment by 1. *)
-          | #"$" => delete (app, count, Cursor.viDlr)
+          | #"$" => delete (app, 1, Cursor.viDlr)
           (* todo: requires custom delete function
           | #"^" => firstNonSpaceChr app
           *)
@@ -524,7 +507,6 @@ struct
       (print "app-update.sml line 527 temp\n"; clearMode app)
 
   (* useful reference as list of non-terminal commands *)
-  (* todo: actually parse, checking if there are further strings or input *)
   fun parseAfterCount (strPos, str, count, app, newCmd) =
     (* we are trying to parse multi-char but non-terminal strings here.
      * For example, we don't want to parse 3w which is a terminal commmand
