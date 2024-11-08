@@ -52,6 +52,36 @@ struct
       (newApp, drawMsg)
     end
 
+  (* Difference between this and buildTextAndClear is that 
+   * this is meant to be called after a chr movement, 
+   * where the cursor may possibly jump off window by a wide marigin.
+   * Since the cursor may move away a lot, it is best to recenter.
+   * *)
+  fun buildTextAndClearAfterChr (app: app_type, buffer, cursorIdx) =
+    let
+      val {windowWidth, windowHeight, startLine, ...} = app
+
+      (* move LineGap to first line displayed on screen *)
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      (* get new startLine which may move screen depending on cursor movements *)
+      val startLine = TextWindow.getStartLine
+        (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
+      (* move buffer to new startLine as required by TextBuilder.build *)
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      val drawMsg = 
+        TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val mode = NORMAL_MODE ""
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine)
+    in
+      (newApp, drawMsg)
+    end
+
   fun centreToCursor (app: app_type) =
     let
       val {buffer, windowWidth, windowHeight, startLine = origLine, cursorIdx, ...} = app
@@ -232,35 +262,12 @@ struct
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
-      let
-        val {windowWidth, windowHeight, startLine, ...} = app
-
-        (* move LineGap to first line displayed on screen *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        (* get new startLine which may move screen depending on cursor movements *)
-        val startLine = TextWindow.getStartLine
-          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
-        (* move buffer to new startLine as required by TextBuilder.build *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        val drawMsg = 
-          TextBuilder.build
-            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-        val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, mode, startLine)
-      in
-        (newApp, drawMsg)
-      end
+      buildTextAndClearAfterChr (app, buffer, cursorIdx)
     else
       let
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val cursorIdx = fMove (buffer, cursorIdx, chr)
-        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
       in
         helpMoveToChr (app, buffer, cursorIdx, count - 1, fMove, chr)
       end
@@ -374,6 +381,40 @@ struct
   fun delete (app: app_type, count, fMove) =
     helpDelete (app, #buffer app, #cursorIdx app, count, fMove)
 
+  fun deleteToEndOfLine (app: app_type) =
+    let
+      val {buffer, cursorIdx, ...} = app
+
+      val lastChr = Cursor.viDlr (buffer, cursorIdx)
+      val length = lastChr - cursorIdx + 1
+      val buffer = LineGap.delete (cursorIdx, length, buffer)
+
+      (* deleting to end of line means we must move back by 1 
+       * if that is possible *)
+      val cursorIdx = Cursor.viH (buffer, cursorIdx)
+    in
+      buildTextAndClear (app, buffer, cursorIdx)
+    end
+
+  fun helpDeleteToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
+    if count = 0 then
+      buildTextAndClearAfterChr (app, buffer, cursorIdx)
+    else
+      let
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val otherIdx = fMove (buffer, cursorIdx, chr)
+
+        val low = Int.min (cursorIdx, otherIdx)
+        val high = Int.max (cursorIdx, otherIdx)
+        val length = high - low
+
+        val buffer = LineGap.delete (low, length, buffer)
+      in
+        helpDeleteToChr (app, buffer, low, count - 1, fMove, chr)
+      end
+
+  fun deleteToChr (app: app_type, count, fMove, chr) =
+    helpDeleteToChr (app, #buffer app, #cursorIdx app, count, fMove, chr)
 
   (* command-parsing functions *)
   (** number of characters which are integers *)
@@ -489,7 +530,7 @@ struct
            * Cursor.viDlr takes us to last chr on line
            * but it leaves last chr on line alone.
            * Have to increment by 1. *)
-          | #"$" => delete (app, 1, Cursor.viDlr)
+          | #"$" => deleteToEndOfLine app
           (* todo: requires custom delete function
           | #"^" => firstNonSpaceChr app
           *)
