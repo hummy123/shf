@@ -430,6 +430,7 @@ struct
   fun handleMoveToChr (count, app, fMove, newCmd) =
     case newCmd of
       CHAR_EVENT chr => moveToChr (app, count, fMove, chr)
+    | KEY_ESC => clearMode app
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
 
   fun handleGo (count, app, newCmd) =
@@ -440,6 +441,7 @@ struct
          | #"E" => move (app, count, Cursor.endOfPrevWORD)
          | #"g" => moveToStart app
          | _ => clearMode app)
+    | KEY_ESC => clearMode app
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
 
   (* useful reference as list of non-terminal commands *)
@@ -487,15 +489,17 @@ struct
   fun parseNormalModeCommand (app, str, newCmd) =
     if String.size str = 0 then
       case newCmd of
-        RESIZE_EVENT (width, height) => resizeText (app, width, height)
-      | CHAR_EVENT chr => handleChr (app, 1, chr, str)
+        CHAR_EVENT chr => handleChr (app, 1, chr, str)
+      | KEY_ESC => clearMode app
+      | RESIZE_EVENT (width, height) => resizeText (app, width, height)
     else if String.size str = 1 then
       case newCmd of
-        RESIZE_EVENT (width, height) => resizeText (app, width, height)
-      | CHAR_EVENT chr =>
+        CHAR_EVENT chr =>
           (case Int.fromString str of
              SOME count => handleChr (app, count, chr, str)
            | NONE => parseAfterCount (0, str, 1, app, newCmd))
+      | KEY_ESC => clearMode app
+      | RESIZE_EVENT (width, height) => resizeText (app, width, height)
     else
       let
         val numLength = getNumLength (0, str)
@@ -508,8 +512,9 @@ struct
         if numLength = String.size str then
           (* reached end of str; str only contained numbers *)
           case newCmd of
-            RESIZE_EVENT (width, height) => resizeText (app, width, height)
-          | CHAR_EVENT chr => handleChr (app, count, chr, str)
+            CHAR_EVENT chr => handleChr (app, count, chr, str)
+          | KEY_ESC => clearMode app
+          | RESIZE_EVENT (width, height) => resizeText (app, width, height)
         else if numLength + 1 < String.size str then
           (* continue parsing. *)
           parseAfterCount (numLength + 1, str, count, app, newCmd)
