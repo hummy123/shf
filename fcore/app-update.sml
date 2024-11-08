@@ -27,6 +27,31 @@ struct
       (newApp, drawMsg)
     end
 
+  fun buildTextAndClear (app: app_type, buffer, cursorIdx) =
+    let
+      val {windowWidth, windowHeight, startLine, ...} = app
+
+      (* move LineGap to first line displayed on screen *)
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      (* get new startLine which may move screen depending on cursor movements *)
+      val startLine = TextWindow.getStartLine
+        (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
+      (* move buffer to new startLine as required by TextBuilder.build *)
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      val drawMsg = 
+        TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val mode = NORMAL_MODE ""
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine)
+    in
+      (newApp, drawMsg)
+    end
+
   fun centreToCursor (app: app_type) =
     let
       val {buffer, windowWidth, windowHeight, startLine = origLine, cursorIdx, ...} = app
@@ -126,29 +151,7 @@ struct
 
   fun helpMove (app: app_type, buffer, cursorIdx, count, fMove) =
     if count = 0 then
-      let
-        val {windowWidth, windowHeight, startLine, ...} = app
-
-        (* move LineGap to first line displayed on screen *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        (* get new startLine which may move screen depending on cursor movements *)
-        val startLine = TextWindow.getStartLine
-          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
-        (* move buffer to new startLine as required by TextBuilder.build *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        val drawMsg = 
-          TextBuilder.build
-            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-        val mode = NORMAL_MODE ""
-        val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, mode, startLine)
-      in
-        (newApp, drawMsg)
-      end
+      buildTextAndClear (app, buffer, cursorIdx)
     else
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       let
@@ -219,35 +222,14 @@ struct
       (* move cursorIdx to first character on line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.firstNonSpaceChr (buffer, cursorIdx)
-
-      (* move LineGap to first line displayed on screen, and build new text *)
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-
-      val mode = NORMAL_MODE ""
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine)
     in
-      (newApp, drawMsg)
+      buildTextAndClear (app, buffer, cursorIdx)
     end
 
   (* equivalent of vi's 'x' command *)
   fun helpRemoveChr (app: app_type, buffer, cursorIdx, count) =
     if count = 0 then
-      let
-        val {startLine, windowWidth, windowHeight, ...} = app
-
-        val buffer = LineGap.goToLine (startLine, buffer)
-        val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
-
-        val drawMsg = 
-          TextBuilder.build
-            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
-      in
-        (newApp, drawMsg)
-      end
+      buildTextAndClear (app, buffer, cursorIdx)
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
