@@ -268,10 +268,11 @@ struct
       in
         if nextIsEnd andalso cursorIsStart then
           (* vi simply doesn't do anything on 'x' command
-           * when cursor is at start of line, and next chr is line break *)
-          clearMode app
+           * when cursor is at start of line, and next chr is line break 
+           * so skip to end of loop by passing count of 0 *)
+          helpDeleteChr (app, buffer, cursorIdx, 0)
         else if cursorIsStart then
-          clearMode app
+          helpDeleteChr (app, buffer, cursorIdx, 0)
         else if nextIsEnd then
           let
            (* delete char at cursor and then decrement cursorIdx by 1
