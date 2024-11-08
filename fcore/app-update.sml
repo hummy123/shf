@@ -101,12 +101,13 @@ struct
       val {line = bufferLine, idx = bufferIdx, ...} = buffer
 
       val bufferIdx = bufferIdx - 1
+      val bufferIdx = Cursor.clipIdx (buffer, bufferIdx)
       val bufferLine = bufferLine - 1
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
       val bufferLine = 
         let
-          val maxHeight = windowHeight - (TextConstants.ySpace * 2)
+          val maxHeight = windowHeight - TextConstants.ySpace
         in
           TextWindow.getStartLineWithCursorCentered 
             (buffer, bufferIdx, bufferLine, windowWidth, maxHeight)
@@ -159,6 +160,7 @@ struct
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val cursorIdx = fMove (buffer, cursorIdx)
+        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
       in
         helpMove (app, buffer, cursorIdx, count - 1, fMove)
       end
@@ -258,6 +260,7 @@ struct
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val cursorIdx = fMove (buffer, cursorIdx, chr)
+        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
       in
         helpMoveToChr (app, buffer, cursorIdx, count - 1, fMove, chr)
       end
@@ -345,7 +348,7 @@ struct
          * is no longer a valid idx,
          * clip cursorIdx to the end. *)
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val cursorIdx = Cursor.clipIdxAfterDelete (buffer, cursorIdx)
+        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
       in
         buildTextAndClear (app, buffer, cursorIdx)
       end
@@ -364,13 +367,6 @@ struct
         val length = high - low
 
         val buffer = LineGap.delete (low, length, buffer)
-
-        (* todo: possibly decrement cursorIdx by 1 
-         * if deleting put cursorIdx past end of file.
-         * else, if deleting put cursorIdx before 0,
-         * ensure that it is clipped to 0.
-         * else, leave cursorIdx alone.
-         * *)
       in
         helpDelete (app, buffer, low, count - 1, fMove)
       end

@@ -1595,7 +1595,7 @@ struct
             val lineIdx = Vector.sub (lhd, relativeLine)
           in
             if lineIdx = String.size shd - 1 andalso List.null stl then
-              (* if is end of buffer, return last idx in buffer; * else, 
+              (* if is end of buffer, return last idx in buffer; else, 
                * increment by 1 as we want to go to first char after line break *)
               bufferIdx + lineIdx
             else
@@ -1715,33 +1715,36 @@ struct
     end
 
   (* Prerequisite: lineGap is moved to cursorIdx *)
-  fun clipIdxAfterDelete (lineGap: LineGap.t, cursorIdx) =
+  fun clipIdx (lineGap: LineGap.t, cursorIdx) =
     let
       val {rightStrings, idx = bufferIdx, ...} = lineGap
     in
+      (* We are trying to check if cursorIdx is within the buffer. *)
       case rightStrings of
-        hd :: tl =>
+        _ :: _ :: _ => 
+          (* if there is a string after the hd, 
+           * we are definitely in a valid idx and should return it *)
+          cursorIdx
+      | [hd] =>
           let
             val strIdx = cursorIdx - bufferIdx
           in
-            if strIdx < String.size hd then
+            if strIdx < String.size hd - 1 then
+              (* if we are before the last char in the string.
+               * Unix file endings always have \n at the end
+               * but we do not want cursor to ever go to end
+               * as vi also does not go to the very end.
+               * This is why we check strIdx is before the last char. 
+               * *)
               cursorIdx
             else
-              (* strIdx is in tl *)
-              (case tl of
-                tlhd :: tltl =>
-                let
-                  val strIdx = strIdx - String.size hd
-                in
-                  if strIdx < String.size tlhd then
-                    cursorIdx
-                  else
-                    bufferIdx + String.size hd + String.size tlhd - 1
-                end
-              | [] =>
-                  bufferIdx + String.size hd - 1)
+              (* if end of buffer - 2 is greater than 0, then that;
+               * else, 0 *)
+              Int.max (bufferIdx + String.size hd - 2, 0)
           end
-      | [] =>
-          Int.max (bufferIdx - 1, 0)
+      | [] => 
+          (* if end of buffer - 2 is greater than 0, then that;
+           * else, 0 *)
+          Int.max (bufferIdx - 2, 0)
     end
 end
