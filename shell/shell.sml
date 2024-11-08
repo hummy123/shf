@@ -14,6 +14,16 @@ struct
       Mailbox.send (inputMailbox, CHAR_EVENT chr)
     end
 
+  fun keyCallback inputMailbox (key, scancode, action, mods) =
+    let
+      open Input
+    in
+      if key = KEY_ESC andalso action = PRESS andalso mods = 0 then
+        Mailbox.send (inputMailbox, InputMsg.KEY_ESC)
+      else
+        ()
+    end
+
   fun registerCallbacks (inputMailbox, window) =
     let
       val resizeCallback = frameBufferSizeCallback inputMailbox
@@ -23,6 +33,10 @@ struct
       val charCallback = charCallback inputMailbox
       val () = Input.exportCharCallback charCallback
       val () = Input.setCharCallback window
+
+      val keyCallback = keyCallback inputMailbox
+      val () = Input.exportKeyCallback keyCallback
+      val () = Input.setKeyCallback window
     in
       ()
     end

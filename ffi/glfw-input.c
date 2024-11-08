@@ -6,6 +6,7 @@
 int PRESS = GLFW_PRESS;
 int REPEAT = GLFW_REPEAT;
 int RELEASE = GLFW_RELEASE;
+int KEY_ESC = GLFW_KEY_ESCAPE;
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);
@@ -22,5 +23,13 @@ void charCallback(GLFWwindow* window, unsigned int codepoint) {
 
 void setCharCallback(GLFWwindow* window) {
   glfwSetCharCallback(window, charCallback);
+}
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  mltonKeyCallback(key, scancode, action, mods);
+}
+
+void setKeyCallback(GLFWwindow *window) {
+  glfwSetKeyCallback(window, keyCallback);
 }
 

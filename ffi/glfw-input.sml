@@ -24,4 +24,13 @@ struct
     _export "mltonCharCallback" public : (Word32.word -> unit) -> unit;
   val setCharCallback =
     _import "setCharCallback" public : window -> unit;
+
+  val exportKeyCallback =
+    _export "mltonKeyCallback" public : (int * int * int * int -> unit) -> unit;
+  val setKeyCallback =
+    _import "setKeyCallback" public : window -> unit;
+
+  val (KEY_ESC, _) =
+    _symbol "KEY_ESC" public : ( unit -> int ) * ( int -> unit );
+  val KEY_ESC = KEY_ESC ()
 end
