@@ -189,10 +189,19 @@ struct
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val cursorIdx = fMove (buffer, cursorIdx)
-        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
+        val newCursorIdx = fMove (buffer, cursorIdx)
+        val newCursorIdx = Cursor.clipIdx (buffer, newCursorIdx)
+        val newCount = 
+          (* it's possible to loop a very high number like 5432131
+           * which will take a long time because of the high number of loops
+           * regardless of the data structure used.
+           * If this happens, and the newCursorIdx is the same as the old one,
+           * then skip to end of loop by going to base case. *)
+          if cursorIdx = newCursorIdx 
+          then 0
+          else count - 1
       in
-        helpMove (app, buffer, cursorIdx, count - 1, fMove)
+        helpMove (app, buffer, newCursorIdx, newCount, fMove)
       end
 
   fun move (app: app_type, count, fMove) =
@@ -267,9 +276,13 @@ struct
       let
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val cursorIdx = fMove (buffer, cursorIdx, chr)
+        val newCursorIdx = fMove (buffer, cursorIdx, chr)
+        val newCount =
+          if cursorIdx = newCursorIdx
+          then 0
+          else cursorIdx - 1
       in
-        helpMoveToChr (app, buffer, cursorIdx, count - 1, fMove, chr)
+        helpMoveToChr (app, buffer, newCursorIdx, newCount, fMove, chr)
       end
 
   fun moveToChr (app: app_type, count, fMove, chr) =
