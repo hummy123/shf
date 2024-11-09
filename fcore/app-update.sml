@@ -348,9 +348,21 @@ struct
   fun removeChr (app: app_type, count) =
     helpRemoveChr (app, #buffer app, #cursorIdx app, count)
 
-  fun helpDelete (app: app_type, buffer, cursorIdx, count, fMove) =
+  fun helpDelete (app: app_type, buffer, cursorIdx, otherIdx, count, fMove) =
+    (* As a small optimisation to reduce allocations, 
+     * we accumulate otherIdx by calling fMove with it and the buffer
+     * on each loop.
+     * Then, at the end of the loop, we perform the actual deletion.
+     * This is faster than performing the actual deletion on every loop
+     * because we only delete once, and avoid allocating intermediary buffers.
+     * The behaviour between the two is equivalent. *)
     if count = 0 then
       let
+        val low = Int.min (cursorIdx, otherIdx)
+        val high = Int.max (cursorIdx, otherIdx)
+        val length = high - low
+        val buffer = LineGap.delete (low, length, buffer)
+
         (* If we have deleted from the buffer so that cursorIdx
          * is no longer a valid idx,
          * clip cursorIdx to the end. *)
@@ -362,24 +374,14 @@ struct
     else
       let
         (* get otherIdx, where cursor will want to go after motion. *)
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val otherIdx = fMove (buffer, cursorIdx)
-
-        (* Because some motions like 'b' take us backwards,
-         * and some motions like 'w' take us forwards,
-         * we need to find out which idx is lower and higher
-         * for proper deletion and seeing where to set cursorIdx to *)
-        val low = Int.min (cursorIdx, otherIdx)
-        val high = Int.max (cursorIdx, otherIdx)
-        val length = high - low
-
-        val buffer = LineGap.delete (low, length, buffer)
+        val buffer = LineGap.goToIdx (otherIdx, buffer)
+        val otherIdx = fMove (buffer, otherIdx)
       in
-        helpDelete (app, buffer, low, count - 1, fMove)
+        helpDelete (app, buffer, cursorIdx, otherIdx, count - 1, fMove)
       end
 
   fun delete (app: app_type, count, fMove) =
-    helpDelete (app, #buffer app, #cursorIdx app, count, fMove)
+    helpDelete (app, #buffer app, #cursorIdx app, #cursorIdx app, count, fMove)
 
   fun deleteToEndOfLine (app: app_type) =
     let
