@@ -432,7 +432,7 @@ struct
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val otherIdx = fMove (buffer, cursorIdx, chr)
+        val otherIdx = fMove (buffer, cursorIdx, chr) + 1
 
         val low = Int.min (cursorIdx, otherIdx)
         val high = Int.max (cursorIdx, otherIdx)
@@ -574,7 +574,13 @@ struct
       case String.sub (str, strPos + 1) of
         #"t" => 
           (* todo: delete till chr, forwards *)
-          clearMode app
+          (case newCmd of
+            CHAR_EVENT chr =>
+              deleteToChr (app, 1, Cursor.tillNextChr, chr)
+          | KEY_ESC =>
+              clearMode app
+          | RESIZE_EVENT (width, height) => 
+              resizeText (app, width, height))
       | #"T" => 
           (* todo: delete till chr, backwards *)
           clearMode app
@@ -662,9 +668,6 @@ struct
             CHAR_EVENT chr => handleChr (app, count, chr, str)
           | KEY_ESC => clearMode app
           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-        else if numLength + 1 < String.size str then
-          (* continue parsing. *)
-          parseAfterCount (numLength + 1, str, count, app, newCmd)
         else
           (* continue parsing. *)
           parseAfterCount (numLength, str, count, app, newCmd)
