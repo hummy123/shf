@@ -277,10 +277,7 @@ struct
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val newCursorIdx = fMove (buffer, cursorIdx, chr)
-        val newCount =
-          if cursorIdx = newCursorIdx
-          then 0
-          else cursorIdx - 1
+        val newCount = if cursorIdx = newCursorIdx then 0 else cursorIdx - 1
       in
         helpMoveToChr (app, buffer, newCursorIdx, newCount, fMove, chr)
       end
@@ -379,8 +376,8 @@ struct
         (* If we have deleted from the buffer so that cursorIdx
          * is no longer a valid idx,
          * clip cursorIdx to the end. *)
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
+        val buffer = LineGap.goToIdx (low, buffer)
+        val cursorIdx = Cursor.clipIdx (buffer, low)
       in
         buildTextAndClear (app, buffer, cursorIdx)
       end
@@ -388,9 +385,10 @@ struct
       let
         (* get otherIdx, where cursor will want to go after motion. *)
         val buffer = LineGap.goToIdx (otherIdx, buffer)
-        val otherIdx = fMove (buffer, otherIdx)
+        val newOtherIdx = fMove (buffer, otherIdx)
+        val newCount = if newOtherIdx = otherIdx then 0 else count - 1
       in
-        helpDelete (app, buffer, cursorIdx, otherIdx, count - 1, fMove)
+        helpDelete (app, buffer, cursorIdx, newOtherIdx, newCount, fMove)
       end
 
   fun delete (app: app_type, count, fMove) =
@@ -454,9 +452,14 @@ struct
     else
       let
         val buffer = LineGap.goToIdx (otherIdx, buffer)
-        val otherIdx = fInc (fMove (buffer, otherIdx, chr), 1)
+        val newOtherIdx = fMove (buffer, otherIdx, chr)
+        val newCount =
+          if newOtherIdx = otherIdx
+          then 0
+          else count - 1
+        val newOtherIdx = fInc (newOtherIdx, 1)
       in
-        helpDeleteToChr (app, buffer, cursorIdx, otherIdx, count - 1, fMove, fInc, chr)
+        helpDeleteToChr (app, buffer, cursorIdx, otherIdx, newCount, fMove, fInc, chr)
       end
 
   fun deleteToChr (app: app_type, count, fMove, fInc, chr) =
