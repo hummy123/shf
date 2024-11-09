@@ -428,25 +428,27 @@ struct
       buildTextAndClear (app, buffer, low)
     end
 
-  fun helpDeleteToChr (app: app_type, buffer, cursorIdx, count, fMove, fInc, chr) =
+  fun helpDeleteToChr (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, fInc, chr) =
     if count = 0 then
-      buildTextAndClearAfterChr (app, buffer, cursorIdx)
-    else
       let
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val otherIdx = fInc (fMove (buffer, cursorIdx, chr), 1)
-
         val low = Int.min (cursorIdx, otherIdx)
         val high = Int.max (cursorIdx, otherIdx)
         val length = high - low
-
         val buffer = LineGap.delete (low, length, buffer)
       in
-        helpDeleteToChr (app, buffer, low, count - 1, fMove, fInc, chr)
+        buildTextAndClearAfterChr (app, buffer, low)
+      end
+    else
+      let
+        val buffer = LineGap.goToIdx (otherIdx, buffer)
+        val otherIdx = fInc (fMove (buffer, otherIdx, chr), 1)
+      in
+        helpDeleteToChr (app, buffer, cursorIdx, otherIdx, count - 1, fMove, fInc, chr)
       end
 
   fun deleteToChr (app: app_type, count, fMove, fInc, chr) =
-    helpDeleteToChr (app, #buffer app, #cursorIdx app, count, fMove, fInc, chr)
+    helpDeleteToChr 
+      (app, #buffer app, #cursorIdx app, #cursorIdx app, count, fMove, fInc, chr)
 
   (* command-parsing functions *)
   (** number of characters which are integers *)
