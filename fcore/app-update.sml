@@ -591,14 +591,25 @@ struct
           | RESIZE_EVENT (width, height) => 
               resizeText (app, width, height))
       | #"d" => 
-          (* todo: delete whole line *)
+          (* delete whole line *)
           clearMode app
       | #"f" => 
-          (* todo: delete to chr, forwards *)
-          clearMode app
+          (case newCmd of
+            CHAR_EVENT chr =>
+              deleteToChr (app, count, Cursor.toNextChr, op+, chr)
+          | KEY_ESC =>
+              clearMode app
+          | RESIZE_EVENT (width, height) => 
+              resizeText (app, width, height))
       | #"F" => 
-          (* todo: delete to chr, backwards *)
-          clearMode app
+          (* delete to chr, backwards *)
+          (case newCmd of
+            CHAR_EVENT chr =>
+              deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
+          | KEY_ESC =>
+              clearMode app
+          | RESIZE_EVENT (width, height) => 
+              resizeText (app, width, height))
       | #"g" => 
           (* todo: same events as handleGo *)
           clearMode app
