@@ -1384,48 +1384,88 @@ struct
           (* tl is empty; return 0 for lineGap start *) 
           0
 
-  fun helpTillPrevChr (strPos, str, absIdx, stl, ltl, origIdx, findChr, lastNonLine) =
-    if strPos < 0 then
-      case (stl, ltl) of
-        (shd :: stl, lhd :: ltl) => 
-          helpTillPrevChr 
-            ( String.size shd - 1, shd, absIdx, stl, ltl
-            , origIdx, findChr, lastNonLine
-            )
-      | (_, _) => 
-          origIdx
-    else 
-      let
-        val chr = String.sub (str, strPos)
-      in
-        if chr = findChr then
-          lastNonLine
-        else
-          let
-            val lastNonLine =
-                if chr = #"\n" orelse chr = #"\r" then
+  fun helpTillPrevChr 
+    ( strPos, str, absIdx, stl, ltl
+    , origIdx, findChr
+    , lastNonLine, lastLine, lastValid
+    ) =
+      if strPos < 0 then
+        case (stl, ltl) of
+          (shd :: stl, lhd :: ltl) => 
+            helpTillPrevChr 
+              ( String.size shd - 1, shd, absIdx, stl, ltl
+              , origIdx, findChr
+              , lastNonLine, lastLine, lastValid
+              )
+        | (_, _) => 
+            origIdx
+      else 
+        let
+          val chr = String.sub (str, strPos)
+        in
+          if chr = findChr then
+            if lastLine = lastNonLine then
+              lastNonLine
+            else if absIdx + 1 = lastLine then
+              lastValid + 1
+            else
+              Int.min (lastLine, lastNonLine)
+          else
+            let
+              val lastLine = 
+                if chr = #"\n" then
+                  absIdx
+                else
+                  lastLine
+              val lastNonLine =
+                if chr = #"\n" then
                   lastNonLine
                 else
                   absIdx
-          in
-            helpTillPrevChr
-              ( strPos - 1, str, absIdx - 1
-              , stl, ltl, origIdx, findChr, lastNonLine
-              )
-          end
-      end
+
+              (* There is a slightly tricky edge case 
+               * which is the reason the lastValid variable.
+               * Say we have a string "a\n\n\nbcd"
+               * and we type "Ta" with the cursor at the end.
+               * We want the cursor to go to the second line break
+               * because (graphical-chr -> \n) should not be selectable.
+               * However, with only lastLine and lastNonLine variables,
+               * we only have information about the most recent \n 
+               * and the most recent graphical-chr.
+               * This means we don't have information about the case 
+               * where a graphical-chr is followed by multiple '\n's.
+               * The lastValid variable keeps track of this information
+               * so we can use it to provide the expected behaviour.
+               * *)
+              val lastValid =
+                if lastLine = lastNonLine + 1 then
+                  lastLine + 1
+                else
+                  Int.min (lastLine, lastNonLine)
+            in
+              helpTillPrevChr
+                ( strPos - 1, str, absIdx - 1
+                , stl, ltl, origIdx, findChr
+                , lastNonLine, lastLine, lastValid
+                )
+            end
+        end
 
   fun startTillPrevChr (shd, strIdx, absIdx, stl, ltl, findChr) =
     (* we want to start iterating from Prev char after strIdx *)
     if strIdx > 0 then
       helpTillPrevChr 
-        (strIdx - 1, shd, absIdx - 1, stl, ltl, absIdx, findChr, absIdx)
+        ( strIdx - 1, shd, absIdx - 1
+        , stl, ltl, absIdx, findChr
+        , absIdx, absIdx, absIdx
+        )
     else
       case (stl, ltl) of
         (stlhd :: stltl, ltlhd :: ltltl) =>
           helpTillPrevChr
             ( String.size stlhd - 1, stlhd, absIdx - 1
-            , stltl, ltltl, absIdx, findChr, absIdx
+            , stltl, ltltl, absIdx, findChr
+            , absIdx, absIdx, absIdx
             )
       | (_, _) => 
           (* tl is empty; return 0 for lineGap start *) 

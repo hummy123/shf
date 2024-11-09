@@ -426,13 +426,13 @@ struct
       buildTextAndClear (app, buffer, low)
     end
 
-  fun helpDeleteToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
+  fun helpDeleteToChr (app: app_type, buffer, cursorIdx, count, fMove, fInc, chr) =
     if count = 0 then
       buildTextAndClearAfterChr (app, buffer, cursorIdx)
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val otherIdx = fMove (buffer, cursorIdx, chr) + 1
+        val otherIdx = fInc (fMove (buffer, cursorIdx, chr), 1)
 
         val low = Int.min (cursorIdx, otherIdx)
         val high = Int.max (cursorIdx, otherIdx)
@@ -440,11 +440,11 @@ struct
 
         val buffer = LineGap.delete (low, length, buffer)
       in
-        helpDeleteToChr (app, buffer, low, count - 1, fMove, chr)
+        helpDeleteToChr (app, buffer, low, count - 1, fMove, fInc, chr)
       end
 
-  fun deleteToChr (app: app_type, count, fMove, chr) =
-    helpDeleteToChr (app, #buffer app, #cursorIdx app, count, fMove, chr)
+  fun deleteToChr (app: app_type, count, fMove, fInc, chr) =
+    helpDeleteToChr (app, #buffer app, #cursorIdx app, count, fMove, fInc, chr)
 
   (* command-parsing functions *)
   (** number of characters which are integers *)
@@ -573,17 +573,23 @@ struct
       (* have to continue parsing string *)
       case String.sub (str, strPos + 1) of
         #"t" => 
-          (* todo: delete till chr, forwards *)
+          (* delete till chr, forwards *)
           (case newCmd of
             CHAR_EVENT chr =>
-              deleteToChr (app, 1, Cursor.tillNextChr, chr)
+              deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
           | KEY_ESC =>
               clearMode app
           | RESIZE_EVENT (width, height) => 
               resizeText (app, width, height))
       | #"T" => 
-          (* todo: delete till chr, backwards *)
-          clearMode app
+          (* delete till chr, backwards *)
+          (case newCmd of
+            CHAR_EVENT chr =>
+              deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
+          | KEY_ESC =>
+              clearMode app
+          | RESIZE_EVENT (width, height) => 
+              resizeText (app, width, height))
       | #"d" => 
           (* todo: delete whole line *)
           clearMode app
