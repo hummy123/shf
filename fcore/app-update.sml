@@ -384,16 +384,25 @@ struct
   fun deleteToEndOfLine (app: app_type) =
     let
       val {buffer, cursorIdx, ...} = app
-
-      val lastChr = Cursor.viDlr (buffer, cursorIdx)
-      val length = lastChr - cursorIdx + 1
-      val buffer = LineGap.delete (cursorIdx, length, buffer)
-
-      (* deleting to end of line means we must move back by 1 
-       * if that is possible *)
-      val cursorIdx = Cursor.viH (buffer, cursorIdx)
     in
-      buildTextAndClear (app, buffer, cursorIdx)
+      if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
+        (* if we are on \n, we don't want to delete or do anything
+         * so reset the mode *)
+        clearMode app
+      else
+        let
+          (* viDlr takes us to the last chr in the line 
+           * but does not delete that last chr
+           * so we call helpRemoveChr to delete that last chr. 
+           * We also rely on helpRemoveChr to handle backwards-movement logic:
+           * If cursorIdx is at \n after deletion, then stop.
+           * Else, move back one chr. *)
+          val lastChr = Cursor.viDlr (buffer, cursorIdx)
+          val length = lastChr - cursorIdx
+          val buffer = LineGap.delete (cursorIdx, length, buffer)
+        in
+          helpRemoveChr (app, buffer, cursorIdx, 1)
+        end
     end
 
   fun deleteToFirstNonSpaceChr (app: app_type) =
@@ -565,22 +574,23 @@ struct
       case String.sub (str, strPos + 1) of
         #"t" => 
           (* todo: delete till chr, forwards *)
-          appendChr (app, chr, str)
+          clearMode app
       | #"T" => 
           (* todo: delete till chr, backwards *)
-          appendChr (app, chr, str)
+          clearMode app
       | #"d" => 
           (* todo: delete whole line *)
-          appendChr (app, chr, str)
+          clearMode app
       | #"f" => 
           (* todo: delete to chr, forwards *)
-          appendChr (app, chr, str)
+          clearMode app
       | #"F" => 
           (* todo: delete to chr, backwards *)
-          appendChr (app, chr, str)
+          clearMode app
       | #"g" => 
           (* todo: same events as handleGo *)
-          appendChr (app, chr, str)
+          clearMode app
+      | _ => clearMode app
 
   (* useful reference as list of non-terminal commands *)
   fun parseAfterCount (strPos, str, count, app, newCmd) =
