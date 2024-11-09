@@ -277,7 +277,7 @@ struct
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val newCursorIdx = fMove (buffer, cursorIdx, chr)
-        val newCount = if cursorIdx = newCursorIdx then 0 else cursorIdx - 1
+        val newCount = if cursorIdx = newCursorIdx then 0 else count - 1
       in
         helpMoveToChr (app, buffer, newCursorIdx, newCount, fMove, chr)
       end
@@ -453,13 +453,10 @@ struct
       let
         val buffer = LineGap.goToIdx (otherIdx, buffer)
         val newOtherIdx = fMove (buffer, otherIdx, chr)
-        val newCount =
-          if newOtherIdx = otherIdx
-          then 0
-          else count - 1
+        val newCount = if newOtherIdx = otherIdx then 0 else count - 1
         val newOtherIdx = fInc (newOtherIdx, 1)
       in
-        helpDeleteToChr (app, buffer, cursorIdx, otherIdx, newCount, fMove, fInc, chr)
+        helpDeleteToChr (app, buffer, cursorIdx, newOtherIdx, newCount, fMove, fInc, chr)
       end
 
   fun deleteToChr (app: app_type, count, fMove, fInc, chr) =
