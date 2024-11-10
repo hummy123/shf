@@ -463,6 +463,26 @@ struct
     helpDeleteToChr 
       (app, #buffer app, #cursorIdx app, #cursorIdx app, count, fMove, fInc, chr)
 
+  fun deleteToStart (app: app_type) =
+    let
+      val {cursorIdx, buffer, windowWidth, windowHeight, ...} = app
+
+      val buffer = LineGap.delete(0, cursorIdx, buffer)
+      val cursorIdx = 0
+      val startLine = 0
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val drawMsg = 
+        TextBuilder.build
+          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+
+      val mode = NORMAL_MODE ""
+      val newApp = AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine)
+    in
+      (newApp, drawMsg)
+    end
+
   (* command-parsing functions *)
   (** number of characters which are integers *)
   fun getNumLength (pos, str) =
@@ -592,44 +612,40 @@ struct
         #"t" => 
           (* delete till chr, forwards *)
           (case newCmd of
-            CHAR_EVENT chr =>
-              deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
-          | KEY_ESC =>
-              clearMode app
-          | RESIZE_EVENT (width, height) => 
-              resizeText (app, width, height))
+            CHAR_EVENT chr => deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
+          | KEY_ESC => clearMode app
+          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
       | #"T" => 
           (* delete till chr, backwards *)
           (case newCmd of
-            CHAR_EVENT chr =>
-              deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
-          | KEY_ESC =>
-              clearMode app
-          | RESIZE_EVENT (width, height) => 
-              resizeText (app, width, height))
+            CHAR_EVENT chr => deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
+          | KEY_ESC => clearMode app
+          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
       | #"d" => 
           (* delete whole line *)
           clearMode app
       | #"f" => 
           (case newCmd of
-            CHAR_EVENT chr =>
-              deleteToChr (app, count, Cursor.toNextChr, op+, chr)
-          | KEY_ESC =>
-              clearMode app
-          | RESIZE_EVENT (width, height) => 
-              resizeText (app, width, height))
+            CHAR_EVENT chr => deleteToChr (app, count, Cursor.toNextChr, op+, chr)
+          | KEY_ESC => clearMode app
+          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
       | #"F" => 
           (* delete to chr, backwards *)
           (case newCmd of
-            CHAR_EVENT chr =>
-              deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
-          | KEY_ESC =>
-              clearMode app
-          | RESIZE_EVENT (width, height) => 
-              resizeText (app, width, height))
+            CHAR_EVENT chr => deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
+          | KEY_ESC => clearMode app
+          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
       | #"g" => 
-          (* todo: same events as handleGo *)
-          clearMode app
+          (* same events as handleGo *)
+          (case newCmd of
+            CHAR_EVENT chr =>
+              (case chr of
+                 #"e" => delete (app, count, Cursor.endOfPrevWord)
+               | #"E" => delete (app, count, Cursor.endOfPrevWORD)
+               | #"g" => deleteToStart app
+               | _ => clearMode app)
+          | KEY_ESC => clearMode app
+          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
       | _ => clearMode app
 
   (* useful reference as list of non-terminal commands *)
