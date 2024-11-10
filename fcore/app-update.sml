@@ -370,6 +370,7 @@ struct
       let
         val low = Int.min (cursorIdx, otherIdx)
         val high = Int.max (cursorIdx, otherIdx)
+        val high = Cursor.clipIdx (buffer, high)
         val length = high - low
         val buffer = LineGap.delete (low, length, buffer)
 
@@ -421,6 +422,7 @@ struct
   fun helpDeleteLine (app: app_type, buffer, cursorIdx, otherIdx, count) =
     if count = 0 then
       let
+        val otherIdx = Cursor.clipIdx (buffer, otherIdx)
         val length = otherIdx - cursorIdx
         val buffer = LineGap.delete (cursorIdx, length, buffer)
 
