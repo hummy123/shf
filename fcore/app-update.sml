@@ -418,6 +418,36 @@ struct
         end
     end
 
+  fun helpDeleteLine (app: app_type, buffer, cursorIdx, otherIdx, count) =
+    if count = 0 then
+      let
+        val length = otherIdx - cursorIdx
+        val buffer = LineGap.delete (cursorIdx, length, buffer)
+
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
+      in
+        buildTextAndClear (app, buffer, cursorIdx)
+      end
+    else
+      let
+        (* get otherIdx, where cursor will want to go after motion. *)
+        val buffer = LineGap.goToIdx (otherIdx, buffer)
+        val newOtherIdx = Cursor.viDlr (buffer, otherIdx)
+        val newOtherIdx = Cursor.viL (buffer, newOtherIdx)
+        val newCount = if newOtherIdx = otherIdx then 0 else count - 1
+      in
+        helpDeleteLine (app, buffer, cursorIdx, newOtherIdx, newCount)
+      end
+
+  fun deleteLine (app: app_type, count) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val cursorIdx = Cursor.vi0 (buffer, cursorIdx)
+    in
+      helpDeleteLine (app, buffer, cursorIdx, cursorIdx, count)
+    end
+
   fun deleteToFirstNonSpaceChr (app: app_type) =
     let
       val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
@@ -595,10 +625,10 @@ struct
           | #"0" => delete (app, 1, Cursor.vi0)
           | #"$" => deleteToEndOfLine app
           | #"^" => deleteToFirstNonSpaceChr app
+          | #"d" => deleteLine (app, count)
           (* non-terminal commands which require appending chr *)
           | #"t" => appendChr (app, chr, str)
           | #"T" => appendChr (app, chr, str)
-          | #"d" => appendChr (app, chr, str)
           | #"f" => appendChr (app, chr, str)
           | #"F" => appendChr (app, chr, str)
           | #"g" => appendChr (app, chr, str)
@@ -621,9 +651,6 @@ struct
             CHAR_EVENT chr => deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
           | KEY_ESC => clearMode app
           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
-      | #"d" => 
-          (* delete whole line *)
-          clearMode app
       | #"f" => 
           (case newCmd of
             CHAR_EVENT chr => deleteToChr (app, count, Cursor.toNextChr, op+, chr)
