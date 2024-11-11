@@ -164,6 +164,11 @@ struct
       ()
     end
 
+  fun yank (shellState: t, str) =
+    ( Glfw.setClipboardString (#window shellState, str);
+      shellState
+    )
+
   fun consumeDrawEvent (shellState, msg) =
     let
       val
@@ -178,6 +183,7 @@ struct
       case msg of
         REDRAW_TEXT textVec => uploadText (shellState, textVec)
       | REDRAW_CURSOR cursorVec => uploadCursor (shellState, cursorVec)
+      | YANK str => yank (shellState, str)
     end
 
   fun consumeDrawEvents (shellState as {drawMailbox, ...}: t) =

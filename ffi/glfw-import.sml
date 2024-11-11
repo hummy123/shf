@@ -22,4 +22,5 @@ struct
   val windowShouldClose = _import "windowShouldClose" public : window -> bool;
   val waitEvents = _import "waitEvents" public reentrant : unit -> unit;
   val swapBuffers = _import "swapBuffers" public : window -> unit;
+  val setClipboardString = _import "setClipboardString" public : window * string -> unit;
 end
