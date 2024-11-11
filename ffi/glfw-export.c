@@ -43,6 +43,5 @@ void swapBuffers(GLFWwindow *window) {
 
 void setClipboardString (GLFWwindow *window, const char *copyString) {
   glfwSetClipboardString(window, copyString);
-  printf("ddone yanking");
 }
 
