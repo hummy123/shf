@@ -272,42 +272,6 @@ struct
       | [] => cursorIdx
     end
 
-  (* below functions, until and including getCursorColumn, 
-   * are all for helping to calculate the cursor's column 
-   * compared to the line the cursor is currently positioned in *)
-  fun reverseLinearSearch (findNum, idx, lines) =
-    if idx < 0 then
-      idx
-    else
-      let
-        val curVal = Vector.sub (lines, idx)
-      in
-        if curVal < findNum then idx
-        else reverseLinearSearch (findNum, idx, lines)
-      end
-
-  fun helpBinSearch (findNum, lines, low, high) =
-    let
-      val mid = low + ((high - low) div 2)
-    in
-      if high >= low then
-        let
-          val midVal = Vector.sub (lines, mid)
-        in
-          if midVal = findNum then
-            mid
-          else if midVal < findNum then
-            helpBinSearch (findNum, lines, mid + 1, high)
-          else
-            helpBinSearch (findNum, lines, low, mid - 1)
-        end
-      else
-        reverseLinearSearch (findNum, mid, lines)
-    end
-
-  fun binSearch (findNum, lines) =
-    helpBinSearch (findNum, lines, 0, Vector.length lines - 1)
-
   fun helpGetCursorColumn (distanceFromLine, strList, lineList) =
     case (strList, lineList) of
       (strHd :: strTl, lnHd :: lnTl) =>
@@ -367,7 +331,7 @@ struct
            * because we know lnHd definitely contains
            * a lineIdx less or equal to strIdx *)
           let
-            val lnIdx = binSearch (strIdx, lnHd)
+            val lnIdx = BinSearch.equalOrLess (strIdx, lnHd)
             val lnIdx = Vector.sub (lnHd, lnIdx)
           in
             if lnIdx < strIdx then

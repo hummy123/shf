@@ -217,7 +217,7 @@ struct
         if firstLineIdx > strIdx then
           bufferLine
         else if firstLineIdx < strIdx then
-          Cursor.binSearch (strIdx - 1, lhd) + bufferLine
+          BinSearch.equalOrLess (strIdx - 1, lhd) + bufferLine
         else
           bufferLine + 1
       end
