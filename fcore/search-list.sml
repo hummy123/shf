@@ -178,19 +178,49 @@ struct
         let
           val last = Vector.sub (hd, Vector.length hd - 1)
         in
-          if last < finish then
+          if finish > last then
             delRightFromHere (finish, left, tl)
-          else if last > finish then
+          else if finish < last then
             let
-              val delpoint = BinSearch.equalOrMore (last, hd)
+              val delpoint = BinSearch.equalOrMore (finish, hd)
               val newHd = VectorSlice.slice (hd, 0, SOME delpoint)
               val newHd = VectorSlice.vector newHd
             in
-              { left = left, right = joinStartOfRight (newHd, right) }
+              {left = left, right = joinStartOfRight (newHd, right)}
             end
-          else if last = finish then
-            { left = left, right = tl }
-    | [] => { left = left, right = right }
+          else
+            (* finish = last *)
+            {left = left, right = tl}
+        end
+    | [] => {left = left, right = right}
+
+  fun delLeftFromHere (start, left, right) =
+    case left of
+      hd :: tl =>
+        let
+          val first = Vector.sub (hd, 0)
+        in
+          if start < first then
+            delLeftFromHere (start, tl, right)
+          else if start > first then
+            let
+              val delpoint = BinSearch.equalOrMore (start, hd)
+              val newLength = Vector.length hd - delpoint
+              val newHd = VectorSlice.slice (hd, delpoint, SOME newLength)
+              val newHd = VectorSlice.vector newHd
+            in
+              {left = joinEndOfLeft (newHd, left), right = right}
+            end
+          else
+            (* start = first *)
+            {left = tl, right = right}
+        end
+    | [] => {left = left, right = right}
+
+  fun delFromLeftAndRight (start, finish, left, right) =
+    let val {left, right} = delRightFromHere (finish, left, right)
+    in delLeftFromHere (start, left, right)
+    end
 
   fun del (start, finish, left, right) =
     case right of
@@ -221,7 +251,7 @@ struct
                      if finish < rfirst then
                        (* start < rfirst, start = llast, and finish < rfirst
                         * so just have to delete left from here *)
-                       deleteLeftFromHere (start, left, right)
+                       delLeftFromHere (start, left, right)
                      else
                        (* start < rfirst, start = llast, finish >= rfirst
                         * in middle; delete from both sides *)
@@ -259,7 +289,7 @@ struct
                  if finish <= llast then
                    moveRightAndDelete (start, finish, left, right)
                  else
-                   deleteLeftFromHere (finish, left, right)
+                   delLeftFromHere (finish, left, right)
                else
                  moveRightAndDelete (start, finish, left, right)
              end
