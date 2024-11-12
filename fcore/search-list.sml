@@ -135,10 +135,49 @@ struct
     (* look at elements to see which way to traverse *)
     case right of
       hd :: _ =>
-        if Vector.sub (hd, 0) >= new then
-          insRight (new, left, right)
+        if Vector.sub (hd, 0) >= new then insRight (new, left, right)
+        else insLeft (new, left, right)
+    | [] => insLeft (new, left, right)
+
+  fun helpGoToNumLeft (num, left, right) =
+    case left of
+      hd :: tl =>
+        if num < Vector.sub (hd, 0) then
+          (* continue *)
+          helpGoToNumLeft 
+            ( num, tl
+            , joinStartOfRight (hd, right)
+            )
         else
-          insLeft (new, left, right)
-    | [] =>
-        insLeft (new, left, right)
+          (* greater or equal to first element so return.
+           * Note: caller which destructures list expects found hd to always be
+           * on right. *)
+          { left = tl
+          , right = joinStartOfRight (hd, right)
+          }
+    | [] => {left = left, right = right}
+
+  fun helpGoToNumRight (num, left, right) =
+    case right of
+      hd :: tl =>
+        if num > Vector.sub (hd, Vector.length hd - 1) then
+          (* continue *)
+          helpGoToNumRight 
+            ( num
+            , joinEndOfLeft (hd, left)
+            , tl
+            )
+        else
+          (* less than or equal to last element so return *)
+          {left = left, right = right}
+    | [] => {left = left, right = right}
+
+  fun goToNum (num, {left, right}: t) =
+    case right of
+      hd :: tl =>
+        if num > Vector.sub (hd, Vector.length hd - 1) then
+          helpGoToNumRight (num, left, right)
+        else
+          helpGoToNumLeft (num, left, right)
+    | [] => helpGoToNumLeft (num, left, right)
 end
