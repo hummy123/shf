@@ -144,17 +144,12 @@ struct
       hd :: tl =>
         if num < Vector.sub (hd, 0) then
           (* continue *)
-          helpGoToNumLeft 
-            ( num, tl
-            , joinStartOfRight (hd, right)
-            )
+          helpGoToNumLeft (num, tl, joinStartOfRight (hd, right))
         else
           (* greater or equal to first element so return.
            * Note: caller which destructures list expects found hd to always be
            * on right. *)
-          { left = tl
-          , right = joinStartOfRight (hd, right)
-          }
+          {left = tl, right = joinStartOfRight (hd, right)}
     | [] => {left = left, right = right}
 
   fun helpGoToNumRight (num, left, right) =
@@ -162,11 +157,7 @@ struct
       hd :: tl =>
         if num > Vector.sub (hd, Vector.length hd - 1) then
           (* continue *)
-          helpGoToNumRight 
-            ( num
-            , joinEndOfLeft (hd, left)
-            , tl
-            )
+          helpGoToNumRight (num, joinEndOfLeft (hd, left), tl)
         else
           (* less than or equal to last element so return *)
           {left = left, right = right}
@@ -180,4 +171,83 @@ struct
         else
           helpGoToNumLeft (num, left, right)
     | [] => helpGoToNumLeft (num, left, right)
+
+  fun del (start, finish, left, right) =
+    case right of
+      rhd :: rtl =>
+        let
+          val rfirst = Vector.sub (rhd, 0)
+        in
+          if start < rfirst then
+            (case left of
+               lhd :: ltl =>
+                 let
+                   val llast = Vector.sub (lhd, Vector.length lhd - 1)
+                 in
+                   if
+                     start < llast
+                   then
+                     if finish < rfirst then
+                       (* start < rfirst and start < llast and finish < rfirst
+                        * move left and delete *)
+                       moveLeftAndDelete (start, finish, left, right)
+                     else
+                       (* start < rfirst and start < llast and finish >= rfirst
+                        * in middle; delete from both sides *)
+                       delFromLeftAndRight (start, finish, left, right)
+                   else if
+                     start = llast
+                   then
+                     if finish < rfirst then
+                       (* start < rfirst, start = llast, and finish < rfirst
+                        * so just have to delete left from here *)
+                       deleteLeftFromHere (start, left, right)
+                     else
+                       (* start < rfirst, start = llast, finish >= rfirst
+                        * in middle; delete from both sides *)
+                       delFromLeftAndRight (start, finish, left, right)
+                   else (* start > llast and start < rfirst *) if
+                     finish >= rfirst
+                   then
+                     (* delete right from here *)
+                     delRightFromHere (finish, left, right)
+                   else
+                     (* start < rfirst and finish < rfirst
+                      * so just return *)
+                     {left = left, right = right}
+                 end
+             | [] =>
+                 (* start < rfirst 
+                  * but left is empty.
+                  * All we can do is 1. Delete right or 2. Return *)
+                 if finish < rfirst then {left = left, right = right}
+                 else delRightFromHere (finish, left, right))
+          else if start = rfirst then
+            delRightFromHere (finish, left, right)
+          else
+            (* start > rfirst 
+             * move right and then start deleting *)
+            moveRightAndDelete (start, finish, left, right)
+        end
+    | [] =>
+        (case left of
+           lhd :: ltl =>
+             let
+               val llast = Vector.sub (lhd, Vector.length lhd - 1)
+             in
+               if start < llast then
+                 if finish <= llast then
+                   moveRightAndDelete (start, finish, left, right)
+                 else
+                   deleteLeftFromHere (finish, left, right)
+               else
+                 moveRightAndDelete (start, finish, left, right)
+             end
+         | [] =>
+             (* left and right are both empty *)
+             {left = left, right = right})
+
+  fun delete (start, length, {left, right}: t) =
+    if length > 0 then del (start, start + length, left, right)
+    else {left = left, right = right}
 end
