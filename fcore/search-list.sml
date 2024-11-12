@@ -172,6 +172,26 @@ struct
           helpGoToNumLeft (num, left, right)
     | [] => helpGoToNumLeft (num, left, right)
 
+  fun delRightFromHere (finish, left, right) =
+    case right of
+      hd :: tl =>
+        let
+          val last = Vector.sub (hd, Vector.length hd - 1)
+        in
+          if last < finish then
+            delRightFromHere (finish, left, tl)
+          else if last > finish then
+            let
+              val delpoint = BinSearch.equalOrMore (last, hd)
+              val newHd = VectorSlice.slice (hd, 0, SOME delpoint)
+              val newHd = VectorSlice.vector newHd
+            in
+              { left = left, right = joinStartOfRight (newHd, right) }
+            end
+          else if last = finish then
+            { left = left, right = tl }
+    | [] => { left = left, right = right }
+
   fun del (start, finish, left, right) =
     case right of
       rhd :: rtl =>
