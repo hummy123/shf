@@ -130,4 +130,15 @@ struct
             {left = left, right = right}
         end
     | [] => {left = left, right = right}
+
+  fun insert (new, {left, right}: t) =
+    (* look at elements to see which way to traverse *)
+    case right of
+      hd :: _ =>
+        if Vector.sub (hd, 0) >= new then
+          insRight (new, left, right)
+        else
+          insLeft (new, left, right)
+    | [] =>
+        insLeft (new, left, right)
 end
