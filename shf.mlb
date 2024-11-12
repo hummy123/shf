@@ -5,7 +5,6 @@ lib/brolib-sml/src/line_gap.sml
 lib/cozette-sml/fonts/cozette-ascii.mlb
 
 (* FUNCTIONAL CORE *)
-fcore/bin-search.sml
 message-types/input-msg.sml
 message-types/draw-msg.sml
 message-types/mailbox-type.sml
@@ -13,6 +12,8 @@ message-types/mailbox-type.sml
 fcore/app-type.sml
 fcore/app-with.sml
 
+fcore/bin-search.sml
+fcore/search-list.sml
 fcore/text-constants.sml
 ann
   "allowVectorExps true"
