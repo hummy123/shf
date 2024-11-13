@@ -1,3 +1,12 @@
+signature SEARCH_LIST =
+sig
+  type t = {left: int vector list, right: int vector list}
+  val empty: t
+  val insert: int * t -> t
+  val delete: int * int * t -> t
+  val mapFromNum: int * int * t -> t
+end
+
 structure SearchList =
 struct
   type t = {left: int vector list, right: int vector list}
@@ -166,9 +175,11 @@ struct
   fun goToNum (num, {left, right}: t) =
     case right of
       hd :: tl =>
-        if num > Vector.sub (hd, Vector.length hd - 1) then
+        if num >= Vector.sub (hd, 0) then
+          (* num is greater or equal to first el on right so go right *)
           helpGoToNumRight (num, left, right)
         else
+          (* num is less than first el on right so go left *)
           helpGoToNumLeft (num, left, right)
     | [] => helpGoToNumLeft (num, left, right)
 
@@ -428,4 +439,54 @@ struct
   fun delete (start, length, {left, right}: t) =
     if length > 0 then del (start, start + length, left, right)
     else {left = left, right = right}
+
+  (* go all the way to the end of the list, mapping each hd,
+   * joining the hd to the left,
+   * and return when we have reached the end *)
+  fun mapRight (mapBy, left, right) =
+    case right of
+      hd :: tl =>
+        let val newHd = Vector.map (fn el => el + mapBy) hd
+        in mapRight (mapBy, joinEndOfLeft (newHd, left), tl)
+        end
+    | [] => {left = left, right = right}
+
+  fun moveRightAndMap (num, mapBy, left, right) =
+    case right of
+      hd :: tl =>
+        let
+          val lastIdx = Vector.length hd - 1
+          val last = Vector.sub (hd, lastIdx)
+        in
+          if num > last then
+            moveRightAndMap (num, mapBy, joinEndOfLeft (hd, left), tl)
+          else if num < last then
+            (* need to map in middle *)
+            let
+              val startIdx = BinSearch.equalOrMore (num, hd)
+              val mapEl = Vector.sub (hd, startIdx)
+              val newHd =
+                Vector.map (fn el => if el < mapEl then el else mapEl + mapBy)
+                  hd
+            in
+              mapRight (mapBy, joinEndOfLeft (newHd, left), tl)
+            end
+          else
+            (* num = last *)
+            let
+              val newHd =
+                Vector.map (fn el => if el < num then num else num + mapBy) hd
+            in
+              mapRight (mapBy, joinEndOfLeft (newHd, left), tl)
+            end
+        end
+    | [] => {left = left, right = right}
+
+  fun mapFromNum (num, mapBy, lst) =
+    let
+      (* goToNum always places vector where num was found to the right list *)
+      val {left, right} = goToNum (num, lst)
+    in
+      moveRightAndMap (num, mapBy, left, right)
+    end
 end
