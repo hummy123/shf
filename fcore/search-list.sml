@@ -194,6 +194,58 @@ struct
         end
     | [] => {left = left, right = right}
 
+  fun moveRightAndDelete (start, finish, left, right) =
+    case right of
+      hd :: tl =>
+        let
+          val last = Vector.sub (hd, Vector.length hd - 1)
+        in
+          if start > last then
+            moveRightAndDelete (start, finish, joinEndOfLeft (hd, left), tl)
+          else if start < last then
+            if finish > last then
+              (* delete part of hd, and continue deleting rightwards *)
+              let
+                val delpoint = BinSearch.equalOrMore (start, hd)
+                val newHd = VectorSlice.slice (hd, 0, SOME delpoint)
+                val newHd = VectorSlice.vector newHd
+              in
+                delRightFromHere (finish, joinEndOfLeft (newHd, left), tl)
+              end
+            else if finish < last then
+              (* have to delete from middle of hd and then return *)
+              let
+                val startpoint = BinSearch.equalOrMore (start, hd)
+                val finishpoint = BinSearch.equalOrMore (finish, hd)
+                val lhd = VectorSlice.slice (hd, 0, SOME (Vector.length hd - startpoint))
+                val rhd = VectorSlice.slice (hd, finishpoint, SOME
+                (Vector.length hd - finishpoint))
+                val lhd = VectorSlice.vector lhd
+                val rhd = VectorSlice.vector rhd
+              in
+                { left = joinEndOfLeft (lhd, left), right = joinStartOfRight
+                (rhd, right)}
+              end
+            else
+              (* finish = last, which means delete from last part of hd *)
+              let
+                val startpoint = BinSearch.equalOrMore (start, hd)
+                val newHd = VectorSlice.slice (hd, 0, SOME startpoint)
+                val newHd = VectorSlice.vector newHd
+              in
+                {left = left, right = joinStartOfRight (newHd, tl)}
+              end
+          else 
+            (* start = last, meaning delete last and then continue deleting right*)
+            let
+              val length = Vector.length hd - 1
+              val newHd = VectorSlice.slice (hd, 0, SOME length)
+              val newHd = VectorSlice.vector newHd
+            in
+              delRightFromHere (finish, joinEndOfLeft (newHd, left), tl)
+            end
+        end
+
   fun delLeftFromHere (start, left, right) =
     case left of
       hd :: tl =>
