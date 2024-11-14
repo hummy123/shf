@@ -450,6 +450,36 @@ struct
       helpDeleteLine (app, buffer, cursorIdx, cursorIdx, count)
     end
 
+  fun helpDeleteLineBack (app, buffer, low, high, count) =
+    if count = 0 then
+      let
+        val low = Int.max (low, 0)
+        val length = high - low
+        val buffer = LineGap.delete (low, length, buffer)
+        val buffer = LineGap.goToIdx (low, buffer)
+      in
+        buildTextAndClear (app, buffer, low)
+      end
+    else
+      let
+        val buffer = LineGap.goToIdx (low, buffer)
+        val low = Cursor.viH (buffer, low)
+        val buffer = LineGap.goToIdx (low, buffer)
+        val low = Cursor.vi0 (buffer, low)
+        val newCount = if low = 0 then 0 else count - 1
+      in
+        helpDeleteLineBack (app, buffer, low, high, newCount)
+      end
+
+  fun deleteLineBack (app: app_type, count) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val low = Cursor.vi0 (buffer, cursorIdx)
+      val high = Cursor.viDlr (buffer, cursorIdx) + 1
+    in
+      helpDeleteLineBack (app, buffer, low, high, count)
+    end
+
   fun deleteToFirstNonSpaceChr (app: app_type) =
     let
       val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
@@ -615,15 +645,19 @@ struct
           (case chr of
             (* terminal commands: require no input after *)
             #"h" => delete (app, count, Cursor.viH)
-          | #"j" => delete (app, count, Cursor.viJ)
-          | #"k" => delete (app, count, Cursor.viK)
           | #"l" => delete (app, count, Cursor.viL)
+            (* vi's 'j' and 'k' commands move up or down a column
+             * but 'dj' or 'dk' delete whole lines
+             * so their implementation differs from
+             * other cursor motions *)
+          | #"j" => deleteLine (app, count + 1)
+          | #"k" => deleteLineBack (app, count)
           | #"w" => delete (app, count, Cursor.nextWord)
           | #"W" => delete (app, count, Cursor.nextWORD)
           | #"b" => delete (app, count, Cursor.prevWord)
           | #"B" => delete (app, count, Cursor.prevWORD)
-          | #"e" => delete (app, count, Cursor.endOfWord)
-          | #"E" => delete (app, count, Cursor.endOfWORD)
+          | #"e" => delete (app, count, Cursor.endOfWordPlusOne)
+          | #"E" => delete (app, count, Cursor.endOfWORDPlusOne)
           | #"0" => delete (app, 1, Cursor.vi0)
           | #"$" => deleteToEndOfLine app
           | #"^" => deleteToFirstNonSpaceChr app

@@ -1135,6 +1135,15 @@ struct
   fun endOfWORD (lineGap, cursorIdx) = 
     toEndOfWord (lineGap, cursorIdx, helpEndOfWORD)
 
+  (* vi's 'e' command takes user last char in word
+   * but 'de' deletes up to and including last char of word 
+   * So we need to increment by one for deletion. *)
+  fun endOfWordPlusOne (lineGap, cursorIdx) =
+    endOfWord (lineGap, cursorIdx) + 1
+
+  fun endOfWORDPlusOne (lineGap, cursorIdx) =
+    endOfWORD (lineGap, cursorIdx) + 1
+
   fun helpFirstNonSpaceChr (strPos, str, absIdx, stl, ltl) =
       if strPos = String.size str then
         case (stl, ltl) of
