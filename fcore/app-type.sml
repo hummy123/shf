@@ -1,11 +1,12 @@
 signature APP_TYPE =
 sig
-  datatype mode = 
-    NORMAL_MODE of string
+  datatype mode = NORMAL_MODE of string
 
   type app_type =
     { mode: mode
     , buffer: LineGap.t
+    , searchList: SearchList.t
+    , searchString: string
     , windowWidth: int
     , windowHeight: int
     (* line to start drawing from *)
@@ -19,12 +20,13 @@ end
 
 structure AppType :> APP_TYPE =
 struct
-  datatype mode =
-    NORMAL_MODE of string
+  datatype mode = NORMAL_MODE of string
 
   type app_type =
     { mode: mode
     , buffer: LineGap.t
+    , searchList: SearchList.t
+    , searchString: string
     , windowWidth: int
     , windowHeight: int
     (* line to start drawing from *)
@@ -36,6 +38,8 @@ struct
   fun init (buffer, windowWidth, windowHeight) : app_type =
     { mode = NORMAL_MODE ""
     , buffer = buffer
+    , searchList = SearchList.empty
+    , searchString = ""
     , windowWidth = windowWidth
     , windowHeight = windowHeight
     , startLine = 0

@@ -7,7 +7,7 @@ sig
   val mapFromNum: int * int * t -> t
 end
 
-structure SearchList =
+structure SearchList :> SEARCH_LIST =
 struct
   type t = {left: int vector list, right: int vector list}
 

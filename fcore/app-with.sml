@@ -7,6 +7,8 @@ struct
       val
         { startLine = _
         , buffer = _
+        , searchList
+        , searchString
         , mode
         , windowWidth
         , windowHeight
@@ -15,6 +17,8 @@ struct
     in
       { startLine = startLine
       , buffer = newBuffer
+      , searchList = searchList
+      , searchString = searchString
       , mode = mode
       , windowWidth = windowWidth
       , windowHeight = windowHeight
@@ -29,6 +33,8 @@ struct
         , buffer = _
         , windowWidth = _
         , windowHeight = _
+        , searchList
+        , searchString
         , startLine
         , cursorIdx
         } = app
@@ -37,6 +43,8 @@ struct
       , buffer = newBuffer
       , windowWidth = newWidth
       , windowHeight = newHeight
+      , searchList = searchList
+      , searchString = searchString
       , startLine = startLine
       , cursorIdx = cursorIdx
       }
@@ -49,15 +57,19 @@ struct
         { mode = _
         , buffer = _
         , cursorIdx = _
+        , startLine = _
+        , searchList
+        , searchString
         , windowWidth
         , windowHeight
-        , startLine = _
         } = app
     in
       { mode = newMode
       , buffer = newBuffer
       , cursorIdx = newCursorIdx
       , startLine = newStartLine
+      , searchList = searchList
+      , searchString = searchString
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       }
@@ -65,11 +77,21 @@ struct
 
   fun mode (app: app_type, newMode) =
     let
-      val {mode = _, buffer, cursorIdx, windowWidth, windowHeight, startLine} =
-        app
+      val
+        { mode = _
+        , buffer
+        , searchList
+        , searchString
+        , cursorIdx
+        , windowWidth
+        , windowHeight
+        , startLine
+        } = app
     in
       { mode = newMode
       , buffer = buffer
+      , searchList = searchList
+      , searchString = searchString
       , cursorIdx = cursorIdx
       , windowWidth = windowWidth
       , windowHeight = windowHeight
