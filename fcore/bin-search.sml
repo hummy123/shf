@@ -63,7 +63,7 @@ struct
               helpBinSearch (findNum, vec, low, mid - 1)
           end
         else
-          forwardLinearSearch (findNum, mid, vec)
+          forwardLinearSearch (findNum, Int.max (mid, 0), vec)
       end
   in
     fun equalOrMore (findNum, vec) =
