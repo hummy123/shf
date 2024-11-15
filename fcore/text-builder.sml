@@ -9,18 +9,19 @@ structure TextBuilder :> TEXT_BUILDER =
 struct
   open TextConstants
 
-  fun accToDrawMsg (textAcc, cursorAcc) =
+  fun accToDrawMsg (textAcc, cursorAcc, bgAcc) =
     let
       open MailboxType
       open DrawMsg
 
       val textAcc = Vector.concat textAcc
-      val cursorAcc = Vector.concat cursorAcc
+      val bgAcc = Vector.concat bgAcc
 
       val textMsg = REDRAW_TEXT textAcc
       val cursorMsg = REDRAW_CURSOR cursorAcc
+      val bgMsg = REDRAW_BG bgAcc
     in
-      [DRAW textMsg, DRAW cursorMsg]
+      [DRAW bgMsg, DRAW textMsg, DRAW cursorMsg]
     end
 
   fun buildCursor (posX, posY, fWindowWidth, fWindowHeight, r, g, b) =
@@ -83,7 +84,7 @@ struct
 
   fun buildTextString
     ( pos, str, acc, posX, posY, startX
-    , tl, absIdx, cursorPos, cursorAcc
+    , tl, absIdx, cursorPos, cursorAcc, bgAcc
     , windowData: window_data, colourData: colour_data
     ) =
       if pos < String.size str then
@@ -95,7 +96,7 @@ struct
               (* not in cursur *)
               buildTextString
                ( pos + 1, str, acc, posX + xSpace, posY, startX
-               , tl, absIdx + 1, cursorPos, cursorAcc
+               , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                , windowData, colourData
                )
             else
@@ -104,12 +105,11 @@ struct
                 val {fw, fh, ...} = windowData
                 val {r, g, b, ...} = colourData
 
-                val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
-                val cursorAcc = cursorHd :: cursorAcc
+                val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
               in
                 buildTextString
                   ( pos + 1, str, acc, posX + xSpace, posY, startX
-                  , tl, absIdx + 1, cursorPos, cursorAcc
+                  , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                   , windowData, colourData
                   )
               end
@@ -119,7 +119,7 @@ struct
                 (* not in cursor position, so iterate like normal *)
                 buildTextString
                   ( pos + 1, str, acc, startX, posY + ySpace, startX
-                  , tl, absIdx + 1, cursorPos, cursorAcc
+                  , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                   , windowData, colourData
                   )
               else
@@ -128,17 +128,16 @@ struct
                    val {fw, fh, ...} = windowData
                    val {r, g, b, ...} = colourData
 
-                   val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
-                   val cursorAcc = cursorHd :: cursorAcc
+                   val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
                  in
                    buildTextString
                      ( pos + 1, str, acc, startX, posY + ySpace, startX
-                     , tl, absIdx + 1, cursorPos, cursorAcc
+                     , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                      , windowData, colourData
                      )
                  end
             else
-              accToDrawMsg (acc, cursorAcc)
+              accToDrawMsg (acc, cursorAcc, bgAcc)
         | chr =>
             let
               val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
@@ -156,7 +155,7 @@ struct
                   in
                     buildTextString
                       ( pos + 1, str, acc, posX + xSpace, posY, startX
-                      , tl, absIdx + 1, cursorPos, cursorAcc
+                      , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                       , windowData, colourData
                       )
                   end
@@ -173,19 +172,18 @@ struct
                   in
                     buildTextString
                       ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
-                      , tl, absIdx + 1, cursorPos, cursorAcc
+                      , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                       , windowData, colourData
                       )
                   end
                 else
-                  accToDrawMsg (acc, cursorAcc)
+                  accToDrawMsg (acc, cursorAcc, bgAcc)
               else
                 (* equal to cursor *)
                 let
                   val {fw, fh, ...} = windowData
                   val {r, g, b, hr, hg, hb} = colourData
-                  val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
-                  val cursorAcc = cursorHd :: cursorAcc
+                  val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
                 in
                   if posX + xSpace < #w windowData then
                     let
@@ -199,7 +197,7 @@ struct
                        * since cursor was built *)
                       buildTextString
                         ( pos + 1, str, acc, posX + xSpace, posY, startX
-                        , tl, absIdx + 1, cursorPos, cursorAcc
+                        , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                         , windowData, colourData
                         )
                     end
@@ -215,12 +213,12 @@ struct
                        * since cursor was built *)
                       buildTextString
                         ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
-                        , tl, absIdx + 1, cursorPos, cursorAcc
+                        , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                         , windowData, colourData
                         )
                     end
                   else
-                    accToDrawMsg (acc, cursorAcc)
+                    accToDrawMsg (acc, cursorAcc, bgAcc)
                 end
             end
       else
@@ -229,11 +227,11 @@ struct
            hd :: tl =>
              buildTextString
                ( 0, hd, acc, posX, posY, startX
-               , tl, absIdx, cursorPos, cursorAcc
+               , tl, absIdx, cursorPos, cursorAcc, bgAcc
                , windowData, colourData
                )
          | [] =>
-             accToDrawMsg (acc, cursorAcc)
+             accToDrawMsg (acc, cursorAcc, bgAcc)
 
   fun isInSearchRange (absIdx, searchPos, searchHd, searchLen) =
     let
@@ -251,7 +249,7 @@ struct
 
   fun buildTextStringSearch
     ( pos, str, acc, posX, posY, startX
-    , tl, absIdx, cursorPos, cursorAcc
+    , tl, absIdx, cursorPos, cursorAcc, bgAcc
     , windowData: window_data, colourData: colour_data
     , searchHd, searchTl, searchPos, searchLen
     ) =
@@ -261,15 +259,15 @@ struct
             (* go to next search hd/tl *)
             buildTextStringSearch
               ( pos, str, acc, posX, posY, startX
-              , tl, absIdx, cursorPos, cursorAcc
+              , tl, absIdx, cursorPos, cursorAcc, bgAcc
               , windowData, colourData
               , searchHd, searchTl, 0, searchLen
               )
         | [] =>
             (* exhausted search hd/tl so calll normal build function *)
-            buildTextString 
+            buildTextString
               ( pos, str, acc, posX, posY, startX
-              , tl, absIdx, cursorPos, cursorAcc
+              , tl, absIdx, cursorPos, cursorAcc, bgAcc
               , windowData, colourData
               )
       else if pos < String.size str then
@@ -289,11 +287,11 @@ struct
                   val {fw, fh, ...} = windowData
 
                   val space = buildCursor (posX, posY, fw, fh, r, g, b)
-                  val cursorAcc = space :: cursorAcc
+                  val bgAcc = space :: bgAcc
                 in
                   buildTextStringSearch
                    ( pos + 1, str, acc, posX + xSpace, posY, startX
-                   , tl, absIdx + 1, cursorPos, cursorAcc
+                   , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                    , windowData, colourData
                    , searchHd, searchTl, searchPos, searchLen
                    )
@@ -301,7 +299,7 @@ struct
               else
                 buildTextStringSearch
                  ( pos + 1, str, acc, posX + xSpace, posY, startX
-                 , tl, absIdx + 1, cursorPos, cursorAcc
+                 , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                  , windowData, colourData
                  , searchHd, searchTl, searchPos, searchLen
                  )
@@ -311,12 +309,11 @@ struct
                 val {fw, fh, ...} = windowData
                 val {r, g, b, ...} = colourData
 
-                val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
-                val cursorAcc = cursorHd :: cursorAcc
+                val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
               in
                 buildTextStringSearch
                   ( pos + 1, str, acc, posX + xSpace, posY, startX
-                  , tl, absIdx + 1, cursorPos, cursorAcc
+                  , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                   , windowData, colourData
                   , searchHd, searchTl, searchPos, searchLen
                   )
@@ -327,7 +324,7 @@ struct
                 (* not in cursor position, so iterate like normal *)
                 buildTextStringSearch
                   ( pos + 1, str, acc, startX, posY + ySpace, startX
-                  , tl, absIdx + 1, cursorPos, cursorAcc
+                  , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                   , windowData, colourData
                   , searchHd, searchTl, searchPos, searchLen
                   )
@@ -337,18 +334,17 @@ struct
                    val {fw, fh, ...} = windowData
                    val {r, g, b, ...} = colourData
 
-                   val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
-                   val cursorAcc = cursorHd :: cursorAcc
+                   val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
                  in
                    buildTextStringSearch
                      ( pos + 1, str, acc, startX, posY + ySpace, startX
-                     , tl, absIdx + 1, cursorPos, cursorAcc
+                     , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                      , windowData, colourData
                      , searchHd, searchTl, searchPos, searchLen
                      )
                  end
             else
-              accToDrawMsg (acc, cursorAcc)
+              accToDrawMsg (acc, cursorAcc, bgAcc)
         | chr =>
             let
               val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
@@ -376,11 +372,11 @@ struct
                       val b: Real32.real = 0.1
 
                       val space = buildCursor (posX, posY, fw, fh, r, g, b)
-                      val cursorAcc = space :: cursorAcc
+                      val bgAcc = space :: bgAcc
                     in
                       buildTextStringSearch
                         ( pos + 1, str, acc, posX + xSpace, posY, startX
-                        , tl, absIdx + 1, cursorPos, cursorAcc
+                        , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                         , windowData, colourData
                         , searchHd, searchTl, searchPos, searchLen
                         )
@@ -400,7 +396,7 @@ struct
                     in
                       buildTextStringSearch
                         ( pos + 1, str, acc, posX + xSpace, posY, startX
-                        , tl, absIdx + 1, cursorPos, cursorAcc
+                        , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                         , windowData, colourData
                         , searchHd, searchTl, searchPos, searchLen
                         )
@@ -418,20 +414,19 @@ struct
                   in
                     buildTextStringSearch
                       ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
-                      , tl, absIdx + 1, cursorPos, cursorAcc
+                      , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                       , windowData, colourData
                       , searchHd, searchTl, searchPos, searchLen
                       )
                   end
                 else
-                  accToDrawMsg (acc, cursorAcc)
+                  accToDrawMsg (acc, cursorAcc, bgAcc)
               else
                 (* equal to cursor *)
                 let
                   val {fw, fh, ...} = windowData
                   val {r, g, b, hr, hg, hb} = colourData
-                  val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
-                  val cursorAcc = cursorHd :: cursorAcc
+                  val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
                 in
                   if posX + xSpace < #w windowData then
                     let
@@ -445,7 +440,7 @@ struct
                        * since cursor was built *)
                       buildTextStringSearch
                         ( pos + 1, str, acc, posX + xSpace, posY, startX
-                        , tl, absIdx + 1, cursorPos, cursorAcc
+                        , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                         , windowData, colourData
                         , searchHd, searchTl, searchPos, searchLen
                         )
@@ -462,13 +457,13 @@ struct
                        * since cursor was built *)
                       buildTextStringSearch
                         ( pos + 1, str, acc, startX + xSpace, posY + ySpace, startX
-                        , tl, absIdx + 1, cursorPos, cursorAcc
+                        , tl, absIdx + 1, cursorPos, cursorAcc, bgAcc
                         , windowData, colourData
                         , searchHd, searchTl, searchPos, searchLen
                         )
                     end
                   else
-                    accToDrawMsg (acc, cursorAcc)
+                    accToDrawMsg (acc, cursorAcc, bgAcc)
                 end
             end
       else
@@ -477,12 +472,12 @@ struct
            hd :: tl =>
              buildTextStringSearch
                ( 0, hd, acc, posX, posY, startX
-               , tl, absIdx, cursorPos, cursorAcc
+               , tl, absIdx, cursorPos, cursorAcc, bgAcc
                , windowData, colourData
                , searchHd, searchTl, searchPos, searchLen
                )
          | [] =>
-             accToDrawMsg (acc, cursorAcc)
+             accToDrawMsg (acc, cursorAcc, bgAcc)
 
   fun build
     ( startLine, cursorPos, lineGap: LineGap.t
@@ -534,6 +529,7 @@ struct
                 , hg = 0.219
                 , hb = 0.25
                 }
+              val cursorAcc = Vector.fromList []
             in
               (case #right searchList of
                 searchHd :: searchTl =>
@@ -542,7 +538,7 @@ struct
                   in
                     buildTextStringSearch
                       ( startIdx, rStrHd, [], 5, 5, 5
-                      , rStrTl, absIdx, cursorPos, []
+                      , rStrTl, absIdx, cursorPos, cursorAcc, []
                       , windowData, colourData
                       , searchHd, searchTl, searchPos, String.size searchString
                       )
@@ -550,7 +546,7 @@ struct
                | [] =>
                   buildTextString
                     ( startIdx, rStrHd, [], 5, 5, 5
-                    , rStrTl, absIdx, cursorPos, []
+                    , rStrTl, absIdx, cursorPos, cursorAcc, []
                     , windowData, colourData
                     ))
             end

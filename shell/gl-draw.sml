@@ -17,6 +17,10 @@ struct
     , cursorProgram: Word32.word
     , cursorDrawLength: int
 
+    , bgVertexBuffer: Word32.word
+    , bgProgram: Word32.word
+    , bgDrawLength: int
+
     , drawMailbox: DrawMsg.t Mailbox.mbox
     , window: MLton.Pointer.t
     }
@@ -56,6 +60,10 @@ struct
       val cursorVertexBuffer = Gles3.createBuffer ()
       val cursorProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
 
+      (* create background buffer and program *)
+      val bgVertexBuffer = Gles3.createBuffer ()
+      val bgProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
+
       (* clean up shaders which are no longer needed once progran is linked. *)
       val _ = Gles3.deleteShader xyrgbVertexShader
       val _ = Gles3.deleteShader rgbFragmentShader
@@ -63,9 +71,15 @@ struct
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
       , textDrawLength = 0
+
       , cursorVertexBuffer = cursorVertexBuffer
       , cursorProgram = cursorProgram
       , cursorDrawLength = 0
+
+      , bgVertexBuffer = bgVertexBuffer
+      , bgProgram = bgProgram
+      , bgDrawLength = 0
+
       , drawMailbox = drawMailbox
       , window = window
       }
@@ -80,6 +94,9 @@ struct
         , cursorVertexBuffer
         , cursorProgram
         , cursorDrawLength
+        , bgVertexBuffer
+        , bgProgram
+        , bgDrawLength
         , window
         , drawMailbox
         } = shellState
@@ -94,6 +111,9 @@ struct
       , cursorVertexBuffer = cursorVertexBuffer
       , cursorProgram = cursorProgram
       , cursorDrawLength = cursorDrawLength
+      , bgVertexBuffer = bgVertexBuffer
+      , bgProgram = bgProgram
+      , bgDrawLength = bgDrawLength
       , drawMailbox = drawMailbox
       , window = window
       }
@@ -108,6 +128,9 @@ struct
         , cursorVertexBuffer
         , cursorProgram
         , cursorDrawLength = _
+        , bgVertexBuffer
+        , bgProgram
+        , bgDrawLength
         , window
         , drawMailbox
         } = shellState
@@ -122,6 +145,43 @@ struct
       , cursorVertexBuffer = cursorVertexBuffer
       , cursorProgram = cursorProgram
       , cursorDrawLength = newCursorDrawLength
+      , bgVertexBuffer = bgVertexBuffer
+      , bgProgram = bgProgram
+      , bgDrawLength = bgDrawLength
+      , drawMailbox = drawMailbox
+      , window = window
+      }
+    end
+
+  fun uploadBg (shellState: t, vec) =
+    let
+      val
+        { textVertexBuffer
+        , textProgram
+        , textDrawLength
+        , cursorVertexBuffer
+        , cursorProgram
+        , cursorDrawLength
+        , bgVertexBuffer
+        , bgProgram
+        , bgDrawLength = _
+        , window
+        , drawMailbox
+        } = shellState
+
+      val _ = Gles3.bindBuffer bgVertexBuffer
+      val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
+      val newBgDrawLength = Vector.length vec div 5
+    in
+      { textVertexBuffer = textVertexBuffer
+      , textProgram = textProgram
+      , textDrawLength = textDrawLength
+      , cursorVertexBuffer = cursorVertexBuffer
+      , cursorProgram = cursorProgram
+      , cursorDrawLength = cursorDrawLength
+      , bgVertexBuffer = bgVertexBuffer
+      , bgProgram = bgProgram
+      , bgDrawLength = newBgDrawLength
       , drawMailbox = drawMailbox
       , window = window
       }
@@ -155,9 +215,13 @@ struct
         , cursorVertexBuffer
         , cursorDrawLength
         , cursorProgram
+        , bgVertexBuffer
+        , bgProgram
+        , bgDrawLength
         , ...
         } = drawObject
 
+      val _ = drawXyrgb (bgVertexBuffer, bgProgram, bgDrawLength)
       val _ = drawXyrgb (cursorVertexBuffer, cursorProgram, cursorDrawLength)
       val _ = drawXyrgb (textVertexBuffer, textProgram, textDrawLength)
     in
@@ -183,6 +247,7 @@ struct
       case msg of
         REDRAW_TEXT textVec => uploadText (shellState, textVec)
       | REDRAW_CURSOR cursorVec => uploadCursor (shellState, cursorVec)
+      | REDRAW_BG bgVec => uploadBg (shellState, bgVec)
       | YANK str => yank (shellState, str)
     end
 
