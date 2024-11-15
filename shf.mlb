@@ -20,6 +20,7 @@ fcore/text-constants.sml
 ann
   "allowVectorExps true"
 in
+  fcore/rect.sml
   fcore/text-builder.sml
 end
 fcore/cursor.sml
