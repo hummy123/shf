@@ -64,7 +64,7 @@ struct
             val buffer = LineGap.goToIdx (origIdx, buffer)
             val searchList = SearchList.goToNum (origIdx, searchList)
           in
-            AppWith.searchListAndBuffer (app, searchList, buffer)
+            AppWith.searchList (app, searchList, buffer, searchString)
           end
     end
 
