@@ -2,8 +2,12 @@ signature SEARCH_LIST =
 sig
   type t = {left: int vector list, right: int vector list}
   val empty: t
+
   val insert: int * t -> t
+  val append: int * t -> t
   val delete: int * int * t -> t
+
+  val goToNum: int * t -> t
   val mapFromNum: int * int * t -> t
 end
 
@@ -147,6 +151,13 @@ struct
         if Vector.sub (hd, 0) >= new then insRight (new, left, right)
         else insLeft (new, left, right)
     | [] => insLeft (new, left, right)
+
+  fun helpAppend (new, left, right) =
+    case right of
+      hd :: tl => helpAppend (new, joinEndOfLeft (hd, left), tl)
+    | [] => {left = joinEndOfLeft (Vector.fromList [new], left), right = right}
+
+  fun append (new, {left, right}: t) = helpAppend (new, left, right)
 
   fun helpGoToNumLeft (num, left, right) =
     case left of

@@ -15,6 +15,7 @@ fcore/search-list.sml
 fcore/app-type.sml
 fcore/app-with.sml
 
+fcore/build-search-list.sml
 fcore/text-constants.sml
 ann
   "allowVectorExps true"

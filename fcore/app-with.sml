@@ -98,4 +98,28 @@ struct
       , startLine = startLine
       }
     end
+
+  fun searchListAndBuffer (app: app_type, newSearchList, newBuffer) =
+    let
+      val
+        { searchList = _
+        , buffer = _
+        , mode
+        , searchString
+        , cursorIdx
+        , windowWidth
+        , windowHeight
+        , startLine
+        } = app
+    in
+      { searchList = newSearchList
+      , buffer = newBuffer
+      , mode = mode
+      , searchString = searchString
+      , cursorIdx = cursorIdx
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      , startLine = startLine
+      }
+    end
 end
