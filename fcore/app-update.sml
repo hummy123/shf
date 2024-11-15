@@ -16,11 +16,23 @@ struct
 
   fun resizeText (app: app_type, newWidth, newHeight) =
     let
-      val {buffer, windowWidth, windowHeight, startLine, cursorIdx, ...} = app
+      val
+        { buffer
+        , windowWidth
+        , windowHeight
+        , startLine
+        , cursorIdx
+        , searchList
+        , searchString
+        , ...
+        } = app
 
       val newBuffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
-        (startLine, cursorIdx, newBuffer, newWidth, newHeight)
+        ( startLine, cursorIdx, newBuffer
+        , newWidth, newHeight
+        , searchList, searchString
+        )
 
       val newApp = AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight)
     in
@@ -29,7 +41,8 @@ struct
 
   fun buildTextAndClear (app: app_type, buffer, cursorIdx) =
     let
-      val {windowWidth, windowHeight, startLine, ...} = app
+      val {windowWidth, windowHeight, startLine, searchList, searchString, ...} =
+        app
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -41,9 +54,11 @@ struct
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
-      val drawMsg = 
-        TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+      val drawMsg = TextBuilder.build
+        ( startLine, cursorIdx, buffer
+        , windowWidth, windowHeight
+        , searchList, searchString
+        )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
@@ -59,7 +74,8 @@ struct
    * *)
   fun buildTextAndClearAfterChr (app: app_type, buffer, cursorIdx) =
     let
-      val {windowWidth, windowHeight, startLine, ...} = app
+      val {windowWidth, windowHeight, startLine, searchList, searchString, ...} =
+        app
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -71,9 +87,11 @@ struct
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
-      val drawMsg = 
-        TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+      val drawMsg = TextBuilder.build
+        ( startLine, cursorIdx, buffer
+        , windowWidth, windowHeight
+        , searchList, searchString
+        )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
@@ -84,10 +102,19 @@ struct
 
   fun centreToCursor (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, startLine = origLine, cursorIdx, ...} = app
+      val
+        { buffer
+        , windowWidth
+        , windowHeight
+        , startLine = origLine
+        , cursorIdx
+        , searchList
+        , searchString
+        , ...
+        } = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
-      val startLine = TextWindow.getStartLineWithCursorCentered 
+      val startLine = TextWindow.getStartLineWithCursorCentered
         (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -95,9 +122,11 @@ struct
       val newApp = AppWith.bufferAndCursorIdx
         (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
-      val drawMsg = 
-        TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+      val drawMsg = TextBuilder.build
+        ( startLine, cursorIdx, buffer
+        , windowWidth, windowHeight
+        , searchList, searchString
+        )
     in
       (newApp, drawMsg)
     end
@@ -106,15 +135,18 @@ struct
 
   fun moveToStart (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, ...} = app
+      val {buffer, windowWidth, windowHeight, searchList, searchString, ...} =
+        app
 
       val cursorIdx = 0
       val startLine = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
-      val drawMsg = 
-        TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+      val drawMsg = TextBuilder.build
+        ( startLine, cursorIdx, buffer
+        , windowWidth, windowHeight
+        , searchList, searchString
+        )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
@@ -125,7 +157,8 @@ struct
 
   fun moveToEnd (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, ...} = app
+      val {buffer, windowWidth, windowHeight, searchList, searchString, ...} =
+        app
 
       val buffer = LineGap.goToEnd buffer
       val {line = bufferLine, idx = bufferIdx, ...} = buffer
@@ -135,18 +168,20 @@ struct
       val bufferLine = bufferLine - 1
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
-      val bufferLine = 
+      val bufferLine =
         let
           val maxHeight = windowHeight - TextConstants.ySpace
         in
-          TextWindow.getStartLineWithCursorCentered 
+          TextWindow.getStartLineWithCursorCentered
             (buffer, bufferIdx, bufferLine, windowWidth, maxHeight)
         end
 
       val buffer = LineGap.goToLine (bufferLine, buffer)
-      val drawMsg = 
-        TextBuilder.build
-          (bufferLine, bufferIdx, buffer, windowWidth, windowHeight)
+      val drawMsg = TextBuilder.build
+        ( bufferLine, bufferIdx, buffer
+        , windowWidth, windowHeight
+        , searchList, searchString
+        )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
@@ -160,14 +195,22 @@ struct
       moveToStart app
     else
       let
-        val {windowWidth, windowHeight, buffer, startLine = origLine, ...} = app
+        val
+          { windowWidth
+          , windowHeight
+          , buffer
+          , startLine = origLine
+          , searchList
+          , searchString
+          , ...
+          } = app
         val buffer = LineGap.goToLine (reqLine, buffer)
 
         (* get idx of first chr after linebreak *)
         val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
 
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val startLine = TextWindow.getStartLineWithCursorCentered 
+        val startLine = TextWindow.getStartLineWithCursorCentered
           (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
         val buffer = LineGap.goToLine (startLine, buffer)
@@ -175,9 +218,11 @@ struct
         val newApp = AppWith.bufferAndCursorIdx
           (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
-        val drawMsg = 
-          TextBuilder.build
-            (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+        val drawMsg = TextBuilder.build
+          ( startLine, cursorIdx, buffer
+          , windowWidth, windowHeight
+          , searchList, searchString
+          )
       in
         (newApp, drawMsg)
       end
@@ -191,14 +236,13 @@ struct
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val newCursorIdx = fMove (buffer, cursorIdx)
         val newCursorIdx = Cursor.clipIdx (buffer, newCursorIdx)
-        val newCount = 
+        val newCount =
           (* it's possible to loop a very high number like 5432131
            * which will take a long time because of the high number of loops
            * regardless of the data structure used.
            * If this happens, and the newCursorIdx is the same as the old one,
            * then skip to end of loop by going to base case. *)
-          if cursorIdx = newCursorIdx 
-          then 0
+          if cursorIdx = newCursorIdx then 0
           else count - 1
       in
         helpMove (app, buffer, newCursorIdx, newCount, fMove)
@@ -211,7 +255,16 @@ struct
 
   fun moveToMatchingPair (app: app_type) =
     let
-      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+      val
+        { buffer
+        , cursorIdx
+        , windowWidth
+        , windowHeight
+        , startLine
+        , searchList
+        , searchString
+        , ...
+        } = app
 
       (* move LineGap and buffer to start of line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -219,17 +272,20 @@ struct
 
       val buffer = LineGap.goToLine (startLine, buffer)
     in
-      if TextWindow.isCursorVisible 
-        (buffer, cursorIdx, startLine, windowWidth, windowHeight)
+      if
+        TextWindow.isCursorVisible
+          (buffer, cursorIdx, startLine, windowWidth, windowHeight)
       then
         (* if visible, just need to redraw; no need to get line *)
         let
           val newApp = AppWith.bufferAndCursorIdx
             (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
-          val drawMsg = 
-            TextBuilder.build
-              (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+          val drawMsg = TextBuilder.build
+            ( startLine, cursorIdx, buffer
+            , windowWidth, windowHeight
+            , searchList, searchString
+            )
         in
           (newApp, drawMsg)
         end
@@ -237,8 +293,7 @@ struct
         (* not visible, so need to get startLine where cursor is visible *)
         let
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
-          val startLine = 
-            TextWindow.getStartLineWithCursorCentered 
+          val startLine = TextWindow.getStartLineWithCursorCentered
             (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
 
           val buffer = LineGap.goToLine (startLine, buffer)
@@ -246,9 +301,11 @@ struct
           val newApp = AppWith.bufferAndCursorIdx
             (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
 
-          val drawMsg = 
-            TextBuilder.build
-              (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+          val drawMsg = TextBuilder.build
+            ( startLine, cursorIdx, buffer
+            , windowWidth, windowHeight
+            , searchList, searchString
+            )
         in
           (newApp, drawMsg)
         end
@@ -336,23 +393,22 @@ struct
           helpRemoveChr (app, buffer, cursorIdx, 0)
         else if nextIsEnd then
           let
-           (* delete char at cursor and then decrement cursorIdx by 1
-            * if cursorIdx is not 0 *)
+            (* delete char at cursor and then decrement cursorIdx by 1
+             * if cursorIdx is not 0 *)
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
-            val cursorIdx = 
-              if Cursor.isPrevChrStartOfLine (buffer, cursorIdx)
-              orelse cursorIdx = 0 then
-                cursorIdx
+            val cursorIdx =
+              if
+                Cursor.isPrevChrStartOfLine (buffer, cursorIdx)
+                orelse cursorIdx = 0
+              then cursorIdx
               else cursorIdx - 1
           in
             helpRemoveChr (app, buffer, cursorIdx, count - 1)
           end
-       else
-         let
-           val buffer = LineGap.delete (cursorIdx, 1, buffer)
-         in
-            helpRemoveChr (app, buffer, cursorIdx, count - 1)
-         end
+        else
+          let val buffer = LineGap.delete (cursorIdx, 1, buffer)
+          in helpRemoveChr (app, buffer, cursorIdx, count - 1)
+          end
       end
 
   fun removeChr (app: app_type, count) =
@@ -501,7 +557,8 @@ struct
       buildTextAndClear (app, buffer, low)
     end
 
-  fun helpDeleteToChr (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, fInc, chr) =
+  fun helpDeleteToChr
+    (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, fInc, chr) =
     if count = 0 then
       let
         val low = Int.min (cursorIdx, otherIdx)
@@ -518,25 +575,44 @@ struct
         val newCount = if newOtherIdx = otherIdx then 0 else count - 1
         val newOtherIdx = fInc (newOtherIdx, 1)
       in
-        helpDeleteToChr (app, buffer, cursorIdx, newOtherIdx, newCount, fMove, fInc, chr)
+        helpDeleteToChr
+          (app, buffer, cursorIdx, newOtherIdx, newCount, fMove, fInc, chr)
       end
 
   fun deleteToChr (app: app_type, count, fMove, fInc, chr) =
-    helpDeleteToChr 
-      (app, #buffer app, #cursorIdx app, #cursorIdx app, count, fMove, fInc, chr)
+    helpDeleteToChr
+      ( app
+      , #buffer app
+      , #cursorIdx app
+      , #cursorIdx app
+      , count
+      , fMove
+      , fInc
+      , chr
+      )
 
   fun deleteToStart (app: app_type) =
     let
-      val {cursorIdx, buffer, windowWidth, windowHeight, ...} = app
+      val
+        { cursorIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
+        , ...
+        } = app
 
-      val buffer = LineGap.delete(0, cursorIdx, buffer)
+      val buffer = LineGap.delete (0, cursorIdx, buffer)
       val cursorIdx = 0
       val startLine = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
-      val drawMsg = 
-        TextBuilder.build
-          (startLine, cursorIdx, buffer, windowWidth, windowHeight)
+      val drawMsg = TextBuilder.build
+        ( startLine, cursorIdx, buffer
+        , windowWidth, windowHeight
+        , searchList, searchString
+        )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
@@ -606,14 +682,12 @@ struct
           move (app, 1, Cursor.vi0)
     | #"$" => move (app, 1, Cursor.viDlr)
     | #"^" => firstNonSpaceChr app
-    | #"G" => 
+    | #"G" =>
         (* if str has a size larger than 0,
          * interpret as "go to line" command;
          * else, interpret as a command to move to end *)
-         if String.size str = 0 then
-           moveToEnd app
-         else
-           moveToLine (app, count - 1)
+        if String.size str = 0 then moveToEnd app
+        else moveToLine (app, count - 1)
     | #"%" => moveToMatchingPair app
     | #"x" => removeChr (app, count)
     (* multi-char commands which can be appended *)
@@ -643,72 +717,76 @@ struct
       case newCmd of
         CHAR_EVENT chr =>
           (case chr of
-            (* terminal commands: require no input after *)
-            #"h" => delete (app, count, Cursor.viH)
-          | #"l" => delete (app, count, Cursor.viL)
-            (* vi's 'j' and 'k' commands move up or down a column
-             * but 'dj' or 'dk' delete whole lines
-             * so their implementation differs from
-             * other cursor motions *)
-          | #"j" => deleteLine (app, count + 1)
-          | #"k" => deleteLineBack (app, count)
-          | #"w" => delete (app, count, Cursor.nextWord)
-          | #"W" => delete (app, count, Cursor.nextWORD)
-          | #"b" => delete (app, count, Cursor.prevWord)
-          | #"B" => delete (app, count, Cursor.prevWORD)
-          | #"e" => delete (app, count, Cursor.endOfWordPlusOne)
-          | #"E" => delete (app, count, Cursor.endOfWORDPlusOne)
-          | #"0" => delete (app, 1, Cursor.vi0)
-          | #"$" => deleteToEndOfLine app
-          | #"^" => deleteToFirstNonSpaceChr app
-          | #"d" => deleteLine (app, count)
-          (* non-terminal commands which require appending chr *)
-          | #"t" => appendChr (app, chr, str)
-          | #"T" => appendChr (app, chr, str)
-          | #"f" => appendChr (app, chr, str)
-          | #"F" => appendChr (app, chr, str)
-          | #"g" => appendChr (app, chr, str)
-          (* invalid command: reset mode *)
-          | _ => clearMode app)
+           (* terminal commands: require no input after *)
+             #"h" => delete (app, count, Cursor.viH)
+           | #"l" => delete (app, count, Cursor.viL)
+           (* vi's 'j' and 'k' commands move up or down a column
+            * but 'dj' or 'dk' delete whole lines
+            * so their implementation differs from
+            * other cursor motions *)
+           | #"j" => deleteLine (app, count + 1)
+           | #"k" => deleteLineBack (app, count)
+           | #"w" => delete (app, count, Cursor.nextWord)
+           | #"W" => delete (app, count, Cursor.nextWORD)
+           | #"b" => delete (app, count, Cursor.prevWord)
+           | #"B" => delete (app, count, Cursor.prevWORD)
+           | #"e" => delete (app, count, Cursor.endOfWordPlusOne)
+           | #"E" => delete (app, count, Cursor.endOfWORDPlusOne)
+           | #"0" => delete (app, 1, Cursor.vi0)
+           | #"$" => deleteToEndOfLine app
+           | #"^" => deleteToFirstNonSpaceChr app
+           | #"d" => deleteLine (app, count)
+           (* non-terminal commands which require appending chr *)
+           | #"t" => appendChr (app, chr, str)
+           | #"T" => appendChr (app, chr, str)
+           | #"f" => appendChr (app, chr, str)
+           | #"F" => appendChr (app, chr, str)
+           | #"g" => appendChr (app, chr, str)
+           (* invalid command: reset mode *)
+           | _ => clearMode app)
       | KEY_ESC => clearMode app
       | RESIZE_EVENT (width, height) => resizeText (app, width, height)
     else
       (* have to continue parsing string *)
       case String.sub (str, strPos + 1) of
-        #"t" => 
+        #"t" =>
           (* delete till chr, forwards *)
           (case newCmd of
-            CHAR_EVENT chr => deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
-          | KEY_ESC => clearMode app
-          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
-      | #"T" => 
+             CHAR_EVENT chr =>
+               deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
+           | KEY_ESC => clearMode app
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+      | #"T" =>
           (* delete till chr, backwards *)
           (case newCmd of
-            CHAR_EVENT chr => deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
-          | KEY_ESC => clearMode app
-          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
-      | #"f" => 
+             CHAR_EVENT chr =>
+               deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
+           | KEY_ESC => clearMode app
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+      | #"f" =>
           (case newCmd of
-            CHAR_EVENT chr => deleteToChr (app, count, Cursor.toNextChr, op+, chr)
-          | KEY_ESC => clearMode app
-          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
-      | #"F" => 
+             CHAR_EVENT chr =>
+               deleteToChr (app, count, Cursor.toNextChr, op+, chr)
+           | KEY_ESC => clearMode app
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+      | #"F" =>
           (* delete to chr, backwards *)
           (case newCmd of
-            CHAR_EVENT chr => deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
-          | KEY_ESC => clearMode app
-          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
-      | #"g" => 
+             CHAR_EVENT chr =>
+               deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
+           | KEY_ESC => clearMode app
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+      | #"g" =>
           (* same events as handleGo *)
           (case newCmd of
-            CHAR_EVENT chr =>
-              (case chr of
-                 #"e" => delete (app, count, Cursor.endOfPrevWord)
-               | #"E" => delete (app, count, Cursor.endOfPrevWORD)
-               | #"g" => deleteToStart app
-               | _ => clearMode app)
-          | KEY_ESC => clearMode app
-          | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+             CHAR_EVENT chr =>
+               (case chr of
+                  #"e" => delete (app, count, Cursor.endOfPrevWord)
+                | #"E" => delete (app, count, Cursor.endOfPrevWORD)
+                | #"g" => deleteToStart app
+                | _ => clearMode app)
+           | KEY_ESC => clearMode app
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
       | _ => clearMode app
 
   (* useful reference as list of non-terminal commands *)
@@ -729,24 +807,16 @@ struct
     | #"T" =>
         (* to just before chr, backward *)
         handleMoveToChr (1, app, Cursor.tillPrevChr, newCmd)
-    | #"y" => 
-        (* yank *) 
-        clearMode app
-    | #"d" => 
-        (* delete *) 
-        parseDelete (strPos, str, count, app, newCmd)
+    | #"y" => (* yank *) clearMode app
+    | #"d" => (* delete *) parseDelete (strPos, str, count, app, newCmd)
     | #"f" =>
         (* to chr, forward *)
         handleMoveToChr (count, app, Cursor.toNextChr, newCmd)
     | #"F" =>
         (* to chr, backward *)
         handleMoveToChr (count, app, Cursor.toPrevChr, newCmd)
-    | #"g" => 
-        (* go *) 
-        handleGo (count, app, newCmd)
-    | #"c" => 
-        (* change *) 
-        clearMode app
+    | #"g" => (* go *) handleGo (count, app, newCmd)
+    | #"c" => (* change *) clearMode app
     | _ =>
         (* isn't a non-terminal cmd
          * this case should never happen*)

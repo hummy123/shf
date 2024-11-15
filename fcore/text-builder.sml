@@ -481,6 +481,9 @@ struct
                 else
                   0
               val absIdx = curIdx + startIdx
+
+              (* todo: make going to absIdx a prerequisite for using this
+               * function *)
               val searchList = SearchList.goToNum (absIdx, searchList)
 
               val windowData = 
