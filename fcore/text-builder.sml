@@ -40,17 +40,15 @@ struct
       val left = (left - halfWidth) / halfWidth
       val right = (right - halfWidth) / halfWidth
 
-      val vec =
-       #[ left, top, r, g, b
-        , right, top, r, g, b
-        , left, bottom, r, g, b
-
-        , left, bottom, r, g, b
-        , right, bottom, r, g, b
-        , right, top, r, g, b
-        ]
     in
-      [vec]
+     #[ left, top, r, g, b
+      , right, top, r, g, b
+      , left, bottom, r, g, b
+
+      , left, bottom, r, g, b
+      , right, bottom, r, g, b
+      , right, top, r, g, b
+      ]
     end
 
   (* builds text from a string with char-wrap.
@@ -106,7 +104,8 @@ struct
                 val {fw, fh, ...} = windowData
                 val {r, g, b, ...} = colourData
 
-                val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
+                val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
+                val cursorAcc = cursorHd :: cursorAcc
               in
                 buildTextString
                   ( pos + 1, str, acc, posX + xSpace, posY, startX
@@ -129,7 +128,8 @@ struct
                    val {fw, fh, ...} = windowData
                    val {r, g, b, ...} = colourData
 
-                   val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
+                   val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
+                   val cursorAcc = cursorHd :: cursorAcc
                  in
                    buildTextString
                      ( pos + 1, str, acc, startX, posY + ySpace, startX
@@ -184,7 +184,8 @@ struct
                 let
                   val {fw, fh, ...} = windowData
                   val {r, g, b, hr, hg, hb} = colourData
-                  val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
+                  val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
+                  val cursorAcc = cursorHd :: cursorAcc
                 in
                   if posX + xSpace < #w windowData then
                     let
@@ -278,19 +279,40 @@ struct
              * else, just skip as usual *)
             if absIdx <> cursorPos then
               (* not in cursur *)
-              buildTextStringSearch
-               ( pos + 1, str, acc, posX + xSpace, posY, startX
-               , tl, absIdx + 1, cursorPos, cursorAcc
-               , windowData, colourData
-               , searchHd, searchTl, searchPos, searchLen
-               )
+              if isInSearchRange (absIdx, searchPos, searchHd, searchLen) then
+                (* draw *)
+                let
+                  (* todo: temp colours *)
+                  val r: Real32.real = 0.3
+                  val g: Real32.real = 0.1
+                  val b: Real32.real = 0.1
+                  val {fw, fh, ...} = windowData
+
+                  val space = buildCursor (posX, posY, fw, fh, r, g, b)
+                  val cursorAcc = space :: cursorAcc
+                in
+                  buildTextStringSearch
+                   ( pos + 1, str, acc, posX + xSpace, posY, startX
+                   , tl, absIdx + 1, cursorPos, cursorAcc
+                   , windowData, colourData
+                   , searchHd, searchTl, searchPos, searchLen
+                   )
+                end
+              else
+                buildTextStringSearch
+                 ( pos + 1, str, acc, posX + xSpace, posY, startX
+                 , tl, absIdx + 1, cursorPos, cursorAcc
+                 , windowData, colourData
+                 , searchHd, searchTl, searchPos, searchLen
+                 )
             else
               (* in cursor *)
               let
                 val {fw, fh, ...} = windowData
                 val {r, g, b, ...} = colourData
 
-                val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
+                val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
+                val cursorAcc = cursorHd :: cursorAcc
               in
                 buildTextStringSearch
                   ( pos + 1, str, acc, posX + xSpace, posY, startX
@@ -315,7 +337,8 @@ struct
                    val {fw, fh, ...} = windowData
                    val {r, g, b, ...} = colourData
 
-                   val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
+                   val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
+                   val cursorAcc = cursorHd :: cursorAcc
                  in
                    buildTextStringSearch
                      ( pos + 1, str, acc, startX, posY + ySpace, startX
@@ -338,13 +361,22 @@ struct
                       val {fw, fh, ...} = windowData
 
                       (* todo: temp colours *)
-                      val r: Real32.real = 0.5
-                      val g: Real32.real = 0.5
-                      val b: Real32.real = 0.5
+                      val r: Real32.real = 0.7
+                      val g: Real32.real = 0.7
+                      val b: Real32.real = 0.7
 
+                      (* build char vec *)
                       val chrVec = 
                         chrFun (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
                       val acc = chrVec :: acc
+
+                      (* build cursor (behind text) vec *)
+                      val r: Real32.real = 0.3
+                      val g: Real32.real = 0.1
+                      val b: Real32.real = 0.1
+
+                      val space = buildCursor (posX, posY, fw, fh, r, g, b)
+                      val cursorAcc = space :: cursorAcc
                     in
                       buildTextStringSearch
                         ( pos + 1, str, acc, posX + xSpace, posY, startX
@@ -398,7 +430,8 @@ struct
                 let
                   val {fw, fh, ...} = windowData
                   val {r, g, b, hr, hg, hb} = colourData
-                  val cursorAcc = buildCursor (posX, posY, fw, fh, r, g ,b)
+                  val cursorHd = buildCursor (posX, posY, fw, fh, r, g ,b)
+                  val cursorAcc = cursorHd :: cursorAcc
                 in
                   if posX + xSpace < #w windowData then
                     let

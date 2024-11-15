@@ -64,7 +64,7 @@ struct
       val app = AppType.init (lineGap, 1920, 1080)
 
       (* todo: remove temp line below which tests search list *)
-      val app = BuildSearchList.build (app, 0, lineGap, "val")
+      val app = BuildSearchList.build (app, 0, lineGap, "val ")
 
       (* create mailboxes for CML communication *)
       val inputMailbox = Mailbox.mailbox ()
