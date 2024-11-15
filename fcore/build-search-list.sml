@@ -15,7 +15,7 @@ struct
         if hdChr = searchChr then
           if matchedChrs + 1 = String.size searchString then
             let
-              val matchedIdx = absIdx - String.size searchString - 1
+              val matchedIdx = absIdx - String.size searchString + 1
             in
               SOME matchedIdx
             end
@@ -57,7 +57,7 @@ struct
             val searchList = SearchList.append (matchedIdx, searchList)
           in
             helpBuild 
-              (app, origIdx, matchedIdx, buffer, searchString, searchList)
+              (app, origIdx, matchedIdx + 1, buffer, searchString, searchList)
           end
       | NONE =>
           let
