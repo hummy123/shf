@@ -5,7 +5,7 @@ sig
 
   val insert: int * t -> t
   val append: int * t -> t
-  val delete: int * int * t -> t
+  val delete: int * int * string * t -> t
 
   val goToNum: int * t -> t
   val mapFrom: int * int * t -> t
@@ -220,8 +220,9 @@ struct
             {left = left, right = right}
           else if finish < last then
             let
-              val delpoint = BinSearch.equalOrMore (finish, hd)
-              val newHd = VectorSlice.slice (hd, 0, SOME delpoint)
+              val delstart = BinSearch.equalOrMore (finish, hd)
+              val dellength = Vector.length hd - delstart
+              val newHd = VectorSlice.slice (hd, delstart, SOME dellength)
               val newHd = VectorSlice.vector newHd
             in
               {left = left, right = joinStartOfRight (newHd, right)}
@@ -230,7 +231,8 @@ struct
             (* finish = last *)
             {left = left, right = tl}
         end
-    | [] => {left = left, right = right}
+    | [] => 
+        {left = left, right = right}
 
   fun moveRightAndDelete (start, finish, left, right) =
     case right of
@@ -411,6 +413,7 @@ struct
           else if start = rfirst then
             delRightFromHere (finish, left, right)
           else 
+            (* finish > rfirst *)
             moveRightAndDelete (start, finish, left, right)
         end
     | [] =>
@@ -429,9 +432,16 @@ struct
              (* left and right are both empty *)
              {left = left, right = right})
 
-  fun delete (start, length, {left, right}: t) =
-    if length > 0 then del (start, start + length, left, right)
-    else {left = left, right = right}
+  fun delete (start, length, searchString, {left, right}: t) =
+    if length > 0 then
+      let
+        val finish = start + length
+        val start = start - String.size searchString + 1
+      in
+        del (start, finish, left, right)
+      end
+    else
+      {left = left, right = right}
 
   (* go all the way to the end of the list, mapping each hd,
    * joining the hd to the left,
