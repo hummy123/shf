@@ -46,7 +46,7 @@ struct
         end
     | [] => NONE
 
-  fun helpBuild (app, origIdx, absIdx, buffer, searchString, searchList) =
+  fun helpFromStart (app, origIdx, absIdx, buffer, searchString, searchList) =
     let
       val buffer = LineGap.goToIdx (absIdx, buffer)
       val {idx = bufferIdx, rightStrings, ...} = buffer
@@ -56,7 +56,7 @@ struct
           let
             val searchList = SearchList.append (matchedIdx, searchList)
           in
-            helpBuild 
+            helpFromStart
               (app, origIdx, matchedIdx + 1, buffer, searchString, searchList)
           end
       | NONE =>
@@ -68,14 +68,54 @@ struct
           end
     end
 
-  fun build (app, cursorIdx, buffer, searchString) =
+  fun fromStart (app, cursorIdx, buffer, searchString) =
     if String.size searchString > 0 then
       let
         val buffer = LineGap.goToStart buffer
       in
-        helpBuild 
+        helpFromStart
           (app, cursorIdx, 0, buffer, searchString, SearchList.empty)
       end
     else
       app
+
+  (* searches for matchedIdx within a range from the buffer instead of from start *)
+  fun helpFromRange 
+    (app, origIdx, curIdx, finishIdx, buffer, searchString, searchList) =
+      let
+        val buffer = LineGap.goToIdx (curIdx, buffer) val {idx = bufferIdx, rightStrings, ...} = buffer in
+        case nextMatch (bufferIdx, curIdx, rightStrings, searchString) of
+          SOME matchedIdx =>
+            if matchedIdx > finishIdx then
+              let
+                val buffer = LineGap.goToIdx (origIdx, buffer)
+                val searchList = SearchList.goToNum (origIdx, searchList)
+              in
+                AppWith.searchList (app, searchList, buffer, searchString)
+              end
+            else
+              let
+                val searchList = SearchList.insert (matchedIdx, searchList)
+              in
+                helpFromRange
+                  ( app, origIdx, matchedIdx + 1, finishIdx
+                  , buffer, searchString, searchList
+                  )
+              end
+        | NONE =>
+            let
+              val buffer = LineGap.goToIdx (origIdx, buffer)
+              val searchList = SearchList.goToNum (origIdx, searchList)
+            in
+              AppWith.searchList (app, searchList, buffer, searchString)
+            end
+      end
+
+  fun fromRange (app, startIdx, finishIdx, buffer, searchString, searchList) =
+    let
+      val buffer = LineGap.goToIdx (startIdx, buffer)
+    in
+      helpFromRange
+        (app, startIdx, startIdx, finishIdx, buffer, searchString, searchList)
+    end
 end
