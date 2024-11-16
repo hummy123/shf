@@ -16,7 +16,7 @@ struct
   type t = {left: int vector list, right: int vector list}
 
   (* temp function for testing *)
-  fun printlst (left, right) =
+  fun printlst {left, right} =
     let
       val left = List.rev left
       val lst = List.concat [left, right]
@@ -124,7 +124,10 @@ struct
             (* new = first *)
             {left = left, right = right}
         end
-    | [] => {left = left, right = right}
+    | [] =>
+        let val new = Vector.fromList [new]
+        in {left = left, right = joinStartOfRight (new, right)}
+        end
 
   fun insRight (new, left, right) =
     case right of
@@ -155,13 +158,16 @@ struct
             (* new = last *)
             {left = left, right = right}
         end
-    | [] => {left = left, right = right}
+    | [] =>
+        let val new = Vector.fromList [new]
+        in {left = joinEndOfLeft (new, left), right = right}
+        end
 
   fun insert (new, {left, right}: t) =
     (* look at elements to see which way to traverse *)
     case right of
       hd :: _ =>
-        if Vector.sub (hd, 0) >= new then insRight (new, left, right)
+        if new > Vector.sub (hd, 0) then insRight (new, left, right)
         else insLeft (new, left, right)
     | [] => insLeft (new, left, right)
 
@@ -231,8 +237,7 @@ struct
             (* finish = last *)
             {left = left, right = tl}
         end
-    | [] => 
-        {left = left, right = right}
+    | [] => {left = left, right = right}
 
   fun moveRightAndDelete (start, finish, left, right) =
     case right of
@@ -396,23 +401,20 @@ struct
           if start < rfirst then
             if finish < rfirst then
               (case left of
-                lhd :: ltl =>
-                  let
-                    val llast = Vector.sub (lhd, Vector.length lhd - 1)
-                  in
-                    if finish = llast then
-                      delLeftFromHere (start, left, right)
-                    else
-                      moveLeftAndDelete (start, finish, left, right)
-                  end
-              | [] =>
-                  {left = left, right = right})
+                 lhd :: ltl =>
+                   let
+                     val llast = Vector.sub (lhd, Vector.length lhd - 1)
+                   in
+                     if finish = llast then delLeftFromHere (start, left, right)
+                     else moveLeftAndDelete (start, finish, left, right)
+                   end
+               | [] => {left = left, right = right})
             else
               (* finish >= rfirst *)
               delFromLeftAndRight (start, finish, left, right)
           else if start = rfirst then
             delRightFromHere (finish, left, right)
-          else 
+          else
             (* finish > rfirst *)
             moveRightAndDelete (start, finish, left, right)
         end
@@ -469,8 +471,7 @@ struct
               val startIdx = BinSearch.equalOrMore (from, hd)
               val mapEl = Vector.sub (hd, startIdx)
               val newHd =
-                Vector.map (fn el => if el < from then el else el + mapBy)
-                  hd
+                Vector.map (fn el => if el < from then el else el + mapBy) hd
             in
               mapRight (mapBy, joinEndOfLeft (newHd, left), tl)
             end
