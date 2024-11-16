@@ -28,7 +28,9 @@ struct
       ()
     end
 
-  val targetLength = 1024
+  (* clojure's persistent vectors contain arrays of length 32
+   * and this data structure is similar to that, so we also use 32 *)
+  val targetLength = 32
 
   val empty: t = {left = [], right = []}
 
