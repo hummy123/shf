@@ -462,31 +462,31 @@ struct
         end
     | [] => {left = left, right = right}
 
-  fun moveRightAndMap (num, mapBy, left, right) =
+  fun moveRightAndMap (from, mapBy, left, right) =
     case right of
       hd :: tl =>
         let
           val lastIdx = Vector.length hd - 1
           val last = Vector.sub (hd, lastIdx)
         in
-          if num > last then
-            moveRightAndMap (num, mapBy, joinEndOfLeft (hd, left), tl)
-          else if num < last then
+          if from > last then
+            moveRightAndMap (from, mapBy, joinEndOfLeft (hd, left), tl)
+          else if from < last then
             (* need to map in middle *)
             let
-              val startIdx = BinSearch.equalOrMore (num, hd)
+              val startIdx = BinSearch.equalOrMore (from, hd)
               val mapEl = Vector.sub (hd, startIdx)
               val newHd =
-                Vector.map (fn el => if el < mapEl then el else mapEl + mapBy)
+                Vector.map (fn el => if el < from then el else el + mapBy)
                   hd
             in
               mapRight (mapBy, joinEndOfLeft (newHd, left), tl)
             end
           else
-            (* num = last *)
+            (* from = last *)
             let
               val newHd =
-                Vector.map (fn el => if el < num then num else num + mapBy) hd
+                Vector.map (fn el => if el < from then el else el + mapBy) hd
             in
               mapRight (mapBy, joinEndOfLeft (newHd, left), tl)
             end
