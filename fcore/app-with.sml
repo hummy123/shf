@@ -75,6 +75,31 @@ struct
       }
     end
 
+  fun onDelete
+    (app: app_type, newBuffer, newCursorIdx, newMode, newStartLine, newSearchList) =
+    let
+      val
+        { mode = _
+        , buffer = _
+        , cursorIdx = _
+        , startLine = _
+        , searchList = _
+        , searchString
+        , windowWidth
+        , windowHeight
+        } = app
+    in
+      { mode = newMode
+      , buffer = newBuffer
+      , cursorIdx = newCursorIdx
+      , startLine = newStartLine
+      , searchList = newSearchList
+      , searchString = searchString
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      }
+    end
+
   fun mode (app: app_type, newMode) =
     let
       val

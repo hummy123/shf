@@ -363,9 +363,34 @@ struct
 
   (* text-delete functions *)
   (** equivalent of vi's 'x' command **)
-  fun helpRemoveChr (app: app_type, buffer, cursorIdx, count) =
+  fun helpRemoveChr (app: app_type, buffer, searchList, cursorIdx, count) =
     if count = 0 then
-      buildTextAndClear (app, buffer, cursorIdx)
+      let
+        val {windowWidth, windowHeight, startLine, searchString, ...} =
+          app
+
+        (* move LineGap to first line displayed on screen *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+
+        (* get new startLine which may move screen depending on cursor movements *)
+        val startLine = TextWindow.getStartLine
+          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
+
+        (* move buffer to new startLine as required by TextBuilder.build *)
+        val buffer = LineGap.goToLine (startLine, buffer)
+
+        val drawMsg = TextBuilder.build
+          ( startLine, cursorIdx, buffer
+          , windowWidth, windowHeight
+          , searchList, searchString
+          )
+
+        val mode = NORMAL_MODE ""
+        val newApp = AppWith.onDelete
+          (app, buffer, cursorIdx, mode, startLine, searchList)
+      in
+        (newApp, drawMsg)
+      end
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -388,14 +413,17 @@ struct
           (* vi simply doesn't do anything on 'x' command
            * when cursor is at start of line, and next chr is line break 
            * so skip to end of loop by passing count of 0 *)
-          helpRemoveChr (app, buffer, cursorIdx, 0)
+          helpRemoveChr (app, buffer, searchList, cursorIdx, 0)
         else if cursorIsStart then
-          helpRemoveChr (app, buffer, cursorIdx, 0)
+          helpRemoveChr (app, buffer, searchList, cursorIdx, 0)
         else if nextIsEnd then
           let
             (* delete char at cursor and then decrement cursorIdx by 1
              * if cursorIdx is not 0 *)
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
+            val searchList = SearchList.delete (cursorIdx, 1, searchList)
+            val searchList = SearchList.mapFrom (cursorIdx, ~1, searchList)
+
             val cursorIdx =
               if
                 Cursor.isPrevChrStartOfLine (buffer, cursorIdx)
@@ -403,16 +431,20 @@ struct
               then cursorIdx
               else cursorIdx - 1
           in
-            helpRemoveChr (app, buffer, cursorIdx, count - 1)
+            helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
           end
         else
-          let val buffer = LineGap.delete (cursorIdx, 1, buffer)
-          in helpRemoveChr (app, buffer, cursorIdx, count - 1)
+          let 
+            val buffer = LineGap.delete (cursorIdx, 1, buffer)
+            val searchList = SearchList.delete (cursorIdx, 1, searchList)
+            val searchList = SearchList.mapFrom (cursorIdx, ~1, searchList)
+          in 
+            helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
           end
       end
 
   fun removeChr (app: app_type, count) =
-    helpRemoveChr (app, #buffer app, #cursorIdx app, count)
+    helpRemoveChr (app, #buffer app, #searchList app, #cursorIdx app, count)
 
   fun helpDelete (app: app_type, buffer, cursorIdx, otherIdx, count, fMove) =
     (* As a small optimisation to reduce allocations, 
@@ -470,8 +502,10 @@ struct
           val lastChr = Cursor.viDlr (buffer, cursorIdx)
           val length = lastChr - cursorIdx
           val buffer = LineGap.delete (cursorIdx, length, buffer)
+
+          (* todo: delete from searchList and map *)
         in
-          helpRemoveChr (app, buffer, cursorIdx, 1)
+          helpRemoveChr (app, buffer, #searchList app, cursorIdx, 1)
         end
     end
 

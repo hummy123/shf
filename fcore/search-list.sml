@@ -8,12 +8,25 @@ sig
   val delete: int * int * t -> t
 
   val goToNum: int * t -> t
-  val mapFromNum: int * int * t -> t
+  val mapFrom: int * int * t -> t
 end
 
 structure SearchList :> SEARCH_LIST =
 struct
   type t = {left: int vector list, right: int vector list}
+
+  (* temp function for testing *)
+  fun printlst (left, right) =
+    let
+      val left = List.rev left
+      val lst = List.concat [left, right]
+      val v = Vector.concat lst
+      val _ = print "\nstart print list:\n"
+      val _ = Vector.map (fn el => print (" " ^ Int.toString el ^ ",")) v
+      val _ = print "\nend print list\n"
+    in
+      ()
+    end
 
   val targetLength = 1024
 
@@ -379,54 +392,25 @@ struct
           val rfirst = Vector.sub (rhd, 0)
         in
           if start < rfirst then
-            (case left of
-               lhd :: ltl =>
-                 let
-                   val llast = Vector.sub (lhd, Vector.length lhd - 1)
-                 in
-                   if
-                     start < llast
-                   then
-                     if finish < rfirst then
-                       (* start < rfirst and start < llast and finish < rfirst
-                        * move left and delete *)
-                       moveLeftAndDelete (start, finish, left, right)
-                     else
-                       (* start < rfirst and start < llast and finish >= rfirst
-                        * in middle; delete from both sides *)
-                       delFromLeftAndRight (start, finish, left, right)
-                   else if
-                     start = llast
-                   then
-                     if finish < rfirst then
-                       (* start < rfirst, start = llast, and finish < rfirst
-                        * so just have to delete left from here *)
-                       delLeftFromHere (start, left, right)
-                     else
-                       (* start < rfirst, start = llast, finish >= rfirst
-                        * in middle; delete from both sides *)
-                       delFromLeftAndRight (start, finish, left, right)
-                   else (* start > llast and start < rfirst *) if
-                     finish >= rfirst
-                   then
-                     (* delete right from here *)
-                     delRightFromHere (finish, left, right)
-                   else
-                     (* start < rfirst and finish < rfirst
-                      * so just return *)
-                     {left = left, right = right}
-                 end
-             | [] =>
-                 (* start < rfirst 
-                  * but left is empty.
-                  * All we can do is 1. Delete right or 2. Return *)
-                 if finish < rfirst then {left = left, right = right}
-                 else delRightFromHere (finish, left, right))
+            if finish < rfirst then
+              (case left of
+                lhd :: ltl =>
+                  let
+                    val llast = Vector.sub (lhd, Vector.length lhd - 1)
+                  in
+                    if finish = llast then
+                      delLeftFromHere (start, left, right)
+                    else
+                      moveLeftAndDelete (start, finish, left, right)
+                  end
+              | [] =>
+                  {left = left, right = right})
+            else
+              (* finish >= rfirst *)
+              delFromLeftAndRight (start, finish, left, right)
           else if start = rfirst then
             delRightFromHere (finish, left, right)
-          else
-            (* start > rfirst 
-             * move right and then start deleting *)
+          else 
             moveRightAndDelete (start, finish, left, right)
         end
     | [] =>
@@ -435,13 +419,11 @@ struct
              let
                val llast = Vector.sub (lhd, Vector.length lhd - 1)
              in
-               if start < llast then
-                 if finish <= llast then
-                   moveRightAndDelete (start, finish, left, right)
-                 else
-                   delLeftFromHere (finish, left, right)
+               if finish >= llast then
+                 delLeftFromHere (start, left, right)
                else
-                 moveRightAndDelete (start, finish, left, right)
+                 (* finish < last *)
+                 moveLeftAndDelete (start, finish, left, right)
              end
          | [] =>
              (* left and right are both empty *)
@@ -493,7 +475,7 @@ struct
         end
     | [] => {left = left, right = right}
 
-  fun mapFromNum (num, mapBy, lst) =
+  fun mapFrom (num, mapBy, lst) =
     let
       (* goToNum always places vector where num was found to the right list *)
       val {left, right} = goToNum (num, lst)
