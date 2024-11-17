@@ -81,9 +81,11 @@ struct
 
   (* searches for matchedIdx within a range from the buffer instead of from start *)
   fun helpFromRange 
-    (app, origIdx, curIdx, finishIdx, buffer, searchString, searchList) =
+    (origIdx, curIdx, finishIdx, buffer, searchString, searchList) =
       let
-        val buffer = LineGap.goToIdx (curIdx, buffer) val {idx = bufferIdx, rightStrings, ...} = buffer in
+        val buffer = LineGap.goToIdx (curIdx, buffer) 
+        val {idx = bufferIdx, rightStrings, ...} = buffer 
+      in
         case nextMatch (bufferIdx, curIdx, rightStrings, searchString) of
           SOME matchedIdx =>
             if matchedIdx > finishIdx then
@@ -91,14 +93,14 @@ struct
                 val buffer = LineGap.goToIdx (origIdx, buffer)
                 val searchList = SearchList.goToNum (origIdx, searchList)
               in
-                AppWith.searchList (app, searchList, buffer, searchString)
+                (buffer, searchList)
               end
             else
               let
                 val searchList = SearchList.insert (matchedIdx, searchList)
               in
                 helpFromRange
-                  ( app, origIdx, matchedIdx + 1, finishIdx
+                  ( origIdx, matchedIdx + 1, finishIdx
                   , buffer, searchString, searchList
                   )
               end
@@ -107,15 +109,16 @@ struct
               val buffer = LineGap.goToIdx (origIdx, buffer)
               val searchList = SearchList.goToNum (origIdx, searchList)
             in
-              AppWith.searchList (app, searchList, buffer, searchString)
+              (buffer, searchList)
             end
       end
 
-  fun fromRange (app, startIdx, finishIdx, buffer, searchString, searchList) =
+  fun fromRange (startIdx, length, buffer, searchString, searchList) =
     let
-      val buffer = LineGap.goToIdx (startIdx, buffer)
+      val finishIdx = startIdx + length + String.size searchString
+      val bufferIdx = startIdx - String.size searchString
     in
       helpFromRange
-        (app, startIdx, startIdx, finishIdx, buffer, searchString, searchList)
+        (startIdx, bufferIdx, finishIdx, buffer, searchString, searchList)
     end
 end

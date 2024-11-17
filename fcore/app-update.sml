@@ -420,9 +420,14 @@ struct
           let
             (* delete char at cursor and then decrement cursorIdx by 1
              * if cursorIdx is not 0 *)
+            val {searchString, ...} = app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
-            val searchList = SearchList.delete (cursorIdx, 1, #searchString app, searchList)
+
+            val searchList = SearchList.delete (cursorIdx, 1, searchString, searchList)
             val searchList = SearchList.mapFrom (cursorIdx, ~1, searchList)
+            val (buffer, searchList) = 
+              BuildSearchList.fromRange 
+                (cursorIdx, 1, buffer, searchString, searchList)
 
             val cursorIdx =
               if
@@ -435,9 +440,14 @@ struct
           end
         else
           let 
+            val {searchString, ...} = app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
-            val searchList = SearchList.delete (cursorIdx, 1, #searchString app, searchList)
+
+            val searchList = SearchList.delete (cursorIdx, 1, searchString, searchList)
             val searchList = SearchList.mapFrom (cursorIdx, ~1, searchList)
+            val (buffer, searchList) = 
+              BuildSearchList.fromRange 
+                (cursorIdx, 1, buffer, searchString, searchList)
           in 
             helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
           end

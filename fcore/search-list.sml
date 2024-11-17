@@ -9,6 +9,7 @@ sig
 
   val goToNum: int * t -> t
   val mapFrom: int * int * t -> t
+  val printlst: t -> unit
 end
 
 structure SearchList :> SEARCH_LIST =
@@ -233,7 +234,7 @@ struct
               val newHd = VectorSlice.slice (hd, delstart, SOME dellength)
               val newHd = VectorSlice.vector newHd
             in
-              {left = left, right = joinStartOfRight (newHd, right)}
+              {left = left, right = joinStartOfRight (newHd, tl)}
             end
           else
             (* finish = last *)
@@ -317,7 +318,7 @@ struct
               val newHd = VectorSlice.slice (hd, delpoint, SOME newLength)
               val newHd = VectorSlice.vector newHd
             in
-              {left = joinEndOfLeft (newHd, left), right = right}
+              {left = joinEndOfLeft (newHd, tl), right = right}
             end
           else
             (* start = first *)
