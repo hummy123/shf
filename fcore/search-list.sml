@@ -246,13 +246,57 @@ struct
     case right of
       hd :: tl =>
         let
+          val first = Vector.sub (hd, 0)
           val last = Vector.sub (hd, Vector.length hd - 1)
         in
           if start > last then
             moveRightAndDelete (start, finish, joinEndOfLeft (hd, left), tl)
-          else if start > Vector.sub (hd, 0) then
-            (* start > first *)
-            {left = left, right = right}
+          else if start > first then
+            if finish < last then
+              (* we want to delete frrom the middle of hd *)
+              let
+                val len1 = BinSearch.equalOrMore (start, hd)
+                val start2 = BinSearch.equalOrMore (finish, hd)
+              in
+                if len1 = start2 then
+                  (* There is a chance the user will want to delete text
+                   * that is not within a search point but between. 
+                   * This case just prevents an extra unnecessary vector
+                   * allocation for tht case. *)
+                  {left = left, right = right}
+                else
+                  let
+                    val len2 = Vector.length hd - start2
+                    val lhd = VectorSlice.slice (hd, 0, SOME len1)
+                    val rhd = VectorSlice.slice (hd, start2, SOME len2)
+                    val lhd = VectorSlice.vector lhd
+                    val rhd = VectorSlice.vector rhd
+                  in
+                    { left = joinEndOfLeft (lhd, left)
+                    , right = joinStartOfRight (rhd, tl)
+                    }
+                  end
+              end
+            else if finish = last then
+              (* deletion range is from middle of this vector to end
+               * which means we want to preserve first half *)
+              let
+                val length = BinSearch.equalOrMore (start, hd)
+                val newHd = VectorSlice.slice (hd, 0, SOME length)
+                val newHd = VectorSlice.vector newHd
+              in
+                {left = left, right = joinStartOfRight (newHd, tl)}
+              end
+            else
+              (* finish > last *)
+              let
+                val length = BinSearch.equalOrMore (start, hd)
+                val newHd = VectorSlice.slice (hd, 0, SOME length)
+                val newHd = VectorSlice.vector newHd
+                val left = joinEndOfLeft (newHd, left)
+              in
+                delRightFromHere (finish, left, right)
+              end
           else if start < last then
             if finish > last then
               (* delete part of hd, and continue deleting rightwards *)
