@@ -7,3 +7,6 @@
 [submodule "tests/Railroad"]
 	path = tests/Railroad
 	url = https://github.com/PerplexSystems/Railroad
+[submodule "test/Railroad"]
+	path = test/Railroad
+	url = https://github.com/PerplexSystems/Railroad
