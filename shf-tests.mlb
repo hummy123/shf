@@ -1,0 +1,34 @@
+$(SML_LIB)/basis/basis.mlb
+
+(* FUNCTIONAL CORE *)
+
+lib/brolib-sml/src/line_gap.sml
+lib/cozette-sml/fonts/cozette-ascii.mlb
+
+message-types/input-msg.sml
+message-types/draw-msg.sml
+message-types/mailbox-type.sml
+
+fcore/bin-search.sml
+fcore/search-list.sml
+
+fcore/app-type.sml
+fcore/app-with.sml
+
+fcore/build-search-list.sml
+fcore/text-constants.sml
+ann
+  "allowVectorExps true"
+in
+  fcore/rect.sml
+  fcore/text-builder.sml
+end
+fcore/cursor.sml
+fcore/text-window.sml
+
+fcore/app-update.sml
+
+(* TEST FILES *)
+
+test/Railroad/src/railroad.mlb
+test/test.sml
