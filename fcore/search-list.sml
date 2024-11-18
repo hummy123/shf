@@ -375,12 +375,42 @@ struct
       hd :: tl =>
         let
           val first = Vector.sub (hd, 0)
+          val last = Vector.sub (hd, Vector.length hd - 1)
         in
           if finish < first then
             moveLeftAndDelete (start, finish, tl, joinStartOfRight (hd, right))
-          else if finish > Vector.sub (hd, Vector.length hd - 1) then
-            (* finish > last *)
-            {left = left, right = right}
+          else if finish > last then
+            if start > last then
+              {left = left, right = right}
+            else if start = last then
+              let
+                val len = Vector.length hd - 1
+                val newHd = VectorSlice.slice (hd, 0, SOME len)
+                val newHd = VectorSlice.vector newHd
+              in
+                {left = joinEndOfLeft (newHd, tl), right = right}
+              end
+            else
+              (* start < last *)
+              let
+                val len1 = BinSearch.equalOrMore (start, hd)
+                val start2 = BinSearch.equalOrMore (finish, hd)
+              in
+                if len1 = start2 then
+                  {left = left, right = right}
+                else
+                  let
+                    val len2 = Vector.length hd - start2
+                    val lhd = VectorSlice.slice (hd, 0, SOME len1)
+                    val rhd = VectorSlice.slice (hd, start2, SOME len2)
+                    val lhd = VectorSlice.vector lhd
+                    val rhd = VectorSlice.vector rhd
+                  in
+                    { left = joinEndOfLeft (lhd, left)
+                    , right = joinStartOfRight (rhd, tl)
+                    }
+                  end
+              end
           else if finish > first then
             if start < first then
               (* delete from start of hd and continue deleting leftwards *)
