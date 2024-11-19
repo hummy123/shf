@@ -67,6 +67,14 @@ fun withIdx (app: AppType.app_type, idx) =
     }
   end
 
+fun getChr (app: AppType.app_type) =
+  let
+    val {cursorIdx, buffer, ...} = app
+    val c = LineGap.substring (cursorIdx, 1, buffer)
+  in
+    String.sub (c, 0)
+  end
+
 val movementTests = describe "movement operations"
   [ test "'h' moves cursor left by one in contiguous string when cursorIdx > 0"
       (fn _ =>
@@ -219,6 +227,173 @@ val movementTests = describe "movement operations"
            (* assert *)
            Expect.isTrue (cursorIdx = 6)
          end)
+
+  , test "'j' moves cursur down one column in contiguous string when column = 0"
+      (fn _ =>
+         let
+           (* arrange *)
+           (* "world" at end of string is intentionally misspelled as "qorld"
+            * since "world" appears twice and it is useful to differentiate them
+            * *)
+           val buffer = LineGap.fromString "hello \nworld \ngoodbye \nqorld \n"
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+
+           (* assert *)
+           val c1 = getChr app1 = #"w"
+           val c2 = getChr app2 = #"g"
+           val c3 = getChr app3 = #"q"
+         in
+           Expect.isTrue (c1 andalso c2 andalso c3)
+         end)
+
+  , test "'j' moves cursur down one column in split string when column = 0"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = fromList ["hello \n", "world \n", "goodbye \n", "qorld"]
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+
+           (* assert *)
+           val c1 = getChr app1 = #"w"
+           val c2 = getChr app2 = #"g"
+           val c3 = getChr app3 = #"q"
+         in
+           Expect.isTrue (c1 andalso c2 andalso c3)
+         end)
+
+  , test "'j' moves cursur down one column in contiguous string when column = 1"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 1)
+
+           (* act *)
+           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+
+           (* assert *)
+           val c1 = getChr app1 = #"o"
+           val c2 = getChr app2 = #"y"
+           val c3 = getChr app3 = #"r"
+         in
+           Expect.isTrue (c1 andalso c2 andalso c3)
+         end)
+
+  , test "'j' moves cursur down one column in split string when column = 1"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer =
+             fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 1)
+
+           (* act *)
+           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+
+           (* assert *)
+           val c1 = getChr app1 = #"o"
+           val c2 = getChr app2 = #"y"
+           val c3 = getChr app3 = #"r"
+         in
+           Expect.isTrue (c1 andalso c2 andalso c3)
+         end)
+
+  , test "'j' moves cursur down one column in contiguous string when column = 2"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 2)
+
+           (* act *)
+           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+
+           (* assert *)
+           val c1 = getChr app1 = #"r"
+           val c2 = getChr app2 = #"e"
+           val c3 = getChr app3 = #"i"
+         in
+           Expect.isTrue (c1 andalso c2 andalso c3)
+         end)
+
+  , test "'j' moves cursur down one column in split string when column = 2"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer =
+             fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 2)
+
+           (* act *)
+           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+
+           (* assert *)
+           val c1 = getChr app1 = #"r"
+           val c2 = getChr app2 = #"e"
+           val c3 = getChr app3 = #"i"
+         in
+           Expect.isTrue (c1 andalso c2 andalso c3)
+         end)
+
+  , test
+      "'j' skips '\\n' when cursor is on non-\\n and is followed by two '\\n's"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello\n\n nworld\n"
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+
+           (* assert *)
+           val isSkipped = cursorIdx = 6
+         in
+           Expect.isTrue isSkipped
+         end)
+
+  , test "'j' moves to end of buffer when on last line" (fn _ =>
+      let
+        (* arrange *)
+        val str = "hello \nworld \ntime to go\n"
+        val buffer = LineGap.fromString str
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 15)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+
+        (* assert *)
+        (* String.size str - 1 is a valid char position
+         * but we are counting String.size str - 2 as the end
+         * because, in Vim, saved files always end with \n
+         * but the last char, \n, is not visible *)
+        val isAtEnd = cursorIdx = String.size str - 2
+      in
+        Expect.isTrue isAtEnd
+      end)
 
   , test "'w' moves cursor to start of next word in contiguous string" (fn _ =>
       let
