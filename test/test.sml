@@ -182,7 +182,7 @@ val lMove = describe "move motion 'l'"
            Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
          end)
 
-  , test "does not move cursor right by one when cursorIdx = length" (fn _ =>
+  , test "does not move cursor when cursorIdx = length" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello world\n"
@@ -385,6 +385,28 @@ val jMove = describe "move motion 'j'"
          * because, in Vim, saved files always end with \n
          * but the last char, \n, is not visible *)
         val isAtEnd = cursorIdx = String.size str - 2
+      in
+        Expect.isTrue isAtEnd
+      end)
+
+  , test "leaves cursor at same idx when already at end of buffer" (fn _ =>
+      let
+        (* arrange *)
+        val str = "hello \nworld \ntime to go\n"
+        val len = String.size str - 2
+        val buffer = LineGap.fromString str
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, len)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+
+        (* assert *)
+        (* String.size str - 1 is a valid char position
+         * but we are counting String.size str - 2 as the end
+         * because, in Vim, saved files always end with \n
+         * but the last char, \n, is not visible *)
+        val isAtEnd = cursorIdx = len
       in
         Expect.isTrue isAtEnd
       end)
