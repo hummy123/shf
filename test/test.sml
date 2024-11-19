@@ -2,7 +2,46 @@ open Railroad
 open Railroad.Test
 open InputMsg
 
-val emptyVec = Vector.fromList []
+local
+  fun helpCountLineBreaks (pos, acc, str) =
+    if pos < 0 then
+      Vector.fromList acc
+    else
+      let
+        val chr = String.sub (str, pos)
+      in
+        if chr = #"\n" then
+          (* Is this a \r\n pair? Then the position of \r should be consed. *)
+          if pos = 0 then
+            Vector.fromList (0 :: acc)
+          else
+            let
+              val prevChar = String.sub (str, pos - 1)
+            in
+              if prevChar = #"\r" then
+                helpCountLineBreaks (pos - 2, (pos - 1) :: acc, str)
+              else
+                helpCountLineBreaks (pos - 1, pos :: acc, str)
+            end
+        else if chr = #"\r" then
+          helpCountLineBreaks (pos - 1, pos :: acc, str)
+        else
+          helpCountLineBreaks (pos - 1, acc, str)
+      end
+
+  fun countLineBreaks str =
+    helpCountLineBreaks (String.size str - 1, [], str)
+in
+  (* creates a LineGap.t with valid metadata from a list of strings *)
+  fun fromList lst =
+    { idx = 0
+    , line = 0
+    , leftStrings = []
+    , leftLines = []
+    , rightStrings = lst
+    , rightLines = List.map countLineBreaks lst
+    }
+end
 
 fun withIdx (app: AppType.app_type, idx) =
   let
@@ -48,14 +87,7 @@ val movementTests = describe "movement operations"
       (fn _ =>
          let
            (* arrange *)
-           val buffer =
-             { idx = 0
-             , line = 0
-             , leftStrings = []
-             , leftLines = []
-             , rightStrings = ["hello", " world"]
-             , rightLines = [emptyVec, emptyVec]
-             }
+           val buffer = fromList ["hello", " world"]
            val app = AppType.init (buffer, 0, 0)
            val app = withIdx (app, 5)
 
@@ -85,14 +117,7 @@ val movementTests = describe "movement operations"
       (fn _ =>
          let
            (* arrange *)
-           val buffer =
-             { idx = 0
-             , line = 0
-             , leftStrings = []
-             , leftLines = []
-             , rightStrings = ["hello\nworld"]
-             , rightLines = [emptyVec]
-             }
+           val buffer = LineGap.fromString "hello\nworld"
            val app = AppType.init (buffer, 0, 0)
            val app = withIdx (app, 6)
 
@@ -107,14 +132,7 @@ val movementTests = describe "movement operations"
       (fn _ =>
          let
            (* arrange *)
-           val buffer =
-             { idx = 0
-             , line = 0
-             , leftStrings = []
-             , leftLines = []
-             , rightStrings = ["hello\n", " world"]
-             , rightLines = [emptyVec, emptyVec]
-             }
+           val buffer = fromList ["hello\n", " world"]
            val app = AppType.init (buffer, 0, 0)
            val app = withIdx (app, 6)
 
@@ -145,14 +163,7 @@ val movementTests = describe "movement operations"
       (fn _ =>
          let
            (* arrange *)
-           val buffer =
-             { idx = 0
-             , line = 0
-             , leftStrings = []
-             , leftLines = []
-             , rightStrings = ["hello ", "world"]
-             , rightLines = [emptyVec, emptyVec]
-             }
+           val buffer = fromList ["hello ", "world"]
            val app = AppType.init (buffer, 0, 0)
            val {cursorIdx = oldCursorIdx, ...} = app
 
@@ -198,14 +209,7 @@ val movementTests = describe "movement operations"
       (fn _ =>
          let
            (* arrange *)
-           val buffer =
-             { idx = 0
-             , line = 0
-             , leftStrings = []
-             , leftLines = []
-             , rightStrings = ["hello\n", "world"]
-             , rightLines = [emptyVec, emptyVec]
-             }
+           val buffer = fromList ["hello\n", "world"]
            val app = AppType.init (buffer, 0, 0)
            val app = withIdx (app, 4)
 
@@ -234,14 +238,7 @@ val movementTests = describe "movement operations"
   , test "'w' moves cursor to start of next word in split string" (fn _ =>
       let
         (* arrange *)
-        val buffer =
-          { idx = 0
-          , line = 0
-          , leftStrings = []
-          , leftLines = []
-          , rightStrings = ["hello ", "world"]
-          , rightLines = [emptyVec, emptyVec]
-          }
+        val buffer = fromList ["hello ", "world"]
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
