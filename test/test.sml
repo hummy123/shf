@@ -75,8 +75,8 @@ fun getChr (app: AppType.app_type) =
     String.sub (c, 0)
   end
 
-val movementTests = describe "movement operations"
-  [ test "'h' moves cursor left by one in contiguous string when cursorIdx > 0"
+val hMove = describe "move motion 'h'"
+  [ test "moves cursor left by one in contiguous string when cursorIdx > 0"
       (fn _ =>
          let
            (* arrange *)
@@ -91,22 +91,21 @@ val movementTests = describe "movement operations"
            Expect.isTrue (cursorIdx = 0)
          end)
 
-  , test "'h' moves cursor left by one in split string when cursorIdx > 0"
-      (fn _ =>
-         let
-           (* arrange *)
-           val buffer = fromList ["hello", " world"]
-           val app = AppType.init (buffer, 0, 0)
-           val app = withIdx (app, 5)
+  , test "moves cursor left by one in split string when cursorIdx > 0" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = fromList ["hello", " world"]
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 5)
 
-           (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
-         in
-           (* assert *)
-           Expect.isTrue (cursorIdx = 4)
-         end)
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
+      in
+        (* assert *)
+        Expect.isTrue (cursorIdx = 4)
+      end)
 
-  , test "'h' does not move cursor when cursorIdx = 0" (fn _ =>
+  , test "does not move cursor when cursorIdx = 0" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello world"
@@ -120,8 +119,7 @@ val movementTests = describe "movement operations"
         Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 0)
       end)
 
-  , test
-      "'h' moves cursor left by two in contiguous string when prev chr is \\n"
+  , test "moves cursor left by two in contiguous string when prev chr is \\n"
       (fn _ =>
          let
            (* arrange *)
@@ -136,7 +134,7 @@ val movementTests = describe "movement operations"
            Expect.isTrue (cursorIdx = 4)
          end)
 
-  , test "'h' moves cursor left by two in split string when prev chr is \\n"
+  , test "moves cursor left by two in split string when prev chr is \\n"
       (fn _ =>
          let
            (* arrange *)
@@ -150,9 +148,11 @@ val movementTests = describe "movement operations"
            (* assert *)
            Expect.isTrue (cursorIdx = 4)
          end)
+  ]
 
-  , test
-      "'l' moves cursor right by one in contiguous string when cursorIdx < length"
+val lMove = describe "move motion 'l'"
+  [ test
+      "moves cursor right by one in contiguous string when cursorIdx < length"
       (fn _ =>
          let
            (* arrange *)
@@ -167,7 +167,7 @@ val movementTests = describe "movement operations"
            Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
          end)
 
-  , test "'l' moves cursor right by one in split string when cursorIdx < length"
+  , test "moves cursor right by one in split string when cursorIdx < length"
       (fn _ =>
          let
            (* arrange *)
@@ -182,23 +182,21 @@ val movementTests = describe "movement operations"
            Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
          end)
 
-  , test "'l' does not move cursor right by one when cursorIdx = length"
-      (fn _ =>
-         let
-           (* arrange *)
-           val buffer = LineGap.fromString "hello world\n"
-           val app = AppType.init (buffer, 0, 0)
-           val app = withIdx (app, 10)
+  , test "does not move cursor right by one when cursorIdx = length" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 10)
 
-           (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
-         in
-           (* assert *)
-           Expect.isTrue (cursorIdx = 10)
-         end)
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
+      in
+        (* assert *)
+        Expect.isTrue (cursorIdx = 10)
+      end)
 
-  , test
-      "'l' moves right by two in contiguous string when char is followed by \\n"
+  , test "moves right by two in contiguous string when char is followed by \\n"
       (fn _ =>
          let
            (* arrange *)
@@ -213,7 +211,7 @@ val movementTests = describe "movement operations"
            Expect.isTrue (cursorIdx = 6)
          end)
 
-  , test "'l' moves right by two in split string when char is followed by \\n"
+  , test "moves right by two in split string when char is followed by \\n"
       (fn _ =>
          let
            (* arrange *)
@@ -227,8 +225,10 @@ val movementTests = describe "movement operations"
            (* assert *)
            Expect.isTrue (cursorIdx = 6)
          end)
+  ]
 
-  , test "'j' moves cursur down one column in contiguous string when column = 0"
+val jMove = describe "move motion 'j'"
+  [ test "moves cursur down one column in contiguous string when column = 0"
       (fn _ =>
          let
            (* arrange *)
@@ -251,27 +251,26 @@ val movementTests = describe "movement operations"
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
 
-  , test "'j' moves cursur down one column in split string when column = 0"
-      (fn _ =>
-         let
-           (* arrange *)
-           val buffer = fromList ["hello \n", "world \n", "goodbye \n", "qorld"]
-           val app = AppType.init (buffer, 0, 0)
+  , test "moves cursur down one column in split string when column = 0" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = fromList ["hello \n", "world \n", "goodbye \n", "qorld"]
+        val app = AppType.init (buffer, 0, 0)
 
-           (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+        (* act *)
+        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
 
-           (* assert *)
-           val c1 = getChr app1 = #"w"
-           val c2 = getChr app2 = #"g"
-           val c3 = getChr app3 = #"q"
-         in
-           Expect.isTrue (c1 andalso c2 andalso c3)
-         end)
+        (* assert *)
+        val c1 = getChr app1 = #"w"
+        val c2 = getChr app2 = #"g"
+        val c3 = getChr app3 = #"q"
+      in
+        Expect.isTrue (c1 andalso c2 andalso c3)
+      end)
 
-  , test "'j' moves cursur down one column in contiguous string when column = 1"
+  , test "moves cursur down one column in contiguous string when column = 1"
       (fn _ =>
          let
            (* arrange *)
@@ -292,29 +291,27 @@ val movementTests = describe "movement operations"
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
 
-  , test "'j' moves cursur down one column in split string when column = 1"
-      (fn _ =>
-         let
-           (* arrange *)
-           val buffer =
-             fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
-           val app = AppType.init (buffer, 0, 0)
-           val app = withIdx (app, 1)
+  , test "moves cursur down one column in split string when column = 1" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 1)
 
-           (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+        (* act *)
+        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
 
-           (* assert *)
-           val c1 = getChr app1 = #"o"
-           val c2 = getChr app2 = #"y"
-           val c3 = getChr app3 = #"r"
-         in
-           Expect.isTrue (c1 andalso c2 andalso c3)
-         end)
+        (* assert *)
+        val c1 = getChr app1 = #"o"
+        val c2 = getChr app2 = #"y"
+        val c3 = getChr app3 = #"r"
+      in
+        Expect.isTrue (c1 andalso c2 andalso c3)
+      end)
 
-  , test "'j' moves cursur down one column in contiguous string when column = 2"
+  , test "moves cursur down one column in contiguous string when column = 2"
       (fn _ =>
          let
            (* arrange *)
@@ -335,30 +332,27 @@ val movementTests = describe "movement operations"
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
 
-  , test "'j' moves cursur down one column in split string when column = 2"
-      (fn _ =>
-         let
-           (* arrange *)
-           val buffer =
-             fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
-           val app = AppType.init (buffer, 0, 0)
-           val app = withIdx (app, 2)
+  , test "moves cursur down one column in split string when column = 2" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 2)
 
-           (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+        (* act *)
+        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
+        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
 
-           (* assert *)
-           val c1 = getChr app1 = #"r"
-           val c2 = getChr app2 = #"e"
-           val c3 = getChr app3 = #"i"
-         in
-           Expect.isTrue (c1 andalso c2 andalso c3)
-         end)
+        (* assert *)
+        val c1 = getChr app1 = #"r"
+        val c2 = getChr app2 = #"e"
+        val c3 = getChr app3 = #"i"
+      in
+        Expect.isTrue (c1 andalso c2 andalso c3)
+      end)
 
-  , test
-      "'j' skips '\\n' when cursor is on non-\\n and is followed by two '\\n's"
+  , test "skips '\\n' when cursor is on non-\\n and is followed by two '\\n's"
       (fn _ =>
          let
            (* arrange *)
@@ -374,7 +368,7 @@ val movementTests = describe "movement operations"
            Expect.isTrue isSkipped
          end)
 
-  , test "'j' moves to end of buffer when on last line" (fn _ =>
+  , test "moves to end of buffer when on last line" (fn _ =>
       let
         (* arrange *)
         val str = "hello \nworld \ntime to go\n"
@@ -394,8 +388,10 @@ val movementTests = describe "movement operations"
       in
         Expect.isTrue isAtEnd
       end)
+  ]
 
-  , test "'w' moves cursor to start of next word in contiguous string" (fn _ =>
+val wMove = describe "move motion 'w'"
+  [ test "moves cursor to start of next word in contiguous string" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello world"
@@ -410,7 +406,7 @@ val movementTests = describe "movement operations"
         Expect.isTrue (chr = #"w")
       end)
 
-  , test "'w' moves cursor to start of next word in split string" (fn _ =>
+  , test "moves cursor to start of next word in split string" (fn _ =>
       let
         (* arrange *)
         val buffer = fromList ["hello ", "world"]
@@ -426,6 +422,6 @@ val movementTests = describe "movement operations"
       end)
   ]
 
-val tests = concat [movementTests]
+val tests = concat [hMove, lMove, jMove, wMove]
 
 val _ = run tests
