@@ -28,22 +28,8 @@ fun withIdx (app: AppType.app_type, idx) =
     }
   end
 
-val cursorTests = describe "cursor operations"
-  [ test "'h' does not move cursor when cursorIdx = 0" (fn _ =>
-      let
-        (* arrange *)
-        val buffer = LineGap.fromString "hello world"
-        val app = AppType.init (buffer, 0, 0)
-        val {cursorIdx = oldCursorIdx, ...} = app
-
-        (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
-      in
-        (* assert *)
-        Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 0)
-      end)
-
-  , test "'h' moves cursor left by one in contiguous string when cursorIdx > 0"
+val movementTests = describe "movement operations"
+  [ test "'h' moves cursor left by one in contiguous string when cursorIdx > 0"
       (fn _ =>
          let
            (* arrange *)
@@ -79,6 +65,20 @@ val cursorTests = describe "cursor operations"
            (* assert *)
            Expect.isTrue (cursorIdx = 4)
          end)
+
+  , test "'h' does not move cursor when cursorIdx = 0" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world"
+        val app = AppType.init (buffer, 0, 0)
+        val {cursorIdx = oldCursorIdx, ...} = app
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
+      in
+        (* assert *)
+        Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 0)
+      end)
 
   , test
       "'h' moves cursor left by two in contiguous string when prev chr is \\n"
@@ -254,6 +254,6 @@ val cursorTests = describe "cursor operations"
       end)
   ]
 
-val tests = concat [cursorTests]
+val tests = concat [movementTests]
 
 val _ = run tests
