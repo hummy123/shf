@@ -433,8 +433,7 @@ val kMove = describe "move motion 'k'"
          in
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
-  ,
-    test "moves cursur up one column in split string when column = 0" (fn _ =>
+  , test "moves cursur up one column in split string when column = 0" (fn _ =>
       let
         (* arrange *)
         val buffer = fromList ["0__", "\n4__", "_\n9_", "__\n14_"]
@@ -626,6 +625,111 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (chr = #"w")
       end)
+
+  , test "moves cursor past newline when next word is after newline" (fn _ =>
+      (* This behaviour makes behaviour different from vi,
+       * where "w" when a newline is in between causes cursor 
+       * to go to newline and not next word.
+       * I don't personally like this behaviour from vi 
+       * since one can just press "j" to go to the newline instead
+       * and it is more intuitive for the cursor to go the next word
+       * as usual with "w". *)
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello \n\n\n world"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #"w")
+      end)
+
+  , test
+      "moves cursor past underscore \
+      \when underscore is between alphanumeric chars"
+      (fn _ =>
+         (* This behaviour makes behaviour different from vi,
+          * where "w" when a newline is in between causes cursor 
+          * to go to newline and not next word.
+          * I don't personally like this behaviour from vi 
+          * since one can just press "j" to go to the newline instead
+          * and it is more intuitive for the cursor to go the next word
+          * as usual with "w". *)
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello_world goodbye_world"
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+           (* assert *)
+           val cursorChr = getChr app
+         in
+           Expect.isTrue (cursorChr = #"g")
+         end)
+
+  , test
+      "moves cursor to punctuation when next char\ 
+      \after continuous alphanumeric chars is punctuation"
+      (fn _ =>
+         (* vi's definition of 'word' instead of 'WORD' *)
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello, world"
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+           (* assert *)
+           val cursorChr = getChr app
+         in
+           Expect.isTrue (cursorChr = #",")
+         end)
+
+  , test
+      "moves cursor to alphanumeric char when next char\ 
+      \after continuous punctuation chars is alphanumeric"
+      (fn _ =>
+         (* vi's definition of 'word' instead of 'WORD' *)
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "!#%^()hello\n"
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+           (* assert *)
+           val cursorChr = getChr app
+         in
+           Expect.isTrue (cursorChr = #"h")
+         end)
+
+  , test
+      "moves cursor to first {alphanumeric|punctuation} \
+      \when cursor is in { space | tab | '\\n' }"
+      (fn _ =>
+         (* vi's definition of 'word' instead of 'WORD' *)
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 4)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+           (* assert *)
+           val cursorChr = getChr app
+         in
+           Expect.isTrue (cursorChr = #"7")
+         end)
   ]
 
 val tests = concat [hMove, lMove, jMove, kMove, wMove]
