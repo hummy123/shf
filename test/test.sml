@@ -5,7 +5,22 @@ open InputMsg
 val emptyVec = Vector.fromList []
 
 val cursorTests = describe "cursor operations"
-  [ test "'w' moves cursor to start of next word in contiguous string" (fn _ =>
+  [ test "'l' moves cursor leftward by one when cursorIdx < length" (fn _ =>
+  let
+    (* arrange *)
+    val buffer = LineGap.fromString "hello world"
+    val app = AppType.init (buffer, 0, 0)
+    
+    (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
+
+    (* assert *)
+  in
+    Expect.isTrue (cursorIdx = 1)
+  end
+  )
+
+  , test "'w' moves cursor to start of next word in contiguous string" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello world"
