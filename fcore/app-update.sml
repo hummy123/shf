@@ -363,6 +363,16 @@ struct
 
   (* text-delete functions *)
   (** equivalent of vi's 'x' command **)
+
+  fun deleteSearchList (cursorIdx, length, searchString, searchList, buffer) = 
+  let
+            val searchList = SearchList.delete (cursorIdx, length, searchString, searchList)
+            val searchList = SearchList.mapFrom (cursorIdx, ~length, searchList)
+  in
+              BuildSearchList.fromRange 
+                (cursorIdx, length, buffer, searchString, searchList)
+  end
+
   fun helpRemoveChr (app: app_type, buffer, searchList, cursorIdx, count) =
     if count = 0 then
       let
@@ -423,11 +433,8 @@ struct
             val {searchString, ...} = app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
 
-            val searchList = SearchList.delete (cursorIdx, 1, searchString, searchList)
-            val searchList = SearchList.mapFrom (cursorIdx, ~1, searchList)
             val (buffer, searchList) = 
-              BuildSearchList.fromRange 
-                (cursorIdx, 1, buffer, searchString, searchList)
+              deleteSearchList (cursorIdx, 1, searchString, searchList, buffer)
 
             val cursorIdx =
               if
@@ -443,11 +450,8 @@ struct
             val {searchString, ...} = app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
 
-            val searchList = SearchList.delete (cursorIdx, 1, searchString, searchList)
-            val searchList = SearchList.mapFrom (cursorIdx, ~1, searchList)
             val (buffer, searchList) = 
-              BuildSearchList.fromRange 
-                (cursorIdx, 1, buffer, searchString, searchList)
+              deleteSearchList (cursorIdx, 1, searchString, searchList, buffer)
           in 
             helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
           end

@@ -1732,7 +1732,8 @@ struct
               (* strIdx is in tl *)
               (case tl of
                 tlhd :: tltl =>
-                  helpIsNextChrEndOfLine (strIdx, tlhd, tltl)
+                  helpIsNextChrEndOfLine 
+                    (strIdx - String.size hd, tlhd, tltl)
               | [] =>
                   (* strIdx is at end of lineGap
                    * which also means at end of line *)

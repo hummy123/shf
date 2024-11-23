@@ -730,6 +730,22 @@ val wMove = describe "move motion 'w'"
          in
            Expect.isTrue (cursorChr = #"7")
          end)
+
+  , test "moves cursor to first alphanumeric char when in punctuation" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "!!! hello\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+        (* assert *)
+        val startsAtExc = getChr app = #"!"
+        val movedToH = getChr app1 = #"h"
+      in
+        Expect.isTrue (startsAtExc andalso movedToH)
+      end)
   ]
 
 val tests = concat [hMove, lMove, jMove, kMove, wMove]
