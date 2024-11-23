@@ -51,32 +51,13 @@ struct
     end
 
   fun bufferAndCursorIdx
-    (app: app_type, newBuffer, newCursorIdx, newMode, newStartLine) =
-    let
-      val
-        { mode = _
-        , buffer = _
-        , cursorIdx = _
-        , startLine = _
-        , searchList
-        , searchString
-        , windowWidth
-        , windowHeight
-        } = app
-    in
-      { mode = newMode
-      , buffer = newBuffer
-      , cursorIdx = newCursorIdx
-      , startLine = newStartLine
-      , searchList = searchList
-      , searchString = searchString
-      , windowWidth = windowWidth
-      , windowHeight = windowHeight
-      }
-    end
-
-  fun onDelete
-    (app: app_type, newBuffer, newCursorIdx, newMode, newStartLine, newSearchList) =
+    ( app: app_type
+    , newBuffer
+    , newCursorIdx
+    , newMode
+    , newStartLine
+    , newSearchList
+    ) =
     let
       val
         { mode = _

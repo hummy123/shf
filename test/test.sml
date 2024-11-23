@@ -746,6 +746,22 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (startsAtExc andalso movedToH)
       end)
+
+  , test "moves cursor to last char in buffer when in last word" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 6)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+        (* assert *)
+        val chrIsEnd = getChr app = #"d"
+      in
+        Expect.isTrue chrIsEnd
+      end)
   ]
 
 val tests = concat [hMove, lMove, jMove, kMove, wMove]

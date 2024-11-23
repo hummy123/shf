@@ -29,9 +29,13 @@ struct
 
       val newBuffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = TextBuilder.build
-        ( startLine, cursorIdx, newBuffer
-        , newWidth, newHeight
-        , searchList, searchString
+        ( startLine
+        , cursorIdx
+        , newBuffer
+        , newWidth
+        , newHeight
+        , searchList
+        , searchString
         )
 
       val newApp = AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight)
@@ -39,10 +43,9 @@ struct
       (newApp, drawMsg)
     end
 
-  fun buildTextAndClear (app: app_type, buffer, cursorIdx) =
+  fun buildTextAndClear (app: app_type, buffer, cursorIdx, searchList) =
     let
-      val {windowWidth, windowHeight, startLine, searchList, searchString, ...} =
-        app
+      val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -55,14 +58,18 @@ struct
       val buffer = LineGap.goToLine (startLine, buffer)
 
       val drawMsg = TextBuilder.build
-        ( startLine, cursorIdx, buffer
-        , windowWidth, windowHeight
-        , searchList, searchString
+        ( startLine
+        , cursorIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
         )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine)
+        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
       (newApp, drawMsg)
     end
@@ -72,10 +79,9 @@ struct
    * where the cursor may possibly jump off window by a wide marigin.
    * Since the cursor may move away a lot, it is best to recenter.
    * *)
-  fun buildTextAndClearAfterChr (app: app_type, buffer, cursorIdx) =
+  fun buildTextAndClearAfterChr (app: app_type, buffer, cursorIdx, searchList) =
     let
-      val {windowWidth, windowHeight, startLine, searchList, searchString, ...} =
-        app
+      val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -88,14 +94,18 @@ struct
       val buffer = LineGap.goToLine (startLine, buffer)
 
       val drawMsg = TextBuilder.build
-        ( startLine, cursorIdx, buffer
-        , windowWidth, windowHeight
-        , searchList, searchString
+        ( startLine
+        , cursorIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
         )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine)
+        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
       (newApp, drawMsg)
     end
@@ -120,12 +130,16 @@ struct
       val buffer = LineGap.goToLine (startLine, buffer)
 
       val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+        (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
 
       val drawMsg = TextBuilder.build
-        ( startLine, cursorIdx, buffer
-        , windowWidth, windowHeight
-        , searchList, searchString
+        ( startLine
+        , cursorIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
         )
     in
       (newApp, drawMsg)
@@ -143,14 +157,18 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val drawMsg = TextBuilder.build
-        ( startLine, cursorIdx, buffer
-        , windowWidth, windowHeight
-        , searchList, searchString
+        ( startLine
+        , cursorIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
         )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine)
+        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
       (newApp, drawMsg)
     end
@@ -178,14 +196,18 @@ struct
 
       val buffer = LineGap.goToLine (bufferLine, buffer)
       val drawMsg = TextBuilder.build
-        ( bufferLine, bufferIdx, buffer
-        , windowWidth, windowHeight
-        , searchList, searchString
+        ( bufferLine
+        , bufferIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
         )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, bufferIdx, mode, bufferLine)
+        (app, buffer, bufferIdx, mode, bufferLine, searchList)
     in
       (newApp, drawMsg)
     end
@@ -216,12 +238,16 @@ struct
         val buffer = LineGap.goToLine (startLine, buffer)
 
         val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+          (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
 
         val drawMsg = TextBuilder.build
-          ( startLine, cursorIdx, buffer
-          , windowWidth, windowHeight
-          , searchList, searchString
+          ( startLine
+          , cursorIdx
+          , buffer
+          , windowWidth
+          , windowHeight
+          , searchList
+          , searchString
           )
       in
         (newApp, drawMsg)
@@ -229,7 +255,7 @@ struct
 
   fun helpMove (app: app_type, buffer, cursorIdx, count, fMove) =
     if count = 0 then
-      buildTextAndClear (app, buffer, cursorIdx)
+      buildTextAndClear (app, buffer, cursorIdx, #searchList app)
     else
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       let
@@ -279,12 +305,16 @@ struct
         (* if visible, just need to redraw; no need to get line *)
         let
           val newApp = AppWith.bufferAndCursorIdx
-            (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+            (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
 
           val drawMsg = TextBuilder.build
-            ( startLine, cursorIdx, buffer
-            , windowWidth, windowHeight
-            , searchList, searchString
+            ( startLine
+            , cursorIdx
+            , buffer
+            , windowWidth
+            , windowHeight
+            , searchList
+            , searchString
             )
         in
           (newApp, drawMsg)
@@ -299,12 +329,16 @@ struct
           val buffer = LineGap.goToLine (startLine, buffer)
 
           val newApp = AppWith.bufferAndCursorIdx
-            (app, buffer, cursorIdx, NORMAL_MODE "", startLine)
+            (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
 
           val drawMsg = TextBuilder.build
-            ( startLine, cursorIdx, buffer
-            , windowWidth, windowHeight
-            , searchList, searchString
+            ( startLine
+            , cursorIdx
+            , buffer
+            , windowWidth
+            , windowHeight
+            , searchList
+            , searchString
             )
         in
           (newApp, drawMsg)
@@ -323,12 +357,12 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.firstNonSpaceChr (buffer, cursorIdx)
     in
-      buildTextAndClear (app, buffer, cursorIdx)
+      buildTextAndClear (app, buffer, cursorIdx, #searchList app)
     end
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
-      buildTextAndClearAfterChr (app, buffer, cursorIdx)
+      buildTextAndClearAfterChr (app, buffer, cursorIdx, #searchList app)
     else
       let
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
@@ -364,43 +398,19 @@ struct
   (* text-delete functions *)
   (** equivalent of vi's 'x' command **)
 
-  fun deleteSearchList (cursorIdx, length, searchString, searchList, buffer) = 
-  let
-            val searchList = SearchList.delete (cursorIdx, length, searchString, searchList)
-            val searchList = SearchList.mapFrom (cursorIdx, ~length, searchList)
-  in
-              BuildSearchList.fromRange 
-                (cursorIdx, length, buffer, searchString, searchList)
-  end
+  fun deleteSearchList (cursorIdx, length, searchString, searchList, buffer) =
+    let
+      val searchList =
+        SearchList.delete (cursorIdx, length, searchString, searchList)
+      val searchList = SearchList.mapFrom (cursorIdx, ~length, searchList)
+    in
+      BuildSearchList.fromRange
+        (cursorIdx, length, buffer, searchString, searchList)
+    end
 
   fun helpRemoveChr (app: app_type, buffer, searchList, cursorIdx, count) =
     if count = 0 then
-      let
-        val {windowWidth, windowHeight, startLine, searchString, ...} =
-          app
-
-        (* move LineGap to first line displayed on screen *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        (* get new startLine which may move screen depending on cursor movements *)
-        val startLine = TextWindow.getStartLine
-          (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
-        (* move buffer to new startLine as required by TextBuilder.build *)
-        val buffer = LineGap.goToLine (startLine, buffer)
-
-        val drawMsg = TextBuilder.build
-          ( startLine, cursorIdx, buffer
-          , windowWidth, windowHeight
-          , searchList, searchString
-          )
-
-        val mode = NORMAL_MODE ""
-        val newApp = AppWith.onDelete
-          (app, buffer, cursorIdx, mode, startLine, searchList)
-      in
-        (newApp, drawMsg)
-      end
+      buildTextAndClear (app, buffer, cursorIdx, searchList)
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -433,8 +443,8 @@ struct
             val {searchString, ...} = app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
 
-            val (buffer, searchList) = 
-              deleteSearchList (cursorIdx, 1, searchString, searchList, buffer)
+            val (buffer, searchList) = deleteSearchList
+              (cursorIdx, 1, searchString, searchList, buffer)
 
             val cursorIdx =
               if
@@ -446,13 +456,13 @@ struct
             helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
           end
         else
-          let 
+          let
             val {searchString, ...} = app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
 
-            val (buffer, searchList) = 
-              deleteSearchList (cursorIdx, 1, searchString, searchList, buffer)
-          in 
+            val (buffer, searchList) = deleteSearchList
+              (cursorIdx, 1, searchString, searchList, buffer)
+          in
             helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
           end
       end
@@ -474,7 +484,12 @@ struct
         val high = Int.max (cursorIdx, otherIdx)
         val high = Cursor.clipIdx (buffer, high)
         val length = high - low
+
         val buffer = LineGap.delete (low, length, buffer)
+
+        val {searchList, searchString, ...} = app
+        val (buffer, searchList) = deleteSearchList
+          (low, length, searchString, searchList, buffer)
 
         (* If we have deleted from the buffer so that cursorIdx
          * is no longer a valid idx,
@@ -482,7 +497,7 @@ struct
         val buffer = LineGap.goToIdx (low, buffer)
         val cursorIdx = Cursor.clipIdx (buffer, low)
       in
-        buildTextAndClear (app, buffer, cursorIdx)
+        buildTextAndClear (app, buffer, cursorIdx, searchList)
       end
     else
       let
@@ -517,9 +532,12 @@ struct
           val length = lastChr - cursorIdx
           val buffer = LineGap.delete (cursorIdx, length, buffer)
 
-          (* todo: delete from searchList and map *)
+          (* delete from searchList and map *)
+          val {searchList, searchString, ...} = app
+          val (buffer, searchList) = deleteSearchList
+            (cursorIdx, length, searchString, searchList, buffer)
         in
-          helpRemoveChr (app, buffer, #searchList app, cursorIdx, 1)
+          helpRemoveChr (app, buffer, searchList, cursorIdx, 1)
         end
     end
 
@@ -530,10 +548,14 @@ struct
         val length = otherIdx - cursorIdx
         val buffer = LineGap.delete (cursorIdx, length, buffer)
 
+        val {searchList, searchString, ...} = app
+        val (buffer, searchList) = deleteSearchList
+          (cursorIdx, length, searchString, searchList, buffer)
+
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
       in
-        buildTextAndClear (app, buffer, cursorIdx)
+        buildTextAndClear (app, buffer, cursorIdx, searchList)
       end
     else
       let
@@ -560,9 +582,14 @@ struct
         val low = Int.max (low, 0)
         val length = high - low
         val buffer = LineGap.delete (low, length, buffer)
+
+        val {searchList, searchString, ...} = app
+        val (buffer, searchList) = deleteSearchList
+          (low, length, searchString, searchList, buffer)
+
         val buffer = LineGap.goToIdx (low, buffer)
       in
-        buildTextAndClear (app, buffer, low)
+        buildTextAndClear (app, buffer, low, searchList)
       end
     else
       let
@@ -586,7 +613,16 @@ struct
 
   fun deleteToFirstNonSpaceChr (app: app_type) =
     let
-      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+      val
+        { buffer
+        , cursorIdx
+        , windowWidth
+        , windowHeight
+        , startLine
+        , searchString
+        , searchList
+        , ...
+        } = app
 
       (* move LineGap and buffer to start of line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -601,8 +637,10 @@ struct
       val length = high - low
 
       val buffer = LineGap.delete (low, length, buffer)
+      val (buffer, searchList) = deleteSearchList
+        (low, length, searchString, searchList, buffer)
     in
-      buildTextAndClear (app, buffer, low)
+      buildTextAndClear (app, buffer, low, searchList)
     end
 
   fun helpDeleteToChr
@@ -613,8 +651,12 @@ struct
         val high = Int.max (cursorIdx, otherIdx)
         val length = high - low
         val buffer = LineGap.delete (low, length, buffer)
+
+        val {searchString, searchList, ...} = app
+        val (buffer, searchList) = deleteSearchList
+          (low, length, searchString, searchList, buffer)
       in
-        buildTextAndClearAfterChr (app, buffer, low)
+        buildTextAndClearAfterChr (app, buffer, low, searchList)
       end
     else
       let
@@ -652,19 +694,26 @@ struct
         } = app
 
       val buffer = LineGap.delete (0, cursorIdx, buffer)
+      val (buffer, searchList) = deleteSearchList
+        (0, cursorIdx, searchString, searchList, buffer)
+
       val cursorIdx = 0
       val startLine = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val drawMsg = TextBuilder.build
-        ( startLine, cursorIdx, buffer
-        , windowWidth, windowHeight
-        , searchList, searchString
+        ( startLine
+        , cursorIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
         )
 
       val mode = NORMAL_MODE ""
       val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine)
+        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
       (newApp, drawMsg)
     end
