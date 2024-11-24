@@ -90,7 +90,6 @@ val hMove = describe "move motion 'h'"
            (* assert *)
            Expect.isTrue (cursorIdx = 0)
          end)
-
   , test "moves cursor left by one in split string when cursorIdx > 0" (fn _ =>
       let
         (* arrange *)
@@ -104,7 +103,6 @@ val hMove = describe "move motion 'h'"
         (* assert *)
         Expect.isTrue (cursorIdx = 4)
       end)
-
   , test "does not move cursor when cursorIdx = 0" (fn _ =>
       let
         (* arrange *)
@@ -118,7 +116,6 @@ val hMove = describe "move motion 'h'"
         (* assert *)
         Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 0)
       end)
-
   , test "moves cursor left by two in contiguous string when prev chr is \\n"
       (fn _ =>
          let
@@ -133,7 +130,6 @@ val hMove = describe "move motion 'h'"
            (* assert *)
            Expect.isTrue (cursorIdx = 4)
          end)
-
   , test "moves cursor left by two in split string when prev chr is \\n"
       (fn _ =>
          let
@@ -166,7 +162,6 @@ val lMove = describe "move motion 'l'"
            (* assert *)
            Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
          end)
-
   , test "moves cursor right by one in split string when cursorIdx < length"
       (fn _ =>
          let
@@ -181,7 +176,6 @@ val lMove = describe "move motion 'l'"
            (* assert *)
            Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
          end)
-
   , test "does not move cursor when cursorIdx = length" (fn _ =>
       let
         (* arrange *)
@@ -195,7 +189,6 @@ val lMove = describe "move motion 'l'"
         (* assert *)
         Expect.isTrue (cursorIdx = 10)
       end)
-
   , test "moves right by two in contiguous string when char is followed by \\n"
       (fn _ =>
          let
@@ -210,7 +203,6 @@ val lMove = describe "move motion 'l'"
            (* assert *)
            Expect.isTrue (cursorIdx = 6)
          end)
-
   , test "moves right by two in split string when char is followed by \\n"
       (fn _ =>
          let
@@ -250,7 +242,6 @@ val jMove = describe "move motion 'j'"
          in
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
-
   , test "moves cursur down one column in split string when column = 0" (fn _ =>
       let
         (* arrange *)
@@ -269,7 +260,6 @@ val jMove = describe "move motion 'j'"
       in
         Expect.isTrue (c1 andalso c2 andalso c3)
       end)
-
   , test "moves cursur down one column in contiguous string when column = 1"
       (fn _ =>
          let
@@ -290,7 +280,6 @@ val jMove = describe "move motion 'j'"
          in
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
-
   , test "moves cursur down one column in split string when column = 1" (fn _ =>
       let
         (* arrange *)
@@ -310,7 +299,6 @@ val jMove = describe "move motion 'j'"
       in
         Expect.isTrue (c1 andalso c2 andalso c3)
       end)
-
   , test "moves cursur down one column in contiguous string when column = 2"
       (fn _ =>
          let
@@ -331,7 +319,6 @@ val jMove = describe "move motion 'j'"
          in
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
-
   , test "moves cursur down one column in split string when column = 2" (fn _ =>
       let
         (* arrange *)
@@ -351,7 +338,6 @@ val jMove = describe "move motion 'j'"
       in
         Expect.isTrue (c1 andalso c2 andalso c3)
       end)
-
   , test "skips '\\n' when cursor is on non-\\n and is followed by two '\\n's"
       (fn _ =>
          let
@@ -367,7 +353,6 @@ val jMove = describe "move motion 'j'"
          in
            Expect.isTrue isSkipped
          end)
-
   , test "moves to end of buffer when on last line" (fn _ =>
       let
         (* arrange *)
@@ -388,7 +373,6 @@ val jMove = describe "move motion 'j'"
       in
         Expect.isTrue isAtEnd
       end)
-
   , test "leaves cursor at same idx when already at end of buffer" (fn _ =>
       let
         (* arrange *)
@@ -452,7 +436,6 @@ val kMove = describe "move motion 'k'"
       in
         Expect.isTrue (c1 andalso c2 andalso c3)
       end)
-
   , test "moves cursur up one column in contiguous string when column = 1"
       (fn _ =>
          let
@@ -473,7 +456,6 @@ val kMove = describe "move motion 'k'"
          in
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
-
   , test "moves cursur up one column in split string when column = 1" (fn _ =>
       let
         (* arrange *)
@@ -493,7 +475,6 @@ val kMove = describe "move motion 'k'"
       in
         Expect.isTrue (c1 andalso c2 andalso c3)
       end)
-
   , test "moves cursur up one column in contiguous string when column = 2"
       (fn _ =>
          let
@@ -514,7 +495,6 @@ val kMove = describe "move motion 'k'"
          in
            Expect.isTrue (c1 andalso c2 andalso c3)
          end)
-
   , test "moves cursur up one column in split string when column = 2" (fn _ =>
       let
         (* arrange *)
@@ -534,7 +514,6 @@ val kMove = describe "move motion 'k'"
       in
         Expect.isTrue (c1 andalso c2 andalso c3)
       end)
-
   , test
       "skips '\\n' when cursor is on '\\n',\
       \prev-char is '\\n' and prev-prev char is not '\\n'"
@@ -554,7 +533,6 @@ val kMove = describe "move motion 'k'"
          in
            Expect.isTrue isSkipped
          end)
-
   , test "moves to 0 of buffer when on first line" (fn _ =>
       let
         (* arrange *)
@@ -571,7 +549,6 @@ val kMove = describe "move motion 'k'"
       in
         Expect.isTrue isAtStart
       end)
-
   , test "leaves cursor at same idx when already at start of buffer" (fn _ =>
       let
         (* arrange *)
@@ -610,7 +587,6 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (chr = #"w")
       end)
-
   , test "moves cursor to start of next word in split string" (fn _ =>
       let
         (* arrange *)
@@ -625,7 +601,6 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (chr = #"w")
       end)
-
   , test "moves cursor past newline when next word is after newline" (fn _ =>
       (* This behaviour makes behaviour different from vi,
        * where "w" when a newline is in between causes cursor 
@@ -647,7 +622,6 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (cursorChr = #"w")
       end)
-
   , test "does not break on undescore when cursor is on alphanumeric char"
       (fn _ =>
          (* This behaviour makes behaviour different from vi,
@@ -670,7 +644,6 @@ val wMove = describe "move motion 'w'"
          in
            Expect.isTrue (cursorChr = #"g")
          end)
-
   , test "breaks on punctuation when cursor is on alphanumeric char" (fn _ =>
       (* vi's definition of 'word' instead of 'WORD' *)
       let
@@ -686,7 +659,6 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (cursorChr = #",")
       end)
-
   , test "breaks on alphanumeric char when cursor is on punctuation" (fn _ =>
       (* vi's definition of 'word' instead of 'WORD' *)
       let
@@ -702,7 +674,6 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (cursorChr = #"h")
       end)
-
   , test "breaks on non-blank char when on blank char" (fn _ =>
       let
         (* arrange *)
@@ -718,7 +689,6 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (cursorChr = #"7")
       end)
-
   , test "moves cursor to first alphanumeric char when on punctuation" (fn _ =>
       let
         (* arrange *)
@@ -734,7 +704,6 @@ val wMove = describe "move motion 'w'"
       in
         Expect.isTrue (startsAtExc andalso movedToH)
       end)
-
   , test "moves cursor to last char when cursor is on last word" (fn _ =>
       let
         (* arrange *)
@@ -767,7 +736,6 @@ val WMove = describe "move motion 'W'"
       in
         Expect.isTrue (chr = #"w")
       end)
-
   , test "moves cursor to start of next WORD in split string" (fn _ =>
       let
         (* arrange *)
@@ -782,7 +750,6 @@ val WMove = describe "move motion 'W'"
       in
         Expect.isTrue (chr = #"w")
       end)
-
   , test "moves cursor past newline when next WORD is after newline" (fn _ =>
       let
         (* arrange *)
@@ -797,7 +764,6 @@ val WMove = describe "move motion 'W'"
       in
         Expect.isTrue (cursorChr = #"w")
       end)
-
   , test "does not break on punctuation when cursor is on alphanumeric char"
       (fn _ =>
          (* vi's definition of 'WORD' instead of 'word' *)
@@ -814,7 +780,6 @@ val WMove = describe "move motion 'W'"
          in
            Expect.isTrue (cursorChr = #"w")
          end)
-
   , test "does not break on alphanumeric char when cursor is on punctuation"
       (fn _ =>
          (* vi's definition of 'WORD' instead of 'word' *)
@@ -831,7 +796,6 @@ val WMove = describe "move motion 'W'"
          in
            Expect.isTrue (cursorChr = #"w")
          end)
-
   , test "moves cursor to first non-blank when cursor is on blank" (fn _ =>
       let
         (* arrange *)
@@ -847,7 +811,6 @@ val WMove = describe "move motion 'W'"
       in
         Expect.isTrue (cursorChr = #"7")
       end)
-
   , test "moves cursor to last char when cursor is on last word" (fn _ =>
       let
         (* arrange *)
@@ -879,7 +842,6 @@ val zeroMove = describe "move motion '0'"
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
       end)
-
   , test "moves cursor to 0 in split string when on first line" (fn _ =>
       let
         (* arrange *)
@@ -893,7 +855,6 @@ val zeroMove = describe "move motion '0'"
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
       end)
-
   , test "leaves cursor on 0 when cursor is already on 0" (fn _ =>
       let
         (* arrange *)
@@ -906,7 +867,6 @@ val zeroMove = describe "move motion '0'"
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
       end)
-
   , test "leaves cursor at same idx when cursor is on '\\n'" (fn _ =>
       let
         (* arrange *)
@@ -923,7 +883,6 @@ val zeroMove = describe "move motion '0'"
         (* assert *)
         Expect.isTrue (oldIdx = newIdx)
       end)
-
   , test
       "moves cursor to first char after '\\n' in contiguous string\
       \when cursor is after first line"
@@ -943,7 +902,6 @@ val zeroMove = describe "move motion '0'"
            (* assert *)
            Expect.isTrue (chr = #"#")
          end)
-
   , test
       "moves cursor to first char after '\\n' in split string\
       \when cursor is after first line"
