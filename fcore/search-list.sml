@@ -63,9 +63,8 @@ struct
           new :: right
     | [] => new :: right
 
-  fun insMiddle (new, hd, tl, left, right) =
+  fun insMiddle (new, middle, hd, tl, left, right) =
     let
-      val middle = BinSearch.equalOrMore (new, hd)
       val leftSlice = VectorSlice.slice (hd, 0, SOME middle)
       val rightLength = Vector.length hd - middle
       val rightSlice = VectorSlice.slice (hd, middle, SOME rightLength)
@@ -111,8 +110,17 @@ struct
               val last = Vector.sub (hd, Vector.length hd - 1)
             in
               if new < last then
-                (* have to insert in middle *)
-                insMiddle (new, hd, tl, left, right)
+                (* new is or should be in middle *)
+                let
+                  val middle = BinSearch.equalOrMore (new, hd)
+                in
+                  if new <> Vector.sub (hd, middle) then
+                    (* not in middle, so insert *)
+                    insMiddle (new, middle, hd, tl, left, right)
+                  else
+                    (* new is in middle, so just return *)
+                    {left = left, right = right}
+                end
               else if new > last then
                 (* have to insert new at end of left 
                  * or start of right (both are equivalent) *)
@@ -146,7 +154,16 @@ struct
             in
               if new > first then
                 (* have to insert in middle *)
-                insMiddle (new, hd, tl, left, right)
+                let
+                  val middle = BinSearch.equalOrMore (new, hd)
+                in
+                  if new <> Vector.sub (hd, middle) then
+                    (* not in middle, so insert *)
+                    insMiddle (new, middle, hd, tl, left, right)
+                  else
+                    (* new is in middle, so return *)
+                    {left = left, right = right}
+                end
               else if new < first then
                 (* have to insert new at start of right
                  * or end of left (both are equivalent) *)
