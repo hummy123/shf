@@ -1156,7 +1156,7 @@ struct
         let
           val chr = String.sub (str, strPos)
         in
-          if Char.isSpace chr then
+          if chr = #" " then
             helpFirstNonSpaceChr 
               (strPos + 1, str, absIdx + 1, stl, ltl)
           else
