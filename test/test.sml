@@ -594,7 +594,6 @@ val kMove = describe "move motion 'k'"
       end)
   ]
 
-
 val wMove = describe "move motion 'w'"
   [ test "moves cursor to start of next word in contiguous string" (fn _ =>
       let
@@ -713,7 +712,7 @@ val wMove = describe "move motion 'w'"
 
   , test
       "moves cursor to first {alphanumeric|punctuation} \
-      \when cursor is in { space | tab | '\\n' }"
+      \when cursor is in {space|tab|'\\n'}"
       (fn _ =>
          (* vi's definition of 'word' instead of 'WORD' *)
          let
@@ -764,6 +763,120 @@ val wMove = describe "move motion 'w'"
       end)
   ]
 
-val tests = concat [hMove, lMove, jMove, kMove, wMove]
+val WMove = describe "move motion 'W'"
+  [ test "moves cursor to start of next word in contiguous string" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+
+        (* assert *)
+        val chr = String.sub ("hello world", cursorIdx)
+      in
+        Expect.isTrue (chr = #"w")
+      end)
+
+  , test "moves cursor to start of next word in split string" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = fromList ["hello ", "world"]
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+
+        (* assert *)
+        val chr = String.sub ("hello world", cursorIdx)
+      in
+        Expect.isTrue (chr = #"w")
+      end)
+
+  , test "moves cursor past newline when next word is after newline" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello \n\n\n world"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #"w")
+      end)
+
+  , test "moves cursor past punctuation when in alphanumeric char" (fn _ =>
+      (* vi's definition of 'WORD' instead of 'word' *)
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello, world"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #"w")
+      end)
+
+  , test "moves cursor past alphanumeric char when in punctuation" (fn _ =>
+      (* vi's definition of 'WORD' instead of 'word' *)
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "!hello!!! world!!!\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #"w")
+      end)
+
+  , test
+      "moves cursor to first {alphanumeric|punctuation} \
+      \when cursor is in {space|tab|'\\n'}"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 4)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+           (* assert *)
+           val cursorChr = getChr app
+         in
+           Expect.isTrue (cursorChr = #"7")
+         end)
+
+  , test "moves cursor to last char in buffer when in last word" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 6)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+        (* assert *)
+        val chrIsEnd = getChr app = #"d"
+      in
+        Expect.isTrue chrIsEnd
+      end)
+  ]
+
+val tests = concat [hMove, lMove, jMove, kMove, wMove, WMove]
 
 val _ = run tests
