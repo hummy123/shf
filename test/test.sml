@@ -647,9 +647,7 @@ val wMove = describe "move motion 'w'"
         Expect.isTrue (cursorChr = #"w")
       end)
 
-  , test
-      "moves cursor past underscore \
-      \when underscore is between alphanumeric chars"
+  , test "does not break on undescore when cursor is on alphanumeric char"
       (fn _ =>
          (* This behaviour makes behaviour different from vi,
           * where "w" when a newline is in between causes cursor 
@@ -672,65 +670,55 @@ val wMove = describe "move motion 'w'"
            Expect.isTrue (cursorChr = #"g")
          end)
 
-  , test
-      "moves cursor to punctuation when next char\ 
-      \after continuous alphanumeric chars is punctuation"
-      (fn _ =>
-         (* vi's definition of 'word' instead of 'WORD' *)
-         let
-           (* arrange *)
-           val buffer = LineGap.fromString "hello, world"
-           val app = AppType.init (buffer, 0, 0)
+  , test "breaks on punctuation when cursor is on alphanumeric char" (fn _ =>
+      (* vi's definition of 'word' instead of 'WORD' *)
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello, world"
+        val app = AppType.init (buffer, 0, 0)
 
-           (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
 
-           (* assert *)
-           val cursorChr = getChr app
-         in
-           Expect.isTrue (cursorChr = #",")
-         end)
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #",")
+      end)
 
-  , test
-      "moves cursor to alphanumeric char when next char\ 
-      \after continuous punctuation chars is alphanumeric"
-      (fn _ =>
-         (* vi's definition of 'word' instead of 'WORD' *)
-         let
-           (* arrange *)
-           val buffer = LineGap.fromString "!#%^()hello\n"
-           val app = AppType.init (buffer, 0, 0)
+  , test "breaks on alphanumeric char when cursor is on punctuation" (fn _ =>
+      (* vi's definition of 'word' instead of 'WORD' *)
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "!#%^()hello\n"
+        val app = AppType.init (buffer, 0, 0)
 
-           (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
 
-           (* assert *)
-           val cursorChr = getChr app
-         in
-           Expect.isTrue (cursorChr = #"h")
-         end)
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #"h")
+      end)
 
-  , test
-      "moves cursor to first {alphanumeric|punctuation} \
-      \when cursor is in {space|tab|'\\n'}"
-      (fn _ =>
-         (* vi's definition of 'word' instead of 'WORD' *)
-         let
-           (* arrange *)
-           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-           val app = AppType.init (buffer, 0, 0)
-           val app = withIdx (app, 4)
+  , test "breaks on non-blank char when on blank char" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 4)
 
-           (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
 
-           (* assert *)
-           val cursorChr = getChr app
-         in
-           Expect.isTrue (cursorChr = #"7")
-         end)
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #"7")
+      end)
 
-  , test "moves cursor to first alphanumeric char when in punctuation" (fn _ =>
+  , test "moves cursor to first alphanumeric char when on punctuation" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "!!! hello\n"
@@ -746,7 +734,7 @@ val wMove = describe "move motion 'w'"
         Expect.isTrue (startsAtExc andalso movedToH)
       end)
 
-  , test "moves cursor to last char in buffer when in last word" (fn _ =>
+  , test "moves cursor to last char when cursor is on last word" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello world\n"
@@ -764,7 +752,7 @@ val wMove = describe "move motion 'w'"
   ]
 
 val WMove = describe "move motion 'W'"
-  [ test "moves cursor to start of next word in contiguous string" (fn _ =>
+  [ test "moves cursor to start of next WORD in contiguous string" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello world"
@@ -779,7 +767,7 @@ val WMove = describe "move motion 'W'"
         Expect.isTrue (chr = #"w")
       end)
 
-  , test "moves cursor to start of next word in split string" (fn _ =>
+  , test "moves cursor to start of next WORD in split string" (fn _ =>
       let
         (* arrange *)
         val buffer = fromList ["hello ", "world"]
@@ -794,7 +782,7 @@ val WMove = describe "move motion 'W'"
         Expect.isTrue (chr = #"w")
       end)
 
-  , test "moves cursor past newline when next word is after newline" (fn _ =>
+  , test "moves cursor past newline when next WORD is after newline" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello \n\n\n world"
@@ -809,58 +797,57 @@ val WMove = describe "move motion 'W'"
         Expect.isTrue (cursorChr = #"w")
       end)
 
-  , test "moves cursor past punctuation when in alphanumeric char" (fn _ =>
-      (* vi's definition of 'WORD' instead of 'word' *)
-      let
-        (* arrange *)
-        val buffer = LineGap.fromString "hello, world"
-        val app = AppType.init (buffer, 0, 0)
-
-        (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
-
-        (* assert *)
-        val cursorChr = getChr app
-      in
-        Expect.isTrue (cursorChr = #"w")
-      end)
-
-  , test "moves cursor past alphanumeric char when in punctuation" (fn _ =>
-      (* vi's definition of 'WORD' instead of 'word' *)
-      let
-        (* arrange *)
-        val buffer = LineGap.fromString "!hello!!! world!!!\n"
-        val app = AppType.init (buffer, 0, 0)
-
-        (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
-
-        (* assert *)
-        val cursorChr = getChr app
-      in
-        Expect.isTrue (cursorChr = #"w")
-      end)
-
-  , test
-      "moves cursor to first {alphanumeric|punctuation} \
-      \when cursor is in {space|tab|'\\n'}"
+  , test "does not break on punctuation when cursor is on alphanumeric char"
       (fn _ =>
+         (* vi's definition of 'WORD' instead of 'word' *)
          let
            (* arrange *)
-           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
+           val buffer = LineGap.fromString "hello, world"
            val app = AppType.init (buffer, 0, 0)
-           val app = withIdx (app, 4)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
 
            (* assert *)
            val cursorChr = getChr app
          in
-           Expect.isTrue (cursorChr = #"7")
+           Expect.isTrue (cursorChr = #"w")
          end)
 
-  , test "moves cursor to last char in buffer when in last word" (fn _ =>
+  , test "does not break on alphanumeric char when cursor is on punctuation"
+      (fn _ =>
+         (* vi's definition of 'WORD' instead of 'word' *)
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "#!hello!!! world!!!\n"
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+
+           (* assert *)
+           val cursorChr = getChr app
+         in
+           Expect.isTrue (cursorChr = #"w")
+         end)
+
+  , test "moves cursor to first non-blank when cursor is on blank" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 4)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+
+        (* assert *)
+        val cursorChr = getChr app
+      in
+        Expect.isTrue (cursorChr = #"7")
+      end)
+
+  , test "moves cursor to last char when cursor is on last word" (fn _ =>
       let
         (* arrange *)
         val buffer = LineGap.fromString "hello world\n"
