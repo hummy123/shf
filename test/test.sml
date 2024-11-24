@@ -536,7 +536,8 @@ val kMove = describe "move motion 'k'"
       end)
 
   , test
-      "skips '\\n' when cursor is on '\\n', prev-char is '\\n' and prev-prev char is not '\\n'"
+      "skips '\\n' when cursor is on '\\n',\
+      \prev-char is '\\n' and prev-prev char is not '\\n'"
       (fn _ =>
          let
            (* arrange *)
@@ -864,6 +865,108 @@ val WMove = describe "move motion 'W'"
       end)
   ]
 
-val tests = concat [hMove, lMove, jMove, kMove, wMove, WMove]
+val zeroMove = describe "move motion '0'"
+  [ test "moves cursor to 0 in contiguous string when on first line" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello w7rld\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 7)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+      in
+        (* assert *)
+        Expect.isTrue (cursorIdx = 0)
+      end)
+
+  , test "moves cursor to 0 in split string when on first line" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = fromList ["hel", "lo ", "w7r", "ld\n"]
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 7)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+      in
+        (* assert *)
+        Expect.isTrue (cursorIdx = 0)
+      end)
+
+  , test "leaves cursor on 0 when cursor is already on 0" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+      in
+        (* assert *)
+        Expect.isTrue (cursorIdx = 0)
+      end)
+
+  , test "leaves cursor at same idx when cursor is on '\\n'" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world\n hello again\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        val app = withIdx (app, 11)
+        val {cursorIdx = oldIdx, ...} = app
+
+        (* act *)
+        val ({cursorIdx = newIdx, ...}, _) =
+          AppUpdate.update (app, CHAR_EVENT #"0")
+      in
+        (* assert *)
+        Expect.isTrue (oldIdx = newIdx)
+      end)
+
+  , test
+      "moves cursor to first char after '\\n' in contiguous string\
+      \when cursor is after first line"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello world\n#ello again\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 21)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+
+           (* assert *)
+           val chr = getChr app
+         in
+           (* assert *)
+           Expect.isTrue (chr = #"#")
+         end)
+
+  , test
+      "moves cursor to first char after '\\n' in split string\
+      \when cursor is after first line"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = fromList
+             ["hel", "lo ", "wor", "ld\n", "#el", "lo ", "aga", "in\n"]
+           val buffer = LineGap.fromString "hello world\n#ello again\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 21)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+
+           (* assert *)
+           val chr = getChr app
+         in
+           (* assert *)
+           Expect.isTrue (chr = #"#")
+         end)
+  ]
+
+val tests = concat [hMove, lMove, jMove, kMove, wMove, WMove, zeroMove]
 
 val _ = run tests
