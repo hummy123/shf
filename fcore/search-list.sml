@@ -3,6 +3,7 @@ sig
   type t = {left: int vector list, right: int vector list}
   val empty: t
 
+  val exists: int * t -> bool
   val insert: int * t -> t
   val append: int * t -> t
   val delete: int * int * string * t -> t
@@ -587,4 +588,38 @@ struct
     in
       moveRightAndMap (num, mapBy, left, right)
     end
+
+  fun helpExistsRight (num, right) =
+    case right of
+      hd :: tl =>
+        let
+          val rlast = Vector.sub (hd, Vector.length hd - 1)
+        in
+          if num > rlast then helpExistsRight (num, tl)
+          else BinSearch.exists (num, hd)
+        end
+    | [] => false
+
+  fun helpExistsLeft (num, left) =
+    case left of
+      hd :: tl =>
+        let
+          val lfirst = Vector.sub (hd, 0)
+        in
+          if num < lfirst then helpExistsLeft (num, tl)
+          else BinSearch.exists (num, hd)
+        end
+    | [] => false
+
+  fun exists (num, {left, right}) =
+    case right of
+      rhd :: rtl =>
+        let
+          val rfirst = Vector.sub (rhd, 0)
+        in
+          if num = rfirst then true
+          else if num > rfirst then helpExistsRight (num, right)
+          else helpExistsLeft (num, left)
+        end
+    | [] => helpExistsLeft (num, left)
 end

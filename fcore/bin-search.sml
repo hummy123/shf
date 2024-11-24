@@ -69,4 +69,28 @@ struct
     fun equalOrMore (findNum, vec) =
       helpBinSearch (findNum, vec, 0, Vector.length vec - 1)
   end
+
+  local
+    fun helpExists (findNum, vec, low, high) =
+      let
+        val mid = low + ((high - low) div 2)
+      in
+        if high >= low then
+          let
+            val midVal = Vector.sub (vec, mid)
+          in
+            if midVal = findNum then
+              true
+            else if midVal < findNum then
+              helpExists (findNum, vec, mid + 1, high)
+            else
+              helpExists (findNum, vec, low, mid - 1)
+          end
+        else
+          false
+      end
+  in
+    fun exists (findNum, vec) =
+      helpExists (findNum, vec, 0, Vector.length vec - 1)
+  end
 end
