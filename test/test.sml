@@ -925,6 +925,75 @@ val zeroMove = describe "move motion '0'"
          end)
   ]
 
-val tests = concat [hMove, lMove, jMove, kMove, wMove, WMove, zeroMove]
+val dlrMove = describe "move motion '$'"
+  [ test "moves cursor to char before '\\n' in contiguous string" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello wor9\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"9")
+      end)
+  , test "moves cursor to char before '\\n' in split string" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = fromList ["hel", "lo ", " wor9\n"]
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"9")
+      end)
+  , test
+      "leaves cursor at same idx in contiguous string\
+      \when char after cursor is '\\n'"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello\n world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 11)
+           val oldIdx = #cursorIdx app
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+           val newIdx = #cursorIdx app
+
+           val nchr = getChr app
+           val nchr = Char.toString nchr ^ "\n"
+         in
+           (* assert *)
+           Expect.isTrue (oldIdx = newIdx)
+         end)
+  , test
+      "leaves cursor at same idx in split string\
+      \when char after cursor is '\\n'"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = fromList ["hel", "lo\n", " wo", "rld", "\n"]
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 11)
+           val oldIdx = #cursorIdx app
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+           val newIdx = #cursorIdx app
+
+           val nchr = getChr app
+           val nchr = Char.toString nchr ^ "\n"
+         in
+           (* assert *)
+           Expect.isTrue (oldIdx = newIdx)
+         end)
+  ]
+
+val tests = concat [hMove, lMove, jMove, kMove, wMove, WMove, zeroMove, dlrMove]
 
 val _ = run tests
