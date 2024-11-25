@@ -1,6 +1,9 @@
 signature TEXT_BUILDER =
 sig
   (* Prerequisites: LineGap is moved to requested line first. *)
+  val getLineAbsIdx: int * LineGap.t -> int
+
+  (* Prerequisites: LineGap is moved to requested line first. *)
   val build: int * int * LineGap.t * int * int * SearchList.t * string
              -> MailboxType.t list
 end
@@ -459,6 +462,45 @@ struct
          | [] =>
              accToDrawMsg (acc, cursorAcc, bgAcc)
 
+  (* gets line start idx, relative to right hd *)
+  fun helpGetLineStartIdx (startLine, curLine, rLnHd) =
+    if startLine > curLine then
+      let
+        val lnPos = startLine - curLine - 1
+      in
+        Vector.sub (rLnHd, lnPos) + 1
+      end
+    else
+      0
+
+  (* gets line start idx, absolute *)
+  fun helpGetLineAbsIdx (curIdx, startLine, curLine, rLnHd) =
+    let
+      val startIdx =
+        if startLine > curLine then
+          let
+            val lnPos = startLine - curLine - 1
+          in
+            Vector.sub (rLnHd, lnPos) + 1
+          end
+        else
+          0
+    in
+      curIdx + startIdx
+    end
+
+  fun getLineAbsIdx (startLine, lineGap: LineGap.t) =
+      let
+        val {rightLines, line = curLine, idx = curIdx, ...} = lineGap
+      in
+        case rightLines of
+          rLnHd :: _ =>
+            helpGetLineAbsIdx (curIdx, startLine, curLine, rLnHd)
+        | [] => 
+            (* should never happen *)
+            0
+      end
+
   fun build
     ( startLine, cursorPos, lineGap: LineGap.t
     , windowWidth, windowHeight
@@ -470,29 +512,10 @@ struct
         case (rightStrings, rightLines) of
           (rStrHd :: rStrTl, rLnHd :: _) =>
             let
-              (* get index of line to start building from *)
-              val startIdx =
-                if startLine > curLine then
-                  let
-                    val lnPos = startLine - curLine - 1
-                    val startIdx = Vector.sub (rLnHd, lnPos)
-                  in
-                    if
-                      String.sub (rStrHd, startIdx) = #"\r"
-                      andalso startIdx < String.size rStrHd - 1
-                      andalso String.sub (rStrHd, startIdx + 1) = #"\n"
-                    then 
-                      (* handle \r\n pair *) 
-                      startIdx + 2
-                    else startIdx + 1
-                  end
-                else
-                  0
+              (* get relative index of line to start building from *)
+              val startIdx = helpGetLineStartIdx (startLine, curLine, rLnHd)
+              (* get absolute idx of line *)
               val absIdx = curIdx + startIdx
-
-              (* todo: make going to absIdx a prerequisite for using this
-               * function *)
-              val searchList = SearchList.goToNum (absIdx, searchList)
 
               val windowData = 
                 { w = windowWidth

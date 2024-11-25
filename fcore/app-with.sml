@@ -26,14 +26,15 @@ struct
       }
     end
 
-  fun bufferAndSize (app: app_type, newBuffer, newWidth, newHeight) =
+  fun bufferAndSize
+    (app: app_type, newBuffer, newWidth, newHeight, newSearchList) =
     let
       val
         { mode
         , buffer = _
         , windowWidth = _
         , windowHeight = _
-        , searchList
+        , searchList = _
         , searchString
         , startLine
         , cursorIdx
@@ -43,7 +44,7 @@ struct
       , buffer = newBuffer
       , windowWidth = newWidth
       , windowHeight = newHeight
-      , searchList = searchList
+      , searchList = newSearchList
       , searchString = searchString
       , startLine = startLine
       , cursorIdx = cursorIdx

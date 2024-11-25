@@ -28,6 +28,9 @@ struct
         } = app
 
       val newBuffer = LineGap.goToLine (startLine, buffer)
+      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+      val searchList = SearchList.goToNum (lineIdx, searchList)
+
       val drawMsg = TextBuilder.build
         ( startLine
         , cursorIdx
@@ -38,7 +41,8 @@ struct
         , searchString
         )
 
-      val newApp = AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight)
+      val newApp = 
+        AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight, searchList)
     in
       (newApp, drawMsg)
     end
@@ -47,7 +51,8 @@ struct
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
-      (* move LineGap to first line displayed on screen *)
+      (* move LineGap to first line displayed on screen 
+       * and move searchList to line's start idx as well *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
       (* get new startLine which may move screen depending on cursor movements *)
@@ -56,6 +61,8 @@ struct
 
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)
+      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+      val searchList = SearchList.goToNum (lineIdx, searchList)
 
       val drawMsg = TextBuilder.build
         ( startLine
@@ -90,8 +97,11 @@ struct
       val startLine = TextWindow.getStartLine
         (buffer, startLine, cursorIdx, windowWidth, windowHeight)
 
-      (* move buffer to new startLine as required by TextBuilder.build *)
+      (* move buffer to new startLine as required by TextBuilder.build 
+       * and move searchList to idx where line starts as well *)
       val buffer = LineGap.goToLine (startLine, buffer)
+      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+      val searchList = SearchList.goToNum (lineIdx, searchList)
 
       val drawMsg = TextBuilder.build
         ( startLine
@@ -128,6 +138,8 @@ struct
         (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
       val buffer = LineGap.goToLine (startLine, buffer)
+      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+      val searchList = SearchList.goToNum (lineIdx, searchList)
 
       val newApp = AppWith.bufferAndCursorIdx
         (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
@@ -155,6 +167,7 @@ struct
       val cursorIdx = 0
       val startLine = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val searchList = SearchList.goToNum (0, searchList)
 
       val drawMsg = TextBuilder.build
         ( startLine
@@ -195,6 +208,9 @@ struct
         end
 
       val buffer = LineGap.goToLine (bufferLine, buffer)
+      val lineIdx = TextBuilder.getLineAbsIdx (bufferLine, buffer)
+      val searchList = SearchList.goToNum (lineIdx, searchList)
+
       val drawMsg = TextBuilder.build
         ( bufferLine
         , bufferIdx
@@ -236,6 +252,8 @@ struct
           (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
         val buffer = LineGap.goToLine (startLine, buffer)
+        val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+        val searchList = SearchList.goToNum (lineIdx, searchList)
 
         val newApp = AppWith.bufferAndCursorIdx
           (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
@@ -297,6 +315,8 @@ struct
       val cursorIdx = Cursor.matchPair (buffer, cursorIdx)
 
       val buffer = LineGap.goToLine (startLine, buffer)
+      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+      val searchList = SearchList.goToNum (lineIdx, searchList)
     in
       if
         TextWindow.isCursorVisible
@@ -327,6 +347,8 @@ struct
             (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
 
           val buffer = LineGap.goToLine (startLine, buffer)
+          val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+          val searchList = SearchList.goToNum (lineIdx, searchList)
 
           val newApp = AppWith.bufferAndCursorIdx
             (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
@@ -700,6 +722,7 @@ struct
       val cursorIdx = 0
       val startLine = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val searchList = SearchList.goToNum (0, searchList)
 
       val drawMsg = TextBuilder.build
         ( startLine
