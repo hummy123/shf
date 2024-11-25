@@ -994,6 +994,93 @@ val dlrMove = describe "move motion '$'"
          end)
   ]
 
-val tests = concat [hMove, lMove, jMove, kMove, wMove, WMove, zeroMove, dlrMove]
+val caretMove = describe "move motion '^'"
+  [ test
+      "moves cursor to first non-space char in first line\
+      \when first line starts with spaces\
+      \and cursor is on first space"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "   3ello world\n"
+           val app = AppType.init (buffer, 0, 0)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"3")
+         end)
+  , test
+      "moves cursor to first non-space char in first line\
+      \when first line starts with space\
+      \and cursor is after first non-space char"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "   3ell7 world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"3")
+         end)
+  , test
+      "moves cursor to first non-space char\ 
+      \when cursor is after first line\
+      \and before first non-space char"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello\n   world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"w")
+         end)
+  , test
+      "moves cursor to first non-space char\ 
+      \when cursor is after first line\
+      \and after first non-space char"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello\n   world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 11)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"w")
+         end)
+  , test "leaves cursor in same position when on '\\n'" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hel\nlo\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 3)
+        val oldIdx = #cursorIdx app
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = oldIdx)
+      end)
+  ]
+
+
+val tests = concat
+  [hMove, lMove, jMove, kMove, wMove, WMove, zeroMove, dlrMove, caretMove]
 
 val _ = run tests
