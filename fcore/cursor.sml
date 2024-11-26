@@ -1,15 +1,41 @@
 structure Cursor =
 struct
-  fun helpVi0 (strPos, str, absIdx, strTl, lineTl) =
-    if strPos < 0 then
-      case (strTl, lineTl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpVi0 (String.size shd - 1, shd, absIdx, stl, ltl)
-      | (_, _) => 0
+  (* returns absolute index of previous line break in string *)
+  fun helpVi0 (absIdx, stl, ltl) =
+    case (stl, ltl) of
+      (shd :: stl, lhd :: ltl) =>
+        if Vector.length lhd > 0 then
+          let
+            val startAbsIdx = absIdx - String.size shd
+            val lineIdx = Vector.sub (lhd, Vector.length lhd - 1)
+          in
+            (* found lineIdx. 
+             * Need to make sure we follow cursor-on-linebreak rule:
+             * If line break is preceded by non-line break char,
+             * then increment by 1.
+             * *)
+             startAbsIdx + lineIdx + 1
+          end
+        else
+          helpVi0 (absIdx - String.size shd, stl, ltl)
+    | (_, _) => 0
+
+  fun startVi0 (strPos, shd, lhd, absIdx, stl, ltl) =
+    if String.sub (shd, strPos) = #"\n" then
+      absIdx
     else
-      case String.sub (str, strPos) of
-        #"\n" => absIdx + 1
-      | _ => helpVi0 (strPos - 1, str, absIdx - 1, strTl, lineTl)
+      if Vector.length lhd > 0 then
+        if Vector.sub (lhd, 0) < strPos then
+          let
+            val linePos = BinSearch.equalOrLess (strPos - 1, lhd)
+            val lineIdx = Vector.sub (lhd, linePos)
+          in
+            absIdx - strPos + lineIdx + 1
+          end
+        else
+          helpVi0 (absIdx - strPos, stl, ltl)
+      else
+        helpVi0 (absIdx - strPos, stl, ltl)
 
   fun vi0 (lineGap: LineGap.t, cursorIdx) =
     let
@@ -25,14 +51,8 @@ struct
           in
             if strIdx < String.size strHd then
               (* strIdx is in this string *)
-              if String.sub (strHd, strIdx) = #"\n" then
-                (* don't need to do anything if we are already at newline;
-                 * just return current cursorIdx *)
-                cursorIdx
-              else
-                (* not at newline so start iterating *)
-                helpVi0 
-                  (strIdx - 1, strHd, cursorIdx - 1, leftStrings, leftLines)
+              startVi0
+                (strIdx, strHd, lnHd, cursorIdx, leftStrings, leftLines)
             else
               (* strIdx must be in the strTl *)
               (case (strTl, lnTl) of
@@ -40,18 +60,14 @@ struct
                    let
                      val strIdx = strIdx - String.size strHd
                    in
-                     if String.sub (nestStrHd, strIdx) = #"\n" then
-                       (* already at linebreak so return same cursorIdx *)
-                       cursorIdx
-                     else
-                       (* not in linebreak *)
-                       helpVi0
-                         ( strIdx - 1
-                         , nestStrHd
-                         , cursorIdx - 1
-                         , strHd :: leftStrings
-                         , lnHd :: leftLines
-                         )
+                     startVi0
+                       ( strIdx
+                       , nestStrHd
+                       , nestLnHd
+                       , cursorIdx
+                       , strHd :: leftStrings
+                       , lnHd :: leftLines
+                       )
                    end
                | (_, _) => cursorIdx)
           end
@@ -541,8 +557,8 @@ struct
               (* graphical-chr -> \n -> \n 
                * so go to beginning of line, 
                * starting from graphical-chr *)
-              helpVi0
-                (strIdx - 2, shd, cursorIdx - 2, leftStrings, leftLines)
+              startVi0
+                (strIdx - 2, shd, lhd, cursorIdx - 2, leftStrings, leftLines)
           else
             (* strIdx - 2 is in leftStrings *)
             case (leftStrings, leftLines) of
@@ -555,8 +571,8 @@ struct
                 (* graphical-chr -> \n -> \n 
                  * so go to beginning of line, 
                  * starting from graphical-chr *)
-                 helpVi0
-                   (String.size lshd - 1, lshd, cursorIdx - 2, lstl, lltl)
+                 startVi0
+                   (String.size lshd - 1, lshd, llhd, cursorIdx - 2, lstl, lltl)
             | (_, _) =>
                 (* nothing to the left, so we are at start of buffer *)
                 0
@@ -564,7 +580,8 @@ struct
           (* ? -> graphical-chr -> \n 
            * Don't expect this case to happen
            * but if it does, go to start of line. *)
-           helpVi0 (strIdx - 1, shd, cursorIdx - 1, leftStrings, leftLines)
+           startVi0 
+             (strIdx - 1, shd, lhd, cursorIdx - 1, leftStrings, leftLines)
       else
         (* strIdx - 1 is in leftStrings *)
         case (leftStrings, leftLines) of
@@ -578,8 +595,8 @@ struct
                   cursorIdx - 1
                 else
                   (* graphical-chr -> \n -> \n *)
-                  helpVi0
-                    (String.size lshd - 2, lshd, cursorIdx - 2, lstl, lltl)
+                  startVi0
+                    (String.size lshd - 2, lshd, llhd, cursorIdx - 2, lstl, lltl)
               else
                 (* cursorIdx - 2 is in lstl *)
                 (case (lstl, lltl) of
@@ -589,12 +606,13 @@ struct
                       cursorIdx - 1
                     else
                       (* graphical-chr -> \n -> \n *)
-                      helpVi0
-                        (String.size stlhd - 1, stlhd, cursorIdx - 2, lstl, lltl)
+                      startVi0
+                        (String.size stlhd - 1, stlhd, ltlhd, cursorIdx - 2, lstl, lltl)
                 | (_, _) => 0)
             else
               (* ? -> graphical-chr -> \n *)
-               helpVi0 (String.size lshd - 1, lshd, cursorIdx - 1, leftStrings, leftLines)
+              startVi0
+                (String.size lshd - 1, lshd, llhd, cursorIdx - 1, leftStrings, leftLines)
         | (_, _) =>
             (* leftStrings is empty so go to start of buffer *)
             0
@@ -1636,8 +1654,9 @@ struct
             (case (leftStrings, leftLines) of
               (lshd :: lstl, llhd :: lltl) =>
                 let
-                  val result = helpVi0 
-                    (String.size lshd - 1, lshd, bufferIdx - 1, lstl, lltl)
+                  val result = 
+                    startVi0
+                      (String.size lshd - 1, lshd, llhd, bufferIdx - 1, lstl, lltl)
                 in
                   if result = bufferIdx then
                     bufferIdx - 1
