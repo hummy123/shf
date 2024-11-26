@@ -1079,8 +1079,241 @@ val caretMove = describe "move motion '^'"
       end)
   ]
 
+val GMove = describe "move motion 'G'"
+  [test "moves cursor to last char in buffer" (fn _ =>
+     (* Note: We assume unix-style line endings:
+      * End of file always has \n at the end.
+      * We don't want cursor to ever reach this last \n
+      * so we say last char is the char before \n
+      * *)
+     let
+       (* arrange *)
+       val buffer = LineGap.fromString "01234\n56789\n"
+       val app = AppType.init (buffer, 0, 0)
+
+       (* act *)
+       val (app, _) = AppUpdate.update (app, CHAR_EVENT #"G")
+     in
+       (* assert *)
+       Expect.isTrue (getChr app = #"9")
+     end)]
+
+val percentMove = describe "move motion '%'"
+  [ test "moves to next ) when cursor is on (" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(hello)\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #")")
+      end)
+  , test "moves to preceding ( when cursur is on )" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(hello)\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 6)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"(")
+      end)
+  (* testing that cursor goes to correct level of nesting *)
+  , test "moves to outermost ) when cursor is on outermost (" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(((hello)))\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = 10)
+      end)
+  , test "moves to outermost ( when cursor is on outermost )" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(((hello)))\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 10)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = 0)
+      end)
+  , test "moves to middle ) when cursor is on middle (" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(((hello)))\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 1)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = 9)
+      end)
+  , test "moves to middle ( when cursor is on middle )" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(((hello)))\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 9)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = 1)
+      end)
+  , test "moves to innermost ) when cursor is on innermost (" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(((hello)))\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 2)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = 8)
+      end)
+  , test "moves to innermost ( when cursor is on innermost )" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "(((hello)))\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 8)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = 2)
+      end)
+  (* testing different pair combinations *)
+  , test "moves to next ] when cursor is on [" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "[hello]\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"]")
+      end)
+  , test "moves to preceding [ when cursur is on ]" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "[hello]\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 6)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"[")
+      end)
+  , test "moves to next } when cursor is on {" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "{hello}\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"}")
+      end)
+  , test "moves to preceding { when cursur is on }" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "{hello}\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 6)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"{")
+      end)
+  , test "moves to next > when cursor is on <" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "<hello>\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #">")
+      end)
+  , test "moves to preceding < when cursur is on >" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "<hello>\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 6)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"<")
+      end)
+  (* testing that % on a non-pair character is a no-op *)
+  , test "does not move when cursor is on a non-pair-character" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello, world\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 5)
+        val oldIdx = #cursorIdx app
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val newIdx = #cursorIdx app
+      in
+        (* assert *)
+        Expect.isTrue (newIdx = oldIdx)
+      end)
+  ]
 
 val tests = concat
-  [hMove, lMove, jMove, kMove, wMove, WMove, zeroMove, dlrMove, caretMove]
+  [ hMove
+  , lMove
+  , jMove
+  , kMove
+  , wMove
+  , WMove
+  , zeroMove
+  , dlrMove
+  , caretMove
+  , GMove
+  , percentMove
+  ]
 
 val _ = run tests
