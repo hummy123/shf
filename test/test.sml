@@ -1117,6 +1117,206 @@ val EMove = describe "move motion 'E'"
       end)
   ]
 
+val bMove = describe "move motion 'b'"
+  [ test "leaves cursor at 0 when cursor is already at 0" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+      in
+        (* assert *)
+        Expect.isTrue (cursorIdx = 0)
+      end)
+  , test "moves cursor to 0 when cursor > 0 and cursor is on first word"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 3)
+
+           (* act *)
+           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+         in
+           (* assert *)
+           Expect.isTrue (cursorIdx = 0)
+         end)
+  , test
+      "moves cursor to first alphanumeric char after whitespace \
+      \when in alphanumeric word"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "   hello world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"h")
+         end)
+  , test
+      "moves cursor to first alphanumeric char after punctuation \
+      \when in alphanumeric word"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "!*#hello world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"h")
+         end)
+  , test
+      "moves cursor to first punctuation char after whitespace \
+      \when in punctuation word"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "   !@#$%^&*()"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"!")
+         end)
+  , test
+      "moves cursor to first punctuation char after \
+      \alphanumeric char when in punctuation word"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "abc!@#$%^&*()"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"!")
+         end)
+  ]
+
+val BMove = describe "move motion 'B'"
+  [ test "leaves cursor at 0 when cursor is already at 0" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "hello world\n"
+        val app = AppType.init (buffer, 0, 0)
+
+        (* act *)
+        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+      in
+        (* assert *)
+        Expect.isTrue (cursorIdx = 0)
+      end)
+  , test "moves cursor to 0 when cursor > 0 and cursor is on first WORD"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "hello world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 3)
+
+           (* act *)
+           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+         in
+           (* assert *)
+           Expect.isTrue (cursorIdx = 0)
+         end)
+  , test
+      "moves cursor to first non-space char after whitespace \
+      \when in WORD"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "   hello world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"h")
+         end)
+  , test
+      "moves cursor to 0 when cursor is on first letter of first WORD \
+      \and there are leadinng spaces before first letter"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "   hello world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 3)
+
+           (* act *)
+           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+         in
+           (* assert *)
+           Expect.isTrue (cursorIdx = 0)
+         end)
+  , test
+      "moves cursor to first char in WORD \
+      \when in alphanumeric word preceded by punctuation"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "!*#hello world\n"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 7)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"!")
+         end)
+  , test "moves cursor to first char after whitespace when in WORD" (fn _ =>
+      let
+        (* arrange *)
+        val buffer = LineGap.fromString "   !qwerty@#$%^&*()\n"
+        val app = AppType.init (buffer, 0, 0)
+        val app = withIdx (app, 17)
+
+        (* act *)
+        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+      in
+        (* assert *)
+        Expect.isTrue (getChr app = #"!")
+      end)
+  , test
+      "moves cursor to first char in WORD \
+      \when in punctuation word preceded by alphanumeric"
+      (fn _ =>
+         let
+           (* arrange *)
+           val buffer = LineGap.fromString "abc!@#$%^&*()"
+           val app = AppType.init (buffer, 0, 0)
+           val app = withIdx (app, 11)
+
+           (* act *)
+           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+         in
+           (* assert *)
+           Expect.isTrue (getChr app = #"a")
+         end)
+  ]
+
+
 val zeroMove = describe "move motion '0'"
   [ test "moves cursor to 0 in contiguous string when on first line" (fn _ =>
       let
@@ -1600,6 +1800,8 @@ val tests = concat
   , WMove
   , eMove
   , EMove
+  , bMove
+  , BMove
   , zeroMove
   , dlrMove
   , caretMove
