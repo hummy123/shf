@@ -3,10 +3,14 @@ struct
   open CML
   open InputMsg
 
-  fun frameBufferSizeCallback inputMailbox (width, height) =
+  (* create mailboxes for CML communication *)
+  val inputMailbox = Mailbox.mailbox ()
+  val drawMailbox = Mailbox.mailbox ()
+
+  fun frameBufferSizeCallback (width, height) =
     Mailbox.send (inputMailbox, RESIZE_EVENT (width, height))
 
-  fun charCallback inputMailbox word =
+  fun charCallback word =
     let
       val word = Word32.toInt word
       val chr = Char.chr word
@@ -14,7 +18,7 @@ struct
       Mailbox.send (inputMailbox, CHAR_EVENT chr)
     end
 
-  fun keyCallback inputMailbox (key, scancode, action, mods) =
+  fun keyCallback (key, scancode, action, mods) =
     let
       open Input
     in
@@ -24,17 +28,14 @@ struct
         ()
     end
 
-  fun registerCallbacks (inputMailbox, window) =
+  fun registerCallbacks window =
     let
-      val resizeCallback = frameBufferSizeCallback inputMailbox
-      val () = Input.exportFramebufferSizeCallback resizeCallback
+      val () = Input.exportFramebufferSizeCallback frameBufferSizeCallback
       val () = Input.setFramebufferSizeCallback window
 
-      val charCallback = charCallback inputMailbox
       val () = Input.exportCharCallback charCallback
       val () = Input.setCharCallback window
 
-      val keyCallback = keyCallback inputMailbox
       val () = Input.exportKeyCallback keyCallback
       val () = Input.setKeyCallback window
     in
@@ -66,11 +67,7 @@ struct
       (* todo: remove temp line below which tests search list *)
       val app = BuildSearchList.fromStart (app, 0, lineGap, "val ")
 
-      (* create mailboxes for CML communication *)
-      val inputMailbox = Mailbox.mailbox ()
-      val drawMailbox = Mailbox.mailbox ()
-
-      val () = registerCallbacks (inputMailbox, window)
+      val () = registerCallbacks window
 
       val _ = CML.spawn (fn () => GlDraw.loop (drawMailbox, window))
       val _ = CML.spawn (fn () =>
