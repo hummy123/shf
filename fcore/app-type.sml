@@ -13,6 +13,10 @@ sig
     , startLine: int
     (* absolute index of movable cursor *)
     , cursorIdx: int
+    (* msgs to send after an update.
+     * The list of messages is reset on each invocation of AppUpdate.update. *)
+    , msgs: MailboxType.t list
+
     }
 
   val init: LineGap.t * int * int -> app_type
@@ -33,6 +37,9 @@ struct
     , startLine: int
     (* absolute index of movable cursor *)
     , cursorIdx: int
+    (* msgs to send after an update.
+     * The list of messages is reset on each invocation of AppUpdate.update. *)
+    , msgs: MailboxType.t list
     }
 
   fun init (buffer, windowWidth, windowHeight) : app_type =
@@ -44,5 +51,6 @@ struct
     , windowHeight = windowHeight
     , startLine = 0
     , cursorIdx = 0
+    , msgs = []
     }
 end

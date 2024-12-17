@@ -7,12 +7,7 @@ struct
   open InputMsg
 
   fun clearMode app =
-    let
-      val mode = NORMAL_MODE ""
-      val newApp = AppWith.mode (app, mode)
-    in
-      (newApp, [])
-    end
+    AppWith.mode (app, NORMAL_MODE "", [])
 
   fun resizeText (app: app_type, newWidth, newHeight) =
     let
@@ -40,11 +35,9 @@ struct
         , searchList
         , searchString
         )
-
-      val newApp = 
-        AppWith.bufferAndSize (app, newBuffer, newWidth, newHeight, searchList)
     in
-      (newApp, drawMsg)
+      AppWith.bufferAndSize
+        (app, newBuffer, newWidth, newHeight, searchList, drawMsg)
     end
 
   fun buildTextAndClear (app: app_type, buffer, cursorIdx, searchList) =
@@ -75,10 +68,9 @@ struct
         )
 
       val mode = NORMAL_MODE ""
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
-      (newApp, drawMsg)
+      AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
     end
 
   (* Difference between this and buildTextAndClear is that 
@@ -114,10 +106,9 @@ struct
         )
 
       val mode = NORMAL_MODE ""
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
-      (newApp, drawMsg)
+      AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
     end
 
   fun centreToCursor (app: app_type) =
@@ -141,9 +132,6 @@ struct
       val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
       val searchList = SearchList.goToNum (lineIdx, searchList)
 
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
-
       val drawMsg = TextBuilder.build
         ( startLine
         , cursorIdx
@@ -154,7 +142,8 @@ struct
         , searchString
         )
     in
-      (newApp, drawMsg)
+      AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList, drawMsg)
     end
 
   (* movement functions *)
@@ -180,10 +169,9 @@ struct
         )
 
       val mode = NORMAL_MODE ""
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
-      (newApp, drawMsg)
+      AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
     end
 
   fun moveToEnd (app: app_type) =
@@ -222,10 +210,9 @@ struct
         )
 
       val mode = NORMAL_MODE ""
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, bufferIdx, mode, bufferLine, searchList)
     in
-      (newApp, drawMsg)
+      AppWith.bufferAndCursorIdx
+        (app, buffer, bufferIdx, mode, bufferLine, searchList, drawMsg)
     end
 
   fun moveToLine (app: app_type, reqLine) =
@@ -255,9 +242,6 @@ struct
         val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
         val searchList = SearchList.goToNum (lineIdx, searchList)
 
-        val newApp = AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
-
         val drawMsg = TextBuilder.build
           ( startLine
           , cursorIdx
@@ -267,8 +251,11 @@ struct
           , searchList
           , searchString
           )
+
+        val mode = NORMAL_MODE ""
       in
-        (newApp, drawMsg)
+        AppWith.bufferAndCursorIdx
+          (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
       end
 
   fun helpMove (app: app_type, buffer, cursorIdx, count, fMove) =
@@ -324,9 +311,6 @@ struct
       then
         (* if visible, just need to redraw; no need to get line *)
         let
-          val newApp = AppWith.bufferAndCursorIdx
-            (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
-
           val drawMsg = TextBuilder.build
             ( startLine
             , cursorIdx
@@ -337,7 +321,15 @@ struct
             , searchString
             )
         in
-          (newApp, drawMsg)
+          AppWith.bufferAndCursorIdx
+            ( app
+            , buffer
+            , cursorIdx
+            , NORMAL_MODE ""
+            , startLine
+            , searchList
+            , drawMsg
+            )
         end
       else
         (* not visible, so need to get startLine where cursor is visible *)
@@ -350,9 +342,6 @@ struct
           val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
           val searchList = SearchList.goToNum (lineIdx, searchList)
 
-          val newApp = AppWith.bufferAndCursorIdx
-            (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList)
-
           val drawMsg = TextBuilder.build
             ( startLine
             , cursorIdx
@@ -363,7 +352,15 @@ struct
             , searchString
             )
         in
-          (newApp, drawMsg)
+          AppWith.bufferAndCursorIdx
+            ( app
+            , buffer
+            , cursorIdx
+            , NORMAL_MODE ""
+            , startLine
+            , searchList
+            , drawMsg
+            )
         end
     end
 
@@ -735,10 +732,9 @@ struct
         )
 
       val mode = NORMAL_MODE ""
-      val newApp = AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList)
     in
-      (newApp, drawMsg)
+      AppWith.bufferAndCursorIdx
+        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
     end
 
   (* command-parsing functions *)
@@ -755,9 +751,8 @@ struct
     let
       val str = str ^ Char.toString chr
       val mode = NORMAL_MODE str
-      val newApp = AppWith.mode (app, mode)
     in
-      (newApp, [])
+      AppWith.mode (app, mode, [])
     end
 
   fun handleChr (app: app_type, count, chr, str) =
@@ -791,9 +786,8 @@ struct
                 val chr = Char.toString chr
                 val str = str ^ chr
                 val mode = NORMAL_MODE str
-                val newApp = AppWith.mode (app, mode)
               in
-                (newApp, [])
+                AppWith.mode (app, mode, [])
               end
             else
               move (app, 1, Cursor.vi0)
@@ -826,9 +820,8 @@ struct
         let
           val str = if Char.isDigit chr then str ^ Char.toString chr else ""
           val mode = NORMAL_MODE str
-          val newApp = AppWith.mode (app, mode)
         in
-          (newApp, [])
+          AppWith.mode (app, mode, [])
         end
 
   fun parseDelete (strPos, str, count, app, newCmd) =

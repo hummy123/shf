@@ -53,6 +53,7 @@ fun withIdx (app: AppType.app_type, idx) =
       , mode
       , windowWidth
       , windowHeight
+      , msgs
       , cursorIdx = _
       } = app
   in
@@ -63,6 +64,7 @@ fun withIdx (app: AppType.app_type, idx) =
     , mode = mode
     , windowWidth = windowWidth
     , windowHeight = windowHeight
+    , msgs = msgs
     , cursorIdx = idx
     }
   end
@@ -85,7 +87,7 @@ val hMove = describe "move motion 'h'"
            val app = withIdx (app, 1)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 0)
@@ -98,7 +100,7 @@ val hMove = describe "move motion 'h'"
         val app = withIdx (app, 5)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
       in
         (* assert *)
         Expect.isTrue (cursorIdx = 4)
@@ -111,7 +113,7 @@ val hMove = describe "move motion 'h'"
         val {cursorIdx = oldCursorIdx, ...} = app
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
       in
         (* assert *)
         Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 0)
@@ -125,7 +127,7 @@ val hMove = describe "move motion 'h'"
            val app = withIdx (app, 6)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 4)
@@ -139,7 +141,7 @@ val hMove = describe "move motion 'h'"
            val app = withIdx (app, 6)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"h")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 4)
@@ -157,7 +159,7 @@ val lMove = describe "move motion 'l'"
            val {cursorIdx = oldCursorIdx, ...} = app
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
          in
            (* assert *)
            Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
@@ -171,7 +173,7 @@ val lMove = describe "move motion 'l'"
            val {cursorIdx = oldCursorIdx, ...} = app
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
          in
            (* assert *)
            Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
@@ -184,7 +186,7 @@ val lMove = describe "move motion 'l'"
         val app = withIdx (app, 10)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
       in
         (* assert *)
         Expect.isTrue (cursorIdx = 10)
@@ -198,7 +200,7 @@ val lMove = describe "move motion 'l'"
            val app = withIdx (app, 4)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 6)
@@ -212,7 +214,7 @@ val lMove = describe "move motion 'l'"
            val app = withIdx (app, 4)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"l")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 6)
@@ -231,9 +233,9 @@ val jMove = describe "move motion 'j'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+           val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
+           val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
 
            (* assert *)
            val c1 = getChr app1 = #"w"
@@ -249,9 +251,9 @@ val jMove = describe "move motion 'j'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+        val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
+        val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
+        val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
 
         (* assert *)
         val c1 = getChr app1 = #"w"
@@ -269,9 +271,9 @@ val jMove = describe "move motion 'j'"
            val app = withIdx (app, 1)
 
            (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+           val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
+           val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
 
            (* assert *)
            val c1 = getChr app1 = #"o"
@@ -288,9 +290,9 @@ val jMove = describe "move motion 'j'"
         val app = withIdx (app, 1)
 
         (* act *)
-        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+        val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
+        val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
+        val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
 
         (* assert *)
         val c1 = getChr app1 = #"o"
@@ -308,9 +310,9 @@ val jMove = describe "move motion 'j'"
            val app = withIdx (app, 2)
 
            (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+           val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
+           val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
+           val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
 
            (* assert *)
            val c1 = getChr app1 = #"r"
@@ -327,9 +329,9 @@ val jMove = describe "move motion 'j'"
         val app = withIdx (app, 2)
 
         (* act *)
-        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"j")
-        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"j")
-        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"j")
+        val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
+        val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
+        val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
 
         (* assert *)
         val c1 = getChr app1 = #"r"
@@ -346,7 +348,7 @@ val jMove = describe "move motion 'j'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
 
            (* assert *)
            val isSkipped = cursorIdx = 6
@@ -362,7 +364,7 @@ val jMove = describe "move motion 'j'"
         val app = withIdx (app, 15)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
 
         (* assert *)
         (* String.size str - 1 is a valid char position
@@ -383,7 +385,7 @@ val jMove = describe "move motion 'j'"
         val app = withIdx (app, len)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"j")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
 
         (* assert *)
         (* String.size str - 1 is a valid char position
@@ -406,9 +408,9 @@ val kMove = describe "move motion 'k'"
            val app = withIdx (app, 14)
 
            (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"k")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"k")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"k")
+           val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
+           val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
+           val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
 
            (* assert *)
            val c1 = getChr app1 = #"9"
@@ -425,9 +427,9 @@ val kMove = describe "move motion 'k'"
         val app = withIdx (app, 14)
 
         (* act *)
-        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"k")
-        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"k")
-        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"k")
+        val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
+        val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
+        val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
 
         (* assert *)
         val c1 = getChr app1 = #"9"
@@ -445,9 +447,9 @@ val kMove = describe "move motion 'k'"
            val app = withIdx (app, 15)
 
            (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"k")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"k")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"k")
+           val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
+           val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
+           val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
 
            (* assert *)
            val c1 = getChr app1 = #"1"
@@ -464,9 +466,9 @@ val kMove = describe "move motion 'k'"
         val app = withIdx (app, 15)
 
         (* act *)
-        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"k")
-        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"k")
-        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"k")
+        val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
+        val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
+        val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
 
         (* assert *)
         val c1 = getChr app1 = #"1"
@@ -484,9 +486,9 @@ val kMove = describe "move motion 'k'"
            val app = withIdx (app, 15)
 
            (* act *)
-           val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"k")
-           val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"k")
-           val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"k")
+           val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
+           val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
+           val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
 
            (* assert *)
            val c1 = getChr app1 = #"1"
@@ -503,9 +505,9 @@ val kMove = describe "move motion 'k'"
         val app = withIdx (app, 15)
 
         (* act *)
-        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"k")
-        val (app2, _) = AppUpdate.update (app1, CHAR_EVENT #"k")
-        val (app3, _) = AppUpdate.update (app2, CHAR_EVENT #"k")
+        val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
+        val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
+        val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
 
         (* assert *)
         val c1 = getChr app1 = #"1"
@@ -525,7 +527,7 @@ val kMove = describe "move motion 'k'"
            val app = withIdx (app, 6)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"k")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
 
            (* assert *)
            val isSkipped = cursorIdx = 0
@@ -541,7 +543,7 @@ val kMove = describe "move motion 'k'"
         val app = withIdx (app, 5)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"k")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
 
         (* assert *)
         val isAtStart = cursorIdx = 0
@@ -558,7 +560,7 @@ val kMove = describe "move motion 'k'"
         val app = withIdx (app, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"k")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
 
         (* assert *)
         (* String.size str - 1 is a valid char position
@@ -579,7 +581,7 @@ val wMove = describe "move motion 'w'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val chr = String.sub ("hello world", cursorIdx)
@@ -593,7 +595,7 @@ val wMove = describe "move motion 'w'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val chr = String.sub ("hello world", cursorIdx)
@@ -614,7 +616,7 @@ val wMove = describe "move motion 'w'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val cursorChr = getChr app
@@ -636,7 +638,7 @@ val wMove = describe "move motion 'w'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+           val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
            (* assert *)
            val cursorChr = getChr app
@@ -651,7 +653,7 @@ val wMove = describe "move motion 'w'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val cursorChr = getChr app
@@ -666,7 +668,7 @@ val wMove = describe "move motion 'w'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val cursorChr = getChr app
@@ -681,7 +683,7 @@ val wMove = describe "move motion 'w'"
         val app = withIdx (app, 4)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val cursorChr = getChr app
@@ -695,7 +697,7 @@ val wMove = describe "move motion 'w'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app1, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app1 = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val startsAtExc = getChr app = #"!"
@@ -711,7 +713,7 @@ val wMove = describe "move motion 'w'"
         val app = withIdx (app, 6)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val chrIsEnd = getChr app = #"d"
@@ -728,7 +730,7 @@ val WMove = describe "move motion 'W'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"W")
 
         (* assert *)
         val chr = String.sub ("hello world", cursorIdx)
@@ -742,7 +744,7 @@ val WMove = describe "move motion 'W'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"W")
 
         (* assert *)
         val chr = String.sub ("hello world", cursorIdx)
@@ -756,7 +758,7 @@ val WMove = describe "move motion 'W'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+        val app = AppUpdate.update (app, CHAR_EVENT #"W")
 
         (* assert *)
         val cursorChr = getChr app
@@ -772,7 +774,7 @@ val WMove = describe "move motion 'W'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+           val app = AppUpdate.update (app, CHAR_EVENT #"W")
 
            (* assert *)
            val cursorChr = getChr app
@@ -788,7 +790,7 @@ val WMove = describe "move motion 'W'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"W")
+           val app = AppUpdate.update (app, CHAR_EVENT #"W")
 
            (* assert *)
            val cursorChr = getChr app
@@ -803,7 +805,7 @@ val WMove = describe "move motion 'W'"
         val app = withIdx (app, 4)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val cursorChr = getChr app
@@ -818,7 +820,7 @@ val WMove = describe "move motion 'W'"
         val app = withIdx (app, 6)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"w")
+        val app = AppUpdate.update (app, CHAR_EVENT #"w")
 
         (* assert *)
         val chrIsEnd = getChr app = #"d"
@@ -839,7 +841,7 @@ val eMove = describe "move motion 'e'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+           val app = AppUpdate.update (app, CHAR_EVENT #"e")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"o")
@@ -855,7 +857,7 @@ val eMove = describe "move motion 'e'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+           val app = AppUpdate.update (app, CHAR_EVENT #"e")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"o")
@@ -871,7 +873,7 @@ val eMove = describe "move motion 'e'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+           val app = AppUpdate.update (app, CHAR_EVENT #"e")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"^")
@@ -887,7 +889,7 @@ val eMove = describe "move motion 'e'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+           val app = AppUpdate.update (app, CHAR_EVENT #"e")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"^")
@@ -903,7 +905,7 @@ val eMove = describe "move motion 'e'"
            val app = withIdx (app, 4)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+           val app = AppUpdate.update (app, CHAR_EVENT #"e")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"d")
@@ -916,7 +918,7 @@ val eMove = describe "move motion 'e'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+           val app = AppUpdate.update (app, CHAR_EVENT #"e")
 
            (* assert *)
            val cursorChr = getChr app
@@ -930,7 +932,7 @@ val eMove = describe "move motion 'e'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+        val app = AppUpdate.update (app, CHAR_EVENT #"e")
 
         (* assert *)
         val cursorChr = getChr app
@@ -945,7 +947,7 @@ val eMove = describe "move motion 'e'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+        val app = AppUpdate.update (app, CHAR_EVENT #"e")
 
         (* assert *)
         val cursorChr = getChr app
@@ -960,7 +962,7 @@ val eMove = describe "move motion 'e'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+        val app = AppUpdate.update (app, CHAR_EVENT #"e")
 
         (* assert *)
         val cursorChr = getChr app
@@ -975,7 +977,7 @@ val eMove = describe "move motion 'e'"
         val app = withIdx (app, 4)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+        val app = AppUpdate.update (app, CHAR_EVENT #"e")
 
         (* assert *)
         val cursorChr = getChr app
@@ -992,7 +994,7 @@ val eMove = describe "move motion 'e'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+           val app = AppUpdate.update (app, CHAR_EVENT #"e")
            val newIdx = #cursorIdx app
          in
            (* assert *)
@@ -1006,7 +1008,7 @@ val eMove = describe "move motion 'e'"
         val app = withIdx (app, 7)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"e")
+        val app = AppUpdate.update (app, CHAR_EVENT #"e")
 
         (* assert *)
         val chrIsEnd = getChr app = #"d"
@@ -1023,7 +1025,7 @@ val EMove = describe "move motion 'E'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"E")
+        val app = AppUpdate.update (app, CHAR_EVENT #"E")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"o")
@@ -1035,7 +1037,7 @@ val EMove = describe "move motion 'E'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"E")
+        val app = AppUpdate.update (app, CHAR_EVENT #"E")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"o")
@@ -1051,7 +1053,7 @@ val EMove = describe "move motion 'E'"
            val app = withIdx (app, 4)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"E")
+           val app = AppUpdate.update (app, CHAR_EVENT #"E")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"$")
@@ -1064,7 +1066,7 @@ val EMove = describe "move motion 'E'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"E")
+        val app = AppUpdate.update (app, CHAR_EVENT #"E")
 
         (* assert *)
         val cursorChr = getChr app
@@ -1079,7 +1081,7 @@ val EMove = describe "move motion 'E'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"E")
+        val app = AppUpdate.update (app, CHAR_EVENT #"E")
 
         (* assert *)
         val cursorChr = getChr app
@@ -1094,7 +1096,7 @@ val EMove = describe "move motion 'E'"
         val app = withIdx (app, 4)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"E")
+        val app = AppUpdate.update (app, CHAR_EVENT #"E")
 
         (* assert *)
         val cursorChr = getChr app
@@ -1109,7 +1111,7 @@ val EMove = describe "move motion 'E'"
         val app = withIdx (app, 7)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"E")
+        val app = AppUpdate.update (app, CHAR_EVENT #"E")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"!")
@@ -1124,7 +1126,7 @@ val bMove = describe "move motion 'b'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"b")
       in
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
@@ -1138,7 +1140,7 @@ val bMove = describe "move motion 'b'"
            val app = withIdx (app, 3)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"b")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 0)
@@ -1154,7 +1156,7 @@ val bMove = describe "move motion 'b'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+           val app = AppUpdate.update (app, CHAR_EVENT #"b")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"h")
@@ -1170,7 +1172,7 @@ val bMove = describe "move motion 'b'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+           val app = AppUpdate.update (app, CHAR_EVENT #"b")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"h")
@@ -1186,7 +1188,7 @@ val bMove = describe "move motion 'b'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+           val app = AppUpdate.update (app, CHAR_EVENT #"b")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"!")
@@ -1202,7 +1204,7 @@ val bMove = describe "move motion 'b'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"b")
+           val app = AppUpdate.update (app, CHAR_EVENT #"b")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"!")
@@ -1217,7 +1219,7 @@ val BMove = describe "move motion 'B'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
       in
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
@@ -1231,7 +1233,7 @@ val BMove = describe "move motion 'B'"
            val app = withIdx (app, 3)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 0)
@@ -1247,7 +1249,7 @@ val BMove = describe "move motion 'B'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+           val app = AppUpdate.update (app, CHAR_EVENT #"B")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"h")
@@ -1263,7 +1265,7 @@ val BMove = describe "move motion 'B'"
            val app = withIdx (app, 3)
 
            (* act *)
-           val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
          in
            (* assert *)
            Expect.isTrue (cursorIdx = 0)
@@ -1279,7 +1281,7 @@ val BMove = describe "move motion 'B'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+           val app = AppUpdate.update (app, CHAR_EVENT #"B")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"!")
@@ -1292,7 +1294,7 @@ val BMove = describe "move motion 'B'"
         val app = withIdx (app, 17)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+        val app = AppUpdate.update (app, CHAR_EVENT #"B")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"!")
@@ -1308,7 +1310,7 @@ val BMove = describe "move motion 'B'"
            val app = withIdx (app, 11)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"B")
+           val app = AppUpdate.update (app, CHAR_EVENT #"B")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"a")
@@ -1325,7 +1327,7 @@ val zeroMove = describe "move motion '0'"
         val app = withIdx (app, 7)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
       in
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
@@ -1338,7 +1340,7 @@ val zeroMove = describe "move motion '0'"
         val app = withIdx (app, 7)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
       in
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
@@ -1350,7 +1352,7 @@ val zeroMove = describe "move motion '0'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+        val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
       in
         (* assert *)
         Expect.isTrue (cursorIdx = 0)
@@ -1365,8 +1367,7 @@ val zeroMove = describe "move motion '0'"
         val {cursorIdx = oldIdx, ...} = app
 
         (* act *)
-        val ({cursorIdx = newIdx, ...}, _) =
-          AppUpdate.update (app, CHAR_EVENT #"0")
+        val {cursorIdx = newIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
       in
         (* assert *)
         Expect.isTrue (oldIdx = newIdx)
@@ -1382,7 +1383,7 @@ val zeroMove = describe "move motion '0'"
            val app = withIdx (app, 21)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+           val app = AppUpdate.update (app, CHAR_EVENT #"0")
 
            (* assert *)
            val chr = getChr app
@@ -1403,7 +1404,7 @@ val zeroMove = describe "move motion '0'"
            val app = withIdx (app, 21)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"0")
+           val app = AppUpdate.update (app, CHAR_EVENT #"0")
 
            (* assert *)
            val chr = getChr app
@@ -1421,7 +1422,7 @@ val dlrMove = describe "move motion '$'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+        val app = AppUpdate.update (app, CHAR_EVENT #"$")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"9")
@@ -1433,7 +1434,7 @@ val dlrMove = describe "move motion '$'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+        val app = AppUpdate.update (app, CHAR_EVENT #"$")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"9")
@@ -1450,7 +1451,7 @@ val dlrMove = describe "move motion '$'"
            val oldIdx = #cursorIdx app
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+           val app = AppUpdate.update (app, CHAR_EVENT #"$")
            val newIdx = #cursorIdx app
 
            val nchr = getChr app
@@ -1471,7 +1472,7 @@ val dlrMove = describe "move motion '$'"
            val oldIdx = #cursorIdx app
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"$")
+           val app = AppUpdate.update (app, CHAR_EVENT #"$")
            val newIdx = #cursorIdx app
 
            val nchr = getChr app
@@ -1494,7 +1495,7 @@ val caretMove = describe "move motion '^'"
            val app = AppType.init (buffer, 0, 0)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+           val app = AppUpdate.update (app, CHAR_EVENT #"^")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"3")
@@ -1511,7 +1512,7 @@ val caretMove = describe "move motion '^'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+           val app = AppUpdate.update (app, CHAR_EVENT #"^")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"3")
@@ -1528,7 +1529,7 @@ val caretMove = describe "move motion '^'"
            val app = withIdx (app, 7)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+           val app = AppUpdate.update (app, CHAR_EVENT #"^")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"w")
@@ -1545,7 +1546,7 @@ val caretMove = describe "move motion '^'"
            val app = withIdx (app, 11)
 
            (* act *)
-           val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+           val app = AppUpdate.update (app, CHAR_EVENT #"^")
          in
            (* assert *)
            Expect.isTrue (getChr app = #"w")
@@ -1559,7 +1560,7 @@ val caretMove = describe "move motion '^'"
         val oldIdx = #cursorIdx app
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"^")
+        val app = AppUpdate.update (app, CHAR_EVENT #"^")
         val newIdx = #cursorIdx app
       in
         (* assert *)
@@ -1580,7 +1581,7 @@ val GMove = describe "move motion 'G'"
        val app = AppType.init (buffer, 0, 0)
 
        (* act *)
-       val (app, _) = AppUpdate.update (app, CHAR_EVENT #"G")
+       val app = AppUpdate.update (app, CHAR_EVENT #"G")
      in
        (* assert *)
        Expect.isTrue (getChr app = #"9")
@@ -1594,7 +1595,7 @@ val percentMove = describe "move motion '%'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #")")
@@ -1607,7 +1608,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 6)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"(")
@@ -1620,7 +1621,7 @@ val percentMove = describe "move motion '%'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
         val newIdx = #cursorIdx app
       in
         (* assert *)
@@ -1634,7 +1635,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 10)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
         val newIdx = #cursorIdx app
       in
         (* assert *)
@@ -1648,7 +1649,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 1)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
         val newIdx = #cursorIdx app
       in
         (* assert *)
@@ -1662,7 +1663,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 9)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
         val newIdx = #cursorIdx app
       in
         (* assert *)
@@ -1676,7 +1677,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 2)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
         val newIdx = #cursorIdx app
       in
         (* assert *)
@@ -1690,7 +1691,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 8)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
         val newIdx = #cursorIdx app
       in
         (* assert *)
@@ -1704,7 +1705,7 @@ val percentMove = describe "move motion '%'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"]")
@@ -1717,7 +1718,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 6)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"[")
@@ -1729,7 +1730,7 @@ val percentMove = describe "move motion '%'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"}")
@@ -1742,7 +1743,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 6)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"{")
@@ -1754,7 +1755,7 @@ val percentMove = describe "move motion '%'"
         val app = AppType.init (buffer, 0, 0)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #">")
@@ -1767,7 +1768,7 @@ val percentMove = describe "move motion '%'"
         val app = withIdx (app, 6)
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
       in
         (* assert *)
         Expect.isTrue (getChr app = #"<")
@@ -1782,7 +1783,7 @@ val percentMove = describe "move motion '%'"
         val oldIdx = #cursorIdx app
 
         (* act *)
-        val (app, _) = AppUpdate.update (app, CHAR_EVENT #"%")
+        val app = AppUpdate.update (app, CHAR_EVENT #"%")
         val newIdx = #cursorIdx app
       in
         (* assert *)

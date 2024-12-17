@@ -17,8 +17,8 @@ struct
   fun loop (app: AppType.app_type, inputMailbox, drawMailbox) =
     let
       val inputMsg = Mailbox.recv inputMailbox
-      val (app, msgList) = AppUpdate.update (app, inputMsg)
-      val _ = sendMsgs (msgList, drawMailbox)
+      val app = AppUpdate.update (app, inputMsg)
+      val () = sendMsgs (#msgs app, drawMailbox)
     in
       loop (app, inputMailbox, drawMailbox)
     end

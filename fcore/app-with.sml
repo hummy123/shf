@@ -2,32 +2,8 @@ structure AppWith =
 struct
   open AppType
 
-  fun startLine (app: app_type, startLine, newBuffer) =
-    let
-      val
-        { startLine = _
-        , buffer = _
-        , searchList
-        , searchString
-        , mode
-        , windowWidth
-        , windowHeight
-        , cursorIdx
-        } = app
-    in
-      { startLine = startLine
-      , buffer = newBuffer
-      , searchList = searchList
-      , searchString = searchString
-      , mode = mode
-      , windowWidth = windowWidth
-      , windowHeight = windowHeight
-      , cursorIdx = cursorIdx
-      }
-    end
-
   fun bufferAndSize
-    (app: app_type, newBuffer, newWidth, newHeight, newSearchList) =
+    (app: app_type, newBuffer, newWidth, newHeight, newSearchList, newMsgs) =
     let
       val
         { mode
@@ -35,6 +11,7 @@ struct
         , windowWidth = _
         , windowHeight = _
         , searchList = _
+        , msgs = _
         , searchString
         , startLine
         , cursorIdx
@@ -45,6 +22,7 @@ struct
       , windowWidth = newWidth
       , windowHeight = newHeight
       , searchList = newSearchList
+      , msgs = newMsgs
       , searchString = searchString
       , startLine = startLine
       , cursorIdx = cursorIdx
@@ -58,6 +36,7 @@ struct
     , newMode
     , newStartLine
     , newSearchList
+    , newMsgs
     ) =
     let
       val
@@ -66,6 +45,7 @@ struct
         , cursorIdx = _
         , startLine = _
         , searchList = _
+        , msgs = _
         , searchString
         , windowWidth
         , windowHeight
@@ -76,16 +56,18 @@ struct
       , cursorIdx = newCursorIdx
       , startLine = newStartLine
       , searchList = newSearchList
+      , msgs = newMsgs
       , searchString = searchString
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       }
     end
 
-  fun mode (app: app_type, newMode) =
+  fun mode (app: app_type, newMode, newMsgs) =
     let
       val
         { mode = _
+        , msgs = _
         , buffer
         , searchList
         , searchString
@@ -96,6 +78,7 @@ struct
         } = app
     in
       { mode = newMode
+      , msgs = newMsgs
       , buffer = buffer
       , searchList = searchList
       , searchString = searchString
@@ -112,6 +95,7 @@ struct
         { searchList = _
         , buffer = _
         , searchString = _
+        , msgs
         , mode
         , cursorIdx
         , windowWidth
@@ -122,6 +106,7 @@ struct
       { searchList = newSearchList
       , buffer = newBuffer
       , searchString = newSearchString
+      , msgs = msgs
       , mode = mode
       , cursorIdx = cursorIdx
       , windowWidth = windowWidth
