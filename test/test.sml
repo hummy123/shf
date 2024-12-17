@@ -528,7 +528,6 @@ val kMove = describe "move motion 'k'"
            val ({cursorIdx, ...}, _) = AppUpdate.update (app, CHAR_EVENT #"k")
 
            (* assert *)
-           val _ = print ("cursorIdx: " ^ Int.toString cursorIdx ^ "\n")
            val isSkipped = cursorIdx = 0
          in
            Expect.isTrue isSkipped
@@ -1809,4 +1808,4 @@ val tests = concat
   , percentMove
   ]
 
-val _ = run tests
+val _ = runWithConfig [Configuration.PrintPassed false] tests
