@@ -1,10 +1,10 @@
 $(SML_LIB)/basis/basis.mlb
 
-(* FUNCTIONAL CORE *)
-
+(* LIBRARIEES *)
 lib/brolib-sml/src/line_gap.sml
 lib/cozette-sml/fonts/cozette-ascii.mlb
 
+(* FUNCTIONAL CORE *)
 message-types/input-msg.sml
 message-types/draw-msg.sml
 message-types/mailbox-type.sml
@@ -26,8 +26,9 @@ end
 fcore/cursor.sml
 fcore/text-window.sml
 
+fcore/finish.sml
+fcore/move.sml
 fcore/app-update.sml
-
 (* TEST FILES *)
 
 test/Railroad/src/railroad.mlb

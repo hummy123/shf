@@ -26,6 +26,8 @@ end
 fcore/cursor.sml
 fcore/text-window.sml
 
+fcore/finish.sml
+fcore/move.sml
 fcore/app-update.sml
 
 (* IMPERATIVE SHELL *)
