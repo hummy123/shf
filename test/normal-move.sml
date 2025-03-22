@@ -2100,6 +2100,63 @@ struct
         end)
     ]
 
+  val ggMove = describe "move motion 'gg'"
+    [ test "moves cursor to start when cursor is at end" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello world"
+          val app = AppType.init (buffer, 0, 0)
+          val app = withIdx (app, 10)
+
+          (* act *)
+          val app = updateMany (app, "gg")
+        in
+          (* assert *)
+          Expect.isTrue (getChr app = #"h")
+        end)
+    , test "moves cursor to start when cursor is in middle" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello world"
+          val app = AppType.init (buffer, 0, 0)
+          val app = withIdx (app, 5)
+
+          (* act *)
+          val app = updateMany (app, "gg")
+        in
+          (* assert *)
+          Expect.isTrue (getChr app = #"h")
+        end)
+    , test "leaves cursor in same place when cursor is already at start"
+        (fn _ =>
+           let
+             (* arrange *)
+             val buffer = LineGap.fromString "hello world"
+             val app = AppType.init (buffer, 0, 0)
+
+             (* act *)
+             val app = updateMany (app, "gg")
+           in
+             (* assert *)
+             Expect.isTrue (getChr app = #"h")
+           end)
+    , test "is cancellable by pressing escape" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello world"
+          val app = AppType.init (buffer, 0, 0)
+          val app = withIdx (app, 5)
+
+          (* act *)
+          val app1 = AppUpdate.update (app, CHAR_EVENT #"g")
+          val app2 = AppUpdate.update (app1, KEY_ESC)
+          val app3 = AppUpdate.update (app2, CHAR_EVENT #"g")
+        in
+          (* assert *)
+          Expect.isTrue (#cursorIdx app3 = 5)
+        end)
+    ]
+
   val tests = concat
     [ hMove
     , jMove
@@ -2121,5 +2178,6 @@ struct
     , TMove
     , fMove
     , FMove
+    , ggMove
     ]
 end
