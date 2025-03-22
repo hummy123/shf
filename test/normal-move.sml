@@ -1497,7 +1497,7 @@ struct
            end)
     ]
 
-  val caretMove = describe "move motion '^'"
+  val hatMove = describe "move motion '^'"
     [ test
         "moves cursor to first non-space char in first line\
         \when first line starts with spaces\
@@ -1805,21 +1805,101 @@ struct
         end)
     ]
 
+  (* movements which use multiple chars *)
+  fun updateMany (app, str) =
+    let
+      fun loop (pos, app) =
+        if pos = String.size str then
+          app
+        else
+          let
+            val chr = String.sub (str, pos)
+            val app = AppUpdate.update (app, CHAR_EVENT chr)
+          in
+            loop (pos + 1, app)
+          end
+    in
+      loop (0, app)
+    end
+
+  val tMove = describe "move motion 't'"
+    [ test
+        "motion 'td' moves cursor to char before 'd' in string \"hello world\""
+        (fn _ =>
+           let
+             (* arrange *)
+             val buffer = LineGap.fromString "hello world"
+             val app = AppType.init (buffer, 0, 0)
+
+             (* act *)
+             val app = updateMany (app, "td")
+           in
+             (* assert *)
+             Expect.isTrue (getChr app = #"l")
+           end)
+    , test "repeating 't' motion with same char does not move cursor" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello world"
+          val app = AppType.init (buffer, 0, 0)
+
+          (* act *)
+          val app1 = updateMany (app, "td")
+          val app2 = updateMany (app1, "td")
+        in
+          (* assert *)
+          Expect.isTrue
+            (#cursorIdx app1 = #cursorIdx app2 andalso getChr app1 = #"l")
+        end)
+    , test
+        "does not move cursor at all when char following 't' is not in string"
+        (fn _ =>
+           let
+             (* arrange *)
+             val buffer = LineGap.fromString "hello world"
+             val app = AppType.init (buffer, 0, 0)
+
+             (* act *)
+             val app1 = updateMany (app, "t;")
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app1 = #cursorIdx app)
+           end)
+    , test "is cancellable by pressing escape" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello world"
+          val app = AppType.init (buffer, 0, 0)
+
+          (* act *)
+          val app1 = AppUpdate.update (app, CHAR_EVENT #"t")
+          val app2 = AppUpdate.update (app1, KEY_ESC)
+          val app3 = AppUpdate.update (app2, CHAR_EVENT #"d")
+        in
+          (* assert *)
+          Expect.isTrue
+            (#cursorIdx app1 = #cursorIdx app2
+             andalso #cursorIdx app2 = #cursorIdx app3)
+        end)
+    ]
+
   val tests = concat
     [ hMove
-    , lMove
     , jMove
     , kMove
+    , lMove
     , wMove
     , WMove
-    , eMove
-    , EMove
     , bMove
     , BMove
+    , eMove
+    , EMove
     , zeroMove
     , dlrMove
-    , caretMove
+    , hatMove
     , GMove
     , percentMove
+    (* multi-char motions *)
+    , tMove
     ]
 end
