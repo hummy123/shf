@@ -29,7 +29,8 @@ fcore/text-window.sml
 fcore/finish.sml
 fcore/move.sml
 fcore/app-update.sml
-(* TEST FILES *)
 
+(* TEST FILES *)
 test/Railroad/src/railroad.mlb
+test/normal-move.sml
 test/test.sml

@@ -107,11 +107,9 @@ struct
             end
           else
             let
-              val searchList = 
-                if SearchList.exists (matchedIdx, searchList) then
-                  searchList
-                else
-                  SearchList.insert (matchedIdx, searchList)
+              val searchList =
+                if SearchList.exists (matchedIdx, searchList) then searchList
+                else SearchList.insert (matchedIdx, searchList)
             in
               helpFromRange
                 ( origIdx
