@@ -1874,7 +1874,75 @@ struct
           (* act *)
           val app1 = AppUpdate.update (app, CHAR_EVENT #"t")
           val app2 = AppUpdate.update (app1, KEY_ESC)
+          (* should not move cursor like other 't' tests do *)
           val app3 = AppUpdate.update (app2, CHAR_EVENT #"d")
+        in
+          (* assert *)
+          Expect.isTrue
+            (#cursorIdx app1 = #cursorIdx app2
+             andalso #cursorIdx app2 = #cursorIdx app3)
+        end)
+    ]
+
+  val TMove = describe "move motion 'T'"
+    [ test
+        "motion 'Th' moves cursor to char after 'h' in string \"hello world\""
+        (fn _ =>
+           let
+             (* arrange *)
+             val buffer = LineGap.fromString "hello world"
+             val app = AppType.init (buffer, 0, 0)
+             val app = withIdx (app, 10)
+
+             (* act *)
+             val app = updateMany (app, "Th")
+           in
+             (* assert *)
+             Expect.isTrue (getChr app = #"e")
+           end)
+    , test "repeating 'T' motion with same char does not move cursor" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello world"
+          val app = AppType.init (buffer, 0, 0)
+          val app = withIdx (app, 10)
+
+          (* act *)
+          val app1 = updateMany (app, "Te")
+          val app2 = updateMany (app1, "Te")
+        in
+          (* assert *)
+          Expect.isTrue
+            (#cursorIdx app1 = #cursorIdx app2 andalso getChr app1 = #"l")
+        end)
+    , test
+        "does not move cursor at all when char following 'T' is not in string"
+        (fn _ =>
+           let
+             (* arrange *)
+             val buffer = LineGap.fromString "hello world"
+             val app = AppType.init (buffer, 0, 0)
+             val app = withIdx (app, 10)
+
+             (* act *)
+             val app1 = updateMany (app, "T;")
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app1 = #cursorIdx app)
+           end)
+    , test "is cancellable by pressing escape" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello world"
+          val app = AppType.init (buffer, 0, 0)
+          val app = withIdx (app, 10)
+
+          (* act *)
+          val app1 = AppUpdate.update (app, CHAR_EVENT #"T")
+          val app2 = AppUpdate.update (app1, KEY_ESC)
+          (* should ordinarily move cursor to 'w' but in this case should not
+           * as escape key should cancel motion which was in progress *)
+          val app3 = AppUpdate.update (app2, CHAR_EVENT #" ")
         in
           (* assert *)
           Expect.isTrue
@@ -1901,5 +1969,6 @@ struct
     , percentMove
     (* multi-char motions *)
     , tMove
+    , TMove
     ]
 end
