@@ -114,4 +114,30 @@ struct
       , startLine = startLine
       }
     end
+
+  fun idx (app, newIdx) =
+    let
+      val
+        { startLine
+        , buffer
+        , searchList
+        , searchString
+        , mode
+        , windowWidth
+        , windowHeight
+        , msgs
+        , cursorIdx = _
+        } = app
+    in
+      { startLine = startLine
+      , buffer = buffer
+      , searchList = searchList
+      , searchString = searchString
+      , mode = mode
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      , msgs = msgs
+      , cursorIdx = newIdx
+      }
+    end
 end

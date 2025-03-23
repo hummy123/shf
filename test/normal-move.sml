@@ -45,32 +45,6 @@ struct
       }
   end
 
-  fun withIdx (app: AppType.app_type, idx) =
-    let
-      val
-        { startLine
-        , buffer
-        , searchList
-        , searchString
-        , mode
-        , windowWidth
-        , windowHeight
-        , msgs
-        , cursorIdx = _
-        } = app
-    in
-      { startLine = startLine
-      , buffer = buffer
-      , searchList = searchList
-      , searchString = searchString
-      , mode = mode
-      , windowWidth = windowWidth
-      , windowHeight = windowHeight
-      , msgs = msgs
-      , cursorIdx = idx
-      }
-    end
-
   fun getChr (app: AppType.app_type) =
     let
       val {cursorIdx, buffer, ...} = app
@@ -86,7 +60,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 1)
+             val app = AppWith.idx (app, 1)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
@@ -100,7 +74,7 @@ struct
              (* arrange *)
              val buffer = fromList ["hello", " world"]
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 5)
+             val app = AppWith.idx (app, 5)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
@@ -127,7 +101,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello\nworld"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 6)
+             val app = AppWith.idx (app, 6)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
@@ -141,7 +115,7 @@ struct
              (* arrange *)
              val buffer = fromList ["hello\n", " world"]
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 6)
+             val app = AppWith.idx (app, 6)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
@@ -186,7 +160,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 10)
+          val app = AppWith.idx (app, 10)
 
           (* act *)
           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
@@ -201,7 +175,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello\nworld\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 4)
+             val app = AppWith.idx (app, 4)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
@@ -215,7 +189,7 @@ struct
              (* arrange *)
              val buffer = fromList ["hello\n", "world"]
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 4)
+             val app = AppWith.idx (app, 4)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
@@ -275,7 +249,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 1)
+             val app = AppWith.idx (app, 1)
 
              (* act *)
              val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
@@ -296,7 +270,7 @@ struct
              val buffer =
                fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 1)
+             val app = AppWith.idx (app, 1)
 
              (* act *)
              val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
@@ -316,7 +290,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 2)
+             val app = AppWith.idx (app, 2)
 
              (* act *)
              val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
@@ -337,7 +311,7 @@ struct
              val buffer =
                fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 2)
+             val app = AppWith.idx (app, 2)
 
              (* act *)
              val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
@@ -372,7 +346,7 @@ struct
           val str = "hello \nworld \ntime to go\n"
           val buffer = LineGap.fromString str
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 15)
+          val app = AppWith.idx (app, 15)
 
           (* act *)
           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
@@ -393,7 +367,7 @@ struct
           val len = String.size str - 2
           val buffer = LineGap.fromString str
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, len)
+          val app = AppWith.idx (app, len)
 
           (* act *)
           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
@@ -416,7 +390,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "0__\n4___\n9___\n14_"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 14)
+             val app = AppWith.idx (app, 14)
 
              (* act *)
              val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -435,7 +409,7 @@ struct
           (* arrange *)
           val buffer = fromList ["0__", "\n4__", "_\n9_", "__\n14_"]
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 14)
+          val app = AppWith.idx (app, 14)
 
           (* act *)
           val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -455,7 +429,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "_w_\n_5__\n_10_\n_15"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 15)
+             val app = AppWith.idx (app, 15)
 
              (* act *)
              val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -474,7 +448,7 @@ struct
           (* arrange *)
           val buffer = fromList ["_w_\n", "_5__", "\n_10_\n", "_15"]
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 15)
+          val app = AppWith.idx (app, 15)
 
           (* act *)
           val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -494,7 +468,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "__2\n__6\n__10\n__15\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 15)
+             val app = AppWith.idx (app, 15)
 
              (* act *)
              val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -513,7 +487,7 @@ struct
           (* arrange *)
           val buffer = fromList ["__", "2\n", "__6", "\n__10", "\n__1", "5\n"]
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 15)
+          val app = AppWith.idx (app, 15)
 
           (* act *)
           val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -535,7 +509,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello\n\n world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 6)
+             val app = AppWith.idx (app, 6)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -551,7 +525,7 @@ struct
           val str = "hello \nworld \ntime to go\n"
           val buffer = LineGap.fromString str
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 5)
+          val app = AppWith.idx (app, 5)
 
           (* act *)
           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -568,7 +542,7 @@ struct
           val buffer = LineGap.fromString str
           val app = AppType.init (buffer, 0, 0)
           (* line below does nothing; just for explicitness *)
-          val app = withIdx (app, 0)
+          val app = AppWith.idx (app, 0)
 
           (* act *)
           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
@@ -691,7 +665,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 4)
+          val app = AppWith.idx (app, 4)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"w")
@@ -722,7 +696,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 6)
+          val app = AppWith.idx (app, 6)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"w")
@@ -814,7 +788,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 4)
+          val app = AppWith.idx (app, 4)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"w")
@@ -829,7 +803,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 6)
+          val app = AppWith.idx (app, 6)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"w")
@@ -914,7 +888,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 4)
+             val app = AppWith.idx (app, 4)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"e")
@@ -986,7 +960,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 4)
+          val app = AppWith.idx (app, 4)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"e")
@@ -1017,7 +991,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 7)
+          val app = AppWith.idx (app, 7)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"e")
@@ -1063,7 +1037,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "#ELL) !@*(ORL$\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 4)
+             val app = AppWith.idx (app, 4)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"E")
@@ -1106,7 +1080,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 4)
+          val app = AppWith.idx (app, 4)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"E")
@@ -1121,7 +1095,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world!\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 7)
+          val app = AppWith.idx (app, 7)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"E")
@@ -1150,7 +1124,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 3)
+             val app = AppWith.idx (app, 3)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"b")
@@ -1166,7 +1140,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "   hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"b")
@@ -1182,7 +1156,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "!*#hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"b")
@@ -1198,7 +1172,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "   !@#$%^&*()"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"b")
@@ -1214,7 +1188,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "abc!@#$%^&*()"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"b")
@@ -1243,7 +1217,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 3)
+             val app = AppWith.idx (app, 3)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
@@ -1259,7 +1233,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "   hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"B")
@@ -1275,7 +1249,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "   hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 3)
+             val app = AppWith.idx (app, 3)
 
              (* act *)
              val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
@@ -1291,7 +1265,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "!*#hello world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"B")
@@ -1304,7 +1278,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "   !qwerty@#$%^&*()\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 17)
+          val app = AppWith.idx (app, 17)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"B")
@@ -1320,7 +1294,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "abc!@#$%^&*()"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 11)
+             val app = AppWith.idx (app, 11)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"B")
@@ -1337,7 +1311,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello w7rld\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 7)
+          val app = AppWith.idx (app, 7)
 
           (* act *)
           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
@@ -1350,7 +1324,7 @@ struct
           (* arrange *)
           val buffer = fromList ["hel", "lo ", "w7r", "ld\n"]
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 7)
+          val app = AppWith.idx (app, 7)
 
           (* act *)
           val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
@@ -1376,7 +1350,7 @@ struct
           val buffer = LineGap.fromString "hello world\n hello again\n"
           val app = AppType.init (buffer, 0, 0)
 
-          val app = withIdx (app, 11)
+          val app = AppWith.idx (app, 11)
           val {cursorIdx = oldIdx, ...} = app
 
           (* act *)
@@ -1394,7 +1368,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n#ello again\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 21)
+             val app = AppWith.idx (app, 21)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"0")
@@ -1415,7 +1389,7 @@ struct
                ["hel", "lo ", "wor", "ld\n", "#el", "lo ", "aga", "in\n"]
              val buffer = LineGap.fromString "hello world\n#ello again\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 21)
+             val app = AppWith.idx (app, 21)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"0")
@@ -1461,7 +1435,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello\n world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 11)
+             val app = AppWith.idx (app, 11)
              val oldIdx = #cursorIdx app
 
              (* act *)
@@ -1482,7 +1456,7 @@ struct
              (* arrange *)
              val buffer = fromList ["hel", "lo\n", " wo", "rld", "\n"]
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 11)
+             val app = AppWith.idx (app, 11)
              val oldIdx = #cursorIdx app
 
              (* act *)
@@ -1523,7 +1497,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "   3ell7 world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"^")
@@ -1540,7 +1514,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello\n   world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 7)
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"^")
@@ -1557,7 +1531,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello\n   world\n"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 11)
+             val app = AppWith.idx (app, 11)
 
              (* act *)
              val app = AppUpdate.update (app, CHAR_EVENT #"^")
@@ -1570,7 +1544,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hel\nlo\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 3)
+          val app = AppWith.idx (app, 3)
           val oldIdx = #cursorIdx app
 
           (* act *)
@@ -1619,7 +1593,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "(hello)\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 6)
+          val app = AppWith.idx (app, 6)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1646,7 +1620,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 10)
+          val app = AppWith.idx (app, 10)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1660,7 +1634,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 1)
+          val app = AppWith.idx (app, 1)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1674,7 +1648,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 9)
+          val app = AppWith.idx (app, 9)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1688,7 +1662,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 2)
+          val app = AppWith.idx (app, 2)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1702,7 +1676,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 8)
+          val app = AppWith.idx (app, 8)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1729,7 +1703,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "[hello]\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 6)
+          val app = AppWith.idx (app, 6)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1754,7 +1728,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "{hello}\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 6)
+          val app = AppWith.idx (app, 6)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1779,7 +1753,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "<hello>\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 6)
+          val app = AppWith.idx (app, 6)
 
           (* act *)
           val app = AppUpdate.update (app, CHAR_EVENT #"%")
@@ -1793,7 +1767,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello, world\n"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 5)
+          val app = AppWith.idx (app, 5)
           val oldIdx = #cursorIdx app
 
           (* act *)
@@ -1892,7 +1866,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 10)
+             val app = AppWith.idx (app, 10)
 
              (* act *)
              val app = updateMany (app, "Th")
@@ -1905,7 +1879,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 10)
+          val app = AppWith.idx (app, 10)
 
           (* act *)
           val app1 = updateMany (app, "Te")
@@ -1922,7 +1896,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 10)
+             val app = AppWith.idx (app, 10)
 
              (* act *)
              val app1 = updateMany (app, "T;")
@@ -1935,7 +1909,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 10)
+          val app = AppWith.idx (app, 10)
 
           (* act *)
           val app1 = AppUpdate.update (app, CHAR_EVENT #"T")
@@ -2029,7 +2003,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 10)
+          val app = AppWith.idx (app, 10)
 
           (* act *)
           val app = updateMany (app, "Fe")
@@ -2043,7 +2017,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 10)
+             val app = AppWith.idx (app, 10)
 
              (* act *)
              val app = updateMany (app, "3Fl")
@@ -2058,7 +2032,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 10)
+             val app = AppWith.idx (app, 10)
 
              (* act *)
              val app = updateMany (app, "9Fl")
@@ -2073,7 +2047,7 @@ struct
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
              val app = AppType.init (buffer, 0, 0)
-             val app = withIdx (app, 10)
+             val app = AppWith.idx (app, 10)
 
              (* act *)
              val app1 = updateMany (app, "F;")
@@ -2086,7 +2060,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 10)
+          val app = AppWith.idx (app, 10)
 
           (* act *)
           val app1 = AppUpdate.update (app, CHAR_EVENT #"F")
@@ -2106,7 +2080,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 10)
+          val app = AppWith.idx (app, 10)
 
           (* act *)
           val app = updateMany (app, "gg")
@@ -2119,7 +2093,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 5)
+          val app = AppWith.idx (app, 5)
 
           (* act *)
           val app = updateMany (app, "gg")
@@ -2145,7 +2119,7 @@ struct
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
           val app = AppType.init (buffer, 0, 0)
-          val app = withIdx (app, 5)
+          val app = AppWith.idx (app, 5)
 
           (* act *)
           val app1 = AppUpdate.update (app, CHAR_EVENT #"g")
@@ -2157,7 +2131,7 @@ struct
         end)
     ]
 
-  val tests = concat
+  val tests =
     [ hMove
     , jMove
     , kMove

@@ -33,4 +33,5 @@ fcore/app-update.sml
 (* TEST FILES *)
 test/Railroad/src/railroad.mlb
 test/normal-move.sml
+test/normal-delete.sml
 test/test.sml
