@@ -35,15 +35,15 @@ struct
       Vector.sub (currentTable, charIdx)
     end
 
-  structure TraverseWORD =
-    MakeDfaLoop
+  structure StartOfNextWORD =
+    MakeNextDfaLoop
       (struct
          val startState = startState
 
-         fun fNext (idx, absIdx, str, tl, currentState, counter) =
+         fun fStart (idx, absIdx, str, tl, currentState, counter) =
            if idx = String.size str then
              case tl of
-               str :: tl => fNext (0, absIdx, str, tl, currentState, counter)
+               str :: tl => fStart (0, absIdx, str, tl, currentState, counter)
              | [] => Int.max (absIdx - 2, 0)
            else
              let
@@ -55,16 +55,23 @@ struct
                    absIdx
                  else
                    (* new loop, so reset to start state and proceed *)
-                   fNext (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
+                   fStart
+                     (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
                else
-                 fNext (idx + 1, absIdx + 1, str, tl, newState, counter)
+                 fStart (idx + 1, absIdx + 1, str, tl, newState, counter)
              end
+       end)
 
-         fun fPrev (idx, absIdx, str, tl, currentState, counter) =
+  structure EndOfPrevWORD =
+    MakePrevDfaLoop
+      (struct
+         val startState = startState
+
+         fun fStart (idx, absIdx, str, tl, currentState, counter) =
            if idx < 0 then
              case tl of
                str :: tl =>
-                 fPrev
+                 fStart
                    (String.size str - 1, absIdx, str, tl, currentState, counter)
              | [] => 0
            else
@@ -77,12 +84,13 @@ struct
                    absIdx
                  else
                    (* reset to start state and proceed *)
-                   fPrev (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
+                   fStart
+                     (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
                else
-                 fPrev (idx - 1, absIdx - 1, str, tl, newState, counter)
+                 fStart (idx - 1, absIdx - 1, str, tl, newState, counter)
              end
        end)
 
-  val next = TraverseWORD.next
-  val prev = TraverseWORD.prev
+  val startOfNextWORD = StartOfNextWORD.next
+  val endOfPrevWORD = EndOfPrevWORD.prev
 end

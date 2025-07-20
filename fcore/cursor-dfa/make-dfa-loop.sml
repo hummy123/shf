@@ -1,11 +1,10 @@
 signature MAKE_DFA_LOOP =
 sig
-  val fNext: int * int * string * string list * Word8.word * int -> int
-  val fPrev: int * int * string * string list * Word8.word * int -> int
+  val fStart: int * int * string * string list * Word8.word * int -> int
   val startState: Word8.word
 end
 
-functor MakeDfaLoop(M: MAKE_DFA_LOOP) =
+functor MakeNextDfaLoop(M: MAKE_DFA_LOOP) =
 struct
   fun next (lineGap: LineGap.t, cursorIdx) =
     let
@@ -19,17 +18,20 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              M.fNext (strIdx, cursorIdx, shd, stl, M.startState, 1)
+              M.fStart (strIdx, cursorIdx, shd, stl, M.startState, 1)
             else
               (* strIdx is in tl *)
               case stl of
                 stlhd :: stltl =>
-                  M.fNext (strIdx, cursorIdx, stlhd, stltl, M.startState, 1)
+                  M.fStart (strIdx, cursorIdx, stlhd, stltl, M.startState, 1)
               | _ => cursorIdx
           end
       | [] => cursorIdx
     end
+end
 
+functor MakePrevDfaLoop(M: MAKE_DFA_LOOP) =
+struct
   fun prev (lineGap: LineGap.t, cursorIdx) =
     let
       val {rightStrings, leftStrings, idx = bufferIdx, ...} = lineGap
@@ -42,7 +44,7 @@ struct
           in
             if strIdx < String.size shd then
               (* strIdx is in this string *)
-              M.fPrev (strIdx, cursorIdx, shd, leftStrings, M.startState, 1)
+              M.fStart (strIdx, cursorIdx, shd, leftStrings, M.startState, 1)
             else
               (* strIdx is in tl *)
               (case stl of
@@ -51,7 +53,7 @@ struct
                      val strIdx = strIdx - String.size shd
                      val leftStrings = shd :: leftStrings
                    in
-                     M.fPrev
+                     M.fStart
                        (strIdx, cursorIdx, stlhd, leftStrings, M.startState, 1)
                    end
                | [] => cursorIdx)

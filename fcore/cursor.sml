@@ -886,7 +886,7 @@ struct
     toNextWord (lineGap, cursorIdx, helpNextWord)
 
   (* equivalent of vi's 'W' command *)
-  val nextWORD = ViWORDDfa.next
+  val nextWORD = ViWORDDfa.startOfNextWORD
 
   fun helpPrevWord (strPos, str, absIdx, strTl, lineTl) =
     if strPos < 0 then
@@ -1077,8 +1077,7 @@ struct
     toEndOfPrevWord (lineGap, cursorIdx, helpEndOfPrevWord)
 
   (* equivalent of vi's 'gE' command *)
-  fun endOfPrevWORD (lineGap, cursorIdx) =
-    toEndOfPrevWord (lineGap, cursorIdx, helpEndOfPrevWORD)
+  val endOfPrevWORD = ViWORDDfa.endOfPrevWORD
 
   fun helpEndOfWord (strPos, str, absIdx, stl, ltl) =
     if strPos = String.size str then
