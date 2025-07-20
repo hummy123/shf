@@ -61,3 +61,24 @@ struct
       | [] => cursorIdx
     end
 end
+
+functor MakePrevDfaLoopMinus1(M: MAKE_DFA_LOOP) =
+struct
+  fun prev (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {idx = bufferIdx, leftStrings, ...} = lineGap
+      val strIdx = cursorIdx - bufferIdx - 1
+      val absIdx = cursorIdx - 1
+    in
+      if strIdx < 0 then
+        case leftStrings of
+          lhd :: ltl =>
+            M.fStart (String.size lhd - 1, absIdx, lhd, ltl, M.startState, 1)
+        | [] => 0
+      else
+        case #rightStrings lineGap of
+          rhd :: _ =>
+            M.fStart (strIdx, absIdx, rhd, leftStrings, M.startState, 1)
+        | [] => Int.max (0, cursorIdx - 2)
+    end
+end

@@ -108,52 +108,35 @@ struct
              end
        end)
 
+  structure StartOfCurrentWORD =
+    MakePrevDfaLoopMinus1
+      (struct
+         val startState = startState
+
+         fun fStart (idx, absIdx, str, tl, currentState, counter) =
+           if idx < 0 then
+             case tl of
+               str :: tl =>
+                 fStart
+                   (String.size str - 1, absIdx, str, tl, currentState, counter)
+             | [] => 0
+           else
+             let
+               val chr = String.sub (str, idx)
+               val newState = next (currentState, chr)
+             in
+               if newState = spaceAfterNonBlankState then
+                 if counter - 1 = 0 then
+                   absIdx + 1
+                 else
+                   fStart
+                     (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
+               else
+                 fStart (idx - 1, absIdx - 1, str, tl, newState, counter)
+             end
+       end)
+
   val startOfNextWORD = StartOfNextWORD.next
   val endOfPrevWORD = EndOfPrevWORD.prev
-
-  fun loopStartOfCurrentWORD (idx, absIdx, str, tl, currentState, counter) =
-    if idx < 0 then
-      case tl of
-        str :: tl =>
-          loopStartOfCurrentWORD
-            (String.size str - 1, absIdx, str, tl, currentState, counter)
-      | [] => 0
-    else
-      let
-        val chr = String.sub (str, idx)
-        val newState = next (currentState, chr)
-      in
-        if newState = spaceAfterNonBlankState then
-          if counter - 1 = 0 then
-            absIdx + 1
-          else
-            loopStartOfCurrentWORD
-              (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
-        else
-          loopStartOfCurrentWORD
-            (idx - 1, absIdx - 1, str, tl, newState, counter)
-      end
-
-  (* we do not rely on MakeDfaLoop functor because we want to 
-   * ignore the character the cursor is currently on,
-   * and start tracking state from the character before the current one. *)
-  fun startOfCurrentWORD (lineGap: LineGap.t, cursorIdx) =
-    let
-      val {idx = bufferIdx, leftStrings, ...} = lineGap
-      val strIdx = cursorIdx - bufferIdx - 1
-      val absIdx = cursorIdx - 1
-    in
-      if strIdx < 0 then
-        case leftStrings of
-          lhd :: ltl =>
-            loopStartOfCurrentWORD
-              (String.size lhd - 1, absIdx, lhd, ltl, startState, 1)
-        | [] => 0
-      else
-        case #rightStrings lineGap of
-          rhd :: _ =>
-            loopStartOfCurrentWORD
-              (strIdx, absIdx, rhd, leftStrings, startState, 1)
-        | [] => Int.max (0, cursorIdx - 2)
-    end
+  val startOfCurrentWORD = StartOfCurrentWORD.prev
 end
