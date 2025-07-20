@@ -974,8 +974,7 @@ struct
     end
 
   (* equivalent of vi's 'b' command *)
-  fun prevWord (lineGap, cursorIdx) =
-    toPrevWord (lineGap, cursorIdx, helpPrevWord)
+  val prevWord = ViWordDfa.startOfCurrentWord
 
   (* equivalent of vi's 'B' command *)
   val prevWORD = ViWORDDfa.startOfCurrentWORD

@@ -9,11 +9,11 @@ struct
   val alphaToSpace: Word8.word = 0w4
   val punctToSpace: Word8.word = 0w5
 
-  val alphaToPunct: Word8.word = 0w6
-  val punctToAlpha: Word8.word = 0w7
+  val spaceToAlpha: Word8.word = 0w6
+  val spaceToPunct: Word8.word = 0w7
 
-  val spaceToAlpha: Word8.word = 0w8
-  val spaceToPunct: Word8.word = 0w9
+  val alphaToPunct: Word8.word = 0w8
+  val punctToAlpha: Word8.word = 0w9
 
   fun makeStart i =
     let
@@ -60,13 +60,21 @@ struct
   val alphaToSpaceTable = startSpaceTable
   val punctToSpaceTable = startSpaceTable
 
+  val spaceToAlphaTable = startAlphaTable
+  val spaceToPunctTable = startPunctTable
+
   val tables =
    #[ startTable
+
     , startAlphaTable
     , startSpaceTable
     , startPunctTable
+
     , alphaToSpaceTable
     , punctToSpaceTable
+
+    , spaceToAlphaTable
+    , spaceToPunctTable
     ]
 
   fun next (currentState, chr) =
@@ -139,8 +147,47 @@ struct
              end
        end)
 
+  structure StartOfCurrentWord =
+    MakePrevDfaLoopMinus1
+      (struct
+         val startState = startState
+
+         fun fStart (idx, absIdx, str, tl, currentState, counter) =
+           if idx < 0 then
+             case tl of
+               str :: tl =>
+                 fStart
+                   (String.size str - 1, absIdx, str, tl, currentState, counter)
+             | [] => 0
+           else
+             let
+               val chr = String.sub (str, idx)
+                         handle _ => (print "156\n"; raise Empty)
+               val newState =
+                 next (currentState, chr)
+                 handle _ =>
+                   ( print ("158: " ^ Word8.toString currentState ^ "\n")
+                   ; raise Empty
+                   )
+             in
+               if
+                 newState = alphaToSpace orelse newState = punctToSpace
+                 orelse newState = alphaToPunct orelse newState = punctToAlpha
+               then
+                 if counter - 1 = 0 then
+                   absIdx + 1
+                 else
+                   fStart
+                     (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
+               else
+                 fStart (idx - 1, absIdx - 1, str, tl, newState, counter)
+             end
+       end)
+
   (* w *)
   val startOfNextWord = StartOfNextWord.next
   (* ge *)
   val endOfPrevWord = EndOfPrevWord.prev
+  (* b *)
+  val startOfCurrentWord = StartOfCurrentWord.prev
 end
