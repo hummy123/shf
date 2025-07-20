@@ -24,6 +24,7 @@ in
   fcore/text-builder.sml
   fcore/cursor-dfa/make-dfa-loop.sml
   fcore/cursor-dfa/vi-WORD-dfa.sml
+  fcore/cursor-dfa/vi-word-dfa.sml
 end
 fcore/cursor.sml
 fcore/text-window.sml

@@ -863,8 +863,7 @@ struct
     end
 
   (* equivalent of vi's 'w' command *)
-  fun nextWord (lineGap, cursorIdx) =
-    toNextWord (lineGap, cursorIdx, helpNextWord)
+  val nextWord = ViWordDfa.startOfNextWord
 
   (* equivalent of vi's 'W' command *)
   val nextWORD = ViWORDDfa.startOfNextWORD
