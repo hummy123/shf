@@ -980,40 +980,8 @@ struct
   (* equivalent of vi's 'B' command *)
   val prevWORD = ViWORDDfa.startOfCurrentWORD
 
-  fun toEndOfPrevWord (lineGap: LineGap.t, cursorIdx, fPrev) =
-    let
-      val
-        {rightStrings, rightLines, leftStrings, leftLines, idx = bufferIdx, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              fPrev (strIdx, shd, cursorIdx, leftStrings, leftLines)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let
-                     val strIdx = strIdx - String.size shd
-                     val leftStrings = shd :: leftStrings
-                     val leftLines = lhd :: leftLines
-                   in
-                     fPrev (strIdx, shd, cursorIdx, leftStrings, leftLines)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
-
   (* equivalent of vi's 'ge' command *)
-  fun endOfPrevWord (lineGap, cursorIdx) =
-    toEndOfPrevWord (lineGap, cursorIdx, helpEndOfPrevWord)
+  val endOfPrevWord = ViWordDfa.endOfPrevWord
 
   (* equivalent of vi's 'gE' command *)
   val endOfPrevWORD = ViWORDDfa.endOfPrevWORD

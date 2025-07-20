@@ -108,6 +108,36 @@ struct
              end
        end)
 
+  structure EndOfPrevWord =
+  MakePrevDfaLoop (
+  struct
+    val startState = startState
+
+    fun fStart (idx, absIdx, str, tl, currentState, counter) =
+      if idx < 0 then
+        case tl of
+          str :: tl => fStart (String.size str - 1, absIdx, str, tl, currentState, counter)
+        | [] => 0
+      else
+        let
+          val chr = String.sub (str, idx)
+          val newState = next (currentState, chr)
+        in
+          if newState = alphaToPunct orelse newState = punctToAlpha 
+          orelse newState = spaceToAlpha orelse newState = spaceToPunct
+          then
+            if counter - 1 = 0 then
+              absIdx
+            else
+              fStart (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
+          else
+            fStart (idx - 1, absIdx - 1, str, tl, newState, counter)
+        end
+  end
+  )
+
   (* w *)
   val startOfNextWord = StartOfNextWord.next
+  (* ge *)
+  val endOfPrevWord = EndOfPrevWord.prev
 end
