@@ -136,7 +136,38 @@ struct
              end
        end)
 
+  structure EndOfCurrentWORD =
+    MakeNextDfaLoopPlus1
+      (struct
+         val startState = startState
+
+         fun fStart (idx, absIdx, str, tl, currentState, counter) =
+           if idx = String.size str then
+             case tl of
+               str :: tl => fStart (0, absIdx, str, tl, currentState, counter)
+             | [] => Int.max (0, absIdx - 2)
+           else
+             let
+               val chr = String.sub (str, idx)
+               val newState = next (currentState, chr)
+             in
+               if newState = spaceAfterNonBlankState then
+                 if counter - 1 = 0 then
+                   Int.max (0, absIdx - 1)
+                 else
+                   fStart
+                     (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
+               else
+                 fStart (idx + 1, absIdx + 1, str, tl, newState, counter)
+             end
+       end)
+
+  (* W *)
   val startOfNextWORD = StartOfNextWORD.next
+  (* gE *)
   val endOfPrevWORD = EndOfPrevWORD.prev
+  (* B *)
   val startOfCurrentWORD = StartOfCurrentWORD.prev
+  (* E *)
+  val endOfCurrentWORD = EndOfCurrentWORD.next
 end

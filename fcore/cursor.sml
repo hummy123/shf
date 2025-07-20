@@ -1169,8 +1169,7 @@ struct
     toEndOfWord (lineGap, cursorIdx, helpEndOfWord)
 
   (* equivalent of vi's `E` command *)
-  fun endOfWORD (lineGap, cursorIdx) =
-    toEndOfWord (lineGap, cursorIdx, helpEndOfWORD)
+  val endOfWORD = ViWORDDfa.endOfCurrentWORD
 
   (* vi's 'e' command takes user last char in word
    * but 'de' deletes up to and including last char of word 
