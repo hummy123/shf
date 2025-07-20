@@ -29,6 +29,32 @@ struct
     end
 end
 
+functor MakeNextDfaLoopPlus1(M: MAKE_DFA_LOOP) =
+struct
+  fun next (lineGap: LineGap.t, cursorIdx) =
+    let
+      val {rightStrings, idx = bufferIdx, ...} = lineGap
+      (* convert absolute cursorIdx to idx relative to hd string *)
+      val strIdx = cursorIdx - bufferIdx + 1
+      val absIdx = cursorIdx + 1
+    in
+      case rightStrings of
+        shd :: stl =>
+          if strIdx < String.size shd then
+            (* strIdx is in this string *)
+            M.fStart (strIdx, absIdx, shd, stl, M.startState, 1)
+          else
+            (* strIdx is in tl *)
+            (case stl of
+               stlhd :: stltl =>
+                 let val strIdx = strIdx - String.size shd
+                 in M.fStart (strIdx, absIdx, stlhd, stltl, M.startState, 1)
+                 end
+             | _ => cursorIdx)
+      | [] => cursorIdx
+    end
+end
+
 functor MakePrevDfaLoop(M: MAKE_DFA_LOOP) =
 struct
   fun prev (lineGap: LineGap.t, cursorIdx) =
