@@ -837,25 +837,6 @@ struct
           helpNextWord (strPos + 1, str, absIdx + 1, strTl, lineTl)
       end
 
-  fun helpNextWORD (strPos, str, absIdx, strTl, lineTl) =
-    if strPos = String.size str then
-      case (strTl, lineTl) of
-        (shd :: stl, lhd :: ltl) => helpNextWORD (0, shd, absIdx, stl, ltl)
-      | (_, _) =>
-          (* reached end of lineGap; 
-           * return last valid chr position *)
-          absIdx - 1
-    else
-      let
-        val chr = String.sub (str, strPos)
-      in
-        if Char.isSpace chr then
-          if notIsNextChrSpace (strPos, str, strTl) then absIdx + 1
-          else helpNextWORD (strPos + 1, str, absIdx + 1, strTl, lineTl)
-        else
-          helpNextWORD (strPos + 1, str, absIdx + 1, strTl, lineTl)
-      end
-
   fun toNextWord (lineGap: LineGap.t, cursorIdx, fNext) =
     let
       val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
@@ -922,27 +903,6 @@ struct
           helpPrevWord (strPos - 1, str, absIdx - 1, strTl, lineTl)
       end
 
-  fun helpPrevWORD (strPos, str, absIdx, strTl, lineTl) =
-    if strPos < 0 then
-      case (strTl, lineTl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpPrevWORD (String.size shd - 1, shd, absIdx, stl, ltl)
-      | (_, _) =>
-          (* reached start of lineGap; 
-           * return 0 which is start idx *)
-          0
-    else
-      let
-        val chr = String.sub (str, strPos)
-      in
-        if Char.isSpace chr then
-          helpPrevWORD (strPos - 1, str, absIdx - 1, strTl, lineTl)
-        else if isPrevChrSpace (strPos, str, strTl) then
-          absIdx
-        else
-          helpPrevWORD (strPos - 1, str, absIdx - 1, strTl, lineTl)
-      end
-
   fun helpEndOfPrevWord (strPos, str, absIdx, strTl, lineTl) =
     if strPos < 0 then
       case (strTl, lineTl) of
@@ -965,25 +925,6 @@ struct
           absIdx - 1
         else
           helpEndOfPrevWord (strPos - 1, str, absIdx - 1, strTl, lineTl)
-      end
-
-  fun helpEndOfPrevWORD (strPos, str, absIdx, strTl, lineTl) =
-    if strPos < 0 then
-      case (strTl, lineTl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpEndOfPrevWORD (String.size shd - 1, shd, absIdx, stl, ltl)
-      | (_, _) => 0
-    else
-      let
-        val chr = String.sub (str, strPos)
-      in
-        if Char.isSpace chr then
-          if isPrevChrSpace (strPos, str, strTl) then
-            helpEndOfPrevWORD (strPos - 1, str, absIdx - 1, strTl, lineTl)
-          else
-            absIdx - 1
-        else
-          helpEndOfPrevWORD (strPos - 1, str, absIdx - 1, strTl, lineTl)
       end
 
   fun startPrevWord (shd, strIdx, absIdx, stl, ltl, fPrev) =
@@ -1106,23 +1047,6 @@ struct
           absIdx
         else
           helpEndOfWord (strPos + 1, str, absIdx + 1, stl, ltl)
-      end
-
-  fun helpEndOfWORD (strPos, str, absIdx, stl, ltl) =
-    if strPos = String.size str then
-      case (stl, ltl) of
-        (shd :: stl, lhd :: ltl) => helpEndOfWORD (0, shd, absIdx, stl, ltl)
-      | (_, _) => absIdx - 1
-    else
-      let
-        val chr = String.sub (str, strPos)
-      in
-        if Char.isSpace chr then
-          helpEndOfWORD (strPos + 1, str, absIdx + 1, stl, ltl)
-        else if isNextChrSpace (strPos, str, stl) then
-          absIdx
-        else
-          helpEndOfWORD (strPos + 1, str, absIdx + 1, stl, ltl)
       end
 
   fun startEndOfWord (shd, strIdx, absIdx, stl, ltl, fEnd) =
