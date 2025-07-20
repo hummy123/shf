@@ -9,23 +9,22 @@ struct
   fun next (lineGap: LineGap.t, cursorIdx) =
     let
       val {rightStrings, idx = bufferIdx, ...} = lineGap
+      (* convert absolute cursorIdx to idx relative to hd string *)
+      val strIdx = cursorIdx - bufferIdx
     in
       case rightStrings of
         shd :: stl =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              M.fStart (strIdx, cursorIdx, shd, stl, M.startState, 1)
-            else
-              (* strIdx is in tl *)
-              case stl of
-                stlhd :: stltl =>
-                  M.fStart (strIdx, cursorIdx, stlhd, stltl, M.startState, 1)
-              | _ => cursorIdx
-          end
+          if strIdx < String.size shd then
+            (* strIdx is in this string *)
+            M.fStart (strIdx, cursorIdx, shd, stl, M.startState, 1)
+          else
+            (* strIdx is in tl *)
+            (case stl of
+               stlhd :: stltl =>
+                 let val strIdx = strIdx - String.size shd
+                 in M.fStart (strIdx, cursorIdx, stlhd, stltl, M.startState, 1)
+                 end
+             | _ => cursorIdx)
       | [] => cursorIdx
     end
 end
@@ -35,29 +34,26 @@ struct
   fun prev (lineGap: LineGap.t, cursorIdx) =
     let
       val {rightStrings, leftStrings, idx = bufferIdx, ...} = lineGap
+      (* convert absolute cursorIdx to idx relative to hd string *)
+      val strIdx = cursorIdx - bufferIdx
     in
       case rightStrings of
         shd :: stl =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              M.fStart (strIdx, cursorIdx, shd, leftStrings, M.startState, 1)
-            else
-              (* strIdx is in tl *)
-              (case stl of
-                 stlhd :: stltl =>
-                   let
-                     val strIdx = strIdx - String.size shd
-                     val leftStrings = shd :: leftStrings
-                   in
-                     M.fStart
-                       (strIdx, cursorIdx, stlhd, leftStrings, M.startState, 1)
-                   end
-               | [] => cursorIdx)
-          end
+          if strIdx < String.size shd then
+            (* strIdx is in this string *)
+            M.fStart (strIdx, cursorIdx, shd, leftStrings, M.startState, 1)
+          else
+            (* strIdx is in tl *)
+            (case stl of
+               stlhd :: stltl =>
+                 let
+                   val strIdx = strIdx - String.size shd
+                   val leftStrings = shd :: leftStrings
+                 in
+                   M.fStart
+                     (strIdx, cursorIdx, stlhd, leftStrings, M.startState, 1)
+                 end
+             | [] => cursorIdx)
       | [] => cursorIdx
     end
 end
