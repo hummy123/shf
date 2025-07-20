@@ -886,8 +886,7 @@ struct
     toNextWord (lineGap, cursorIdx, helpNextWord)
 
   (* equivalent of vi's 'W' command *)
-  fun nextWORD (lineGap, cursorIdx) =
-    toNextWord (lineGap, cursorIdx, helpNextWORD)
+  val nextWORD = ViWORDDfa.nextWORD
 
   fun helpPrevWord (strPos, str, absIdx, strTl, lineTl) =
     if strPos < 0 then

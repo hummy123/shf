@@ -22,6 +22,7 @@ ann
 in
   fcore/rect.sml
   fcore/text-builder.sml
+  fcore/cursor-dfa/vi-WORD-dfa.sml
 end
 fcore/cursor.sml
 fcore/text-window.sml
