@@ -1118,6 +1118,19 @@ struct
           (* assert *)
           Expect.isTrue (cursorIdx = 0)
         end)
+    , test "moves cursor previous word when on first character of next word"
+        (fn _ =>
+           let
+             val buffer = LineGap.fromString "hello world\n"
+             val app = AppType.init (buffer, 0, 0)
+             val app = AppWith.idx (app, 6)
+             val chr1 = getChr app
+
+             val app2 = AppUpdate.update (app, CHAR_EVENT #"b")
+             val chr2 = getChr app2
+           in
+             Expect.isTrue (chr1 = #"w" andalso chr2 = #"h")
+           end)
     , test "moves cursor to 0 when cursor > 0 and cursor is on first word"
         (fn _ =>
            let
