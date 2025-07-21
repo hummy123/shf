@@ -147,69 +147,73 @@ struct
              end
        end)
 
+  fun startOfCurrentWord (idx, absIdx, str, tl, currentState, counter) =
+    if idx < 0 then
+      case tl of
+        str :: tl =>
+          startOfCurrentWord
+            (String.size str - 1, absIdx, str, tl, currentState, counter)
+      | [] => 0
+    else
+      let
+        val chr = String.sub (str, idx) handle _ => (print "156\n"; raise Empty)
+        val newState =
+          next (currentState, chr)
+          handle _ =>
+            (print ("158: " ^ Word8.toString currentState ^ "\n"); raise Empty)
+      in
+        if
+          newState = alphaToSpace orelse newState = punctToSpace
+          orelse newState = alphaToPunct orelse newState = punctToAlpha
+        then
+          if counter - 1 = 0 then
+            absIdx + 1
+          else
+            startOfCurrentWord
+              (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
+        else
+          startOfCurrentWord (idx - 1, absIdx - 1, str, tl, newState, counter)
+      end
+
   structure StartOfCurrentWord =
     MakePrevDfaLoopMinus1
-      (struct
-         val startState = startState
+      (struct val startState = startState val fStart = startOfCurrentWord end)
 
-         fun fStart (idx, absIdx, str, tl, currentState, counter) =
-           if idx < 0 then
-             case tl of
-               str :: tl =>
-                 fStart
-                   (String.size str - 1, absIdx, str, tl, currentState, counter)
-             | [] => 0
-           else
-             let
-               val chr = String.sub (str, idx)
-                         handle _ => (print "156\n"; raise Empty)
-               val newState =
-                 next (currentState, chr)
-                 handle _ =>
-                   ( print ("158: " ^ Word8.toString currentState ^ "\n")
-                   ; raise Empty
-                   )
-             in
-               if
-                 newState = alphaToSpace orelse newState = punctToSpace
-                 orelse newState = alphaToPunct orelse newState = punctToAlpha
-               then
-                 if counter - 1 = 0 then
-                   absIdx + 1
-                 else
-                   fStart
-                     (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
-               else
-                 fStart (idx - 1, absIdx - 1, str, tl, newState, counter)
-             end
-       end)
+  structure StartOfCurrentWordStrict =
+    MakePrevDfaLoop
+      (struct val startState = startState val fStart = startOfCurrentWord end)
 
-  structure EndOfCurrentWord = MakeNextDfaLoopPlus1 (
-  struct
-    val startState = startState
-
-    fun fStart (idx, absIdx, str, tl, currentState, counter) =
-      if idx = String.size str then
-        case tl of
-          str :: tl =>
-            fStart (0, absIdx, str, tl, currentState, counter)
-        | [] => Int.max (0, absIdx - 2)
-      else
-        let
-          val chr = String.sub (str, idx)
-          val newState = next (currentState, chr)
-        in
-          if newState = alphaToSpace orelse newState = punctToSpace
-          orelse newState = alphaToPunct orelse newState = punctToAlpha then
-            if counter - 1 = 0 then
-              absIdx - 1
-            else
-              fStart (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
+  fun endOfCurrentWord (idx, absIdx, str, tl, currentState, counter) =
+    if idx = String.size str then
+      case tl of
+        str :: tl =>
+          endOfCurrentWord (0, absIdx, str, tl, currentState, counter)
+      | [] => Int.max (0, absIdx - 2)
+    else
+      let
+        val chr = String.sub (str, idx)
+        val newState = next (currentState, chr)
+      in
+        if
+          newState = alphaToSpace orelse newState = punctToSpace
+          orelse newState = alphaToPunct orelse newState = punctToAlpha
+        then
+          if counter - 1 = 0 then
+            absIdx - 1
           else
-            fStart (idx + 1, absIdx + 1, str, tl, newState, counter)
-        end
-  end
-  )
+            endOfCurrentWord
+              (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
+        else
+          endOfCurrentWord (idx + 1, absIdx + 1, str, tl, newState, counter)
+      end
+
+  structure EndOfCurrentWord =
+    MakeNextDfaLoopPlus1
+      (struct val startState = startState val fStart = endOfCurrentWord end)
+
+  structure EndOfCurrentWordStrict =
+    MakeNextDfaLoop
+      (struct val startState = startState val fStart = endOfCurrentWord end)
 
   (* w *)
   val startOfNextWord = StartOfNextWord.next
@@ -219,4 +223,9 @@ struct
   val startOfCurrentWord = StartOfCurrentWord.prev
   (* e *)
   val endOfCurrentWord = EndOfCurrentWord.next
+
+  (* the meaning of "Strict" and the utility of these two functions
+   * is described in vi-WORD-dfa.sml *)
+  val startOfCurrentWordStrict = StartOfCurrentWordStrict.prev
+  val endOfCurrentWordStrict = EndOfCurrentWordStrict.next
 end
