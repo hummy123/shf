@@ -21,8 +21,11 @@ struct
             (* strIdx is in tl *)
             (case stl of
                stlhd :: stltl =>
-                 let val strIdx = strIdx - String.size shd
-                 in M.fStart (strIdx, cursorIdx, stlhd, stltl, M.startState, count)
+                 let
+                   val strIdx = strIdx - String.size shd
+                 in
+                   M.fStart
+                     (strIdx, cursorIdx, stlhd, stltl, M.startState, count)
                  end
              | _ => cursorIdx)
       | [] => cursorIdx
@@ -77,7 +80,13 @@ struct
                    val leftStrings = shd :: leftStrings
                  in
                    M.fStart
-                     (strIdx, cursorIdx, stlhd, leftStrings, M.startState, count)
+                     ( strIdx
+                     , cursorIdx
+                     , stlhd
+                     , leftStrings
+                     , M.startState
+                     , count
+                     )
                  end
              | [] => cursorIdx)
       | [] => cursorIdx
@@ -95,7 +104,8 @@ struct
       if strIdx < 0 then
         case leftStrings of
           lhd :: ltl =>
-            M.fStart (String.size lhd - 1, absIdx, lhd, ltl, M.startState, count)
+            M.fStart
+              (String.size lhd - 1, absIdx, lhd, ltl, M.startState, count)
         | [] => 0
       else
         case #rightStrings lineGap of
@@ -103,4 +113,77 @@ struct
             M.fStart (strIdx, absIdx, rhd, leftStrings, M.startState, count)
         | [] => Int.max (0, cursorIdx - 2)
     end
+end
+
+signature MAKE_CHAR_FOLDER =
+sig
+  val startState: Word8.word
+  val tables: Word8.word vector vector
+
+  val isFinal: Word8.word -> bool
+  val finish: int -> int
+end
+
+functor MakeCharFolderNext(Fn: MAKE_CHAR_FOLDER) =
+struct
+  fun nextState (currentState, currentChar) =
+    let
+      val currentState = Word8.toInt currentState
+      val currentTable = Vector.sub (Fn.tables, currentState)
+      val charIdx = Char.ord currentChar
+    in
+      Vector.sub (currentTable, charIdx)
+    end
+
+  fun foldNext (idx, absIdx, str, tl, currentState, counter) =
+    if idx = String.size str then
+      case tl of
+        str :: tl => foldNext (0, absIdx, str, tl, currentState, counter)
+      | [] => Int.max (absIdx - 2, 0)
+    else
+      let
+        val chr = String.sub (str, idx)
+        val newState = nextState (currentState, chr)
+      in
+        if Fn.isFinal newState then
+          if counter - 1 = 0 then
+            Fn.finish absIdx
+          else
+            (* new loop, so reset to start state and proceed *)
+            foldNext (idx + 1, absIdx + 1, str, tl, Fn.startState, counter - 1)
+        else
+          foldNext (idx + 1, absIdx + 1, str, tl, newState, counter)
+      end
+end
+
+functor MakeCharFolderPrev(Fn: MAKE_CHAR_FOLDER) =
+struct
+  fun nextState (currentState, currentChar) =
+    let
+      val currentState = Word8.toInt currentState
+      val currentTable = Vector.sub (Fn.tables, currentState)
+      val charIdx = Char.ord currentChar
+    in
+      Vector.sub (currentTable, charIdx)
+    end
+
+  fun foldPrev (idx, absIdx, str, tl, currentState, counter) =
+    if idx < 0 then
+      case tl of
+        str :: tl =>
+          foldPrev (String.size str - 1, absIdx, str, tl, currentState, counter)
+      | [] => 0
+    else
+      let
+        val chr = String.sub (str, idx)
+        val newState = nextState (currentState, chr)
+      in
+        if Fn.isFinal newState then
+          if counter - 1 = 0 then
+            Fn.finish absIdx
+          else
+            foldPrev (idx - 1, absIdx - 1, str, tl, Fn.startState, counter - 1)
+        else
+          foldPrev (idx - 1, absIdx - 1, str, tl, newState, counter)
+      end
 end
