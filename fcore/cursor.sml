@@ -733,17 +733,6 @@ struct
   (* equivalent of vi's `E` command *)
   val endOfWORD = ViWORDDfa.endOfCurrentWORD
 
-  (* vi's 'e' command takes user last char in word
-   * but 'de' deletes up to and including last char of word 
-   * So we need to increment by one for deletion. *)
-  fun endOfWordPlusOne (lineGap, cursorIdx) =
-    (* todo: fix *)
-    endOfWord (lineGap, cursorIdx, 1) + 1
-
-  fun endOfWORDPlusOne (lineGap, cursorIdx) =
-    (* todo: fix *)
-    endOfWORD (lineGap, cursorIdx, 1) + 1
-
   fun helpFirstNonSpaceChr (strPos, str, absIdx, stl, ltl) =
     if strPos = String.size str then
       case (stl, ltl) of
