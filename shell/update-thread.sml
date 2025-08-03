@@ -17,7 +17,19 @@ struct
   fun loop (app: AppType.app_type, inputMailbox, drawMailbox) =
     let
       val inputMsg = Mailbox.recv inputMailbox
-      val app = AppUpdate.update (app, inputMsg)
+      val app = 
+        AppUpdate.update (app, inputMsg) 
+          handle e => 
+            let
+              (* print stack trace for debugging purposes, 
+               * and then raise another exception to exit the program *)
+              val stackTrace = MLton.Exn.history e
+              val stackTrace = String.concatWith "\n" stackTrace
+              val () = print (stackTrace ^ "\n")
+            in
+              raise Empty
+            end
+
       val () = sendMsgs (#msgs app, drawMailbox)
     in
       loop (app, inputMailbox, drawMailbox)
