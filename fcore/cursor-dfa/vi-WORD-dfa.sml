@@ -43,15 +43,6 @@ struct
     , spaceAfterNonBlankTable
     ]
 
-  fun next (currentState, currentChar) =
-    let
-      val currentState = Word8.toInt currentState
-      val currentTable = Vector.sub (tables, currentState)
-      val charIdx = Char.ord currentChar
-    in
-      Vector.sub (currentTable, charIdx)
-    end
-
   structure StartOfNextWORD =
     MakeNextDfaLoop
       (struct
