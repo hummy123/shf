@@ -130,41 +130,32 @@ struct
          val fStart = Folder.foldPrev
        end)
 
-  fun startOfCurrentWord (idx, absIdx, str, tl, currentState, counter) =
-    if idx < 0 then
-      case tl of
-        str :: tl =>
-          startOfCurrentWord
-            (String.size str - 1, absIdx, str, tl, currentState, counter)
-      | [] => 0
-    else
-      let
-        val chr = String.sub (str, idx) handle _ => (print "156\n"; raise Empty)
-        val newState =
-          next (currentState, chr)
-          handle _ =>
-            (print ("158: " ^ Word8.toString currentState ^ "\n"); raise Empty)
-      in
-        if
-          newState = alphaToSpace orelse newState = punctToSpace
-          orelse newState = alphaToPunct orelse newState = punctToAlpha
-        then
-          if counter - 1 = 0 then
-            absIdx + 1
-          else
-            startOfCurrentWord
-              (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
-        else
-          startOfCurrentWord (idx - 1, absIdx - 1, str, tl, newState, counter)
-      end
+  structure StartOfCurrentWordFolder =
+    MakeCharFolderPrev
+      (struct
+         val startState = startState
+         val tables = tables
+
+         fun isFinal currentState =
+           currentState = alphaToSpace orelse currentState = punctToSpace
+           orelse currentState = alphaToPunct orelse currentState = punctToAlpha
+
+         fun finish idx = idx + 1
+       end)
 
   structure StartOfCurrentWord =
     MakePrevDfaLoopMinus1
-      (struct val startState = startState val fStart = startOfCurrentWord end)
+      (struct
+         val startState = startState
+         val fStart = StartOfCurrentWordFolder.foldPrev
+       end)
 
   structure StartOfCurrentWordStrict =
     MakePrevDfaLoop
-      (struct val startState = startState val fStart = startOfCurrentWord end)
+      (struct
+         val startState = startState
+         val fStart = StartOfCurrentWordFolder.foldPrev
+       end)
 
   fun endOfCurrentWord (idx, absIdx, str, tl, currentState, counter) =
     if idx = String.size str then
