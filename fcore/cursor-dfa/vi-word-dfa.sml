@@ -157,37 +157,32 @@ struct
          val fStart = StartOfCurrentWordFolder.foldPrev
        end)
 
-  fun endOfCurrentWord (idx, absIdx, str, tl, currentState, counter) =
-    if idx = String.size str then
-      case tl of
-        str :: tl =>
-          endOfCurrentWord (0, absIdx, str, tl, currentState, counter)
-      | [] => Int.max (0, absIdx - 2)
-    else
-      let
-        val chr = String.sub (str, idx)
-        val newState = next (currentState, chr)
-      in
-        if
-          newState = alphaToSpace orelse newState = punctToSpace
-          orelse newState = alphaToPunct orelse newState = punctToAlpha
-        then
-          if counter - 1 = 0 then
-            absIdx - 1
-          else
-            endOfCurrentWord
-              (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
-        else
-          endOfCurrentWord (idx + 1, absIdx + 1, str, tl, newState, counter)
-      end
+  structure EndOfCurrentWordFolder =
+    MakeCharFolderNext
+      (struct
+         val startState = startState
+         val tables = tables
+
+         fun isFinal currentState =
+           currentState = alphaToSpace orelse currentState = punctToSpace
+           orelse currentState = alphaToPunct orelse currentState = punctToAlpha
+
+         fun finish x = x - 1
+       end)
 
   structure EndOfCurrentWord =
     MakeNextDfaLoopPlus1
-      (struct val startState = startState val fStart = endOfCurrentWord end)
+      (struct
+         val startState = startState
+         val fStart = EndOfCurrentWordFolder.foldNext
+       end)
 
   structure EndOfCurrentWordStrict =
     MakeNextDfaLoop
-      (struct val startState = startState val fStart = endOfCurrentWord end)
+      (struct
+         val startState = startState
+         val fStart = EndOfCurrentWordFolder.foldNext
+       end)
 
   (* w *)
   val startOfNextWord = StartOfNextWord.next
