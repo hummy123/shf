@@ -472,6 +472,27 @@ struct
   fun delete (app: app_type, count, fMove) =
     helpDelete (app, #buffer app, #cursorIdx app, #cursorIdx app, count, fMove)
 
+  fun deleteByDfa (app: app_type, count, fMove) =
+    let
+      val {buffer, cursorIdx, searchList, searchString, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val otherIdx = fMove (buffer, cursorIdx, count)
+
+      val low = Int.min (cursorIdx, otherIdx)
+      val high = Int.max (cursorIdx, otherIdx)
+      val length = high - low
+
+      val buffer = LineGap.delete (low, length, buffer)
+
+      val (buffer, searchList) = deleteSearchList
+        (low, length, searchString, searchList, buffer)
+
+      val buffer = LineGap.goToIdx (low, buffer)
+    in
+      Finish.buildTextAndClear (app, buffer, low, searchList)
+    end
+
   fun deleteToEndOfLine (app: app_type) =
     let
       val {buffer, cursorIdx, ...} = app
@@ -780,12 +801,16 @@ struct
             * other cursor motions *)
            | #"j" => deleteLine (app, count + 1)
            | #"k" => deleteLineBack (app, count)
-           | #"w" => delete (app, count, Cursor.nextWord)
-           | #"W" => delete (app, count, Cursor.nextWORD)
-           | #"b" => delete (app, count, Cursor.prevWord)
-           | #"B" => delete (app, count, Cursor.prevWORD)
-           | #"e" => delete (app, count, Cursor.endOfWordPlusOne)
-           | #"E" => delete (app, count, Cursor.endOfWORDPlusOne)
+           | #"w" => deleteByDfa (app, count, Cursor.nextWord)
+           | #"W" => deleteByDfa (app, count, Cursor.nextWORD)
+           | #"b" => deleteByDfa (app, count, Cursor.prevWord)
+           | #"B" => deleteByDfa (app, count, Cursor.prevWORD)
+
+           (* todo: fix as 'plusOne' needs reimplementing
+           | #"e" => deleteByDfa (app, count, Cursor.endOfWordPlusOne)
+           | #"E" => deleteByDfa (app, count, Cursor.endOfWORDPlusOne)
+           *)
+
            | #"0" => delete (app, 1, Cursor.vi0)
            | #"$" => deleteToEndOfLine app
            | #"^" => deleteToFirstNonSpaceChr app
@@ -835,8 +860,8 @@ struct
           (case newCmd of
              CHAR_EVENT chr =>
                (case chr of
-                  #"e" => delete (app, count, Cursor.endOfPrevWord)
-                | #"E" => delete (app, count, Cursor.endOfPrevWORD)
+                  #"e" => deleteByDfa (app, count, Cursor.endOfPrevWord)
+                | #"E" => deleteByDfa (app, count, Cursor.endOfPrevWORD)
                 | #"g" => deleteToStart app
                 | _ => clearMode app)
            | KEY_ESC => clearMode app

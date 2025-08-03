@@ -737,10 +737,12 @@ struct
    * but 'de' deletes up to and including last char of word 
    * So we need to increment by one for deletion. *)
   fun endOfWordPlusOne (lineGap, cursorIdx) =
-    endOfWord (lineGap, cursorIdx) + 1
+    (* todo: fix *)
+    endOfWord (lineGap, cursorIdx, 1) + 1
 
   fun endOfWORDPlusOne (lineGap, cursorIdx) =
-    endOfWORD (lineGap, cursorIdx) + 1
+    (* todo: fix *)
+    endOfWORD (lineGap, cursorIdx, 1) + 1
 
   fun helpFirstNonSpaceChr (strPos, str, absIdx, stl, ltl) =
     if strPos = String.size str then
