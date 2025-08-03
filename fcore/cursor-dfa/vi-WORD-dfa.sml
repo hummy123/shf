@@ -123,6 +123,25 @@ struct
          val fStart = EndOfCurrentWORDFolder.foldNext
        end)
 
+  structure EndOfCurrentWORDForDelete =
+    MakeNextDfaLoopPlus1
+      (struct
+         val startState = startState
+
+         structure Folder =
+           MakeCharFolderNext
+             (struct
+                val startState = startState
+                val tables = tables
+
+                fun isFinal currentState =
+                  currentState = spaceAfterNonBlankState
+                fun finish idx = idx
+              end)
+
+         val fStart = Folder.foldNext
+       end)
+
   structure EndOfCurrentWORDStrict =
     MakeNextDfaLoop
       (struct
@@ -138,6 +157,7 @@ struct
   val startOfCurrentWORD = StartOfCurrentWORD.prev
   (* E *)
   val endOfCurrentWORD = EndOfCurrentWORD.next
+  val endOfCurrentWORDForDelete = EndOfCurrentWORDForDelete.next
 
   (* functions to strictly get the start and end of the current word. 
    * Problem: We want to support Vi motions like viW (selects a single word),

@@ -77,15 +77,6 @@ struct
     , spaceToPunctTable
     ]
 
-  fun next (currentState, chr) =
-    let
-      val currentState = Word8.toInt currentState
-      val currentTable = Vector.sub (tables, currentState)
-      val charIdx = Char.ord chr
-    in
-      Vector.sub (currentTable, charIdx)
-    end
-
   structure StartOfNextWord =
     MakeNextDfaLoop
       (struct
@@ -157,16 +148,17 @@ struct
          val fStart = StartOfCurrentWordFolder.foldPrev
        end)
 
+  fun isFinalForEndOfCurrentWord currentState =
+    currentState = alphaToSpace orelse currentState = punctToSpace
+    orelse currentState = alphaToPunct orelse currentState = punctToAlpha
+
   structure EndOfCurrentWordFolder =
     MakeCharFolderNext
       (struct
          val startState = startState
          val tables = tables
 
-         fun isFinal currentState =
-           currentState = alphaToSpace orelse currentState = punctToSpace
-           orelse currentState = alphaToPunct orelse currentState = punctToAlpha
-
+         val isFinal = isFinalForEndOfCurrentWord
          fun finish x = x - 1
        end)
 
@@ -184,6 +176,24 @@ struct
          val fStart = EndOfCurrentWordFolder.foldNext
        end)
 
+  structure EndOfCurrentWordForDelete =
+    MakeNextDfaLoopPlus1
+      (struct
+         val startState = startState
+
+         structure Folder =
+           MakeCharFolderNext
+             (struct
+                val startState = startState
+                val tables = tables
+
+                val isFinal = isFinalForEndOfCurrentWord
+                fun finish x = x
+              end)
+
+         val fStart = Folder.foldNext
+       end)
+
   (* w *)
   val startOfNextWord = StartOfNextWord.next
   (* ge *)
@@ -192,6 +202,7 @@ struct
   val startOfCurrentWord = StartOfCurrentWord.prev
   (* e *)
   val endOfCurrentWord = EndOfCurrentWord.next
+  val endOfCurrentWordForDelete = EndOfCurrentWordForDelete.next
 
   (* the meaning of "Strict" and the utility of these two functions
    * is described in vi-WORD-dfa.sml *)

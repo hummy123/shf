@@ -805,8 +805,8 @@ struct
            | #"W" => deleteByDfa (app, count, Cursor.nextWORD)
            | #"b" => deleteByDfa (app, count, Cursor.prevWord)
            | #"B" => deleteByDfa (app, count, Cursor.prevWORD)
-           | #"e" => deleteByDfa (app, count, Cursor.endOfWord)
-           | #"E" => deleteByDfa (app, count, Cursor.endOfWORD)
+           | #"e" => deleteByDfa (app, count, Cursor.endOfWordForDelete)
+           | #"E" => deleteByDfa (app, count, Cursor.endOfWORDForDelete)
            | #"0" => delete (app, 1, Cursor.vi0)
            | #"$" => deleteToEndOfLine app
            | #"^" => deleteToFirstNonSpaceChr app

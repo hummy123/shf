@@ -729,9 +729,11 @@ struct
 
   (* equivalent of vi's `e` command *)
   val endOfWord = ViWordDfa.endOfCurrentWord
+  val endOfWordForDelete = ViWordDfa.endOfCurrentWordForDelete
 
   (* equivalent of vi's `E` command *)
   val endOfWORD = ViWORDDfa.endOfCurrentWORD
+  val endOfWORDForDelete = ViWORDDfa.endOfCurrentWORDForDelete
 
   fun helpFirstNonSpaceChr (strPos, str, absIdx, stl, ltl) =
     if strPos = String.size str then
