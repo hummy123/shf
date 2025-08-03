@@ -70,8 +70,10 @@ end
 structure MoveToNextWord = MakeDfaMove (struct val fMove = Cursor.nextWord end)
 structure MoveToNextWORD = MakeDfaMove (struct val fMove = Cursor.nextWORD end)
 
-structure MoveToEndOfWord = MakeDfaMove (struct val fMove = Cursor.endOfWord end)
-structure MoveToEndOfWORD = MakeDfaMove (struct val fMove = Cursor.endOfWORD end)
+structure MoveToEndOfWord =
+  MakeDfaMove (struct val fMove = Cursor.endOfWord end)
+structure MoveToEndOfWORD =
+  MakeDfaMove (struct val fMove = Cursor.endOfWORD end)
 
 structure MoveToPrevWord = MakeDfaMove (struct val fMove = Cursor.prevWord end)
 structure MoveToPrevWORD = MakeDfaMove (struct val fMove = Cursor.prevWORD end)
@@ -80,4 +82,3 @@ structure MoveToEndOfPrevWord =
   MakeDfaMove (struct val fMove = Cursor.endOfPrevWord end)
 structure MoveToEndOfPrevWORD =
   MakeDfaMove (struct val fMove = Cursor.endOfPrevWORD end)
-
