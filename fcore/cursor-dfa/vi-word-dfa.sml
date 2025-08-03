@@ -91,29 +91,21 @@ struct
       (struct
          val startState = startState
 
-         fun fStart (idx, absIdx, str, tl, currentState, counter) =
-           if idx = String.size str then
-             case tl of
-               str :: tl => fStart (0, absIdx, str, tl, currentState, counter)
-             | [] => Int.max (0, absIdx - 2)
-           else
-             let
-               val chr = String.sub (str, idx)
-               val newState = next (currentState, chr)
-             in
-               if
-                 newState = alphaToPunct orelse newState = punctToAlpha
-                 orelse newState = spaceToAlpha orelse newState = spaceToPunct
-               then
-                 if counter - 1 = 0 then
-                   absIdx
-                 else
-                   (* reset state *)
-                   fStart
-                     (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
-               else
-                 fStart (idx + 1, absIdx + 1, str, tl, newState, counter)
-             end
+         structure Folder =
+           MakeCharFolderNext
+             (struct
+                val startState = startState
+                val tables = tables
+
+                fun isFinal currentState =
+                  currentState = alphaToPunct orelse currentState = punctToAlpha
+                  orelse currentState = spaceToAlpha
+                  orelse currentState = spaceToPunct
+
+                fun finish x = x
+              end)
+
+         val fStart = Folder.foldNext
        end)
 
   structure EndOfPrevWord =
@@ -121,30 +113,21 @@ struct
       (struct
          val startState = startState
 
-         fun fStart (idx, absIdx, str, tl, currentState, counter) =
-           if idx < 0 then
-             case tl of
-               str :: tl =>
-                 fStart
-                   (String.size str - 1, absIdx, str, tl, currentState, counter)
-             | [] => 0
-           else
-             let
-               val chr = String.sub (str, idx)
-               val newState = next (currentState, chr)
-             in
-               if
-                 newState = alphaToPunct orelse newState = punctToAlpha
-                 orelse newState = spaceToAlpha orelse newState = spaceToPunct
-               then
-                 if counter - 1 = 0 then
-                   absIdx
-                 else
-                   fStart
-                     (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
-               else
-                 fStart (idx - 1, absIdx - 1, str, tl, newState, counter)
-             end
+         structure Folder =
+           MakeCharFolderPrev
+             (struct
+                val startState = startState
+                val tables = tables
+
+                fun isFinal currentState =
+                  currentState = alphaToPunct orelse currentState = punctToAlpha
+                  orelse currentState = spaceToAlpha
+                  orelse currentState = spaceToPunct
+
+                fun finish x = x
+              end)
+
+         val fStart = Folder.foldPrev
        end)
 
   fun startOfCurrentWord (idx, absIdx, str, tl, currentState, counter) =
