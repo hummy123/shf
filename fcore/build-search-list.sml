@@ -133,6 +133,7 @@ struct
     let
       val finishIdx = startIdx + length + String.size searchString
       val bufferIdx = startIdx - String.size searchString
+      val bufferIdx = Int.max (bufferIdx, 0)
     in
       helpFromRange
         (startIdx, bufferIdx, finishIdx, buffer, searchString, searchList)
