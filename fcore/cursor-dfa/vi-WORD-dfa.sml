@@ -57,26 +57,18 @@ struct
       (struct
          val startState = startState
 
-         fun fStart (idx, absIdx, str, tl, currentState, counter) =
-           if idx = String.size str then
-             case tl of
-               str :: tl => fStart (0, absIdx, str, tl, currentState, counter)
-             | [] => Int.max (absIdx - 2, 0)
-           else
-             let
-               val chr = String.sub (str, idx)
-               val newState = next (currentState, chr)
-             in
-               if newState = nonBlankAfterSpaceState then
-                 if counter - 1 = 0 then
-                   absIdx
-                 else
-                   (* new loop, so reset to start state and proceed *)
-                   fStart
-                     (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
-               else
-                 fStart (idx + 1, absIdx + 1, str, tl, newState, counter)
-             end
+         structure Folder =
+           MakeCharFolderNext
+             (struct
+                val startState = startState
+                val tables = tables
+
+                fun finish x = x
+                fun isFinal currentState =
+                  currentState = nonBlankAfterSpaceState
+              end)
+
+         val fStart = Folder.foldNext
        end)
 
   structure EndOfPrevWORD =
@@ -84,28 +76,18 @@ struct
       (struct
          val startState = startState
 
-         fun fStart (idx, absIdx, str, tl, currentState, counter) =
-           if idx < 0 then
-             case tl of
-               str :: tl =>
-                 fStart
-                   (String.size str - 1, absIdx, str, tl, currentState, counter)
-             | [] => 0
-           else
-             let
-               val chr = String.sub (str, idx)
-               val newState = next (currentState, chr)
-             in
-               if newState = nonBlankAfterSpaceState then
-                 if counter - 1 = 0 then
-                   absIdx
-                 else
-                   (* reset to start state and proceed *)
-                   fStart
-                     (idx - 1, absIdx - 1, str, tl, startState, counter - 1)
-               else
-                 fStart (idx - 1, absIdx - 1, str, tl, newState, counter)
-             end
+         structure Folder =
+           MakeCharFolderNext
+             (struct
+                val startState = startState
+                val tables = tables
+
+                fun finish x = x
+                fun isFinal currentState =
+                  currentState = nonBlankAfterSpaceState
+              end)
+
+         val fStart = Folder.foldNext
        end)
 
   fun startOfCurrentWORD (idx, absIdx, str, tl, currentState, counter) =
