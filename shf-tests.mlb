@@ -38,4 +38,5 @@ fcore/app-update.sml
 test/Railroad/src/railroad.mlb
 test/normal-move.sml
 test/normal-delete.sml
+test/regression.sml
 test/test.sml

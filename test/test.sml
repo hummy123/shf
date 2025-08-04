@@ -1,12 +1,16 @@
-fun main () =
-  let
-    open Railroad
-    open Railroad.Test
+structure Test =
+struct
+  open Railroad
+  open Railroad.Test
 
-    val tests = NormalMove.tests @ NormalDelete.tests
-    val tests = concat tests
-  in
-    runWithConfig [Configuration.PrintPassed false] tests
-  end
+  fun main () =
+    let
+      val tests =
+        List.concat [NormalMove.tests, NormalDelete.tests, Regression.tests]
+      val tests = concat tests
+    in
+      runWithConfig [Configuration.PrintPassed false] tests
+    end
+end
 
-val () = main ()
+val () = Test.main ()
