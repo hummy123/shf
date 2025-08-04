@@ -187,3 +187,48 @@ struct
           foldPrev (idx - 1, absIdx - 1, str, tl, newState, counter)
       end
 end
+
+signature MAKE_IF_CHAR_FOLDER =
+sig
+  val fStart: int * string * int vector * int * string list * int vector list
+              -> int
+end
+
+functor MakeIfCharFolderPrev(Fn: MAKE_IF_CHAR_FOLDER) =
+struct
+  fun foldPrev (lineGap: LineGap.t, cursorIdx) =
+    let
+      val
+        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
+        lineGap
+    in
+      case (rightStrings, rightLines) of
+        (strHd :: strTl, lnHd :: lnTl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size strHd then
+              (* strIdx is in this string *)
+              Fn.fStart (strIdx, strHd, lnHd, cursorIdx, leftStrings, leftLines)
+            else
+              (* strIdx must be in the strTl *)
+              (case (strTl, lnTl) of
+                 (nestStrHd :: _, nestLnHd :: _) =>
+                   let
+                     val strIdx = strIdx - String.size strHd
+                   in
+                     Fn.fStart
+                       ( strIdx
+                       , nestStrHd
+                       , nestLnHd
+                       , cursorIdx
+                       , strHd :: leftStrings
+                       , lnHd :: leftLines
+                       )
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) => (* nowhere to go, so return cursorIdx *) cursorIdx
+    end
+end

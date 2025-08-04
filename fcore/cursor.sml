@@ -36,41 +36,9 @@ struct
     else
       helpVi0 (absIdx - strPos, stl, ltl)
 
-  fun vi0 (lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (strHd :: strTl, lnHd :: lnTl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size strHd then
-              (* strIdx is in this string *)
-              startVi0 (strIdx, strHd, lnHd, cursorIdx, leftStrings, leftLines)
-            else
-              (* strIdx must be in the strTl *)
-              (case (strTl, lnTl) of
-                 (nestStrHd :: _, nestLnHd :: _) =>
-                   let
-                     val strIdx = strIdx - String.size strHd
-                   in
-                     startVi0
-                       ( strIdx
-                       , nestStrHd
-                       , nestLnHd
-                       , cursorIdx
-                       , strHd :: leftStrings
-                       , lnHd :: leftLines
-                       )
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => (* nowhere to go, so return cursorIdx *) cursorIdx
-    end
+  structure Vi0 = MakeIfCharFolderPrev (struct val fStart = startVi0 end)
+
+  val vi0 = Vi0.foldPrev
 
   fun helpViDlr (strPos, str, absIdx, strTl, lineTl) =
     if strPos = String.size str then
