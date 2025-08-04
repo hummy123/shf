@@ -36,9 +36,16 @@ struct
     else
       helpVi0 (absIdx - strPos, stl, ltl)
 
-  structure Vi0 = MakeIfCharFolderPrev (struct val fStart = startVi0 end)
+  structure Vi0 =
+    MakeIfCharFolderPrev
+      (struct
+         type env = unit
+         val fStart = startVi0
+         fun fStart (strPos, shd, lhd, absIdx, stl, ltl, _) =
+           startVi0 (strPos, shd, lhd, absIdx, stl, ltl)
+       end)
 
-  val vi0 = Vi0.foldPrev
+  fun vi0 (lineGap, cursorIdx) = Vi0.foldPrev (lineGap, cursorIdx, ())
 
   fun helpViDlr (strPos, str, absIdx, strTl, lineTl) =
     if strPos = String.size str then
@@ -156,6 +163,8 @@ struct
   structure ViH =
     MakeIfCharFolderPrev
       (struct
+         type env = unit
+
          fun helpViH (strIdx, hd, cursorIdx, leftStrings) =
            if strIdx > 0 then
              (* bounds check: can access prev char in hd *)
@@ -216,11 +225,11 @@ struct
                     cursorIdx - 1
               | [] => 0)
 
-         fun fStart (strIdx, hd, _, cursorIdx, leftStrings, _) =
+         fun fStart (strIdx, hd, _, cursorIdx, leftStrings, _, _) =
            helpViH (strIdx, hd, cursorIdx, leftStrings)
        end)
 
-  val viH = ViH.foldPrev
+  fun viH (lineGap, cursorIdx) = ViH.foldPrev (lineGap, cursorIdx, ())
 
   fun helpGetCursorColumn (distanceFromLine, strList, lineList) =
     case (strList, lineList) of
@@ -438,6 +447,8 @@ struct
   structure ViK =
     MakeIfCharFolderPrev
       (struct
+         type env = unit
+
          fun helpViK
            ( strPos
            , str
@@ -517,7 +528,7 @@ struct
                      , lineTl
                      )
 
-         fun fStart (strIdx, shd, lhd, cursorIdx, leftStrings, leftLines) =
+         fun fStart (strIdx, shd, lhd, cursorIdx, leftStrings, leftLines, _) =
            if String.sub (shd, strIdx) = #"\n" then
              (* ? -> ? -> \n *)
              if strIdx > 0 then
@@ -640,10 +651,9 @@ struct
                  , leftLines
                  )
              end
-
        end)
 
-  val viK = ViK.foldPrev
+  fun viK (lineGap, cursorIdx) = ViK.foldPrev (lineGap, cursorIdx, ())
 
   (* equivalent of vi's 'w' command *)
   val nextWord = ViWordDfa.startOfNextWord
@@ -676,6 +686,8 @@ struct
   structure FirstNonSpaceChr =
     MakeIfCharFolderPrev
       (struct
+         type env = unit
+
          fun helpFirstNonSpaceChr (strPos, str, absIdx, stl) =
            if strPos = String.size str then
              case stl of
@@ -691,7 +703,7 @@ struct
                  absIdx
              end
 
-         fun fStart (strIdx, shd, _, absIdx, stl, _) =
+         fun fStart (strIdx, shd, _, absIdx, stl, _, _) =
            if strIdx < String.size shd then
              helpFirstNonSpaceChr (strIdx, shd, absIdx, stl)
            else
@@ -700,7 +712,8 @@ struct
              | [] => (* tl is empty; just return absIdx *) absIdx
        end)
 
-  val firstNonSpaceChr = FirstNonSpaceChr.foldPrev
+  fun firstNonSpaceChr (lineGap, cursorIdx) =
+    FirstNonSpaceChr.foldPrev (lineGap, cursorIdx, ())
 
   fun helpToNextChr (strPos, str, absIdx, stl, ltl, origIdx, findChr) =
     if strPos = String.size str then

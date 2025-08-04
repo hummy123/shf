@@ -190,13 +190,16 @@ end
 
 signature MAKE_IF_CHAR_FOLDER =
 sig
-  val fStart: int * string * int vector * int * string list * int vector list
-              -> int
+  type env
+
+  val fStart:
+    int * string * int vector * int * string list * int vector list * env
+    -> int
 end
 
 functor MakeIfCharFolderPrev(Fn: MAKE_IF_CHAR_FOLDER) =
 struct
-  fun foldPrev (lineGap: LineGap.t, cursorIdx) =
+  fun foldPrev (lineGap: LineGap.t, cursorIdx, env: Fn.env) =
     let
       val
         {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
@@ -210,7 +213,8 @@ struct
           in
             if strIdx < String.size strHd then
               (* strIdx is in this string *)
-              Fn.fStart (strIdx, strHd, lnHd, cursorIdx, leftStrings, leftLines)
+              Fn.fStart
+                (strIdx, strHd, lnHd, cursorIdx, leftStrings, leftLines, env)
             else
               (* strIdx must be in the strTl *)
               (case (strTl, lnTl) of
@@ -225,6 +229,7 @@ struct
                        , cursorIdx
                        , strHd :: leftStrings
                        , lnHd :: leftLines
+                       , env
                        )
                    end
                | (_, _) => cursorIdx)
