@@ -43,12 +43,22 @@ struct
        let
          val app = appFromText initialText
          val history = "G12dk"
-         val history = "100G55dkz33dk"
          val newApp = applyChars (history, app)
        in
          (* just expect that we do not fail or throw an exception *)
          Expect.isTrue true
-       end)]
+       end),
+
+       test "idk yet" (fn _ =>
+       let
+         val app = appFromText initialText
+         val history = "16G18ddjjjjjjjjjdkdkdkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
+         val newApp = applyChars (history, app)
+       in
+         Expect.isTrue true
+       end
+       )
+    ]
 
   val tests = [charEventTests]
 end

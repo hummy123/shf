@@ -33,6 +33,6 @@ struct
       val () = TextIO.output (io, textOutput)
       val () = TextIO.closeOut io
     in
-      raise Empty
+      raise e
     end
 end
