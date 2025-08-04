@@ -826,35 +826,42 @@ struct
   fun toNextChr (lineGap, cursorIdx, chr) =
     nextChr (lineGap, cursorIdx, chr, startToNextChr)
 
-  fun helpToPrevChr (strPos, str, absIdx, stl, ltl, origIdx, findChr) =
-    if strPos < 0 then
-      case (stl, ltl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpToPrevChr
-            (String.size shd - 1, shd, absIdx, stl, ltl, origIdx, findChr)
-      | (_, _) => origIdx
-    else if String.sub (str, strPos) = findChr then
-      absIdx
-    else
-      helpToPrevChr (strPos - 1, str, absIdx - 1, stl, ltl, origIdx, findChr)
+  structure ToPrevChr =
+    MakeIfCharFolderPrev
+      (struct
+         type env = char
 
-  fun startToPrevChr (shd, strIdx, absIdx, stl, ltl, findChr) =
-    (* we want to start iterating from Prev char after strIdx *)
-    if strIdx > 0 then
-      helpToPrevChr (strIdx - 1, shd, absIdx - 1, stl, ltl, absIdx, findChr)
-    else
-      case (stl, ltl) of
-        (stlhd :: stltl, ltlhd :: ltltl) =>
-          helpToPrevChr
-            ( String.size stlhd - 1
-            , stlhd
-            , absIdx - 1
-            , stltl
-            , ltltl
-            , absIdx
-            , findChr
-            )
-      | (_, _) => (* tl is empty; return 0 for lineGap start *) 0
+         fun helpToPrevChr (strPos, str, absIdx, stl, origIdx, findChr) =
+           if strPos < 0 then
+             case stl of
+               shd :: stl =>
+                 helpToPrevChr
+                   (String.size shd - 1, shd, absIdx, stl, origIdx, findChr)
+             | [] => origIdx
+           else if String.sub (str, strPos) = findChr then
+             absIdx
+           else
+             helpToPrevChr (strPos - 1, str, absIdx - 1, stl, origIdx, findChr)
+
+         fun fStart (strIdx, shd, _, absIdx, stl, _, findChr) =
+           (* we want to start iterating from Prev char after strIdx *)
+           if strIdx > 0 then
+             helpToPrevChr (strIdx - 1, shd, absIdx - 1, stl, absIdx, findChr)
+           else
+             case stl of
+               stlhd :: stltl =>
+                 helpToPrevChr
+                   ( String.size stlhd - 1
+                   , stlhd
+                   , absIdx - 1
+                   , stltl
+                   , absIdx
+                   , findChr
+                   )
+             | [] => (* tl is empty; return 0 for lineGap start *) 0
+       end)
+
+  val toPrevChr = ToPrevChr.foldPrev
 
   fun helpTillPrevChr
     ( strPos
@@ -993,9 +1000,6 @@ struct
           end
       | (_, _) => cursorIdx
     end
-
-  fun toPrevChr (lineGap, cursorIdx, chr) =
-    prevChr (lineGap, cursorIdx, chr, startToPrevChr)
 
   fun tillPrevChr (lineGap, cursorIdx, chr) =
     prevChr (lineGap, cursorIdx, chr, startTillPrevChr)
