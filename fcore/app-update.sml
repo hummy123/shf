@@ -509,7 +509,7 @@ struct
           * We also rely on helpRemoveChr to handle backwards-movement logic:
           * If cursorIdx is at \n after deletion, then stop.
           * Else, move back one chr. *)
-          val lastChr = Cursor.viDlr (buffer, cursorIdx)
+          val lastChr = Cursor.viDlr (buffer, cursorIdx, 1)
           val length = lastChr - cursorIdx
           val buffer = LineGap.delete (cursorIdx, length, buffer)
 
@@ -522,39 +522,23 @@ struct
         end
     end
 
-  fun helpDeleteLine (app: app_type, buffer, cursorIdx, otherIdx, count) =
-    if count = 0 then
-      let
-        val otherIdx = Cursor.clipIdx (buffer, otherIdx)
-        val length = otherIdx - cursorIdx
-        val buffer = LineGap.delete (cursorIdx, length, buffer)
-
-        val {searchList, searchString, ...} = app
-        val (buffer, searchList) = deleteSearchList
-          (cursorIdx, length, searchString, searchList, buffer)
-
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val cursorIdx = Cursor.clipIdx (buffer, cursorIdx)
-      in
-        Finish.buildTextAndClear (app, buffer, cursorIdx, searchList)
-      end
-    else
-      let
-        (* get otherIdx, where cursor will want to go after motion. *)
-        val buffer = LineGap.goToIdx (otherIdx, buffer)
-        val newOtherIdx = Cursor.viDlr (buffer, otherIdx)
-        val newOtherIdx = Cursor.viL (buffer, newOtherIdx)
-        val newCount = if newOtherIdx = otherIdx then 0 else count - 1
-      in
-        helpDeleteLine (app, buffer, cursorIdx, newOtherIdx, newCount)
-      end
-
   fun deleteLine (app: app_type, count) =
     let
-      val {buffer, cursorIdx, ...} = app
-      val cursorIdx = Cursor.vi0 (buffer, cursorIdx)
+      val {buffer, cursorIdx, searchList, searchString, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val startIdx = Cursor.vi0 (buffer, cursorIdx)
+      val finishIdx = Cursor.viDlrForDelete (buffer, cursorIdx, count)
+
+      val length = finishIdx - startIdx
+      val buffer = LineGap.delete (startIdx, length, buffer)
+
+      val (buffer, searchList) = deleteSearchList
+        (startIdx, length, searchString, searchList, buffer)
+
+      val buffer = LineGap.goToIdx (startIdx, buffer)
     in
-      helpDeleteLine (app, buffer, cursorIdx, cursorIdx, count)
+      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList)
     end
 
   fun helpDeleteLineBack (app, buffer, low, high, count) =
@@ -587,7 +571,7 @@ struct
     let
       val {buffer, cursorIdx, ...} = app
       val low = Cursor.vi0 (buffer, cursorIdx)
-      val high = Cursor.viDlr (buffer, cursorIdx) + 1
+      val high = Cursor.viDlr (buffer, cursorIdx, 1) + 1
     in
       helpDeleteLineBack (app, buffer, low, high, count)
     end

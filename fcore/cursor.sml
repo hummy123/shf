@@ -47,67 +47,8 @@ struct
 
   fun vi0 (lineGap, cursorIdx) = Vi0.foldPrev (lineGap, cursorIdx, ())
 
-  fun helpViDlr (strPos, str, absIdx, strTl, lineTl) =
-    if strPos = String.size str then
-      case (strTl, lineTl) of
-        (shd :: stl, lhd :: ltl) => helpViDlr (0, shd, absIdx, stl, ltl)
-      | (_, _) => absIdx - 1
-    else
-      case String.sub (str, strPos) of
-        #"\n" => absIdx - 1
-      | _ => helpViDlr (strPos + 1, str, absIdx + 1, strTl, lineTl)
-
-  fun viDlr (lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (strHd :: strTl, lnHd :: lnTl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size strHd then
-              if String.sub (strHd, strIdx) <> #"\n" then
-                (* not in double linebreak *)
-                helpViDlr (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
-              else (* check if we are in double linebreak *) if strIdx - 1 >= 0 then
-                if String.sub (strHd, strIdx - 1) = #"\n" then
-                  (* we are in double linebreak, so do nothing *)
-                  cursorIdx
-                else
-                  (* not in double linebreak, so iterate *)
-                  helpViDlr (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
-              else
-                (* check if double linebreak in strTl *)
-                (case strTl of
-                   nestStrHd :: _ =>
-                     if String.sub (nestStrHd, 0) = #"\n" then
-                       cursorIdx
-                     else
-                       helpViDlr (strIdx + 1, strHd, cursorIdx + 1, strTl, lnTl)
-                 | [] => cursorIdx)
-            else
-              (* strIdx must be in the strTl *)
-              (case (strTl, lnTl) of
-                 (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
-                   let
-                     val strIdx = strIdx - String.size strHd
-                   in
-                     helpViDlr
-                       ( strIdx + 1
-                       , nestStrHd
-                       , cursorIdx + 1
-                       , nestStrTl
-                       , nestLnTl
-                       )
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => (* nowhere to go, so return cursorIdx *) cursorIdx
-    end
+  val viDlr = ViDlrDfa.next
+  val viDlrForDelete = ViDlrDfa.nextForDelete
 
   fun helpViL (strIdx, hd, cursorIdx, tl) =
     if String.sub (hd, strIdx) = #"\n" then

@@ -43,7 +43,6 @@ structure MoveViK = MakeMove (struct val fMove = Cursor.viK end)
 structure MoveViL = MakeMove (struct val fMove = Cursor.viL end)
 
 structure MoveToStartOfLine = MakeMove (struct val fMove = Cursor.vi0 end)
-structure MoveToEndOfLine = MakeMove (struct val fMove = Cursor.viDlr end)
 
 signature DFA_MOVE =
 sig
@@ -82,3 +81,5 @@ structure MoveToEndOfPrevWord =
   MakeDfaMove (struct val fMove = Cursor.endOfPrevWord end)
 structure MoveToEndOfPrevWORD =
   MakeDfaMove (struct val fMove = Cursor.endOfPrevWORD end)
+
+structure MoveToEndOfLine = MakeDfaMove (struct val fMove = Cursor.viDlr end)
