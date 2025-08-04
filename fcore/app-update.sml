@@ -538,7 +538,7 @@ struct
 
       val buffer = LineGap.goToIdx (startIdx, buffer)
     in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList)
+      Finish.buildTextAndClear (app, buffer, startIdx, searchList)
     end
 
   fun helpDeleteLineBack (app, buffer, low, high, count) =
@@ -569,7 +569,6 @@ struct
 
   fun deleteLineBack (app: app_type, count) =
     let
-      val _ = raise Empty
       val {buffer, cursorIdx, ...} = app
       val low = Cursor.vi0 (buffer, cursorIdx)
       val high = Cursor.viDlr (buffer, cursorIdx, 1) + 1
