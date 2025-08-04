@@ -153,91 +153,74 @@ struct
           cursorIdx
     end
 
-  fun helpViH (strIdx, hd, cursorIdx, leftStrings) =
-    if strIdx > 0 then
-      (* bounds check: can access prev char in hd *)
-      if String.sub (hd, strIdx - 1) = #"\n" then
-        (* prev char is line break *)
-        if strIdx - 1 > 0 then
-          (* bounds check: can access two chars back in hd *)
-          if String.sub (hd, strIdx - 2) = #"\n" then
-            (* line break followed by line break
-             * so it is fine to decrement by 1 *)
-            cursorIdx - 1
-          else
-            (* non-line break followed by line break 
-             * so we have to decrement by two,
-             * skipping over line break *)
-            cursorIdx - 2
-        else
-          (* need to check two chars back in leftStrings *)
-          (case leftStrings of
-             lhd :: ltl =>
-               if String.sub (lhd, String.size lhd - 1) = #"\n" then
-                 (* double line break *)
-                 cursorIdx - 1
+  structure ViH =
+    MakeIfCharFolderPrev
+      (struct
+         fun helpViH (strIdx, hd, cursorIdx, leftStrings) =
+           if strIdx > 0 then
+             (* bounds check: can access prev char in hd *)
+             if String.sub (hd, strIdx - 1) = #"\n" then
+               (* prev char is line break *)
+               if strIdx - 1 > 0 then
+                 (* bounds check: can access two chars back in hd *)
+                 if String.sub (hd, strIdx - 2) = #"\n" then
+                   (* line break followed by line break
+                    * so it is fine to decrement by 1 *)
+                   cursorIdx - 1
+                 else
+                   (* non-line break followed by line break 
+                    * so we have to decrement by two,
+                    * skipping over line break *)
+                   cursorIdx - 2
                else
-                 (* non-line break precedes line break *)
-                 cursorIdx - 2
-           | [] => cursorIdx - 1)
-      else
-        (* prev char is not line break so we can decrement by 1 *)
-        cursorIdx - 1
-    else
-      (* prev char is in leftStrings *)
-      (case leftStrings of
-         lhd :: ltl =>
-           if String.sub (lhd, String.size lhd - 1) = #"\n" then
-             (* one line break *)
-             if String.size lhd > 1 then
-               (* bounds check: prev-prev chr is in lhd *)
-               if String.sub (lhd, String.size lhd - 2) = #"\n" then
-                 (* double line break *)
-                 cursorIdx - 1
-               else
-                 (* non-line break precedes line break *)
-                 cursorIdx - 2
+                 (* need to check two chars back in leftStrings *)
+                 (case leftStrings of
+                    lhd :: ltl =>
+                      if String.sub (lhd, String.size lhd - 1) = #"\n" then
+                        (* double line break *)
+                        cursorIdx - 1
+                      else
+                        (* non-line break precedes line break *)
+                        cursorIdx - 2
+                  | [] => cursorIdx - 1)
              else
-               (* prev-prev chr is in ltl *)
-               (case ltl of
-                  ltlhd :: _ =>
-                    if String.sub (ltlhd, String.size ltlhd - 1) = #"\n" then
-                      (* double line break *)
-                      cursorIdx - 1
-                    else
-                      (* non-line break precedes line break *)
-                      cursorIdx - 2
-                | [] => cursorIdx - 1)
+               (* prev char is not line break so we can decrement by 1 *)
+               cursorIdx - 1
            else
-             (* no line break *)
-             cursorIdx - 1
-       | [] => 0)
+             (* prev char is in leftStrings *)
+             (case leftStrings of
+                lhd :: ltl =>
+                  if String.sub (lhd, String.size lhd - 1) = #"\n" then
+                    (* one line break *)
+                    if String.size lhd > 1 then
+                      (* bounds check: prev-prev chr is in lhd *)
+                      if String.sub (lhd, String.size lhd - 2) = #"\n" then
+                        (* double line break *)
+                        cursorIdx - 1
+                      else
+                        (* non-line break precedes line break *)
+                        cursorIdx - 2
+                    else
+                      (* prev-prev chr is in ltl *)
+                      (case ltl of
+                         ltlhd :: _ =>
+                           if String.sub (ltlhd, String.size ltlhd - 1) = #"\n" then
+                             (* double line break *)
+                             cursorIdx - 1
+                           else
+                             (* non-line break precedes line break *)
+                             cursorIdx - 2
+                       | [] => cursorIdx - 1)
+                  else
+                    (* no line break *)
+                    cursorIdx - 1
+              | [] => 0)
 
-  (* Prerequisite: lineGap is moved to requested idx first. *)
-  fun viH (lineGap: LineGap.t, cursorIdx) =
-    let
-      val {rightStrings, leftStrings, idx = bufferIdx, ...} = lineGap
-    in
-      case rightStrings of
-        hd :: tl =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size hd then
-              (* strIdx in hd *)
-              helpViH (strIdx, hd, cursorIdx, leftStrings)
-            else
-              (* strIdx in tl *)
-              (case tl of
-                 tlhd :: tltl =>
-                   let val strIdx = strIdx - String.size hd
-                   in helpViH (strIdx, tlhd, cursorIdx, hd :: leftStrings)
-                   end
-               | [] => cursorIdx)
-          end
-      | [] => cursorIdx
-    end
+         fun fStart (strIdx, hd, _, cursorIdx, leftStrings, _) =
+           helpViH (strIdx, hd, cursorIdx, leftStrings)
+       end)
+
+  val viH = ViH.foldPrev
 
   fun helpGetCursorColumn (distanceFromLine, strList, lineList) =
     case (strList, lineList) of
@@ -452,230 +435,215 @@ struct
       | (_, _) => (* nowhere to go rightward, so return cursorIdx *) cursorIdx
     end
 
-  fun helpViK
-    ( strPos
-    , str
-    , absIdx
-    , lineColumn
-    , preferredColumn
-    , hasPassedLine
-    , strTl
-    , lineHd
-    , lineTl
-    ) =
-    if strPos < 0 then
-      case (strTl, lineTl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpViK
-            ( String.size shd - 1
-            , shd
-            , absIdx
-            , lineColumn
-            , preferredColumn
-            , hasPassedLine
-            , stl
-            , lhd
-            , ltl
-            )
-      | (_, _) => (* empty, so return start of previous string *) absIdx + 1
-    else
-      case String.sub (str, strPos) of
-        #"\n" =>
-          if hasPassedLine then
-            (* reached line break twice, 
-             * but line has fewer chars than preferredColumn 
-             * so go back to chr immediately after this second line break *)
-            absIdx + 1
-          else
-            (* reached start of line once;
-            * have to check if this is a double linebreak,
-            * and return idx of second linebreak if so *)
-            let
-              (* have to calculate column of current line
-               * so we know which line to stop searching at *)
-              val lineColumn = getCursorColumn
-                (strPos - 1, str, lineHd, strTl, lineTl, absIdx - 1)
-            in
-              helpViK
-                ( strPos - 1
-                , str
-                , absIdx - 1
-                , lineColumn
-                , preferredColumn
-                , true
-                , strTl
-                , lineHd
-                , lineTl
-                )
-            end
-      | _ =>
-          if lineColumn <= preferredColumn andalso hasPassedLine then
-            (* We're at or before the preferredColumn so return absIdx
-             * context: current line may have fewer columns  
-             * than our preferred column value.
-             * If this is the case, we want to check
-             * "is lineColumn equal to or before preferredColumn?". *)
-            absIdx
-          else
-            (* we're not in the preferred column, so keep iterating *)
-            helpViK
-              ( strPos - 1
-              , str
-              , absIdx - 1
-              , lineColumn - 1
-              , preferredColumn
-              , hasPassedLine
-              , strTl
-              , lineHd
-              , lineTl
-              )
+  structure ViK =
+    MakeIfCharFolderPrev
+      (struct
+         fun helpViK
+           ( strPos
+           , str
+           , absIdx
+           , lineColumn
+           , preferredColumn
+           , hasPassedLine
+           , strTl
+           , lineHd
+           , lineTl
+           ) =
+           if strPos < 0 then
+             case (strTl, lineTl) of
+               (shd :: stl, lhd :: ltl) =>
+                 helpViK
+                   ( String.size shd - 1
+                   , shd
+                   , absIdx
+                   , lineColumn
+                   , preferredColumn
+                   , hasPassedLine
+                   , stl
+                   , lhd
+                   , ltl
+                   )
+             | (_, _) => (* empty, so return start of previous string *)
+                 absIdx + 1
+           else
+             case String.sub (str, strPos) of
+               #"\n" =>
+                 if hasPassedLine then
+                   (* reached line break twice, 
+                    * but line has fewer chars than preferredColumn 
+                    * so go back to chr immediately after this second line break *)
+                   absIdx + 1
+                 else
+                   (* reached start of line once;
+                   * have to check if this is a double linebreak,
+                   * and return idx of second linebreak if so *)
+                   let
+                     (* have to calculate column of current line
+                      * so we know which line to stop searching at *)
+                     val lineColumn = getCursorColumn
+                       (strPos - 1, str, lineHd, strTl, lineTl, absIdx - 1)
+                   in
+                     helpViK
+                       ( strPos - 1
+                       , str
+                       , absIdx - 1
+                       , lineColumn
+                       , preferredColumn
+                       , true
+                       , strTl
+                       , lineHd
+                       , lineTl
+                       )
+                   end
+             | _ =>
+                 if lineColumn <= preferredColumn andalso hasPassedLine then
+                   (* We're at or before the preferredColumn so return absIdx
+                    * context: current line may have fewer columns  
+                    * than our preferred column value.
+                    * If this is the case, we want to check
+                    * "is lineColumn equal to or before preferredColumn?". *)
+                   absIdx
+                 else
+                   (* we're not in the preferred column, so keep iterating *)
+                   helpViK
+                     ( strPos - 1
+                     , str
+                     , absIdx - 1
+                     , lineColumn - 1
+                     , preferredColumn
+                     , hasPassedLine
+                     , strTl
+                     , lineHd
+                     , lineTl
+                     )
 
-  fun startViK (strIdx, shd, cursorIdx, leftStrings, lhd, leftLines) =
-    if String.sub (shd, strIdx) = #"\n" then
-      (* ? -> ? -> \n *)
-      if strIdx > 0 then
-        (* strIdx - 1 is in shd *)
-        if String.sub (shd, strIdx - 1) = #"\n" then
-          (* ? -> \n -> \n *)
-          if strIdx > 1 then
-            (* strIdx - 2 is in shd *)
-            if String.sub (shd, strIdx - 2) = #"\n" then
-              (* \n -> \n -> \n 
-               * so it is safe to decrement cursorIdx by 1 *)
-              cursorIdx - 1
-            else
-              (* graphical-chr -> \n -> \n 
-               * so go to beginning of line, 
-               * starting from graphical-chr *)
-              startVi0
-                (strIdx - 2, shd, lhd, cursorIdx - 2, leftStrings, leftLines)
-          else
-            (* strIdx - 2 is in leftStrings *)
-            case (leftStrings, leftLines) of
-              (lshd :: lstl, llhd :: lltl) =>
-                if String.sub (lshd, String.size lshd - 1) = #"\n" then
-                  (* \n -> \n -> \n 
-                   * so it is safe to decrement cursorIdx by 1 *)
-                  cursorIdx - 1
-                else
-                  (* graphical-chr -> \n -> \n 
-                   * so go to beginning of line, 
-                   * starting from graphical-chr *)
-                  startVi0
-                    ( String.size lshd - 1
-                    , lshd
-                    , llhd
-                    , cursorIdx - 2
-                    , lstl
-                    , lltl
-                    )
-            | (_, _) =>
-                (* nothing to the left, so we are at start of buffer *)
-                0
-        else
-          (* ? -> graphical-chr -> \n 
-           * Don't expect this case to happen
-           * but if it does, go to start of line. *)
-          startVi0 (strIdx - 1, shd, lhd, cursorIdx - 1, leftStrings, leftLines)
-      else
-        (* strIdx - 1 is in leftStrings *)
-        case (leftStrings, leftLines) of
-          (lshd :: lstl, llhd :: lltl) =>
-            if String.sub (lshd, String.size lshd - 1) = #"\n" then
-              (* ? -> \n -> \n *)
-              if String.size lshd > 1 then
-                (* cursorIdx - 2 is in this string *)
-                if String.sub (lshd, String.size lshd - 2) = #"\n" then
-                  (* \n -> \n -> \n *)
-                  cursorIdx - 1
-                else
-                  (* graphical-chr -> \n -> \n *)
-                  startVi0
-                    ( String.size lshd - 2
-                    , lshd
-                    , llhd
-                    , cursorIdx - 2
-                    , lstl
-                    , lltl
-                    )
-              else
-                (* cursorIdx - 2 is in lstl *)
-                (case (lstl, lltl) of
-                   (stlhd :: stltl, ltlhd :: lltl) =>
-                     if String.sub (stlhd, String.size stlhd - 1) = #"\n" then
-                       (* \n -> \n -> \n *)
-                       cursorIdx - 1
+         fun fStart (strIdx, shd, lhd, cursorIdx, leftStrings, leftLines) =
+           if String.sub (shd, strIdx) = #"\n" then
+             (* ? -> ? -> \n *)
+             if strIdx > 0 then
+               (* strIdx - 1 is in shd *)
+               if String.sub (shd, strIdx - 1) = #"\n" then
+                 (* ? -> \n -> \n *)
+                 if strIdx > 1 then
+                   (* strIdx - 2 is in shd *)
+                   if String.sub (shd, strIdx - 2) = #"\n" then
+                     (* \n -> \n -> \n 
+                      * so it is safe to decrement cursorIdx by 1 *)
+                     cursorIdx - 1
+                   else
+                     (* graphical-chr -> \n -> \n 
+                      * so go to beginning of line, 
+                      * starting from graphical-chr *)
+                     startVi0
+                       ( strIdx - 2
+                       , shd
+                       , lhd
+                       , cursorIdx - 2
+                       , leftStrings
+                       , leftLines
+                       )
+                 else
+                   (* strIdx - 2 is in leftStrings *)
+                   case (leftStrings, leftLines) of
+                     (lshd :: lstl, llhd :: lltl) =>
+                       if String.sub (lshd, String.size lshd - 1) = #"\n" then
+                         (* \n -> \n -> \n 
+                          * so it is safe to decrement cursorIdx by 1 *)
+                         cursorIdx - 1
+                       else
+                         (* graphical-chr -> \n -> \n 
+                          * so go to beginning of line, 
+                          * starting from graphical-chr *)
+                         startVi0
+                           ( String.size lshd - 1
+                           , lshd
+                           , llhd
+                           , cursorIdx - 2
+                           , lstl
+                           , lltl
+                           )
+                   | (_, _) =>
+                       (* nothing to the left, so we are at start of buffer *)
+                       0
+               else
+                 (* ? -> graphical-chr -> \n 
+                  * Don't expect this case to happen
+                  * but if it does, go to start of line. *)
+                 startVi0
+                   (strIdx - 1, shd, lhd, cursorIdx - 1, leftStrings, leftLines)
+             else
+               (* strIdx - 1 is in leftStrings *)
+               case (leftStrings, leftLines) of
+                 (lshd :: lstl, llhd :: lltl) =>
+                   if String.sub (lshd, String.size lshd - 1) = #"\n" then
+                     (* ? -> \n -> \n *)
+                     if String.size lshd > 1 then
+                       (* cursorIdx - 2 is in this string *)
+                       if String.sub (lshd, String.size lshd - 2) = #"\n" then
+                         (* \n -> \n -> \n *)
+                         cursorIdx - 1
+                       else
+                         (* graphical-chr -> \n -> \n *)
+                         startVi0
+                           ( String.size lshd - 2
+                           , lshd
+                           , llhd
+                           , cursorIdx - 2
+                           , lstl
+                           , lltl
+                           )
                      else
-                       (* graphical-chr -> \n -> \n *)
-                       startVi0
-                         ( String.size stlhd - 1
-                         , stlhd
-                         , ltlhd
-                         , cursorIdx - 2
-                         , lstl
-                         , lltl
-                         )
-                 | (_, _) => 0)
-            else
-              (* ? -> graphical-chr -> \n *)
-              startVi0
-                ( String.size lshd - 1
-                , lshd
-                , llhd
-                , cursorIdx - 1
-                , leftStrings
-                , leftLines
-                )
-        | (_, _) => (* leftStrings is empty so go to start of buffer *) 0
-    else
-      (* ? -> ? -> graphical-chr 
-       * Normal case where we call startViK. *)
-      let
-        val lineColumn = getCursorColumn
-          (strIdx, shd, lhd, leftStrings, leftLines, cursorIdx)
-      in
-        helpViK
-          ( strIdx
-          , shd
-          , cursorIdx
-          , lineColumn
-          , lineColumn
-          , false
-          , leftStrings
-          , lhd
-          , leftLines
-          )
-      end
+                       (* cursorIdx - 2 is in lstl *)
+                       (case (lstl, lltl) of
+                          (stlhd :: stltl, ltlhd :: lltl) =>
+                            if String.sub (stlhd, String.size stlhd - 1) = #"\n" then
+                              (* \n -> \n -> \n *)
+                              cursorIdx - 1
+                            else
+                              (* graphical-chr -> \n -> \n *)
+                              startVi0
+                                ( String.size stlhd - 1
+                                , stlhd
+                                , ltlhd
+                                , cursorIdx - 2
+                                , lstl
+                                , lltl
+                                )
+                        | (_, _) => 0)
+                   else
+                     (* ? -> graphical-chr -> \n *)
+                     startVi0
+                       ( String.size lshd - 1
+                       , lshd
+                       , llhd
+                       , cursorIdx - 1
+                       , leftStrings
+                       , leftLines
+                       )
+               | (_, _) => (* leftStrings is empty so go to start of buffer *) 0
+           else
+             (* ? -> ? -> graphical-chr 
+              * Normal case where we call startViK. *)
+             let
+               val lineColumn = getCursorColumn
+                 (strIdx, shd, lhd, leftStrings, leftLines, cursorIdx)
+             in
+               helpViK
+                 ( strIdx
+                 , shd
+                 , cursorIdx
+                 , lineColumn
+                 , lineColumn
+                 , false
+                 , leftStrings
+                 , lhd
+                 , leftLines
+                 )
+             end
 
-  fun viK (lineGap: LineGap.t, cursorIdx) =
-    let
-      val
-        {rightStrings, idx = bufferIdx, rightLines, leftStrings, leftLines, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              startViK (strIdx, shd, cursorIdx, leftStrings, lhd, leftLines)
-            else
-              case (stl, ltl) of
-                (stlhd :: stltl, ltlhd :: ltltl) =>
-                  let
-                    val strIdx = strIdx - String.size shd
-                    val leftStrings = shd :: leftStrings
-                    val leftLines = lhd :: leftLines
-                  in
-                    startViK
-                      (strIdx, stlhd, cursorIdx, leftStrings, ltlhd, leftLines)
-                  end
-              | (_, _) => cursorIdx
-          end
-      | (_, _) => (* nowhere to go rightward, so return cursorIdx *) cursorIdx
-    end
+       end)
+
+  val viK = ViK.foldPrev
 
   (* equivalent of vi's 'w' command *)
   val nextWord = ViWordDfa.startOfNextWord
@@ -703,60 +671,36 @@ struct
   val endOfWORD = ViWORDDfa.endOfCurrentWORD
   val endOfWORDForDelete = ViWORDDfa.endOfCurrentWORDForDelete
 
-  fun helpFirstNonSpaceChr (strPos, str, absIdx, stl, ltl) =
-    if strPos = String.size str then
-      case (stl, ltl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpFirstNonSpaceChr (0, shd, absIdx, stl, ltl)
-      | (_, _) => absIdx - 1
-    else
-      let
-        val chr = String.sub (str, strPos)
-      in
-        if chr = #" " then
-          helpFirstNonSpaceChr (strPos + 1, str, absIdx + 1, stl, ltl)
-        else
-          absIdx
-      end
-
-  fun startFirstNonSpaceChr (shd, strIdx, absIdx, stl, ltl) =
-    if strIdx < String.size shd then
-      helpFirstNonSpaceChr (strIdx, shd, absIdx, stl, ltl)
-    else
-      case (stl, ltl) of
-        (stlhd :: stltl, ltlhd :: ltltl) =>
-          helpFirstNonSpaceChr (0, stlhd, absIdx, stltl, ltltl)
-      | (_, _) => (* tl is empty; just return absIdx *) absIdx
-
   (* Prerequisite: 
    * LineGap has been moved to start of line (provided with vi0). *)
-  fun firstNonSpaceChr (lineGap: LineGap.t, cursorIdx) =
-    let
-      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              startFirstNonSpaceChr (shd, strIdx, cursorIdx, stl, ltl)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let
-                     val strIdx = strIdx - String.size shd
-                   in
-                     startFirstNonSpaceChr
-                       (stlhd, strIdx, cursorIdx, stltl, ltltl)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
+  structure FirstNonSpaceChr =
+    MakeIfCharFolderPrev
+      (struct
+         fun helpFirstNonSpaceChr (strPos, str, absIdx, stl) =
+           if strPos = String.size str then
+             case stl of
+               shd :: stl => helpFirstNonSpaceChr (0, shd, absIdx, stl)
+             | [] => absIdx - 1
+           else
+             let
+               val chr = String.sub (str, strPos)
+             in
+               if chr = #" " then
+                 helpFirstNonSpaceChr (strPos + 1, str, absIdx + 1, stl)
+               else
+                 absIdx
+             end
+
+         fun fStart (strIdx, shd, _, absIdx, stl, _) =
+           if strIdx < String.size shd then
+             helpFirstNonSpaceChr (strIdx, shd, absIdx, stl)
+           else
+             case stl of
+               stlhd :: stltl => helpFirstNonSpaceChr (0, stlhd, absIdx, stltl)
+             | [] => (* tl is empty; just return absIdx *) absIdx
+       end)
+
+  val firstNonSpaceChr = FirstNonSpaceChr.foldPrev
 
   fun helpToNextChr (strPos, str, absIdx, stl, ltl, origIdx, findChr) =
     if strPos = String.size str then
