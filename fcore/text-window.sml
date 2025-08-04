@@ -187,7 +187,7 @@ struct
             else if cursorIdx > absIdx then
               (* possibly move downwards *)
               getStartLineAfter
-                ( startIdx
+                ( Int.max (startIdx, 0)
                 , rStrHd
                 , oldLine
                 , absIdx
