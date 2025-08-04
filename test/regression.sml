@@ -10,12 +10,12 @@ struct
       let
         val chr = String.sub (str, pos)
         val app = AppUpdate.update (app, InputMsg.CHAR_EVENT chr)
+                  handle _ => raise Fail (Int.toString pos)
       in
         updateLoop (pos + 1, str, app)
       end
 
-  fun updateAppWithChars (historyString, app) =
-    updateLoop (0, historyString, app)
+  fun applyChars (historyString, app) = updateLoop (0, historyString, app)
 
   fun appFromText text =
     let val buffer = LineGap.fromString text
@@ -36,8 +36,19 @@ struct
       str
     end
 
+  val initialApp = appFromText initialText
+
   val charEventTests = describe "CHAR_EVENT regressions"
-    [test "placeholder" (fn _ => Expect.isTrue true)]
+    [test "SearchList.goToNum vector bounds regression (1)" (fn _ =>
+       let
+         val app = appFromText initialText
+         val history = "G12dk"
+         val history = "100G55dkz33dk"
+         val newApp = applyChars (history, app)
+       in
+         (* just expect that we do not fail or throw an exception *)
+         Expect.isTrue true
+       end)]
 
   val tests = [charEventTests]
 end

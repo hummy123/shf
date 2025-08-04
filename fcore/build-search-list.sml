@@ -27,7 +27,7 @@ struct
     case rightStrings of
       hd :: tl =>
         let
-          val strIdx = absIdx - bufferIdx
+          val strIdx = Int.max (0, absIdx - bufferIdx)
         in
           if strIdx < String.size hd then
             helpNextMatch (strIdx, hd, tl, absIdx, searchString, 0)

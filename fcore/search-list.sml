@@ -226,11 +226,14 @@ struct
   fun goToNum (num, {left, right}: t) =
     case right of
       hd :: tl =>
-        if num >= Vector.sub (hd, 0) then
-          (* num is greater or equal to first el on right so go right *)
-          helpGoToNumRight (num, left, right)
+        if Vector.length hd > 0 then
+          if Vector.sub (hd, 0) >= Vector.sub (hd, 0) then
+            (* num is greater or equal to first el on right so go right *)
+            helpGoToNumRight (num, left, right)
+          else
+            (* num is less than first el on right so go left *)
+            helpGoToNumLeft (num, left, right)
         else
-          (* num is less than first el on right so go left *)
           helpGoToNumLeft (num, left, right)
     | [] => helpGoToNumLeft (num, left, right)
 
