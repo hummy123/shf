@@ -229,9 +229,7 @@ struct
     end
 
   fun yank (shellState: t, str) =
-    ( Glfw.setClipboardString (#window shellState, str);
-      shellState
-    )
+    (Glfw.setClipboardString (#window shellState, str); shellState)
 
   fun consumeDrawEvent (shellState, msg) =
     let
