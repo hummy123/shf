@@ -9,8 +9,8 @@ struct
     else
       let
         val chr = String.sub (str, pos)
+        val () = ExceptionLogger.addCommand (InputMsg.CHAR_EVENT chr)
         val app = AppUpdate.update (app, InputMsg.CHAR_EVENT chr)
-                  handle _ => raise Fail (Int.toString pos)
       in
         updateLoop (pos + 1, str, app)
       end

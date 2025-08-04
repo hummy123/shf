@@ -35,6 +35,10 @@ fcore/move.sml
 fcore/app-update.sml
 
 (* TEST FILES *)
+$(SML_LIB)/basis/mlton.mlb
+
+shell/exception-logger.sml
+
 test/Railroad/src/railroad.mlb
 test/normal-move.sml
 test/normal-delete.sml

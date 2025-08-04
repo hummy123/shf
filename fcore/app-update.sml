@@ -569,6 +569,7 @@ struct
 
   fun deleteLineBack (app: app_type, count) =
     let
+      val _ = raise Empty
       val {buffer, cursorIdx, ...} = app
       val low = Cursor.vi0 (buffer, cursorIdx)
       val high = Cursor.viDlr (buffer, cursorIdx, 1) + 1

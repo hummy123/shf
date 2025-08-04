@@ -5,4 +5,4 @@ run:
 	./build-unix.sh && ./shf
 
 tests:
-	mlton shf-tests.mlb && ./shf-tests
+	mlton -const "Exn.keepHistory true" shf-tests.mlb && ./shf-tests

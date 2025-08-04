@@ -46,6 +46,7 @@ in
   ffi/glfw-input.sml
 end
 
+shell/exception-logger.sml
 shell/update-thread.sml
 shell/gl-shaders.sml
 shell/gl-draw.sml

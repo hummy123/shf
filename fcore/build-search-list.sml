@@ -130,12 +130,15 @@ struct
     end
 
   fun fromRange (startIdx, length, buffer, searchString, searchList) =
-    let
-      val finishIdx = startIdx + length + String.size searchString
-      val bufferIdx = startIdx - String.size searchString
-      val bufferIdx = Int.max (bufferIdx, 0)
-    in
-      helpFromRange
-        (startIdx, bufferIdx, finishIdx, buffer, searchString, searchList)
-    end
+    if String.size searchString = 0 then
+      (buffer, searchList)
+    else
+      let
+        val finishIdx = startIdx + length + String.size searchString
+        val bufferIdx = startIdx - String.size searchString
+        val bufferIdx = Int.max (bufferIdx, 0)
+      in
+        helpFromRange
+          (startIdx, bufferIdx, finishIdx, buffer, searchString, searchList)
+      end
 end
