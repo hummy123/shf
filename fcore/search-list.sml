@@ -10,25 +10,14 @@ sig
 
   val goToNum: int * t -> t
   val mapFrom: int * int * t -> t
-  val printlst: t -> unit
+
+  val toVector: t -> int vector
+  val toString: t -> string
 end
 
-structure SearchList :> SEARCH_LIST =
+structure SearchList : SEARCH_LIST =
 struct
   type t = {left: int vector list, right: int vector list}
-
-  (* temp function for testing *)
-  fun printlst {left, right} =
-    let
-      val left = List.rev left
-      val lst = List.concat [left, right]
-      val v = Vector.concat lst
-      val _ = print "\nstart print list:\n"
-      val _ = Vector.map (fn el => print (" " ^ Int.toString el ^ ",")) v
-      val _ = print "\nend print list\n"
-    in
-      ()
-    end
 
   (* clojure's persistent vectors contain arrays of length 32
    * and this data structure is similar to that, so we also use 32 *)
@@ -625,4 +614,21 @@ struct
           else helpExistsLeft (num, left)
         end
     | [] => helpExistsLeft (num, left)
+
+  fun helpToVector (left, right) =
+    case left of
+      hd :: tl => helpToVector (tl, hd :: right)
+    | [] => Vector.concat right
+
+  (* for testing *)
+  fun toVector {left, right} = helpToVector (left, right)
+
+  fun toString {left, right} =
+    let
+      val vec = toVector {left = left, right = right}
+
+      val strList = Vector.foldr (fn (num, acc) => Int.toString num :: acc) [] vec
+    in
+      String.concatWith ", " strList
+    end
 end
