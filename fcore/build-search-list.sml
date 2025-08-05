@@ -81,10 +81,11 @@ struct
   fun fromStart (app, cursorIdx, buffer, searchString) =
     if String.size searchString > 0 then
       let
+        val buffer = LineGap.goToEnd buffer
+        val searchList = SearchLineGap.search (buffer, searchString)
         val buffer = LineGap.goToStart buffer
       in
-        helpFromStart
-          (app, cursorIdx, 0, buffer, searchString, SearchList.empty)
+        AppWith.searchList (app, searchList, buffer, searchString)
       end
     else
       app
@@ -130,15 +131,11 @@ struct
     end
 
   fun fromRange (startIdx, length, buffer, searchString, searchList) =
-    if String.size searchString = 0 then
+    let
+      val buffer = LineGap.goToEnd buffer
+      val searchList = SearchLineGap.search (buffer, searchString)
+      val buffer = LineGap.goToStart buffer
+    in
       (buffer, searchList)
-    else
-      let
-        val finishIdx = startIdx + length + String.size searchString
-        val bufferIdx = startIdx - String.size searchString
-        val bufferIdx = Int.max (bufferIdx, 0)
-      in
-        helpFromRange
-          (startIdx, bufferIdx, finishIdx, buffer, searchString, searchList)
-      end
+    end
 end

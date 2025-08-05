@@ -19,18 +19,18 @@ struct
     let
       (* print stack trace for debugging purposes, 
        * and then raise another exception to exit the program *)
+      val errName = General.exnName e ^ "\n"
       val stackTrace = MLton.Exn.history e
-      val stackTrace = String.concatWith "\n" stackTrace
-      val () = print "ERROR:\n"
-      val () = print (stackTrace ^ "\n\n")
-
+      val stackTrace = (String.concatWith "\n" stackTrace) ^ "\n"
       val history = !textCommands ^ "\n\n"
-      val () = print ("HISTORY: " ^ history)
 
-      val textOutput = stackTrace ^ "\n" ^ history
+      val log = String.concat
+        ["ERROR: ", errName, stackTrace, "HISTORY: ", history]
+
+      val () = print ("\n" ^ log)
 
       val io = TextIO.openAppend "exceptions.log"
-      val () = TextIO.output (io, textOutput)
+      val () = TextIO.output (io, log)
       val () = TextIO.closeOut io
     in
       raise e
