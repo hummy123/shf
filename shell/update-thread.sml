@@ -32,6 +32,9 @@ struct
 
       val app = AppUpdate.update (app, inputMsg) handle e => ExceptionLogger.log e
 
+      val searchList = #searchList app
+      val searchList = SearchList.toString searchList ^ "\n"
+
       val () = sendMsgs (#msgs app, drawMailbox)
     in
       loop (app, inputMailbox, drawMailbox)
