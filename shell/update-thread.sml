@@ -30,7 +30,8 @@ struct
 
       val () = ExceptionLogger.addCommand inputMsg
 
-      val app = AppUpdate.update (app, inputMsg) handle e => ExceptionLogger.log e
+      val app = AppUpdate.update (app, inputMsg)
+                handle e => ExceptionLogger.log e
 
       val searchList = #searchList app
       val searchList = SearchList.toString searchList ^ "\n"

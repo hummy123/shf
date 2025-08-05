@@ -65,7 +65,15 @@ struct
       val app = AppType.init (lineGap, 1920, 1080)
 
       (* todo: remove temp line below which tests search list *)
-      val app = BuildSearchList.fromStart (app, 0, lineGap, "val ")
+      val app =
+        let
+          val searchString = "val "
+          val (buffer, searchList) =
+            SearchLineGap.build (#buffer app, searchString)
+          val buffer = LineGap.goToStart buffer
+        in
+          AppWith.searchList (app, searchList, buffer, searchString)
+        end
 
       val () = registerCallbacks window
 

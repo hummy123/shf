@@ -76,16 +76,4 @@ struct
       end
     else
       (buffer, SearchList.empty)
-
-  fun buildIntoApp (app, buffer, searchString) =
-    if String.size searchString > 0 then
-      let
-        val buffer = LineGap.goToEnd buffer
-        val searchList = search (buffer, searchString)
-        val buffer = LineGap.goToStart buffer
-      in
-        AppWith.searchList (app, searchList, buffer, searchString)
-      end
-    else
-      app
 end

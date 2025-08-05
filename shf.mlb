@@ -12,12 +12,11 @@ message-types/mailbox-type.sml
 
 fcore/bin-search.sml
 fcore/search-list.sml
+fcore/search/search-line-gap.sml
 
 fcore/app-type.sml
 fcore/app-with.sml
 
-fcore/search/search-line-gap.sml
-fcore/build-search-list.sml
 fcore/text-constants.sml
 ann
   "allowVectorExps true"

@@ -15,19 +15,19 @@ sig
   val toString: t -> string
 end
 
-structure SearchList : SEARCH_LIST =
+structure SearchList: SEARCH_LIST =
 struct
-  structure IntSet = MakeGapSet (
-  struct
-    type key = int
+  structure IntSet =
+    MakeGapSet
+      (struct
+         type key = int
 
-    val maxNodeSize = 32
+         val maxNodeSize = 32
 
-    fun l (a: int, b) = a < b
-    fun eq (a: int, b) = a = b
-    fun g (a: int, b) = a > b
-  end
-  )
+         fun l (a: int, b) = a < b
+         fun eq (a: int, b) = a = b
+         fun g (a: int, b) = a > b
+       end)
 
   type t = IntSet.t
 
@@ -43,10 +43,8 @@ struct
   val empty = IntSet.empty
 
   fun insert (num, set) =
-    let
-      val () = print ("adding num: " ^ Int.toString num ^ "\n")
-    in
-      IntSet.add (num, set)
+    let val () = print ("adding num: " ^ Int.toString num ^ "\n")
+    in IntSet.add (num, set)
     end
 
   val append = IntSet.add
@@ -63,10 +61,12 @@ struct
 
         val secondVec = toVector result
 
-        val () = print ("delete start has " ^ Int.toString (Vector.length
-        firstVec) ^ "elements\n")
-        val () = print ("delete result has " ^ Int.toString (Vector.length
-        secondVec) ^ "elements\n")
+        val () = print
+          ("delete start has " ^ Int.toString (Vector.length firstVec)
+           ^ "elements\n")
+        val () = print
+          ("delete result has " ^ Int.toString (Vector.length secondVec)
+           ^ "elements\n")
       in
         result
       end
@@ -132,7 +132,7 @@ struct
     let
       (* goToNum always places vector where num was found to the right list *)
       val () = print ("mapping by " ^ Int.toString num ^ "\n")
-     val {left, right} = goToNum (0, lst)
+      val {left, right} = goToNum (0, lst)
     in
       moveRightAndMap (num, 0, left, right)
     end
@@ -143,10 +143,11 @@ struct
     let
       val vec = toVector {left = left, right = right}
 
-      val () = print ("toString has " ^ Int.toString (Vector.length vec) ^
-      "elements\n")
+      val () = print
+        ("toString has " ^ Int.toString (Vector.length vec) ^ "elements\n")
 
-      val strList = Vector.foldr (fn (num, acc) => Int.toString num :: acc) [] vec
+      val strList =
+        Vector.foldr (fn (num, acc) => Int.toString num :: acc) [] vec
     in
       ""
     end
