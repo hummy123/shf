@@ -6,10 +6,8 @@ struct
     in
       case acc of
         hd :: tl =>
-          if Vector.length hd < 32 then
-            (Vector.concat [num, hd]) :: tl
-          else
-            num :: acc
+          if Vector.length hd < 32 then (Vector.concat [num, hd]) :: tl
+          else num :: acc
       | [] => num :: acc
     end
 
@@ -19,7 +17,8 @@ struct
     else if pos < 0 then
       case tl of
         hd :: tl =>
-          searchStep (String.size hd - 1, hd, absIdx, tl, acc, searchPos, searchString)
+          searchStep
+            (String.size hd - 1, hd, absIdx, tl, acc, searchPos, searchString)
       | [] => acc
     else
       let
@@ -27,7 +26,8 @@ struct
         val searchChr = String.sub (searchString, searchPos)
       in
         if bufferChr = searchChr then
-          searchStep (pos - 1, hd, absIdx - 1, tl, acc, searchPos - 1, searchString)
+          searchStep
+            (pos - 1, hd, absIdx - 1, tl, acc, searchPos - 1, searchString)
         else
           acc
       end
@@ -40,7 +40,7 @@ struct
       | [] => acc
     else
       let
-        val acc = searchStep 
+        val acc = searchStep
           (pos, hd, absIdx, tl, acc, String.size searchString - 1, searchString)
       in
         loopSearch (pos - 1, hd, absIdx - 1, tl, acc, searchString)
@@ -58,10 +58,34 @@ struct
           in
             case leftStrings of
               hd :: tl =>
-                loopSearch (String.size hd - 1, hd, absIdx - 1, tl, [], searchString)
+                loopSearch
+                  (String.size hd - 1, hd, absIdx - 1, tl, [], searchString)
             | [] => []
           end
     in
       {left = [], right = acc}
     end
+
+  fun build (buffer, searchString) =
+    if String.size searchString > 0 then
+      let
+        val buffer = LineGap.goToEnd buffer
+        val searchList = search (buffer, searchString)
+      in
+        (buffer, searchList)
+      end
+    else
+      (buffer, SearchList.empty)
+
+  fun buildIntoApp (app, buffer, searchString) =
+    if String.size searchString > 0 then
+      let
+        val buffer = LineGap.goToEnd buffer
+        val searchList = search (buffer, searchString)
+        val buffer = LineGap.goToStart buffer
+      in
+        AppWith.searchList (app, searchList, buffer, searchString)
+      end
+    else
+      app
 end
