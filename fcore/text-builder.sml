@@ -325,34 +325,11 @@ struct
     , bgAcc
     , env: env_data
     , searchHd
-    , searchTl
     , searchPos
     , searchLen
     ) =
     if searchPos = Vector.length searchHd then
-      case searchTl of
-        searchHd :: searchTl =>
-          (* go to next search hd/tl *)
-          buildTextStringSearch
-            ( pos
-            , str
-            , acc
-            , posX
-            , posY
-            , startX
-            , tl
-            , absIdx
-            , cursorPos
-            , cursorAcc
-            , bgAcc
-            , env
-            , searchHd
-            , searchTl
-            , 0
-            , searchLen
-            )
-      | [] =>
-          (* exhausted search hd/tl so call normal build function *)
+          (* exhausted search list so call normal build function *)
           buildTextString
             ( pos
             , str
@@ -401,7 +378,6 @@ struct
                   , bgAcc
                   , env
                   , searchHd
-                  , searchTl
                   , searchPos
                   , searchLen
                   )
@@ -421,7 +397,6 @@ struct
                 , bgAcc
                 , env
                 , searchHd
-                , searchTl
                 , searchPos
                 , searchLen
                 )
@@ -447,7 +422,6 @@ struct
                 , bgAcc
                 , env
                 , searchHd
-                , searchTl
                 , searchPos
                 , searchLen
                 )
@@ -470,7 +444,6 @@ struct
                 , bgAcc
                 , env
                 , searchHd
-                , searchTl
                 , searchPos
                 , searchLen
                 )
@@ -496,7 +469,6 @@ struct
                   , bgAcc
                   , env
                   , searchHd
-                  , searchTl
                   , searchPos
                   , searchLen
                   )
@@ -547,7 +519,6 @@ struct
                       , bgAcc
                       , env
                       , searchHd
-                      , searchTl
                       , searchPos
                       , searchLen
                       )
@@ -580,7 +551,6 @@ struct
                       , bgAcc
                       , env
                       , searchHd
-                      , searchTl
                       , searchPos
                       , searchLen
                       )
@@ -607,7 +577,6 @@ struct
                     , bgAcc
                     , env
                     , searchHd
-                    , searchTl
                     , searchPos
                     , searchLen
                     )
@@ -643,7 +612,6 @@ struct
                       , bgAcc
                       , env
                       , searchHd
-                      , searchTl
                       , searchPos
                       , searchLen
                       )
@@ -679,7 +647,6 @@ struct
                       , bgAcc
                       , env
                       , searchHd
-                      , searchTl
                       , searchPos
                       , searchLen
                       )
@@ -706,7 +673,6 @@ struct
             , bgAcc
             , env
             , searchHd
-            , searchTl
             , searchPos
             , searchLen
             )
@@ -779,12 +745,9 @@ struct
               }
 
             val cursorAcc = Vector.fromList []
+            val searchPos = BinSearch.equalOrMore (absIdx, searchList)
           in
-            (case #right searchList of
-               searchHd :: searchTl =>
-                 let
-                   val searchPos = BinSearch.equalOrMore (absIdx, searchHd)
-                 in
+            if searchPos < Vector.length searchList then
                    buildTextStringSearch
                      ( startIdx
                      , rStrHd
@@ -798,13 +761,11 @@ struct
                      , cursorAcc
                      , []
                      , env
-                     , searchHd
-                     , searchTl
+                     , searchList
                      , searchPos
                      , String.size searchString
                      )
-                 end
-             | [] =>
+            else
                  buildTextString
                    ( startIdx
                    , rStrHd
@@ -818,7 +779,7 @@ struct
                    , cursorAcc
                    , []
                    , env
-                   ))
+                   )
           end
       | (_, _) =>
           (* requested line goes beyond the buffer,

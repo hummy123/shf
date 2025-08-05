@@ -1,36 +1,12 @@
 structure SearchList =
 struct
-  structure IntSet =
-    MakeGapSet
-      (struct
-         type key = int
-         val maxNodeSize = 32
+  type t = int vector
 
-         fun l (a, b: int) = a < b
-         fun eq (a, b: int) = a = b
-         fun g (a, b: int) = a > b
-       end)
-
-  type t = IntSet.t
-
-  val empty = IntSet.empty
-
-  val goToNum = IntSet.moveTo
-
-  fun cons (num, acc) =
-    let
-      val num = Vector.fromList [num]
-    in
-      case acc of
-        hd :: tl =>
-          if Vector.length hd < 32 then (Vector.concat [num, hd]) :: tl
-          else num :: acc
-      | [] => num :: acc
-    end
+  val empty = Vector.fromList []
 
   fun searchStep (pos, hd, absIdx, tl, acc, searchPos, searchString) =
     if searchPos < 0 then
-      cons (absIdx + 1, acc)
+      (absIdx + 1) :: acc
     else if pos < 0 then
       case tl of
         hd :: tl =>
@@ -54,7 +30,7 @@ struct
       case tl of
         hd :: tl =>
           loopSearch (String.size hd - 1, hd, absIdx, tl, acc, searchString)
-      | [] => acc
+      | [] => Vector.fromList acc
     else
       let
         val acc = searchStep
@@ -65,23 +41,18 @@ struct
 
   (* Prerequisite: move buffer/LineGap to end *)
   fun search (buffer: LineGap.t, searchString) =
-    let
-      val acc =
-        if String.size searchString = 0 then
-          []
-        else
-          let
-            val {leftStrings, idx = absIdx, ...} = buffer
-          in
-            case leftStrings of
-              hd :: tl =>
-                loopSearch
-                  (String.size hd - 1, hd, absIdx - 1, tl, [], searchString)
-            | [] => []
-          end
-    in
-      {left = [], right = acc}
-    end
+    if String.size searchString = 0 then
+      empty
+    else
+      let
+        val {leftStrings, idx = absIdx, ...} = buffer
+      in
+        case leftStrings of
+          hd :: tl =>
+            loopSearch
+              (String.size hd - 1, hd, absIdx - 1, tl, [], searchString)
+        | [] => empty
+      end
 
   fun build (buffer, searchString) =
     if String.size searchString > 0 then

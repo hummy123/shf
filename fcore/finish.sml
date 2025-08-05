@@ -17,7 +17,6 @@ struct
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)
       val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
-      val searchList = SearchList.goToNum (lineIdx, searchList)
 
       val drawMsg = TextBuilder.build
         ( startLine
