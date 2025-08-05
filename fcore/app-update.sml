@@ -392,8 +392,7 @@ struct
             val searchString = #searchString app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
 
-            val (buffer, searchList) =
-              SearchLineGap.build (buffer, searchString)
+            val (buffer, searchList) = SearchList.build (buffer, searchString)
 
             val cursorIdx =
               if
@@ -409,8 +408,7 @@ struct
             val searchString = #searchString app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
 
-            val (buffer, searchList) =
-              SearchLineGap.build (buffer, searchString)
+            val (buffer, searchList) = SearchList.build (buffer, searchString)
           in
             helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
           end
@@ -437,7 +435,7 @@ struct
         val buffer = LineGap.delete (low, length, buffer)
 
         val searchString = #searchString app
-        val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+        val (buffer, searchList) = SearchList.build (buffer, searchString)
 
         (* If we have deleted from the buffer so that cursorIdx
         * is no longer a valid idx,
@@ -473,7 +471,7 @@ struct
 
       val buffer = LineGap.delete (low, length, buffer)
 
-      val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+      val (buffer, searchList) = SearchList.build (buffer, searchString)
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
@@ -502,7 +500,7 @@ struct
 
           (* delete from searchList and map *)
           val searchString = #searchString app
-          val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+          val (buffer, searchList) = SearchList.build (buffer, searchString)
         in
           helpRemoveChr (app, buffer, searchList, cursorIdx, 1)
         end
@@ -519,7 +517,7 @@ struct
       val length = finishIdx - startIdx
       val buffer = LineGap.delete (startIdx, length, buffer)
 
-      val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+      val (buffer, searchList) = SearchList.build (buffer, searchString)
 
       val buffer = LineGap.goToIdx (startIdx, buffer)
     in
@@ -534,7 +532,7 @@ struct
         val buffer = LineGap.delete (low, length, buffer)
 
         val searchString = #searchString app
-        val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+        val (buffer, searchList) = SearchList.build (buffer, searchString)
 
         val buffer = LineGap.goToIdx (low, buffer)
       in
@@ -585,7 +583,7 @@ struct
       val length = high - low
 
       val buffer = LineGap.delete (low, length, buffer)
-      val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+      val (buffer, searchList) = SearchList.build (buffer, searchString)
     in
       Finish.buildTextAndClear (app, buffer, low, searchList)
     end
@@ -600,7 +598,7 @@ struct
         val buffer = LineGap.delete (low, length, buffer)
 
         val searchString = #searchString app
-        val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+        val (buffer, searchList) = SearchList.build (buffer, searchString)
       in
         buildTextAndClearAfterChr (app, buffer, low, searchList)
       end
@@ -633,7 +631,7 @@ struct
         app
 
       val buffer = LineGap.delete (0, cursorIdx, buffer)
-      val (buffer, searchList) = SearchLineGap.build (buffer, searchString)
+      val (buffer, searchList) = SearchList.build (buffer, searchString)
 
       val cursorIdx = 0
       val startLine = 0

@@ -12,7 +12,6 @@ message-types/mailbox-type.sml
 
 fcore/bin-search.sml
 fcore/search-list.sml
-fcore/search/search-line-gap.sml
 
 fcore/app-type.sml
 fcore/app-with.sml
