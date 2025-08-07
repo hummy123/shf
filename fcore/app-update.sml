@@ -366,6 +366,24 @@ struct
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
     | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
 
+  fun moveToNextMatch (app: app_type, count) =
+    let
+      val {cursorIdx, searchList, buffer, ...} = app
+      val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
+    in
+      if newCursorIdx = ~1 then clearMode app
+      else buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
+    end
+
+  fun moveToPrevMatch (app: app_type, count) =
+    let
+      val {cursorIdx, searchList, buffer, ...} = app
+      val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
+    in
+      if newCursorIdx = ~1 then clearMode app
+      else buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
+    end
+
   (* text-delete functions *)
   (** equivalent of vi's 'x' command **)
   fun helpRemoveChr (app: app_type, buffer, cursorIdx, count) =
@@ -707,6 +725,8 @@ struct
     | #"B" => MoveToPrevWORD.move (app, count)
     | #"e" => MoveToEndOfWord.move (app, count)
     | #"E" => MoveToEndOfWORD.move (app, count)
+    | #"n" => moveToNextMatch (app, count)
+    | #"N" => moveToPrevMatch (app, count)
     | #"z" => centreToCursor app
     (* can only move to start or end of line once 
      * so hardcode count as 1 *)
