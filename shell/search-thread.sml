@@ -6,7 +6,7 @@ struct
   fun loop (searchMailbox, inputMailbox) =
     let
       val (buffer, searchString) = Mailbox.recv searchMailbox
-      val (_, searchList) = SearchList.build (buffer, searchString)
+      val searchList = SearchList.build (buffer, searchString)
       val () = Mailbox.send (inputMailbox, InputMsg.WITH_SEARCH_LIST searchList)
     in
       loop (searchMailbox, inputMailbox)

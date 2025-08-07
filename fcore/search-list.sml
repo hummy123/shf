@@ -57,13 +57,12 @@ struct
   fun build (buffer, searchString) =
     if String.size searchString > 0 then
       let
-        val buffer = LineGap.goToEnd buffer
         val searchList = search (buffer, searchString)
       in
-        (buffer, searchList)
+        searchList
       end
     else
-      (buffer, empty)
+      empty
 
   fun loopNextMatch (pos, searchList, count) =
     if count = 0 then
