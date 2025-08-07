@@ -5,7 +5,6 @@ struct
   open AppType
   open InputMsg
 
-
   fun getNumLength (pos, str) =
     if pos = String.size str then
       pos
