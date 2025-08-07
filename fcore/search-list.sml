@@ -64,4 +64,52 @@ struct
       end
     else
       (buffer, empty)
+
+  fun loopNextMatch (pos, searchList, count) =
+    if count = 0 then
+      Vector.sub (searchList, pos)
+    else
+      let
+        val pos = pos + 1
+        val pos = if pos < Vector.length searchList then pos else 0
+        val count = count - 1
+      in
+        loopNextMatch (pos, searchList, count)
+      end
+
+  fun nextMatch (cursorIdx, searchList, count) =
+    if Vector.length searchList = 0 then
+      ~1
+    else
+      let
+        val pos = BinSearch.equalOrMore (cursorIdx + 1, searchList)
+        val pos = if pos < Vector.length searchList then pos else 0
+        val count = count - 1
+      in
+        loopNextMatch (pos, searchList, count)
+      end
+
+  fun loopPrevMatch (pos, searchList, count) =
+    if count = 0 then
+      Vector.sub (searchList, pos)
+    else
+      let
+        val pos = pos - 1
+        val pos = if pos < 0 then Vector.length searchList - 1 else pos
+        val count = count - 1
+      in
+        loopPrevMatch (pos, searchList, count)
+      end
+
+  fun prevMatch (cursorIdx, searchList, count) =
+    if Vector.length searchList = 0 then
+      ~1
+    else
+      let
+        val pos = BinSearch.equalOrLess (cursorIdx - 1, searchList)
+        val pos = if pos < 0 then Vector.length searchList - 1 else pos
+        val count = count - 1
+      in
+        loopPrevMatch (pos, searchList, count)
+      end
 end
