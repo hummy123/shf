@@ -604,9 +604,11 @@ struct
 
   (* equivalent of vi's 'b' command *)
   val prevWord = ViWordDfa.startOfCurrentWord
+  val prevWordStrict = ViWordDfa.startOfCurrentWordStrict
 
   (* equivalent of vi's 'B' command *)
   val prevWORD = ViWORDDfa.startOfCurrentWORD
+  val prevWORDStrict = ViWORDDfa.startOfCurrentWORDStrict
 
   (* equivalent of vi's 'ge' command *)
   val endOfPrevWord = ViWordDfa.endOfPrevWord

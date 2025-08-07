@@ -146,6 +146,7 @@ struct
            | #"f" => appendChr (app, chr, str)
            | #"F" => appendChr (app, chr, str)
            | #"g" => appendChr (app, chr, str)
+           | #"i" => appendChr (app, chr, str)
            (* invalid command: reset mode *)
            | _ => Finish.clearMode app)
       | KEY_ESC => Finish.clearMode app
@@ -204,6 +205,16 @@ struct
                     NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWORD)
                 | #"g" => NormalDelete.deleteToStart app
                 | _ => Finish.clearMode app)
+           | KEY_ESC => Finish.clearMode app
+           | RESIZE_EVENT (width, height) =>
+               Finish.resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList =>
+               Finish.withSearchList (app, searchList))
+      | #"i" =>
+          (case newCmd of
+             CHAR_EVENT #"w" => NormalDelete.deleteInsideWord app
+           | CHAR_EVENT #"W" => NormalDelete.deleteInsideWORD app
+           | CHAR_EVENT _ => Finish.clearMode app
            | KEY_ESC => Finish.clearMode app
            | RESIZE_EVENT (width, height) =>
                Finish.resizeText (app, width, height)

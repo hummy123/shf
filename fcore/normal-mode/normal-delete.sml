@@ -380,4 +380,59 @@ struct
       else
         helpDeleteToMatch (app, newCursorIdx, cursorIdx)
     end
+
+  fun deleteInsideWord (app: app_type) =
+    let
+      val {buffer, cursorIdx, searchString, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val low = Cursor.prevWordStrict (buffer, cursorIdx, 1)
+      val high = Cursor.endOfWordForDelete (buffer, cursorIdx, 1)
+    in
+      if low = high then
+        app
+      else
+        let
+          val length = high - low
+          val buffer = LineGap.delete (low, length, buffer)
+
+          val buffer = LineGap.goToEnd buffer
+          val initialMsg = [SEARCH (buffer, searchString)]
+
+          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val searchList =
+            SearchList.buildRange (buffer, searchString, low - 777)
+
+          val buffer = LineGap.goToIdx (low, buffer)
+        in
+          Finish.buildTextAndClear (app, buffer, low, searchList, initialMsg)
+        end
+    end
+
+  fun deleteInsideWORD (app: app_type) =
+    let
+      val {buffer, cursorIdx, searchString, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val low = Cursor.prevWORDStrict (buffer, cursorIdx, 1)
+      val high = Cursor.endOfWORDForDelete (buffer, cursorIdx, 1)
+    in
+      if low = high then
+        app
+      else
+        let
+          val length = high - low
+          val buffer = LineGap.delete (low, length, buffer)
+
+          val buffer = LineGap.goToEnd buffer
+          val initialMsg = [SEARCH (buffer, searchString)]
+
+          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val searchList =
+            SearchList.buildRange (buffer, searchString, low - 777)
+
+          val buffer = LineGap.goToIdx (low, buffer)
+        in
+
+          Finish.buildTextAndClear (app, buffer, low, searchList, initialMsg)
+        end
+    end
 end
