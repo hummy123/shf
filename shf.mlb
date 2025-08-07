@@ -35,6 +35,7 @@ fcore/move.sml
 
 fcore/normal-mode/normal-move.sml
 fcore/normal-mode/normal-delete.sml
+fcore/normal-mode/normal-mode.sml
 
 fcore/app-update.sml
 

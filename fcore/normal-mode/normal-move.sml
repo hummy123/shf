@@ -209,7 +209,8 @@ struct
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
-      Finish.buildTextAndClearAfterChr (app, buffer, cursorIdx, #searchList app, [])
+      Finish.buildTextAndClearAfterChr
+        (app, buffer, cursorIdx, #searchList app, [])
     else
       let
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
@@ -230,8 +231,11 @@ struct
       val {cursorIdx, searchList, buffer, ...} = app
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 then Finish.clearMode app
-      else Finish.buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
+      if newCursorIdx = ~1 then
+        Finish.clearMode app
+      else
+        Finish.buildTextAndClearAfterChr
+          (app, buffer, newCursorIdx, searchList, [])
     end
 
   fun moveToPrevMatch (app: app_type, count) =
@@ -239,8 +243,11 @@ struct
       val {cursorIdx, searchList, buffer, ...} = app
       val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 then Finish.clearMode app
-      else Finish.buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
+      if newCursorIdx = ~1 then
+        Finish.clearMode app
+      else
+        Finish.buildTextAndClearAfterChr
+          (app, buffer, newCursorIdx, searchList, [])
     end
 
 end

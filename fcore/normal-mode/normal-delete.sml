@@ -281,7 +281,8 @@ struct
         val searchList =
           SearchList.buildRange (buffer, searchString, cursorIdx - 777)
       in
-        Finish.buildTextAndClearAfterChr (app, buffer, low, searchList, initialMsg)
+        Finish.buildTextAndClearAfterChr
+          (app, buffer, low, searchList, initialMsg)
       end
     else
       let
@@ -363,8 +364,10 @@ struct
       val {cursorIdx, searchList, ...} = app
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 orelse newCursorIdx <= cursorIdx then Finish.clearMode app
-      else helpDeleteToMatch (app, cursorIdx, newCursorIdx)
+      if newCursorIdx = ~1 orelse newCursorIdx <= cursorIdx then
+        Finish.clearMode app
+      else
+        helpDeleteToMatch (app, cursorIdx, newCursorIdx)
     end
 
   fun deleteToPrevMatch (app: app_type, count) =
@@ -372,7 +375,9 @@ struct
       val {cursorIdx, searchList, ...} = app
       val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 orelse newCursorIdx >= cursorIdx then Finish.clearMode app
-      else helpDeleteToMatch (app, newCursorIdx, cursorIdx)
+      if newCursorIdx = ~1 orelse newCursorIdx >= cursorIdx then
+        Finish.clearMode app
+      else
+        helpDeleteToMatch (app, newCursorIdx, cursorIdx)
     end
 end
