@@ -695,6 +695,38 @@ struct
         (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
     end
 
+  fun helpDeleteToMatch (app: app_type, low, high) =
+    let
+      val {buffer, searchString, ...} = app
+      val length = high - low
+      val buffer = LineGap.delete (low, length, buffer)
+
+      val buffer = LineGap.goToEnd buffer
+      val initialMsg = [SEARCH (buffer, searchString)]
+
+      val buffer = LineGap.goToIdx (low, buffer)
+    in
+      Finish.buildTextAndClear (app, buffer, low, SearchList.empty, initialMsg)
+    end
+
+  fun deleteToNextMatch (app: app_type, count) =
+    let
+      val {cursorIdx, searchList, ...} = app
+      val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
+    in
+      if newCursorIdx = ~1 orelse newCursorIdx <= cursorIdx then clearMode app
+      else helpDeleteToMatch (app, cursorIdx, newCursorIdx)
+    end
+
+  fun deleteToPrevMatch (app: app_type, count) =
+    let
+      val {cursorIdx, searchList, ...} = app
+      val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
+    in
+      if newCursorIdx = ~1 orelse newCursorIdx >= cursorIdx then clearMode app
+      else helpDeleteToMatch (app, newCursorIdx, cursorIdx)
+    end
+
   (* command-parsing functions *)
   (** number of characters which are integers *)
   fun getNumLength (pos, str) =
@@ -809,6 +841,8 @@ struct
            | #"$" => deleteToEndOfLine app
            | #"^" => deleteToFirstNonSpaceChr app
            | #"d" => deleteLine (app, count)
+           | #"n" => deleteToNextMatch (app, count)
+           | #"N" => deleteToPrevMatch (app, count)
            (* non-terminal commands which require appending chr *)
            | #"t" => appendChr (app, chr, str)
            | #"T" => appendChr (app, chr, str)

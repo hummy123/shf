@@ -6,8 +6,7 @@ struct
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
-      (* move LineGap to first line displayed on screen 
-       * and move searchList to line's start idx as well *)
+      (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
       (* get new startLine which may move screen depending on cursor movements *)
