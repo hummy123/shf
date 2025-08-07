@@ -6,123 +6,7 @@ struct
   open DrawMsg
   open InputMsg
 
-  fun clearMode app =
-    AppWith.mode (app, NORMAL_MODE "", [])
-
-  fun withSearchList (app: app_type, searchList) =
-    let
-      val {buffer, searchString, cursorIdx, ...} = app
-      val app = AppWith.searchList (app, searchList, buffer, searchString)
-    in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [])
-    end
-
-  fun resizeText (app: app_type, newWidth, newHeight) =
-    let
-      val
-        { buffer
-        , windowWidth
-        , windowHeight
-        , startLine
-        , cursorIdx
-        , searchList
-        , searchString
-        , ...
-        } = app
-
-      val newBuffer = LineGap.goToLine (startLine, buffer)
-      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
-
-      val drawMsg = TextBuilder.build
-        ( startLine
-        , cursorIdx
-        , newBuffer
-        , newWidth
-        , newHeight
-        , searchList
-        , searchString
-        , []
-        )
-    in
-      AppWith.bufferAndSize
-        (app, newBuffer, newWidth, newHeight, searchList, drawMsg)
-    end
-
-  (* Difference between this and buildTextAndClear is that 
-   * this is meant to be called after a chr movement, 
-   * where the cursor may possibly jump off window by a wide marigin.
-   * Since the cursor may move away a lot, it is best to recenter.
-   * *)
-  fun buildTextAndClearAfterChr
-    (app: app_type, buffer, cursorIdx, searchList, initialMsg) =
-    let
-      val {windowWidth, windowHeight, startLine, searchString, ...} = app
-
-      (* move LineGap to first line displayed on screen *)
-      val buffer = LineGap.goToLine (startLine, buffer)
-
-      (* get new startLine which may move screen depending on cursor movements *)
-      val startLine = TextWindow.getStartLine
-        (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
-      (* move buffer to new startLine as required by TextBuilder.build 
-      * and move searchList to idx where line starts as well *)
-      val buffer = LineGap.goToLine (startLine, buffer)
-
-      val drawMsg = TextBuilder.build
-        ( startLine
-        , cursorIdx
-        , buffer
-        , windowWidth
-        , windowHeight
-        , searchList
-        , searchString
-        , []
-        )
-
-      val mode = NORMAL_MODE ""
-    in
-      AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
-    end
-
-  fun centreToCursor (app: app_type) =
-    let
-      val
-        { buffer
-        , windowWidth
-        , windowHeight
-        , startLine = origLine
-        , cursorIdx
-        , searchList
-        , searchString
-        , ...
-        } = app
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-
-      val startLine = TextWindow.getStartLineWithCursorCentered
-        (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
-
-      val drawMsg = TextBuilder.build
-        ( startLine
-        , cursorIdx
-        , buffer
-        , windowWidth
-        , windowHeight
-        , searchList
-        , searchString
-        , []
-        )
-    in
-      AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList, drawMsg)
-    end
-
   (* movement functions *)
-
   fun moveToStart (app: app_type) =
     let
       val {buffer, windowWidth, windowHeight, searchList, searchString, ...} =
@@ -330,7 +214,7 @@ struct
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
-      buildTextAndClearAfterChr (app, buffer, cursorIdx, #searchList app, [])
+      Finish.buildTextAndClearAfterChr (app, buffer, cursorIdx, #searchList app, [])
     else
       let
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
@@ -349,9 +233,9 @@ struct
   fun handleMoveToChr (count, app, fMove, newCmd) =
     case newCmd of
       CHAR_EVENT chr => moveToChr (app, count, fMove, chr)
-    | KEY_ESC => clearMode app
-    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-    | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
+    | KEY_ESC => Finish.clearMode app
+    | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+    | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
 
   fun handleGo (count, app, newCmd) =
     case newCmd of
@@ -360,18 +244,18 @@ struct
            #"e" => MoveToEndOfPrevWord.move (app, count)
          | #"E" => MoveToEndOfPrevWORD.move (app, count)
          | #"g" => moveToStart app
-         | _ => clearMode app)
-    | KEY_ESC => clearMode app
-    | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-    | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
+         | _ => Finish.clearMode app)
+    | KEY_ESC => Finish.clearMode app
+    | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+    | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
 
   fun moveToNextMatch (app: app_type, count) =
     let
       val {cursorIdx, searchList, buffer, ...} = app
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 then clearMode app
-      else buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
+      if newCursorIdx = ~1 then Finish.clearMode app
+      else Finish.buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
     end
 
   fun moveToPrevMatch (app: app_type, count) =
@@ -379,8 +263,8 @@ struct
       val {cursorIdx, searchList, buffer, ...} = app
       val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 then clearMode app
-      else buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
+      if newCursorIdx = ~1 then Finish.clearMode app
+      else Finish.buildTextAndClearAfterChr (app, buffer, newCursorIdx, searchList, [])
     end
 
   (* text-delete functions *)
@@ -531,7 +415,7 @@ struct
       if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
         (* if we are on \n, we don't want to delete or do anything
         * so reset the mode *)
-        clearMode app
+        Finish.clearMode app
       else
         let
           (* viDlr takes us to the last chr in the line 
@@ -662,7 +546,7 @@ struct
         val searchList =
           SearchList.buildRange (buffer, searchString, cursorIdx - 777)
       in
-        buildTextAndClearAfterChr (app, buffer, low, searchList, initialMsg)
+        Finish.buildTextAndClearAfterChr (app, buffer, low, searchList, initialMsg)
       end
     else
       let
@@ -744,7 +628,7 @@ struct
       val {cursorIdx, searchList, ...} = app
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 orelse newCursorIdx <= cursorIdx then clearMode app
+      if newCursorIdx = ~1 orelse newCursorIdx <= cursorIdx then Finish.clearMode app
       else helpDeleteToMatch (app, cursorIdx, newCursorIdx)
     end
 
@@ -753,7 +637,7 @@ struct
       val {cursorIdx, searchList, ...} = app
       val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
     in
-      if newCursorIdx = ~1 orelse newCursorIdx >= cursorIdx then clearMode app
+      if newCursorIdx = ~1 orelse newCursorIdx >= cursorIdx then Finish.clearMode app
       else helpDeleteToMatch (app, newCursorIdx, cursorIdx)
     end
 
@@ -789,7 +673,7 @@ struct
     | #"E" => MoveToEndOfWORD.move (app, count)
     | #"n" => moveToNextMatch (app, count)
     | #"N" => moveToPrevMatch (app, count)
-    | #"z" => centreToCursor app
+    | #"z" => Finish.centreToCursor app
     (* can only move to start or end of line once 
      * so hardcode count as 1 *)
     | #"0" =>
@@ -880,10 +764,10 @@ struct
            | #"F" => appendChr (app, chr, str)
            | #"g" => appendChr (app, chr, str)
            (* invalid command: reset mode *)
-           | _ => clearMode app)
-      | KEY_ESC => clearMode app
-      | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-      | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
+           | _ => Finish.clearMode app)
+      | KEY_ESC => Finish.clearMode app
+      | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+      | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
     else
       (* have to continue parsing string *)
       case String.sub (str, strPos + 1) of
@@ -892,32 +776,32 @@ struct
           (case newCmd of
              CHAR_EVENT chr =>
                deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
-           | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
+           | KEY_ESC => Finish.clearMode app
+           | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList))
       | #"T" =>
           (* delete till chr, backwards *)
           (case newCmd of
              CHAR_EVENT chr =>
                deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
-           | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
+           | KEY_ESC => Finish.clearMode app
+           | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList))
       | #"f" =>
           (case newCmd of
              CHAR_EVENT chr =>
                deleteToChr (app, count, Cursor.toNextChr, op+, chr)
-           | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
+           | KEY_ESC => Finish.clearMode app
+           | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList))
       | #"F" =>
           (* delete to chr, backwards *)
           (case newCmd of
              CHAR_EVENT chr =>
                deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
-           | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
+           | KEY_ESC => Finish.clearMode app
+           | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList))
       | #"g" =>
           (* same events as handleGo *)
           (case newCmd of
@@ -926,11 +810,11 @@ struct
                   #"e" => deleteByDfa (app, count, Cursor.endOfPrevWord)
                 | #"E" => deleteByDfa (app, count, Cursor.endOfPrevWORD)
                 | #"g" => deleteToStart app
-                | _ => clearMode app)
-           | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
-      | _ => clearMode app
+                | _ => Finish.clearMode app)
+           | KEY_ESC => Finish.clearMode app
+           | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList))
+      | _ => Finish.clearMode app
 
   (* useful reference as list of non-terminal commands *)
   fun parseAfterCount (strPos, str, count, app, newCmd) =
@@ -950,7 +834,7 @@ struct
     | #"T" =>
         (* to just before chr, backward *)
         handleMoveToChr (1, app, Cursor.tillPrevChr, newCmd)
-    | #"y" => (* yank *) clearMode app
+    | #"y" => (* yank *) Finish.clearMode app
     | #"d" => (* delete *) parseDelete (strPos, str, count, app, newCmd)
     | #"f" =>
         (* to chr, forward *)
@@ -959,28 +843,28 @@ struct
         (* to chr, backward *)
         handleMoveToChr (count, app, Cursor.toPrevChr, newCmd)
     | #"g" => (* go *) handleGo (count, app, newCmd)
-    | #"c" => (* change *) clearMode app
+    | #"c" => (* change *) Finish.clearMode app
     | _ =>
         (* isn't a non-terminal cmd
          * this case should never happen*)
-        clearMode app
+        Finish.clearMode app
 
   fun parseNormalModeCommand (app, str, newCmd) =
     if String.size str = 0 then
       case newCmd of
         CHAR_EVENT chr => handleChr (app, 1, chr, str)
-      | KEY_ESC => clearMode app
-      | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-      | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
+      | KEY_ESC => Finish.clearMode app
+      | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+      | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
     else if String.size str = 1 then
       case newCmd of
         CHAR_EVENT chr =>
           (case Int.fromString str of
              SOME count => handleChr (app, count, chr, str)
            | NONE => parseAfterCount (0, str, 1, app, newCmd))
-      | KEY_ESC => clearMode app
-      | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-      | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
+      | KEY_ESC => Finish.clearMode app
+      | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+      | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
     else
       let
         val numLength = getNumLength (0, str)
@@ -994,9 +878,9 @@ struct
           (* reached end of str; str only contained numbers *)
           case newCmd of
             CHAR_EVENT chr => handleChr (app, count, chr, str)
-          | KEY_ESC => clearMode app
-          | RESIZE_EVENT (width, height) => resizeText (app, width, height)
-          | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
+          | KEY_ESC => Finish.clearMode app
+          | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+          | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
         else
           (* continue parsing. *)
           parseAfterCount (numLength, str, count, app, newCmd)

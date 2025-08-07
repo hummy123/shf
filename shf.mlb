@@ -1,6 +1,6 @@
 $(SML_LIB)/basis/basis.mlb
 
-(* LIBRARIEES *)
+(* LIBRARIES *)
 lib/brolib-sml/src/line_gap.sml
 lib/brolib-sml/src/gap_set.sml
 lib/cozette-sml/fonts/cozette-ascii.mlb
@@ -32,6 +32,7 @@ fcore/text-window.sml
 
 fcore/finish.sml
 fcore/move.sml
+fcore/normal-mode/normal-move.sml
 fcore/app-update.sml
 
 (* IMPERATIVE SHELL *)

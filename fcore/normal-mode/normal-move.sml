@@ -1,0 +1,3 @@
+structure NormalMove =
+struct
+end
