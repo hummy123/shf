@@ -68,9 +68,10 @@ struct
       (* todo: remove temp line below which tests search list *)
       val app =
         let
+          val buffer = #buffer app
+          val buffer = LineGap.goToEnd buffer
           val searchString = "val "
-          val (buffer, searchList) =
-            SearchList.build (#buffer app, searchString)
+          val searchList = SearchList.build (buffer, searchString)
           val buffer = LineGap.goToStart buffer
         in
           AppWith.searchList (app, searchList, buffer, searchString)

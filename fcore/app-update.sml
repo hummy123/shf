@@ -668,7 +668,7 @@ struct
         app
 
       val buffer = LineGap.delete (0, cursorIdx, buffer)
-      val (buffer, searchList) = SearchList.build (buffer, searchString)
+      val searchList = SearchList.empty
 
       val buffer = LineGap.goToEnd buffer
       val initialMsg = [SEARCH (buffer, #searchString app)]
