@@ -431,8 +431,73 @@ struct
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
-
           Finish.buildTextAndClear (app, buffer, low, searchList, initialMsg)
+        end
+    end
+
+  fun deleteInsideChrOpen (app: app_type, chr) =
+    let
+      val {cursorIdx, buffer, searchString, ...} = app
+
+      val start = cursorIdx + 1
+      val buffer = LineGap.goToIdx (start, buffer)
+
+      val origLow = Cursor.toPrevChr (buffer, start, chr)
+      val buffer = LineGap.goToIdx (origLow, buffer)
+      val high = Cursor.matchPair (buffer, origLow)
+    in
+      if origLow = high then
+        Finish.clearMode app
+      else
+        let
+          val low = origLow + 1
+          val length = high - low
+          val buffer = LineGap.delete (low, length, buffer)
+
+          val buffer = LineGap.goToEnd buffer
+          val initialMsg = [SEARCH (buffer, searchString)]
+
+          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val searchList =
+            SearchList.buildRange (buffer, searchString, low - 777)
+
+          val buffer = LineGap.goToIdx (origLow, buffer)
+        in
+          Finish.buildTextAndClear
+            (app, buffer, origLow, searchList, initialMsg)
+        end
+    end
+
+  fun deleteInsideChrClose (app: app_type, chr) =
+    let
+      val {cursorIdx, buffer, searchString, ...} = app
+
+      val start = Int.max (cursorIdx - 1, 0)
+      val buffer = LineGap.goToIdx (start, buffer)
+
+      val high = Cursor.toNextChr (buffer, start, chr)
+      val buffer = LineGap.goToIdx (high, buffer)
+      val origLow = Cursor.matchPair (buffer, high)
+    in
+      if origLow = high then
+        Finish.clearMode app
+      else
+        let
+          val low = origLow + 1
+          val length = high - low
+          val buffer = LineGap.delete (low, length, buffer)
+
+          val buffer = LineGap.goToEnd buffer
+          val initialMsg = [SEARCH (buffer, searchString)]
+
+          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val searchList =
+            SearchList.buildRange (buffer, searchString, low - 777)
+
+          val buffer = LineGap.goToIdx (origLow, buffer)
+        in
+          Finish.buildTextAndClear
+            (app, buffer, origLow, searchList, initialMsg)
         end
     end
 end

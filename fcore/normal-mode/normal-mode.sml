@@ -111,6 +111,20 @@ struct
           AppWith.mode (app, mode, [])
         end
 
+  fun parseDeleteInside (app, chr) =
+    case chr of
+      #"w" => NormalDelete.deleteInsideWord app
+    | #"W" => NormalDelete.deleteInsideWORD app
+    | #"(" => NormalDelete.deleteInsideChrOpen (app, chr)
+    | #"[" => NormalDelete.deleteInsideChrOpen (app, chr)
+    | #"{" => NormalDelete.deleteInsideChrOpen (app, chr)
+    | #"<" => NormalDelete.deleteInsideChrOpen (app, chr)
+    | #")" => NormalDelete.deleteInsideChrClose (app, chr)
+    | #"]" => NormalDelete.deleteInsideChrClose (app, chr)
+    | #"}" => NormalDelete.deleteInsideChrClose (app, chr)
+    | #">" => NormalDelete.deleteInsideChrClose (app, chr)
+    | _ => Finish.clearMode app
+
   fun parseDelete (strPos, str, count, app, newCmd) =
     if strPos = String.size str - 1 then
       (* have to check newCmd *)
@@ -212,9 +226,7 @@ struct
                Finish.withSearchList (app, searchList))
       | #"i" =>
           (case newCmd of
-             CHAR_EVENT #"w" => NormalDelete.deleteInsideWord app
-           | CHAR_EVENT #"W" => NormalDelete.deleteInsideWORD app
-           | CHAR_EVENT _ => Finish.clearMode app
+             CHAR_EVENT chr => parseDeleteInside (app, chr)
            | KEY_ESC => Finish.clearMode app
            | RESIZE_EVENT (width, height) =>
                Finish.resizeText (app, width, height)

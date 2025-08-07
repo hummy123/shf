@@ -249,5 +249,4 @@ struct
         Finish.buildTextAndClearAfterChr
           (app, buffer, newCursorIdx, searchList, [])
     end
-
 end
