@@ -159,6 +159,7 @@ struct
 
   fun searchRange (buffer: LineGap.t, searchString, low) =
     let
+      val low = Int.max (low, 0)
       val {rightStrings, leftStrings, idx = absIdx, ...} = buffer
     in
       case rightStrings of
