@@ -449,4 +449,34 @@ struct
     in
       finishAfterDeleteInside (app, origLow, high)
     end
+
+  fun deleteAroundChrOpen (app: app_type, chr) =
+    let
+      val {cursorIdx, buffer, ...} = app
+
+      val start = cursorIdx + 1
+      val buffer = LineGap.goToIdx (start, buffer)
+
+      val low = Cursor.toPrevChr (buffer, start, chr)
+      val buffer = LineGap.goToIdx (low, buffer)
+      val high = Cursor.matchPair (buffer, low)
+    in
+      if low = high then Finish.clearMode app
+      else deleteAndFinish (app, low, high - low + 1, buffer)
+    end
+
+  fun deleteAroundChrClose (app: app_type, chr) =
+    let
+      val {cursorIdx, buffer, ...} = app
+
+      val start = Int.max (cursorIdx - 1, 0)
+      val buffer = LineGap.goToIdx (start, buffer)
+
+      val high = Cursor.toNextChr (buffer, start, chr)
+      val buffer = LineGap.goToIdx (high, buffer)
+      val low = Cursor.matchPair (buffer, high)
+    in
+      if low = high then Finish.clearMode app
+      else deleteAndFinish (app, low, high - low + 1, buffer)
+    end
 end
