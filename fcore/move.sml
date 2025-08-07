@@ -12,7 +12,7 @@ functor MakeMove(Fn: MOVE): MAKE_MOVE =
 struct
   fun helpMove (app: AppType.app_type, buffer, cursorIdx, count) =
     if count = 0 then
-      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app)
+      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app, [])
     else
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       let
@@ -62,7 +62,7 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Fn.fMove (buffer, cursorIdx, count)
     in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app)
+      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app, [])
     end
 end
 

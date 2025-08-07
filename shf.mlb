@@ -47,6 +47,7 @@ in
 end
 
 shell/exception-logger.sml
+shell/search-thread.sml
 shell/update-thread.sml
 shell/gl-shaders.sml
 shell/gl-draw.sml

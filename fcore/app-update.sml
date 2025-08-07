@@ -9,6 +9,14 @@ struct
   fun clearMode app =
     AppWith.mode (app, NORMAL_MODE "", [])
 
+  fun withSearchList (app: app_type, searchList) =
+    let
+      val {buffer, searchString, cursorIdx, ...} = app
+      val app = AppWith.searchList (app, searchList, buffer, searchString)
+    in
+      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [])
+    end
+
   fun resizeText (app: app_type, newWidth, newHeight) =
     let
       val
@@ -33,6 +41,7 @@ struct
         , newHeight
         , searchList
         , searchString
+        , []
         )
     in
       AppWith.bufferAndSize
@@ -44,7 +53,8 @@ struct
    * where the cursor may possibly jump off window by a wide marigin.
    * Since the cursor may move away a lot, it is best to recenter.
    * *)
-  fun buildTextAndClearAfterChr (app: app_type, buffer, cursorIdx, searchList) =
+  fun buildTextAndClearAfterChr
+    (app: app_type, buffer, cursorIdx, searchList, initialMsg) =
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
@@ -68,6 +78,7 @@ struct
         , windowHeight
         , searchList
         , searchString
+        , []
         )
 
       val mode = NORMAL_MODE ""
@@ -104,6 +115,7 @@ struct
         , windowHeight
         , searchList
         , searchString
+        , []
         )
     in
       AppWith.bufferAndCursorIdx
@@ -129,6 +141,7 @@ struct
         , windowHeight
         , searchList
         , searchString
+        , []
         )
 
       val mode = NORMAL_MODE ""
@@ -169,6 +182,7 @@ struct
         , windowHeight
         , searchList
         , searchString
+        , []
         )
 
       val mode = NORMAL_MODE ""
@@ -211,6 +225,7 @@ struct
           , windowHeight
           , searchList
           , searchString
+          , []
           )
 
         val mode = NORMAL_MODE ""
@@ -253,6 +268,7 @@ struct
             , windowHeight
             , searchList
             , searchString
+            , []
             )
         in
           AppWith.bufferAndCursorIdx
@@ -283,6 +299,7 @@ struct
             , windowHeight
             , searchList
             , searchString
+            , []
             )
         in
           AppWith.bufferAndCursorIdx
@@ -309,12 +326,12 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.firstNonSpaceChr (buffer, cursorIdx)
     in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app)
+      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app, [])
     end
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
-      buildTextAndClearAfterChr (app, buffer, cursorIdx, #searchList app)
+      buildTextAndClearAfterChr (app, buffer, cursorIdx, #searchList app, [])
     else
       let
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
@@ -335,6 +352,7 @@ struct
       CHAR_EVENT chr => moveToChr (app, count, fMove, chr)
     | KEY_ESC => clearMode app
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+    | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
 
   fun handleGo (count, app, newCmd) =
     case newCmd of
@@ -346,12 +364,19 @@ struct
          | _ => clearMode app)
     | KEY_ESC => clearMode app
     | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+    | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
 
   (* text-delete functions *)
   (** equivalent of vi's 'x' command **)
-  fun helpRemoveChr (app: app_type, buffer, searchList, cursorIdx, count) =
+  fun helpRemoveChr (app: app_type, buffer, cursorIdx, count) =
     if count = 0 then
-      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList)
+      let
+        val buffer = LineGap.goToEnd buffer
+        val initialMsg = [SEARCH (buffer, #searchString app)]
+      in
+        Finish.buildTextAndClear
+          (app, buffer, cursorIdx, SearchList.empty, initialMsg)
+      end
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -374,17 +399,15 @@ struct
           (* vi simply doesn't do anything on 'x' command
           * when cursor is at start of line, and next chr is line break 
           * so skip to end of loop by passing count of 0 *)
-          helpRemoveChr (app, buffer, searchList, cursorIdx, 0)
+          helpRemoveChr (app, buffer, cursorIdx, 0)
         else if cursorIsStart then
-          helpRemoveChr (app, buffer, searchList, cursorIdx, 0)
+          helpRemoveChr (app, buffer, cursorIdx, 0)
         else if nextIsEnd then
           let
             (* delete char at cursor and then decrement cursorIdx by 1
             * if cursorIdx is not 0 *)
             val searchString = #searchString app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
-
-            val (buffer, searchList) = SearchList.build (buffer, searchString)
 
             val cursorIdx =
               if
@@ -393,21 +416,19 @@ struct
               then cursorIdx
               else cursorIdx - 1
           in
-            helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
+            helpRemoveChr (app, buffer, cursorIdx, count - 1)
           end
         else
           let
             val searchString = #searchString app
             val buffer = LineGap.delete (cursorIdx, 1, buffer)
-
-            val (buffer, searchList) = SearchList.build (buffer, searchString)
           in
-            helpRemoveChr (app, buffer, searchList, cursorIdx, count - 1)
+            helpRemoveChr (app, buffer, cursorIdx, count - 1)
           end
       end
 
   fun removeChr (app: app_type, count) =
-    helpRemoveChr (app, #buffer app, #searchList app, #cursorIdx app, count)
+    helpRemoveChr (app, #buffer app, #cursorIdx app, count)
 
   fun helpDelete (app: app_type, buffer, cursorIdx, otherIdx, count, fMove) =
     (* As a small optimisation to reduce allocations, 
@@ -426,8 +447,9 @@ struct
 
         val buffer = LineGap.delete (low, length, buffer)
 
+        val buffer = LineGap.goToEnd buffer
         val searchString = #searchString app
-        val (buffer, searchList) = SearchList.build (buffer, searchString)
+        val initialMsg = [SEARCH (buffer, searchString)]
 
         (* If we have deleted from the buffer so that cursorIdx
         * is no longer a valid idx,
@@ -435,7 +457,8 @@ struct
         val buffer = LineGap.goToIdx (low, buffer)
         val cursorIdx = Cursor.clipIdx (buffer, low)
       in
-        Finish.buildTextAndClear (app, buffer, cursorIdx, searchList)
+        Finish.buildTextAndClear
+          (app, buffer, cursorIdx, SearchList.empty, initialMsg)
       end
     else
       let
@@ -463,11 +486,12 @@ struct
 
       val buffer = LineGap.delete (low, length, buffer)
 
-      val (buffer, searchList) = SearchList.build (buffer, searchString)
+      val buffer = LineGap.goToEnd buffer
+      val initialMsg = [SEARCH (buffer, searchString)]
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
-      Finish.buildTextAndClear (app, buffer, low, searchList)
+      Finish.buildTextAndClear (app, buffer, low, SearchList.empty, initialMsg)
     end
 
   fun deleteToEndOfLine (app: app_type) =
@@ -489,12 +513,8 @@ struct
           val lastChr = Cursor.viDlr (buffer, cursorIdx, 1)
           val length = lastChr - cursorIdx
           val buffer = LineGap.delete (cursorIdx, length, buffer)
-
-          (* delete from searchList and map *)
-          val searchString = #searchString app
-          val (buffer, searchList) = SearchList.build (buffer, searchString)
         in
-          helpRemoveChr (app, buffer, searchList, cursorIdx, 1)
+          helpRemoveChr (app, buffer, cursorIdx, 1)
         end
     end
 
@@ -509,11 +529,13 @@ struct
       val length = finishIdx - startIdx
       val buffer = LineGap.delete (startIdx, length, buffer)
 
-      val (buffer, searchList) = SearchList.build (buffer, searchString)
+      val buffer = LineGap.goToEnd buffer
+      val initialMsg = [SEARCH (buffer, searchString)]
 
       val buffer = LineGap.goToIdx (startIdx, buffer)
     in
-      Finish.buildTextAndClear (app, buffer, startIdx, searchList)
+      Finish.buildTextAndClear
+        (app, buffer, startIdx, SearchList.empty, initialMsg)
     end
 
   fun helpDeleteLineBack (app, buffer, low, high, count) =
@@ -523,12 +545,14 @@ struct
         val length = high - low
         val buffer = LineGap.delete (low, length, buffer)
 
+        val buffer = LineGap.goToEnd buffer
         val searchString = #searchString app
-        val (buffer, searchList) = SearchList.build (buffer, searchString)
+        val initialMsg = [SEARCH (buffer, searchString)]
 
         val buffer = LineGap.goToIdx (low, buffer)
       in
-        Finish.buildTextAndClear (app, buffer, low, searchList)
+        Finish.buildTextAndClear
+          (app, buffer, low, SearchList.empty, initialMsg)
       end
     else
       let
@@ -575,9 +599,11 @@ struct
       val length = high - low
 
       val buffer = LineGap.delete (low, length, buffer)
-      val (buffer, searchList) = SearchList.build (buffer, searchString)
+
+      val buffer = LineGap.goToEnd buffer
+      val initialMsg = [SEARCH (buffer, searchString)]
     in
-      Finish.buildTextAndClear (app, buffer, low, searchList)
+      Finish.buildTextAndClear (app, buffer, low, SearchList.empty, initialMsg)
     end
 
   fun helpDeleteToChr
@@ -589,10 +615,12 @@ struct
         val length = high - low
         val buffer = LineGap.delete (low, length, buffer)
 
+        val buffer = LineGap.goToEnd buffer
         val searchString = #searchString app
-        val (buffer, searchList) = SearchList.build (buffer, searchString)
+        val initialMsg = [SEARCH (buffer, searchString)]
       in
-        buildTextAndClearAfterChr (app, buffer, low, searchList)
+        buildTextAndClearAfterChr
+          (app, buffer, low, SearchList.empty, initialMsg)
       end
     else
       let
@@ -625,6 +653,9 @@ struct
       val buffer = LineGap.delete (0, cursorIdx, buffer)
       val (buffer, searchList) = SearchList.build (buffer, searchString)
 
+      val buffer = LineGap.goToEnd buffer
+      val initialMsg = [SEARCH (buffer, #searchString app)]
+
       val cursorIdx = 0
       val startLine = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -637,6 +668,7 @@ struct
         , windowHeight
         , searchList
         , searchString
+        , initialMsg
         )
 
       val mode = NORMAL_MODE ""
@@ -767,6 +799,7 @@ struct
            | _ => clearMode app)
       | KEY_ESC => clearMode app
       | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+      | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
     else
       (* have to continue parsing string *)
       case String.sub (str, strPos + 1) of
@@ -776,27 +809,31 @@ struct
              CHAR_EVENT chr =>
                deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
            | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
       | #"T" =>
           (* delete till chr, backwards *)
           (case newCmd of
              CHAR_EVENT chr =>
                deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
            | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
       | #"f" =>
           (case newCmd of
              CHAR_EVENT chr =>
                deleteToChr (app, count, Cursor.toNextChr, op+, chr)
            | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
       | #"F" =>
           (* delete to chr, backwards *)
           (case newCmd of
              CHAR_EVENT chr =>
                deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
            | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
       | #"g" =>
           (* same events as handleGo *)
           (case newCmd of
@@ -807,7 +844,8 @@ struct
                 | #"g" => deleteToStart app
                 | _ => clearMode app)
            | KEY_ESC => clearMode app
-           | RESIZE_EVENT (width, height) => resizeText (app, width, height))
+           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+           | WITH_SEARCH_LIST searchList => withSearchList (app, searchList))
       | _ => clearMode app
 
   (* useful reference as list of non-terminal commands *)
@@ -849,6 +887,7 @@ struct
         CHAR_EVENT chr => handleChr (app, 1, chr, str)
       | KEY_ESC => clearMode app
       | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+      | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
     else if String.size str = 1 then
       case newCmd of
         CHAR_EVENT chr =>
@@ -857,6 +896,7 @@ struct
            | NONE => parseAfterCount (0, str, 1, app, newCmd))
       | KEY_ESC => clearMode app
       | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+      | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
     else
       let
         val numLength = getNumLength (0, str)
@@ -872,6 +912,7 @@ struct
             CHAR_EVENT chr => handleChr (app, count, chr, str)
           | KEY_ESC => clearMode app
           | RESIZE_EVENT (width, height) => resizeText (app, width, height)
+          | WITH_SEARCH_LIST searchList => withSearchList (app, searchList)
         else
           (* continue parsing. *)
           parseAfterCount (numLength, str, count, app, newCmd)

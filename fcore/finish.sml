@@ -2,7 +2,7 @@ structure Finish =
 struct
   open AppType
 
-  fun buildTextAndClear (app: app_type, buffer, cursorIdx, searchList) =
+  fun buildTextAndClear (app: app_type, buffer, cursorIdx, searchList, msgs) =
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
@@ -18,7 +18,7 @@ struct
       val buffer = LineGap.goToLine (startLine, buffer)
       val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
 
-      val drawMsg = TextBuilder.build
+      val msgs = TextBuilder.build
         ( startLine
         , cursorIdx
         , buffer
@@ -26,11 +26,12 @@ struct
         , windowHeight
         , searchList
         , searchString
+        , msgs
         )
 
       val mode = NORMAL_MODE ""
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
+        (app, buffer, cursorIdx, mode, startLine, searchList, msgs)
     end
 end

@@ -6,6 +6,7 @@ struct
   (* create mailboxes for CML communication *)
   val inputMailbox = Mailbox.mailbox ()
   val drawMailbox = Mailbox.mailbox ()
+  val searchMailbox = Mailbox.mailbox ()
 
   fun frameBufferSizeCallback (width, height) =
     Mailbox.send (inputMailbox, RESIZE_EVENT (width, height))
@@ -79,7 +80,9 @@ struct
 
       val _ = CML.spawn (fn () => GlDraw.loop (drawMailbox, window))
       val _ = CML.spawn (fn () =>
-        UpdateThread.loop (app, inputMailbox, drawMailbox))
+        UpdateThread.loop (app, inputMailbox, drawMailbox, searchMailbox))
+      val _ = CML.spawn (fn () =>
+        SearchThread.loop (searchMailbox, inputMailbox))
     in
       ()
     end

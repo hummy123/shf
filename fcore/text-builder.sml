@@ -4,43 +4,22 @@ sig
   val getLineAbsIdx: int * LineGap.t -> int
 
   (* Prerequisites: LineGap is moved to requested line first. *)
-  val build: int * int * LineGap.t * int * int * SearchList.t * string
-             -> MailboxType.t list
+  val build:
+    int
+    * int
+    * LineGap.t
+    * int
+    * int
+    * SearchList.t
+    * string
+    * MailboxType.t list
+    -> MailboxType.t list
 end
 
 structure TextBuilder :> TEXT_BUILDER =
 struct
   open TextConstants
 
-  fun accToDrawMsg (textAcc, cursorAcc, bgAcc) =
-    let
-      open MailboxType
-      open DrawMsg
-
-      val textAcc = Vector.concat textAcc
-      val bgAcc = Vector.concat bgAcc
-
-      val textMsg = REDRAW_TEXT textAcc
-      val cursorMsg = REDRAW_CURSOR cursorAcc
-      val bgMsg = REDRAW_BG bgAcc
-    in
-      [DRAW bgMsg, DRAW textMsg, DRAW cursorMsg]
-    end
-
-  (* builds text from a string with char-wrap.
-   * char-wrap is a similar concept to word-wrap, 
-   * but it breaks on character in the middle of a word.
-   *
-   * Will likely want multiple versions of these two mutually recursive
-   * functions for each selection and cursor type:
-   * cursor over an individual character, 
-   * range selection where multiple characters are selected, etc.
-   *
-   * Todo: 
-   * - Possibly add visual horizontal indentation when char-wrap occurs
-   *   on an indented line *)
-  (* same as buildTextStringAfterCursor, except this keeps track of absolute
-   * index and cursor pos too *)
   type env_data =
     { r: Real32.real
     , g: Real32.real
@@ -57,8 +36,40 @@ struct
     (* fw/fh = float window width and float window height *)
     , fw: Real32.real
     , fh: Real32.real
+    , msgs: MailboxType.t list
     }
 
+  fun accToDrawMsg (textAcc, cursorAcc, bgAcc, env: env_data) =
+    let
+      open MailboxType
+      open DrawMsg
+
+      val msgs = #msgs env
+
+      val textAcc = Vector.concat textAcc
+      val bgAcc = Vector.concat bgAcc
+
+      val textMsg = REDRAW_TEXT textAcc
+      val cursorMsg = REDRAW_CURSOR cursorAcc
+      val bgMsg = REDRAW_BG bgAcc
+    in
+      DRAW bgMsg :: DRAW textMsg :: DRAW cursorMsg :: msgs
+    end
+
+  (* builds text from a string with char-wrap.
+   * char-wrap is a similar concept to word-wrap, 
+   * but it breaks on character in the middle of a word.
+   *
+   * Will likely want multiple versions of these two mutually recursive
+   * functions for each selection and cursor type:
+   * cursor over an individual character, 
+   * range selection where multiple characters are selected, etc.
+   *
+   * Todo: 
+   * - Possibly add visual horizontal indentation when char-wrap occurs
+   *   on an indented line *)
+  (* same as buildTextStringAfterCursor, except this keeps track of absolute
+   * index and cursor pos too *)
   fun buildTextString
     ( pos
     , str
@@ -159,7 +170,7 @@ struct
                   )
               end
           else
-            accToDrawMsg (acc, cursorAcc, bgAcc)
+            accToDrawMsg (acc, cursorAcc, bgAcc, env)
       | chr =>
           let
             val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
@@ -213,7 +224,7 @@ struct
                     )
                 end
               else
-                accToDrawMsg (acc, cursorAcc, bgAcc)
+                accToDrawMsg (acc, cursorAcc, bgAcc, env)
             else
               (* equal to cursor *)
               let
@@ -278,7 +289,7 @@ struct
                       )
                   end
                 else
-                  accToDrawMsg (acc, cursorAcc, bgAcc)
+                  accToDrawMsg (acc, cursorAcc, bgAcc, env)
               end
           end
     else
@@ -299,7 +310,7 @@ struct
             , bgAcc
             , env
             )
-      | [] => accToDrawMsg (acc, cursorAcc, bgAcc)
+      | [] => accToDrawMsg (acc, cursorAcc, bgAcc, env)
 
   fun isInSearchRange (absIdx, searchPos, searchHd, searchLen) =
     let val searchIdx = Vector.sub (searchHd, searchPos)
@@ -329,21 +340,21 @@ struct
     , searchLen
     ) =
     if searchPos = Vector.length searchHd then
-          (* exhausted search list so call normal build function *)
-          buildTextString
-            ( pos
-            , str
-            , acc
-            , posX
-            , posY
-            , startX
-            , tl
-            , absIdx
-            , cursorPos
-            , cursorAcc
-            , bgAcc
-            , env
-            )
+      (* exhausted search list so call normal build function *)
+      buildTextString
+        ( pos
+        , str
+        , acc
+        , posX
+        , posY
+        , startX
+        , tl
+        , absIdx
+        , cursorPos
+        , cursorAcc
+        , bgAcc
+        , env
+        )
     else if pos < String.size str then
       case String.sub (str, pos) of
         #" " =>
@@ -474,7 +485,7 @@ struct
                   )
               end
           else
-            accToDrawMsg (acc, cursorAcc, bgAcc)
+            accToDrawMsg (acc, cursorAcc, bgAcc, env)
       | chr =>
           let
             val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
@@ -582,7 +593,7 @@ struct
                     )
                 end
               else
-                accToDrawMsg (acc, cursorAcc, bgAcc)
+                accToDrawMsg (acc, cursorAcc, bgAcc, env)
             else
               (* equal to cursor *)
               let
@@ -652,7 +663,7 @@ struct
                       )
                   end
                 else
-                  accToDrawMsg (acc, cursorAcc, bgAcc)
+                  accToDrawMsg (acc, cursorAcc, bgAcc, env)
               end
           end
     else
@@ -676,7 +687,7 @@ struct
             , searchPos
             , searchLen
             )
-      | [] => accToDrawMsg (acc, cursorAcc, bgAcc)
+      | [] => accToDrawMsg (acc, cursorAcc, bgAcc, env)
 
   (* gets line start idx, relative to right hd *)
   fun helpGetLineStartIdx (startLine, curLine, rLnHd) =
@@ -718,6 +729,7 @@ struct
     , windowHeight
     , searchList: SearchList.t
     , searchString
+    , msgs
     ) =
     let
       val {rightStrings, rightLines, line = curLine, idx = curIdx, ...} =
@@ -742,44 +754,45 @@ struct
               , hr = 0.211
               , hg = 0.219
               , hb = 0.25
+              , msgs = msgs
               }
 
             val cursorAcc = Vector.fromList []
             val searchPos = BinSearch.equalOrMore (absIdx, searchList)
           in
             if searchPos < Vector.length searchList then
-                   buildTextStringSearch
-                     ( startIdx
-                     , rStrHd
-                     , []
-                     , 5
-                     , 5
-                     , 5
-                     , rStrTl
-                     , absIdx
-                     , cursorPos
-                     , cursorAcc
-                     , []
-                     , env
-                     , searchList
-                     , searchPos
-                     , String.size searchString
-                     )
+              buildTextStringSearch
+                ( startIdx
+                , rStrHd
+                , []
+                , 5
+                , 5
+                , 5
+                , rStrTl
+                , absIdx
+                , cursorPos
+                , cursorAcc
+                , []
+                , env
+                , searchList
+                , searchPos
+                , String.size searchString
+                )
             else
-                 buildTextString
-                   ( startIdx
-                   , rStrHd
-                   , []
-                   , 5
-                   , 5
-                   , 5
-                   , rStrTl
-                   , absIdx
-                   , cursorPos
-                   , cursorAcc
-                   , []
-                   , env
-                   )
+              buildTextString
+                ( startIdx
+                , rStrHd
+                , []
+                , 5
+                , 5
+                , 5
+                , rStrTl
+                , absIdx
+                , cursorPos
+                , cursorAcc
+                , []
+                , env
+                )
           end
       | (_, _) =>
           (* requested line goes beyond the buffer,

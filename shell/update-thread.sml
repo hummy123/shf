@@ -4,18 +4,21 @@ struct
   open MailboxType
   open InputMsg
 
-  fun sendMsg (msg, drawMailbox) =
-    case msg of DRAW msg => Mailbox.send (drawMailbox, msg)
+  fun sendMsg (msg, drawMailbox, searchMailbox) =
+    case msg of
+      DRAW msg => Mailbox.send (drawMailbox, msg)
+    | SEARCH (buffer, searchString) =>
+        Mailbox.send (searchMailbox, (buffer, searchString))
 
-  fun sendMsgs (msgList, drawMailbox) =
+  fun sendMsgs (msgList, drawMailbox, searchMailbox) =
     case msgList of
       hd :: tl =>
-        let val _ = sendMsg (hd, drawMailbox)
-        in sendMsgs (tl, drawMailbox)
+        let val _ = sendMsg (hd, drawMailbox, searchMailbox)
+        in sendMsgs (tl, drawMailbox, searchMailbox)
         end
     | [] => ()
 
-  fun loop (app: AppType.app_type, inputMailbox, drawMailbox) =
+  fun loop (app: AppType.app_type, inputMailbox, drawMailbox, searchMailbox) =
     let
       val inputMsg = Mailbox.recv inputMailbox
       val () =
@@ -33,8 +36,8 @@ struct
       val app = AppUpdate.update (app, inputMsg)
                 handle e => ExceptionLogger.log e
 
-      val () = sendMsgs (#msgs app, drawMailbox)
+      val () = sendMsgs (#msgs app, drawMailbox, searchMailbox)
     in
-      loop (app, inputMailbox, drawMailbox)
+      loop (app, inputMailbox, drawMailbox, searchMailbox)
     end
 end
