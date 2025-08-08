@@ -5,9 +5,9 @@ struct
 
   fun deleteAndFinish (app: app_type, low, length, buffer) =
     let
-      val searchString = #searchString app
       val buffer = LineGap.delete (low, length, buffer)
 
+      val searchString = #searchString app
       val buffer = LineGap.goToEnd buffer
       val initialMsg = [SEARCH (buffer, searchString)]
 
@@ -478,5 +478,43 @@ struct
     in
       if low = high then Finish.clearMode app
       else deleteAndFinish (app, low, high - low + 1, buffer)
+    end
+
+  fun deletePair (app: app_type) =
+    let
+      val {cursorIdx, buffer, ...} = app
+      val otherIdx = Cursor.matchPair (buffer, cursorIdx)
+    in
+      if otherIdx = cursorIdx then
+        Finish.clearMode app
+      else
+        let
+          val low = Int.min (cursorIdx, otherIdx)
+          val high = Int.max (cursorIdx, otherIdx)
+          val length = high - low + 1
+
+          val buffer = LineGap.delete (low, length, buffer)
+          val buffer = LineGap.goToIdx (low, buffer)
+
+          val low =
+            if Cursor.isCursorAtStartOfLine (buffer, low) then
+              (* we may have deleted the last character of this current line,
+               * and if we did, we have to move the cursor back by 1 *)
+              Int.max (low - 1, 0)
+            else
+              low
+
+          val searchString = #searchString app
+          val buffer = LineGap.goToEnd buffer
+          val initialMsg = [SEARCH (buffer, searchString)]
+
+          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val searchList =
+            SearchList.buildRange (buffer, searchString, low - 777)
+
+          val buffer = LineGap.goToIdx (low, buffer)
+        in
+          Finish.buildTextAndClear (app, buffer, low, searchList, initialMsg)
+        end
     end
 end

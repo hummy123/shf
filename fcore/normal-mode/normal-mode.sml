@@ -166,6 +166,7 @@ struct
            | #"d" => NormalDelete.deleteLine (app, count)
            | #"n" => NormalDelete.deleteToNextMatch (app, count)
            | #"N" => NormalDelete.deleteToPrevMatch (app, count)
+           | #"%" => NormalDelete.deletePair app
            (* non-terminal commands which require appending chr *)
            | #"t" => appendChr (app, chr, str)
            | #"T" => appendChr (app, chr, str)
