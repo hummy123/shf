@@ -21,24 +21,15 @@ struct
       AppWith.mode (app, mode, [])
     end
 
-  fun parseMoveToChr (count, app, fMove, newCmd) =
-    case newCmd of
-      CHAR_EVENT chr => NormalMove.moveToChr (app, count, fMove, chr)
-    | KEY_ESC => Finish.clearMode app
-    | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
-    | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
+  fun parseMoveToChr (count, app, fMove, chrCmd) =
+    NormalMove.moveToChr (app, count, fMove, chrCmd)
 
-  fun parseGo (count, app, newCmd) =
-    case newCmd of
-      CHAR_EVENT chr =>
-        (case chr of
-           #"e" => MoveToEndOfPrevWord.move (app, count)
-         | #"E" => MoveToEndOfPrevWORD.move (app, count)
-         | #"g" => NormalMove.moveToStart app
-         | _ => Finish.clearMode app)
-    | KEY_ESC => Finish.clearMode app
-    | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
-    | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
+  fun parseGo (count, app, chrCmd) =
+    case chrCmd of
+      #"e" => MoveToEndOfPrevWord.move (app, count)
+    | #"E" => MoveToEndOfPrevWORD.move (app, count)
+    | #"g" => NormalMove.moveToStart app
+    | _ => Finish.clearMode app
 
   fun parseChr (app: app_type, count, chr, str) =
     case chr of
@@ -137,127 +128,69 @@ struct
     | #">" => NormalDelete.deleteAroundChrClose (app, chr)
     | _ => Finish.clearMode app
 
-  fun parseDelete (strPos, str, count, app, newCmd) =
+  fun parseDeleteTerminal (str, count, app, chrCmd) =
+    case chrCmd of
+    (* terminal commands: require no input after *)
+      #"h" => NormalDelete.delete (app, count, Cursor.viH)
+    | #"l" => NormalDelete.delete (app, count, Cursor.viL)
+    (* vi's 'j' and 'k' commands move up or down a column
+     * but 'dj' or 'dk' delete whole lines
+     * so their implementation differs from
+     * other cursor motions *)
+    | #"j" => NormalDelete.deleteLine (app, count + 1)
+    | #"k" => NormalDelete.deleteLineBack (app, count)
+    | #"w" => NormalDelete.deleteByDfa (app, count, Cursor.nextWord)
+    | #"W" => NormalDelete.deleteByDfa (app, count, Cursor.nextWORD)
+    | #"b" => NormalDelete.deleteByDfa (app, count, Cursor.prevWord)
+    | #"B" => NormalDelete.deleteByDfa (app, count, Cursor.prevWORD)
+    | #"e" => NormalDelete.deleteByDfa (app, count, Cursor.endOfWordForDelete)
+    | #"E" => NormalDelete.deleteByDfa (app, count, Cursor.endOfWORDForDelete)
+    | #"0" => NormalDelete.delete (app, 1, Cursor.vi0)
+    | #"$" => NormalDelete.deleteToEndOfLine app
+    | #"^" => NormalDelete.deleteToFirstNonSpaceChr app
+    | #"d" => NormalDelete.deleteLine (app, count)
+    | #"n" => NormalDelete.deleteToNextMatch (app, count)
+    | #"N" => NormalDelete.deleteToPrevMatch (app, count)
+    | #"%" => NormalDelete.deletePair app
+    (* non-terminal commands which require appending chr *)
+    | #"t" => appendChr (app, chrCmd, str)
+    | #"T" => appendChr (app, chrCmd, str)
+    | #"f" => appendChr (app, chrCmd, str)
+    | #"F" => appendChr (app, chrCmd, str)
+    | #"g" => appendChr (app, chrCmd, str)
+    | #"i" => appendChr (app, chrCmd, str)
+    | #"a" => appendChr (app, chrCmd, str)
+    (* invalid command: reset mode *)
+    | _ => Finish.clearMode app
+
+  fun parseDeleteGo (app, count, chrCmd) =
+    case chrCmd of
+      #"e" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWord)
+    | #"E" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWORD)
+    | #"g" => NormalDelete.deleteToStart app
+    | _ => Finish.clearMode app
+
+  fun parseDelete (strPos, str, count, app, chrCmd) =
     if strPos = String.size str - 1 then
-      (* have to check newCmd *)
-      case newCmd of
-        CHAR_EVENT chr =>
-          (case chr of
-           (* terminal commands: require no input after *)
-             #"h" => NormalDelete.delete (app, count, Cursor.viH)
-           | #"l" => NormalDelete.delete (app, count, Cursor.viL)
-           (* vi's 'j' and 'k' commands move up or down a column
-            * but 'dj' or 'dk' delete whole lines
-            * so their implementation differs from
-            * other cursor motions *)
-           | #"j" => NormalDelete.deleteLine (app, count + 1)
-           | #"k" => NormalDelete.deleteLineBack (app, count)
-           | #"w" => NormalDelete.deleteByDfa (app, count, Cursor.nextWord)
-           | #"W" => NormalDelete.deleteByDfa (app, count, Cursor.nextWORD)
-           | #"b" => NormalDelete.deleteByDfa (app, count, Cursor.prevWord)
-           | #"B" => NormalDelete.deleteByDfa (app, count, Cursor.prevWORD)
-           | #"e" =>
-               NormalDelete.deleteByDfa (app, count, Cursor.endOfWordForDelete)
-           | #"E" =>
-               NormalDelete.deleteByDfa (app, count, Cursor.endOfWORDForDelete)
-           | #"0" => NormalDelete.delete (app, 1, Cursor.vi0)
-           | #"$" => NormalDelete.deleteToEndOfLine app
-           | #"^" => NormalDelete.deleteToFirstNonSpaceChr app
-           | #"d" => NormalDelete.deleteLine (app, count)
-           | #"n" => NormalDelete.deleteToNextMatch (app, count)
-           | #"N" => NormalDelete.deleteToPrevMatch (app, count)
-           | #"%" => NormalDelete.deletePair app
-           (* non-terminal commands which require appending chr *)
-           | #"t" => appendChr (app, chr, str)
-           | #"T" => appendChr (app, chr, str)
-           | #"f" => appendChr (app, chr, str)
-           | #"F" => appendChr (app, chr, str)
-           | #"g" => appendChr (app, chr, str)
-           | #"i" => appendChr (app, chr, str)
-           | #"a" => appendChr (app, chr, str)
-           (* invalid command: reset mode *)
-           | _ => Finish.clearMode app)
-      | KEY_ESC => Finish.clearMode app
-      | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
-      | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
+      parseDeleteTerminal (str, count, app, chrCmd)
     else
       (* have to continue parsing string *)
       case String.sub (str, strPos + 1) of
         #"t" =>
-          (* delete till chr, forwards *)
-          (case newCmd of
-             CHAR_EVENT chr =>
-               NormalDelete.deleteToChr (app, 1, Cursor.tillNextChr, op+, chr)
-           | KEY_ESC => Finish.clearMode app
-           | RESIZE_EVENT (width, height) =>
-               Finish.resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList =>
-               Finish.withSearchList (app, searchList))
+          NormalDelete.deleteToChr (app, 1, Cursor.tillNextChr, op+, chrCmd)
       | #"T" =>
-          (* delete till chr, backwards *)
-          (case newCmd of
-             CHAR_EVENT chr =>
-               NormalDelete.deleteToChr (app, 1, Cursor.tillPrevChr, op-, chr)
-           | KEY_ESC => Finish.clearMode app
-           | RESIZE_EVENT (width, height) =>
-               Finish.resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList =>
-               Finish.withSearchList (app, searchList))
+          NormalDelete.deleteToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
       | #"f" =>
-          (case newCmd of
-             CHAR_EVENT chr =>
-               NormalDelete.deleteToChr (app, count, Cursor.toNextChr, op+, chr)
-           | KEY_ESC => Finish.clearMode app
-           | RESIZE_EVENT (width, height) =>
-               Finish.resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList =>
-               Finish.withSearchList (app, searchList))
+          NormalDelete.deleteToChr (app, count, Cursor.toNextChr, op+, chrCmd)
       | #"F" =>
-          (* delete to chr, backwards *)
-          (case newCmd of
-             CHAR_EVENT chr =>
-               NormalDelete.deleteToChr (app, count, Cursor.toPrevChr, op-, chr)
-           | KEY_ESC => Finish.clearMode app
-           | RESIZE_EVENT (width, height) =>
-               Finish.resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList =>
-               Finish.withSearchList (app, searchList))
-      | #"g" =>
-          (* same events as parseGo *)
-          (case newCmd of
-             CHAR_EVENT chr =>
-               (case chr of
-                  #"e" =>
-                    NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWord)
-                | #"E" =>
-                    NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWORD)
-                | #"g" => NormalDelete.deleteToStart app
-                | _ => Finish.clearMode app)
-           | KEY_ESC => Finish.clearMode app
-           | RESIZE_EVENT (width, height) =>
-               Finish.resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList =>
-               Finish.withSearchList (app, searchList))
-      | #"i" =>
-          (case newCmd of
-             CHAR_EVENT chr => parseDeleteInside (app, chr)
-           | KEY_ESC => Finish.clearMode app
-           | RESIZE_EVENT (width, height) =>
-               Finish.resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList =>
-               Finish.withSearchList (app, searchList))
-      | #"a" =>
-          (case newCmd of
-             CHAR_EVENT chr => parseDeleteAround (app, chr)
-           | KEY_ESC => Finish.clearMode app
-           | RESIZE_EVENT (width, height) =>
-               Finish.resizeText (app, width, height)
-           | WITH_SEARCH_LIST searchList =>
-               Finish.withSearchList (app, searchList))
+          NormalDelete.deleteToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
+      | #"g" => parseDeleteGo (app, count, chrCmd)
+      | #"i" => parseDeleteInside (app, chrCmd)
+      | #"a" => parseDeleteAround (app, chrCmd)
       | _ => Finish.clearMode app
 
   (* useful reference as list of non-terminal commands *)
-  fun parseAfterCount (strPos, str, count, app, newCmd) =
+  fun parseAfterCount (strPos, str, count, app, chrCmd) =
     (* we are trying to parse multi-char but non-terminal strings here.
      * For example, we don't want to parse 3w which is a terminal commmand
      * to go 3 words forwards
@@ -270,41 +203,32 @@ struct
          * tillNextChr with count of 1 has same effect
          * as tillNextChr with any count above 1
          * so just hardcode 1 *)
-        parseMoveToChr (1, app, Cursor.tillNextChr, newCmd)
+        parseMoveToChr (1, app, Cursor.tillNextChr, chrCmd)
     | #"T" =>
         (* to just before chr, backward *)
-        parseMoveToChr (1, app, Cursor.tillPrevChr, newCmd)
+        parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
     | #"y" => (* yank *) Finish.clearMode app
-    | #"d" => (* delete *) parseDelete (strPos, str, count, app, newCmd)
+    | #"d" => (* delete *) parseDelete (strPos, str, count, app, chrCmd)
     | #"f" =>
         (* to chr, forward *)
-        parseMoveToChr (count, app, Cursor.toNextChr, newCmd)
+        parseMoveToChr (count, app, Cursor.toNextChr, chrCmd)
     | #"F" =>
         (* to chr, backward *)
-        parseMoveToChr (count, app, Cursor.toPrevChr, newCmd)
-    | #"g" => (* go *) parseGo (count, app, newCmd)
+        parseMoveToChr (count, app, Cursor.toPrevChr, chrCmd)
+    | #"g" => (* go *) parseGo (count, app, chrCmd)
     | #"c" => (* change *) Finish.clearMode app
     | _ =>
         (* isn't a non-terminal cmd
          * this case should never happen*)
         Finish.clearMode app
 
-  fun parseNormalModeCommand (app, str, newCmd) =
+  fun parseNormalModeCommand (app, str, chrCmd) =
     if String.size str = 0 then
-      case newCmd of
-        CHAR_EVENT chr => parseChr (app, 1, chr, str)
-      | KEY_ESC => Finish.clearMode app
-      | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
-      | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
+      parseChr (app, 1, chrCmd, str)
     else if String.size str = 1 then
-      case newCmd of
-        CHAR_EVENT chr =>
-          (case Int.fromString str of
-             SOME count => parseChr (app, count, chr, str)
-           | NONE => parseAfterCount (0, str, 1, app, newCmd))
-      | KEY_ESC => Finish.clearMode app
-      | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
-      | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
+      case Int.fromString str of
+        SOME count => parseChr (app, count, chrCmd, str)
+      | NONE => parseAfterCount (0, str, 1, app, chrCmd)
     else
       let
         val numLength = getNumLength (0, str)
@@ -316,17 +240,16 @@ struct
       in
         if numLength = String.size str then
           (* reached end of str; str only contained numbers *)
-          case newCmd of
-            CHAR_EVENT chr => parseChr (app, count, chr, str)
-          | KEY_ESC => Finish.clearMode app
-          | RESIZE_EVENT (width, height) =>
-              Finish.resizeText (app, width, height)
-          | WITH_SEARCH_LIST searchList =>
-              Finish.withSearchList (app, searchList)
+          parseChr (app, count, chrCmd, str)
         else
           (* continue parsing. *)
-          parseAfterCount (numLength, str, count, app, newCmd)
+          parseAfterCount (numLength, str, count, app, chrCmd)
       end
 
-  fun update (app, str, msg) = parseNormalModeCommand (app, str, msg)
+  fun update (app, str, msg) =
+    case msg of
+      CHAR_EVENT chrCmd => parseNormalModeCommand (app, str, chrCmd)
+    | KEY_ESC => Finish.clearMode app
+    | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
+    | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
 end
