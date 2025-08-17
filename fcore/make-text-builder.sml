@@ -1,12 +1,16 @@
+structure PosData =
+struct
+  (* I don't like introducing new bindings in the global name space
+   * so the pos_data type is introduced in a new struct. *)
+  type t = {chr: char, strIdx: int, absIdx: int, hd: string, tl: string list}
+end
+
 signature MAKE_TEXT_BUILDER =
 sig
   type state
   type env
 
-  type pos_data =
-    {chr: char, strIdx: int, absIdx: int, hd: string, tl: string list}
-
-  val folder: pos_data * env * state -> state
+  val folder: PosData.t * env * state -> state
   val stopFold: state -> bool
 end
 
@@ -29,3 +33,14 @@ struct
         buildLoop (strIdx + 1, absIdx + 1, hd, tl, env, state)
       end
 end
+
+structure Good =
+  MakeTextBuilder
+    (struct
+       type state = unit
+       type env = unit
+
+       fun folder (_, _, _) = ()
+       fun stopFold () = false
+       fun finish () = 33
+     end)
