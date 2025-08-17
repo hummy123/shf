@@ -17,6 +17,7 @@ fcore/app-type.sml
 fcore/app-with.sml
 
 fcore/text-constants.sml
+fcore/make-text-builder.sml
 ann
   "allowVectorExps true"
 in
