@@ -70,6 +70,20 @@ struct
    *   on an indented line *)
   (* same as buildTextStringAfterCursor, except this keeps track of absolute
    * index and cursor pos too *)
+
+  fun makeChr (chr, posX, posY, windowWidth, windowHeight, r, g, b) =
+    CozetteAscii.make
+      ( chr
+      , Real32.fromInt posX
+      , Real32.fromInt posY
+      , scale
+      , windowWidth
+      , windowHeight
+      , r
+      , g
+      , b
+      )
+
   fun buildTextString
     ( pos
     , str
@@ -172,17 +186,14 @@ struct
           else
             accToDrawMsg (acc, cursorAcc, bgAcc, env)
       | chr =>
-          let
-            val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
-          in
+          let in
             if absIdx <> cursorPos then
               (* not equal to cursor *)
               if posX + xSpace < #w env then
                 let
                   val {r, g, b, fw, fh, ...} = env
 
-                  val chrVec = chrFun
-                    (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                  val chrVec = makeChr (chr, posX, posY, fw, fh, r, g, b)
                   val acc = chrVec :: acc
                 in
                   buildTextString
@@ -204,8 +215,8 @@ struct
                 let
                   val {r, g, b, fw, fh, ...} = env
 
-                  val chrVec = chrFun
-                    (startX, posY + ySpace, fontSize, fontSize, fw, fh, r, g, b)
+                  val chrVec = makeChr
+                    (chr, startX, posY + ySpace, fw, fh, r, g, b)
                   val acc = chrVec :: acc
                 in
                   buildTextString
@@ -235,8 +246,7 @@ struct
               in
                 if posX + xSpace < #w env then
                   let
-                    val chrVec = chrFun
-                      (posX, posY, fontSize, fontSize, fw, fh, hr, hg, hb)
+                    val chrVec = makeChr (chr, posX, posY, fw, fh, hr, hg, hb)
                     val acc = chrVec :: acc
                   in
                     (* can start building after cursor now, 
@@ -258,17 +268,8 @@ struct
                   end
                 else if posY + ySpace < #h env then
                   let
-                    val chrVec = chrFun
-                      ( startX
-                      , posY + ySpace
-                      , fontSize
-                      , fontSize
-                      , fw
-                      , fh
-                      , hr
-                      , hg
-                      , hb
-                      )
+                    val chrVec = makeChr
+                      (chr, startX, posY + ySpace, fw, fh, hr, hg, hb)
                     val acc = chrVec :: acc
                   in
                     (* can start building after cursor now, 
@@ -503,8 +504,7 @@ struct
                     val b: Real32.real = 0.7
 
                     (* build char vec *)
-                    val chrVec = chrFun
-                      (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                    val chrVec = makeChr (chr, posX, posY, fw, fh, r, g, b)
                     val acc = chrVec :: acc
 
                     (* build cursor (behind text) vec *)
@@ -538,8 +538,7 @@ struct
                   let
                     val {fw, fh, r, g, b, ...} = env
 
-                    val chrVec = chrFun
-                      (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                    val chrVec = makeChr (chr, posX, posY, fw, fh, r, g, b)
                     val acc = chrVec :: acc
                     val searchPos =
                       if
@@ -570,8 +569,8 @@ struct
                 let
                   val {fw, fh, r, g, b, ...} = env
 
-                  val chrVec = chrFun
-                    (startX, posY + ySpace, fontSize, fontSize, fw, fh, r, g, b)
+                  val chrVec = makeChr
+                    (chr, startX, posY + ySpace, fw, fh, r, g, b)
                   val acc = chrVec :: acc
                 in
                   buildTextStringSearch
@@ -603,8 +602,7 @@ struct
               in
                 if posX + xSpace < #w env then
                   let
-                    val chrVec = chrFun
-                      (posX, posY, fontSize, fontSize, fw, fh, hr, hg, hb)
+                    val chrVec = makeChr (chr, posX, posY, fw, fh, hr, hg, hb)
                     val acc = chrVec :: acc
                   in
                     (* can start building after cursor now, 
@@ -629,17 +627,8 @@ struct
                   end
                 else if posY + ySpace < #h env then
                   let
-                    val chrVec = chrFun
-                      ( startX
-                      , posY + ySpace
-                      , fontSize
-                      , fontSize
-                      , fw
-                      , fh
-                      , hr
-                      , hg
-                      , hb
-                      )
+                    val chrVec = makeChr
+                      (chr, startX, posY + ySpace, fw, fh, hr, hg, hb)
                     val acc = chrVec :: acc
                   in
                     (* can start building after cursor now, 

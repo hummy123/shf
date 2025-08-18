@@ -4,4 +4,5 @@ struct
   val xSpace3 = xSpace * 3
   val ySpace = 25
   val fontSize: Real32.real = 30.0
+  val scale: Real32.real = 2.0
 end
