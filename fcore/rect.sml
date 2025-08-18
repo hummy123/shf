@@ -1,27 +1,35 @@
-structure Rect =
+structure Rect = 
 struct
-  fun lerp (startX, startY, drawWidth, drawHeight, windowWidth, windowHeight, r, g, b) : Real32.real vector =
+  fun xToNdc (xOffset, xpos, scale, halfWidth) =
+    ((xpos * scale + xOffset) - halfWidth) / halfWidth
+
+  fun yToNdc (yOffset, ypos, scale, halfHeight) =
+   ~(((ypos * scale + yOffset) - halfHeight) / halfHeight)
+
+  fun lerp (xOffset: Real32.real, yOffset, scale, windowWidth, windowHeight, r, g, b) =
     let
-       val startX = Real32.fromInt startX
-       val startY = Real32.fromInt startY
-       val endY = windowHeight - startY
-       val startY = windowHeight - (startY + drawHeight)
-       val endX = startX + drawWidth
-       val windowHeight = windowHeight / 2.0
-       val windowWidth = windowWidth / 2.0
+      val halfWidth = windowWidth / 2.0
+      val halfHeight = windowHeight / 2.0
     in
-       #[      (((startX * (1.0 - 0.733333349228)) + (endX * 0.733333349228)) / windowWidth) - 1.0,
-      (((startY * (1.0 - 1.0)) + (endY * 1.0)) / windowHeight) - 1.0, r, g, b,
-      (((startX * (1.0 - 0.733333349228)) + (endX * 0.733333349228)) / windowWidth) - 1.0,
-      (((startY * (1.0 - 0.0)) + (endY * 0.0)) / windowHeight) - 1.0, r, g, b,
-      (((startX * (1.0 - 0.266666650772)) + (endX * 0.266666650772)) / windowWidth) - 1.0,
-      (((startY * (1.0 - 0.0)) + (endY * 0.0)) / windowHeight) - 1.0, r, g, b,
-      (((startX * (1.0 - 0.266666650772)) + (endX * 0.266666650772)) / windowWidth) - 1.0,
-      (((startY * (1.0 - 0.0)) + (endY * 0.0)) / windowHeight) - 1.0, r, g, b,
-      (((startX * (1.0 - 0.266666650772)) + (endX * 0.266666650772)) / windowWidth) - 1.0,
-      (((startY * (1.0 - 1.0)) + (endY * 1.0)) / windowHeight) - 1.0, r, g, b,
-      (((startX * (1.0 - 0.733333349228)) + (endX * 0.733333349228)) / windowWidth) - 1.0,
-      (((startY * (1.0 - 1.0)) + (endY * 1.0)) / windowHeight) - 1.0, r, g, b
-    ]
-  end
+     #[
+xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 6.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 6.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 6.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
+r, g, b
+      ]
+    end
 end

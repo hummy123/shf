@@ -71,6 +71,10 @@ struct
   (* same as buildTextStringAfterCursor, except this keeps track of absolute
    * index and cursor pos too *)
 
+  fun makeRect (posX, posY, fw, fh, r, g, b) =
+    Rect.lerp
+      (Real32.fromInt (posX - 1), Real32.fromInt posY, scale, fw, fh, r, g, b)
+
   fun makeChr (chr, posX, posY, windowWidth, windowHeight, r, g, b) =
     CozetteAscii.make
       ( chr
@@ -124,8 +128,7 @@ struct
             let
               val {r, g, b, fw, fh, ...} = env
 
-              val cursorAcc = Rect.lerp
-                (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+              val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
             in
               buildTextString
                 ( pos + 1
@@ -165,8 +168,7 @@ struct
               let
                 val {r, g, b, fw, fh, ...} = env
 
-                val cursorAcc = Rect.lerp
-                  (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
               in
                 buildTextString
                   ( pos + 1
@@ -241,8 +243,7 @@ struct
               let
                 val {fw, fh, r, g, b, hr, hg, hb, ...} = env
 
-                val cursorAcc = Rect.lerp
-                  (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
               in
                 if posX + xSpace < #w env then
                   let
@@ -372,8 +373,7 @@ struct
                 val b: Real32.real = 0.1
                 val {fw, fh, ...} = env
 
-                val space = Rect.lerp
-                  (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                val space = makeRect (posX, posY, fw, fh, r, g, b)
                 val bgAcc = space :: bgAcc
               in
                 buildTextStringSearch
@@ -417,8 +417,7 @@ struct
             let
               val {fw, fh, r, g, b, ...} = env
 
-              val cursorAcc = Rect.lerp
-                (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+              val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
             in
               buildTextStringSearch
                 ( pos + 1
@@ -464,8 +463,7 @@ struct
               let
                 val {fw, fh, r, g, b, ...} = env
 
-                val cursorAcc = Rect.lerp
-                  (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
               in
                 buildTextStringSearch
                   ( pos + 1
@@ -512,8 +510,7 @@ struct
                     val g: Real32.real = 0.1
                     val b: Real32.real = 0.1
 
-                    val space = Rect.lerp
-                      (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                    val space = makeRect (posX, posY, fw, fh, r, g, b)
                     val bgAcc = space :: bgAcc
                   in
                     buildTextStringSearch
@@ -597,8 +594,7 @@ struct
               (* equal to cursor *)
               let
                 val {fw, fh, r, g, b, hr, hg, hb, ...} = env
-                val cursorAcc = Rect.lerp
-                  (posX, posY, fontSize, fontSize, fw, fh, r, g, b)
+                val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
               in
                 if posX + xSpace < #w env then
                   let
