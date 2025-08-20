@@ -10,7 +10,7 @@ struct
       let
         val chr = String.sub (str, pos)
         val () = ExceptionLogger.addCommand (InputMsg.CHAR_EVENT chr)
-        val app = AppUpdate.update (app, InputMsg.CHAR_EVENT chr)
+        val app = TestUtils.update (app, InputMsg.CHAR_EVENT chr)
       in
         updateLoop (pos + 1, str, app)
       end
@@ -19,7 +19,7 @@ struct
 
   fun appFromText text =
     let val buffer = LineGap.fromString text
-    in AppType.init (buffer, 0, 0)
+    in TestUtils.init buffer
     end
 
   fun loadFromFile (io, acc) =
@@ -39,25 +39,25 @@ struct
   val initialApp = appFromText initialText
 
   val charEventTests = describe "CHAR_EVENT regressions"
-    [test "SearchList.goToNum vector bounds regression (1)" (fn _ =>
-       let
-         val app = appFromText initialText
-         val history = "G12dk"
-         val newApp = applyChars (history, app)
-       in
-         (* just expect that we do not fail or throw an exception *)
-         Expect.isTrue true
-       end),
-
-       test "idk yet" (fn _ =>
-       let
-         val app = appFromText initialText
-         val history = "16G18ddjjjjjjjjjdkdkdkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
-         val newApp = applyChars (history, app)
-       in
-         Expect.isTrue true
-       end
-       )
+    [ test "SearchList.goToNum vector bounds regression (1)" (fn _ =>
+        let
+          val app = appFromText initialText
+          val history = "G12dk"
+          val newApp = applyChars (history, app)
+        in
+          (* just expect that we do not fail or throw an exception *)
+          Expect.isTrue true
+        end)
+    ,
+      test "idk yet" (fn _ =>
+        let
+          val app = appFromText initialText
+          val history =
+            "16G18ddjjjjjjjjjdkdkdkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
+          val newApp = applyChars (history, app)
+        in
+          Expect.isTrue true
+        end)
     ]
 
   val tests = [charEventTests]

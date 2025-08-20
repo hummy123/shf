@@ -59,11 +59,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 1)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 0)
@@ -73,11 +73,11 @@ struct
            let
              (* arrange *)
              val buffer = fromList ["hello", " world"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 5)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 4)
@@ -86,11 +86,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val {cursorIdx = oldCursorIdx, ...} = app
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
         in
           (* assert *)
           Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 0)
@@ -100,11 +100,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\nworld"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 6)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 4)
@@ -114,11 +114,11 @@ struct
            let
              (* arrange *)
              val buffer = fromList ["hello\n", " world"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 6)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"h")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 4)
@@ -132,11 +132,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val {cursorIdx = oldCursorIdx, ...} = app
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
            in
              (* assert *)
              Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
@@ -146,11 +146,11 @@ struct
            let
              (* arrange *)
              val buffer = fromList ["hello ", "world"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val {cursorIdx = oldCursorIdx, ...} = app
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
            in
              (* assert *)
              Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
@@ -159,11 +159,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 10)
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
         in
           (* assert *)
           Expect.isTrue (cursorIdx = 10)
@@ -174,11 +174,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\nworld\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 4)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 6)
@@ -188,11 +188,11 @@ struct
            let
              (* arrange *)
              val buffer = fromList ["hello\n", "world"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 4)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"l")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 6)
@@ -209,12 +209,12 @@ struct
               * *)
              val buffer = LineGap.fromString
                "hello \nworld \ngoodbye \nqorld \n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
 
              (* assert *)
              val c1 = getChr app1 = #"w"
@@ -229,12 +229,12 @@ struct
              (* arrange *)
              val buffer =
                fromList ["hello \n", "world \n", "goodbye \n", "qorld"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
 
              (* assert *)
              val c1 = getChr app1 = #"w"
@@ -248,13 +248,13 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 1)
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
 
              (* assert *)
              val c1 = getChr app1 = #"o"
@@ -269,13 +269,13 @@ struct
              (* arrange *)
              val buffer =
                fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 1)
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
 
              (* assert *)
              val c1 = getChr app1 = #"o"
@@ -289,13 +289,13 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 2)
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
 
              (* assert *)
              val c1 = getChr app1 = #"r"
@@ -310,13 +310,13 @@ struct
              (* arrange *)
              val buffer =
                fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 2)
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"j")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"j")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"j")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
 
              (* assert *)
              val c1 = getChr app1 = #"r"
@@ -330,10 +330,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\n\n nworld\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
 
              (* assert *)
              val isSkipped = cursorIdx = 6
@@ -345,11 +345,11 @@ struct
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
           val buffer = LineGap.fromString str
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 15)
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
 
           (* assert *)
           (* String.size str - 1 is a valid char position
@@ -366,11 +366,11 @@ struct
           val str = "hello \nworld \ntime to go\n"
           val len = String.size str - 2
           val buffer = LineGap.fromString str
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, len)
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"j")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
 
           (* assert *)
           (* String.size str - 1 is a valid char position
@@ -389,13 +389,13 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "0__\n4___\n9___\n14_"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 14)
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
 
              (* assert *)
              val c1 = getChr app1 = #"9"
@@ -408,13 +408,13 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["0__", "\n4__", "_\n9_", "__\n14_"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 14)
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
-          val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
+          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
 
           (* assert *)
           val c1 = getChr app1 = #"9"
@@ -428,13 +428,13 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "_w_\n_5__\n_10_\n_15"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 15)
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
 
              (* assert *)
              val c1 = getChr app1 = #"1"
@@ -447,13 +447,13 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["_w_\n", "_5__", "\n_10_\n", "_15"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 15)
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
-          val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
+          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
 
           (* assert *)
           val c1 = getChr app1 = #"1"
@@ -467,13 +467,13 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "__2\n__6\n__10\n__15\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 15)
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
-             val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
-             val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
 
              (* assert *)
              val c1 = getChr app1 = #"1"
@@ -486,13 +486,13 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["__", "2\n", "__6", "\n__10", "\n__1", "5\n"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 15)
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"k")
-          val app2 = AppUpdate.update (app1, CHAR_EVENT #"k")
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #"k")
+          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
 
           (* assert *)
           val c1 = getChr app1 = #"1"
@@ -508,11 +508,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\n\n world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 6)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
 
              (* assert *)
              val isSkipped = cursorIdx = 0
@@ -524,11 +524,11 @@ struct
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
           val buffer = LineGap.fromString str
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 5)
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
 
           (* assert *)
           val isAtStart = cursorIdx = 0
@@ -540,12 +540,12 @@ struct
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
           val buffer = LineGap.fromString str
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           (* line below does nothing; just for explicitness *)
           val app = AppWith.idx (app, 0)
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"k")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
 
           (* assert *)
           (* String.size str - 1 is a valid char position
@@ -563,10 +563,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"w")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val chr = String.sub ("hello world", cursorIdx)
@@ -577,10 +577,10 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["hello ", "world"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"w")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val chr = String.sub ("hello world", cursorIdx)
@@ -598,10 +598,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello \n\n\n world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"w")
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val cursorChr = getChr app
@@ -620,10 +620,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello_world goodbye_world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"w")
+             val app = TestUtils.update (app, CHAR_EVENT #"w")
 
              (* assert *)
              val cursorChr = getChr app
@@ -635,10 +635,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello, world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"w")
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val cursorChr = getChr app
@@ -650,10 +650,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "!#%^()hello\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"w")
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val cursorChr = getChr app
@@ -664,11 +664,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 4)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"w")
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val cursorChr = getChr app
@@ -680,10 +680,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "!!! hello\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app1 = AppUpdate.update (app, CHAR_EVENT #"w")
+             val app1 = TestUtils.update (app, CHAR_EVENT #"w")
 
              (* assert *)
              val startsAtExc = getChr app = #"!"
@@ -695,11 +695,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 6)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"w")
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val chrIsEnd = getChr app = #"d"
@@ -713,10 +713,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"W")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"W")
 
           (* assert *)
           val chr = String.sub ("hello world", cursorIdx)
@@ -727,10 +727,10 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["hello ", "world"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"W")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"W")
 
           (* assert *)
           val chr = String.sub ("hello world", cursorIdx)
@@ -741,10 +741,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello \n\n\n world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"W")
+          val app = TestUtils.update (app, CHAR_EVENT #"W")
 
           (* assert *)
           val cursorChr = getChr app
@@ -757,10 +757,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello, world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"W")
+             val app = TestUtils.update (app, CHAR_EVENT #"W")
 
              (* assert *)
              val cursorChr = getChr app
@@ -773,10 +773,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "#!hello!!! world!!!\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"W")
+             val app = TestUtils.update (app, CHAR_EVENT #"W")
 
              (* assert *)
              val cursorChr = getChr app
@@ -787,11 +787,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 4)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"w")
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val cursorChr = getChr app
@@ -802,11 +802,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 6)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"w")
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
 
           (* assert *)
           val chrIsEnd = getChr app = #"d"
@@ -824,10 +824,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"e")
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"o")
@@ -840,10 +840,10 @@ struct
            let
              (* arrange *)
              val buffer = fromList ["hello ", "world", "\n"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"e")
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"o")
@@ -856,10 +856,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "#$%!^ world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"e")
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"^")
@@ -872,10 +872,10 @@ struct
            let
              (* arrange *)
              val buffer = fromList ["#$", "%!^ ", "world", "\n"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"e")
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"^")
@@ -887,11 +887,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 4)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"e")
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"d")
@@ -901,10 +901,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello_world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"e")
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
 
              (* assert *)
              val cursorChr = getChr app
@@ -915,10 +915,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "#!^*(_#!@*(\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"e")
+          val app = TestUtils.update (app, CHAR_EVENT #"e")
 
           (* assert *)
           val cursorChr = getChr app
@@ -930,10 +930,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello, world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"e")
+          val app = TestUtils.update (app, CHAR_EVENT #"e")
 
           (* assert *)
           val cursorChr = getChr app
@@ -945,10 +945,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "!#%^()hello\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"e")
+          val app = TestUtils.update (app, CHAR_EVENT #"e")
 
           (* assert *)
           val cursorChr = getChr app
@@ -959,11 +959,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 4)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"e")
+          val app = TestUtils.update (app, CHAR_EVENT #"e")
 
           (* assert *)
           val cursorChr = getChr app
@@ -977,10 +977,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "!!! hello\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"e")
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
              val newIdx = #cursorIdx app
            in
              (* assert *)
@@ -990,11 +990,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 7)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"e")
+          val app = TestUtils.update (app, CHAR_EVENT #"e")
 
           (* assert *)
           val chrIsEnd = getChr app = #"d"
@@ -1009,10 +1009,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hel!!!lo world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"E")
+             val app = TestUtils.update (app, CHAR_EVENT #"E")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"o")
@@ -1021,10 +1021,10 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["hel", "!!!", "lo ", "world", "\n"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"E")
+          val app = TestUtils.update (app, CHAR_EVENT #"E")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"o")
@@ -1036,11 +1036,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "#ELL) !@*(ORL$\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 4)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"E")
+             val app = TestUtils.update (app, CHAR_EVENT #"E")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"$")
@@ -1050,10 +1050,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello, world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"E")
+          val app = TestUtils.update (app, CHAR_EVENT #"E")
 
           (* assert *)
           val cursorChr = getChr app
@@ -1065,10 +1065,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "!#%^()hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"E")
+          val app = TestUtils.update (app, CHAR_EVENT #"E")
 
           (* assert *)
           val cursorChr = getChr app
@@ -1079,11 +1079,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 4)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"E")
+          val app = TestUtils.update (app, CHAR_EVENT #"E")
 
           (* assert *)
           val cursorChr = getChr app
@@ -1094,11 +1094,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world!\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 7)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"E")
+          val app = TestUtils.update (app, CHAR_EVENT #"E")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"!")
@@ -1110,10 +1110,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"b")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"b")
         in
           (* assert *)
           Expect.isTrue (cursorIdx = 0)
@@ -1122,11 +1122,11 @@ struct
         (fn _ =>
            let
              val buffer = LineGap.fromString "hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 6)
              val chr1 = getChr app
 
-             val app2 = AppUpdate.update (app, CHAR_EVENT #"b")
+             val app2 = TestUtils.update (app, CHAR_EVENT #"b")
              val chr2 = getChr app2
            in
              Expect.isTrue (chr1 = #"w" andalso chr2 = #"h")
@@ -1136,11 +1136,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 3)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"b")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"b")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 0)
@@ -1152,11 +1152,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "   hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"b")
+             val app = TestUtils.update (app, CHAR_EVENT #"b")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"h")
@@ -1168,11 +1168,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "!*#hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"b")
+             val app = TestUtils.update (app, CHAR_EVENT #"b")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"h")
@@ -1184,11 +1184,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "   !@#$%^&*()"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"b")
+             val app = TestUtils.update (app, CHAR_EVENT #"b")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"!")
@@ -1200,11 +1200,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "abc!@#$%^&*()"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"b")
+             val app = TestUtils.update (app, CHAR_EVENT #"b")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"!")
@@ -1216,10 +1216,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"B")
         in
           (* assert *)
           Expect.isTrue (cursorIdx = 0)
@@ -1229,11 +1229,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 3)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"B")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 0)
@@ -1245,11 +1245,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "   hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"B")
+             val app = TestUtils.update (app, CHAR_EVENT #"B")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"h")
@@ -1261,11 +1261,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "   hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 3)
 
              (* act *)
-             val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"B")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"B")
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 0)
@@ -1277,11 +1277,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "!*#hello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"B")
+             val app = TestUtils.update (app, CHAR_EVENT #"B")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"!")
@@ -1290,11 +1290,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "   !qwerty@#$%^&*()\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 17)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"B")
+          val app = TestUtils.update (app, CHAR_EVENT #"B")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"!")
@@ -1306,11 +1306,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "abc!@#$%^&*()"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 11)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"B")
+             val app = TestUtils.update (app, CHAR_EVENT #"B")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"a")
@@ -1323,11 +1323,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello w7rld\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 7)
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"0")
         in
           (* assert *)
           Expect.isTrue (cursorIdx = 0)
@@ -1336,11 +1336,11 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["hel", "lo ", "w7r", "ld\n"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 7)
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"0")
         in
           (* assert *)
           Expect.isTrue (cursorIdx = 0)
@@ -1349,10 +1349,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val {cursorIdx, ...} = AppUpdate.update (app, CHAR_EVENT #"0")
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"0")
         in
           (* assert *)
           Expect.isTrue (cursorIdx = 0)
@@ -1361,14 +1361,14 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world\n hello again\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           val app = AppWith.idx (app, 11)
           val {cursorIdx = oldIdx, ...} = app
 
           (* act *)
           val {cursorIdx = newIdx, ...} =
-            AppUpdate.update (app, CHAR_EVENT #"0")
+            TestUtils.update (app, CHAR_EVENT #"0")
         in
           (* assert *)
           Expect.isTrue (oldIdx = newIdx)
@@ -1380,11 +1380,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world\n#ello again\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 21)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"0")
+             val app = TestUtils.update (app, CHAR_EVENT #"0")
 
              (* assert *)
              val chr = getChr app
@@ -1401,11 +1401,11 @@ struct
              val buffer = fromList
                ["hel", "lo ", "wor", "ld\n", "#el", "lo ", "aga", "in\n"]
              val buffer = LineGap.fromString "hello world\n#ello again\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 21)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"0")
+             val app = TestUtils.update (app, CHAR_EVENT #"0")
 
              (* assert *)
              val chr = getChr app
@@ -1420,10 +1420,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello wor9\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"$")
+          val app = TestUtils.update (app, CHAR_EVENT #"$")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"9")
@@ -1432,10 +1432,10 @@ struct
         let
           (* arrange *)
           val buffer = fromList ["hel", "lo ", " wor9\n"]
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"$")
+          val app = TestUtils.update (app, CHAR_EVENT #"$")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"9")
@@ -1447,12 +1447,12 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\n world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 11)
              val oldIdx = #cursorIdx app
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"$")
+             val app = TestUtils.update (app, CHAR_EVENT #"$")
              val newIdx = #cursorIdx app
 
              val nchr = getChr app
@@ -1468,12 +1468,12 @@ struct
            let
              (* arrange *)
              val buffer = fromList ["hel", "lo\n", " wo", "rld", "\n"]
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 11)
              val oldIdx = #cursorIdx app
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"$")
+             val app = TestUtils.update (app, CHAR_EVENT #"$")
              val newIdx = #cursorIdx app
 
              val nchr = getChr app
@@ -1493,10 +1493,10 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "   3ello world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"^")
+             val app = TestUtils.update (app, CHAR_EVENT #"^")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"3")
@@ -1509,11 +1509,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "   3ell7 world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"^")
+             val app = TestUtils.update (app, CHAR_EVENT #"^")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"3")
@@ -1526,11 +1526,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\n   world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"^")
+             val app = TestUtils.update (app, CHAR_EVENT #"^")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"w")
@@ -1543,11 +1543,11 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\n   world\n"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 11)
 
              (* act *)
-             val app = AppUpdate.update (app, CHAR_EVENT #"^")
+             val app = TestUtils.update (app, CHAR_EVENT #"^")
            in
              (* assert *)
              Expect.isTrue (getChr app = #"w")
@@ -1556,12 +1556,12 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hel\nlo\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 3)
           val oldIdx = #cursorIdx app
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"^")
+          val app = TestUtils.update (app, CHAR_EVENT #"^")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1579,10 +1579,10 @@ struct
        let
          (* arrange *)
          val buffer = LineGap.fromString "01234\n56789\n"
-         val app = AppType.init (buffer, 0, 0)
+         val app = TestUtils.init buffer
 
          (* act *)
-         val app = AppUpdate.update (app, CHAR_EVENT #"G")
+         val app = TestUtils.update (app, CHAR_EVENT #"G")
        in
          (* assert *)
          Expect.isTrue (getChr app = #"9")
@@ -1593,10 +1593,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(hello)\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #")")
@@ -1605,11 +1605,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(hello)\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 6)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"(")
@@ -1619,10 +1619,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1632,11 +1632,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 10)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1646,11 +1646,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 1)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1660,11 +1660,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 9)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1674,11 +1674,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 2)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1688,11 +1688,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "(((hello)))\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 8)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1703,10 +1703,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "[hello]\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"]")
@@ -1715,11 +1715,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "[hello]\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 6)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"[")
@@ -1728,10 +1728,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "{hello}\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"}")
@@ -1740,11 +1740,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "{hello}\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 6)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"{")
@@ -1753,10 +1753,10 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "<hello>\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #">")
@@ -1765,11 +1765,11 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "<hello>\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 6)
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
         in
           (* assert *)
           Expect.isTrue (getChr app = #"<")
@@ -1779,12 +1779,12 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello, world\n"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 5)
           val oldIdx = #cursorIdx app
 
           (* act *)
-          val app = AppUpdate.update (app, CHAR_EVENT #"%")
+          val app = TestUtils.update (app, CHAR_EVENT #"%")
           val newIdx = #cursorIdx app
         in
           (* assert *)
@@ -1801,7 +1801,7 @@ struct
         else
           let
             val chr = String.sub (str, pos)
-            val app = AppUpdate.update (app, CHAR_EVENT chr)
+            val app = TestUtils.update (app, CHAR_EVENT chr)
           in
             loop (pos + 1, app)
           end
@@ -1816,7 +1816,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
              val app = updateMany (app, "td")
@@ -1828,7 +1828,7 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
           val app1 = updateMany (app, "td")
@@ -1844,7 +1844,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
              val app1 = updateMany (app, "t;")
@@ -1856,13 +1856,13 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"t")
-          val app2 = AppUpdate.update (app1, KEY_ESC)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"t")
+          val app2 = TestUtils.update (app1, KEY_ESC)
           (* should not move cursor like other 't' tests do *)
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #"d")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"d")
         in
           (* assert *)
           Expect.isTrue
@@ -1878,7 +1878,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1891,7 +1891,7 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1908,7 +1908,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1921,15 +1921,15 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 10)
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"T")
-          val app2 = AppUpdate.update (app1, KEY_ESC)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"T")
+          val app2 = TestUtils.update (app1, KEY_ESC)
           (* should ordinarily move cursor to 'w' but in this case should not
            * as escape key should cancel motion which was in progress *)
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #" ")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #" ")
         in
           (* assert *)
           Expect.isTrue
@@ -1944,7 +1944,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
              val app = updateMany (app, "fw")
@@ -1956,7 +1956,7 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
           val app = updateMany (app, "3fl")
@@ -1970,7 +1970,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
              val app = updateMany (app, "9fl")
@@ -1984,7 +1984,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
              val app1 = updateMany (app, "f;")
@@ -1996,12 +1996,12 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"f")
-          val app2 = AppUpdate.update (app1, KEY_ESC)
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #"d")
+          val app1 = TestUtils.update (app, CHAR_EVENT #"f")
+          val app2 = TestUtils.update (app1, KEY_ESC)
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"d")
         in
           (* assert *)
           Expect.isTrue
@@ -2015,7 +2015,7 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -2029,7 +2029,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -2044,7 +2044,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -2059,7 +2059,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -2072,13 +2072,13 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 10)
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"F")
-          val app2 = AppUpdate.update (app1, KEY_ESC)
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #"r")
+          val app1 = TestUtils.update (app, CHAR_EVENT #"F")
+          val app2 = TestUtils.update (app1, KEY_ESC)
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"r")
         in
           (* assert *)
           Expect.isTrue
@@ -2092,7 +2092,7 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -2105,7 +2105,7 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 5)
 
           (* act *)
@@ -2119,7 +2119,7 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = AppType.init (buffer, 0, 0)
+             val app = TestUtils.init buffer
 
              (* act *)
              val app = updateMany (app, "gg")
@@ -2131,13 +2131,13 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = AppType.init (buffer, 0, 0)
+          val app = TestUtils.init buffer
           val app = AppWith.idx (app, 5)
 
           (* act *)
-          val app1 = AppUpdate.update (app, CHAR_EVENT #"g")
-          val app2 = AppUpdate.update (app1, KEY_ESC)
-          val app3 = AppUpdate.update (app2, CHAR_EVENT #"g")
+          val app1 = TestUtils.update (app, CHAR_EVENT #"g")
+          val app2 = TestUtils.update (app1, KEY_ESC)
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"g")
         in
           (* assert *)
           Expect.isTrue (#cursorIdx app3 = 5)

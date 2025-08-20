@@ -137,6 +137,7 @@ struct
       }
     end
 
+  (* this function exists only for testing *)
   fun idx (app, newIdx) =
     let
       val
