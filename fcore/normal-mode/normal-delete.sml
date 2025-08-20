@@ -244,14 +244,14 @@ struct
     end
 
   fun helpDeleteToChr
-    (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, fInc, chr) =
+    (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, fInc, chr, time) =
     if count = 0 then
       let
         val low = Int.min (cursorIdx, otherIdx)
         val high = Int.max (cursorIdx, otherIdx)
         val length = high - low
       in
-        deleteAndFinish (app, low, length, buffer, #bufferModifyTime app)
+        deleteAndFinish (app, low, length, buffer, time)
       end
     else
       let
@@ -261,10 +261,19 @@ struct
         val newOtherIdx = fInc (newOtherIdx, 1)
       in
         helpDeleteToChr
-          (app, buffer, cursorIdx, newOtherIdx, newCount, fMove, fInc, chr)
+          ( app
+          , buffer
+          , cursorIdx
+          , newOtherIdx
+          , newCount
+          , fMove
+          , fInc
+          , chr
+          , time
+          )
       end
 
-  fun deleteToChr (app: app_type, count, fMove, fInc, chr) =
+  fun deleteToChr (app: app_type, count, fMove, fInc, chr, time) =
     helpDeleteToChr
       ( app
       , #buffer app
@@ -274,6 +283,7 @@ struct
       , fMove
       , fInc
       , chr
+      , time
       )
 
   fun deleteToStart (app: app_type, time) =

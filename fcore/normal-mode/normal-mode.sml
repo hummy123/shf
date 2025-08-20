@@ -31,7 +31,7 @@ struct
     | #"g" => NormalMove.moveToStart app
     | _ => Finish.clearMode app
 
-  fun parseChr (app: app_type, count, chr, str) =
+  fun parseChr (app: app_type, count, chr, str, time) =
     case chr of
       #"h" => MoveViH.move (app, count)
     | #"j" => MoveViJ.move (app, count)
@@ -81,7 +81,7 @@ struct
         if String.size str = 0 then NormalMove.moveToEnd app
         else NormalMove.moveToLine (app, count - 1)
     | #"%" => NormalMove.moveToMatchingPair app
-    | #"x" => NormalDelete.removeChr (app, count)
+    | #"x" => NormalDelete.removeChr (app, count, time)
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
@@ -102,56 +102,58 @@ struct
           AppWith.mode (app, mode, [])
         end
 
-  fun parseDeleteInside (app, chr) =
+  fun parseDeleteInside (app, chr, time) =
     case chr of
-      #"w" => NormalDelete.deleteInsideWord app
-    | #"W" => NormalDelete.deleteInsideWORD app
-    | #"(" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #"[" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #"{" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #"<" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #")" => NormalDelete.deleteInsideChrClose (app, chr)
-    | #"]" => NormalDelete.deleteInsideChrClose (app, chr)
-    | #"}" => NormalDelete.deleteInsideChrClose (app, chr)
-    | #">" => NormalDelete.deleteInsideChrClose (app, chr)
+      #"w" => NormalDelete.deleteInsideWord (app, time)
+    | #"W" => NormalDelete.deleteInsideWORD (app, time)
+    | #"(" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #"[" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #"{" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #"<" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #")" => NormalDelete.deleteInsideChrClose (app, chr, time)
+    | #"]" => NormalDelete.deleteInsideChrClose (app, chr, time)
+    | #"}" => NormalDelete.deleteInsideChrClose (app, chr, time)
+    | #">" => NormalDelete.deleteInsideChrClose (app, chr, time)
     | _ => Finish.clearMode app
 
-  fun parseDeleteAround (app, chr) =
+  fun parseDeleteAround (app, chr, time) =
     case chr of
-      #"(" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #"[" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #"{" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #"<" => NormalDelete.deleteInsideChrOpen (app, chr)
-    | #")" => NormalDelete.deleteAroundChrClose (app, chr)
-    | #"]" => NormalDelete.deleteAroundChrClose (app, chr)
-    | #"}" => NormalDelete.deleteAroundChrClose (app, chr)
-    | #">" => NormalDelete.deleteAroundChrClose (app, chr)
+      #"(" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #"[" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #"{" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #"<" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+    | #")" => NormalDelete.deleteAroundChrClose (app, chr, time)
+    | #"]" => NormalDelete.deleteAroundChrClose (app, chr, time)
+    | #"}" => NormalDelete.deleteAroundChrClose (app, chr, time)
+    | #">" => NormalDelete.deleteAroundChrClose (app, chr, time)
     | _ => Finish.clearMode app
 
-  fun parseDeleteTerminal (str, count, app, chrCmd) =
+  fun parseDeleteTerminal (str, count, app, chrCmd, time) =
     case chrCmd of
     (* terminal commands: require no input after *)
-      #"h" => NormalDelete.delete (app, count, Cursor.viH)
-    | #"l" => NormalDelete.delete (app, count, Cursor.viL)
+      #"h" => NormalDelete.delete (app, count, Cursor.viH, time)
+    | #"l" => NormalDelete.delete (app, count, Cursor.viL, time)
     (* vi's 'j' and 'k' commands move up or down a column
      * but 'dj' or 'dk' delete whole lines
      * so their implementation differs from
      * other cursor motions *)
-    | #"j" => NormalDelete.deleteLine (app, count + 1)
-    | #"k" => NormalDelete.deleteLineBack (app, count)
-    | #"w" => NormalDelete.deleteByDfa (app, count, Cursor.nextWord)
-    | #"W" => NormalDelete.deleteByDfa (app, count, Cursor.nextWORD)
-    | #"b" => NormalDelete.deleteByDfa (app, count, Cursor.prevWord)
-    | #"B" => NormalDelete.deleteByDfa (app, count, Cursor.prevWORD)
-    | #"e" => NormalDelete.deleteByDfa (app, count, Cursor.endOfWordForDelete)
-    | #"E" => NormalDelete.deleteByDfa (app, count, Cursor.endOfWORDForDelete)
-    | #"0" => NormalDelete.delete (app, 1, Cursor.vi0)
-    | #"$" => NormalDelete.deleteToEndOfLine app
-    | #"^" => NormalDelete.deleteToFirstNonSpaceChr app
-    | #"d" => NormalDelete.deleteLine (app, count)
-    | #"n" => NormalDelete.deleteToNextMatch (app, count)
-    | #"N" => NormalDelete.deleteToPrevMatch (app, count)
-    | #"%" => NormalDelete.deletePair app
+    | #"j" => NormalDelete.deleteLine (app, count + 1, time)
+    | #"k" => NormalDelete.deleteLineBack (app, count, time)
+    | #"w" => NormalDelete.deleteByDfa (app, count, Cursor.nextWord, time)
+    | #"W" => NormalDelete.deleteByDfa (app, count, Cursor.nextWORD, time)
+    | #"b" => NormalDelete.deleteByDfa (app, count, Cursor.prevWord, time)
+    | #"B" => NormalDelete.deleteByDfa (app, count, Cursor.prevWORD, time)
+    | #"e" =>
+        NormalDelete.deleteByDfa (app, count, Cursor.endOfWordForDelete, time)
+    | #"E" =>
+        NormalDelete.deleteByDfa (app, count, Cursor.endOfWORDForDelete, time)
+    | #"0" => NormalDelete.delete (app, 1, Cursor.vi0, time)
+    | #"$" => NormalDelete.deleteToEndOfLine (app, time)
+    | #"^" => NormalDelete.deleteToFirstNonSpaceChr (app, time)
+    | #"d" => NormalDelete.deleteLine (app, count, time)
+    | #"n" => NormalDelete.deleteToNextMatch (app, count, time)
+    | #"N" => NormalDelete.deleteToPrevMatch (app, count, time)
+    | #"%" => NormalDelete.deletePair (app, time)
     (* non-terminal commands which require appending chr *)
     | #"t" => appendChr (app, chrCmd, str)
     | #"T" => appendChr (app, chrCmd, str)
@@ -163,34 +165,38 @@ struct
     (* invalid command: reset mode *)
     | _ => Finish.clearMode app
 
-  fun parseDeleteGo (app, count, chrCmd) =
+  fun parseDeleteGo (app, count, chrCmd, time) =
     case chrCmd of
-      #"e" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWord)
-    | #"E" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWORD)
-    | #"g" => NormalDelete.deleteToStart app
+      #"e" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWord, time)
+    | #"E" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWORD, time)
+    | #"g" => NormalDelete.deleteToStart (app, time)
     | _ => Finish.clearMode app
 
-  fun parseDelete (strPos, str, count, app, chrCmd) =
+  fun parseDelete (strPos, str, count, app, chrCmd, time) =
     if strPos = String.size str - 1 then
-      parseDeleteTerminal (str, count, app, chrCmd)
+      parseDeleteTerminal (str, count, app, chrCmd, time)
     else
       (* have to continue parsing string *)
       case String.sub (str, strPos + 1) of
         #"t" =>
-          NormalDelete.deleteToChr (app, 1, Cursor.tillNextChr, op+, chrCmd)
+          NormalDelete.deleteToChr
+            (app, 1, Cursor.tillNextChr, op+, chrCmd, time)
       | #"T" =>
-          NormalDelete.deleteToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
+          NormalDelete.deleteToChr
+            (app, 1, Cursor.tillPrevChr, op-, chrCmd, time)
       | #"f" =>
-          NormalDelete.deleteToChr (app, count, Cursor.toNextChr, op+, chrCmd)
+          NormalDelete.deleteToChr
+            (app, count, Cursor.toNextChr, op+, chrCmd, time)
       | #"F" =>
-          NormalDelete.deleteToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
-      | #"g" => parseDeleteGo (app, count, chrCmd)
-      | #"i" => parseDeleteInside (app, chrCmd)
-      | #"a" => parseDeleteAround (app, chrCmd)
+          NormalDelete.deleteToChr
+            (app, count, Cursor.toPrevChr, op-, chrCmd, time)
+      | #"g" => parseDeleteGo (app, count, chrCmd, time)
+      | #"i" => parseDeleteInside (app, chrCmd, time)
+      | #"a" => parseDeleteAround (app, chrCmd, time)
       | _ => Finish.clearMode app
 
   (* useful reference as list of non-terminal commands *)
-  fun parseAfterCount (strPos, str, count, app, chrCmd) =
+  fun parseAfterCount (strPos, str, count, app, chrCmd, time) =
     (* we are trying to parse multi-char but non-terminal strings here.
      * For example, we don't want to parse 3w which is a terminal commmand
      * to go 3 words forwards
@@ -208,7 +214,7 @@ struct
         (* to just before chr, backward *)
         parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
     | #"y" => (* yank *) Finish.clearMode app
-    | #"d" => (* delete *) parseDelete (strPos, str, count, app, chrCmd)
+    | #"d" => (* delete *) parseDelete (strPos, str, count, app, chrCmd, time)
     | #"f" =>
         (* to chr, forward *)
         parseMoveToChr (count, app, Cursor.toNextChr, chrCmd)
@@ -222,13 +228,13 @@ struct
          * this case should never happen*)
         Finish.clearMode app
 
-  fun parseNormalModeCommand (app, str, chrCmd) =
+  fun parseNormalModeCommand (app, str, chrCmd, time) =
     if String.size str = 0 then
-      parseChr (app, 1, chrCmd, str)
+      parseChr (app, 1, chrCmd, str, time)
     else if String.size str = 1 then
       case Int.fromString str of
-        SOME count => parseChr (app, count, chrCmd, str)
-      | NONE => parseAfterCount (0, str, 1, app, chrCmd)
+        SOME count => parseChr (app, count, chrCmd, str, time)
+      | NONE => parseAfterCount (0, str, 1, app, chrCmd, time)
     else
       let
         val numLength = getNumLength (0, str)
@@ -240,15 +246,15 @@ struct
       in
         if numLength = String.size str then
           (* reached end of str; str only contained numbers *)
-          parseChr (app, count, chrCmd, str)
+          parseChr (app, count, chrCmd, str, time)
         else
           (* continue parsing. *)
-          parseAfterCount (numLength, str, count, app, chrCmd)
+          parseAfterCount (numLength, str, count, app, chrCmd, time)
       end
 
-  fun update (app, str, msg) =
+  fun update (app, str, msg, time) =
     case msg of
-      CHAR_EVENT chrCmd => parseNormalModeCommand (app, str, chrCmd)
+      CHAR_EVENT chrCmd => parseNormalModeCommand (app, str, chrCmd, time)
     | KEY_ESC => Finish.clearMode app
     | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
     | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
