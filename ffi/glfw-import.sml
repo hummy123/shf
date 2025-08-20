@@ -9,8 +9,6 @@ struct
     _symbol "DEPRECATED" public : ( unit -> int ) * ( int -> unit );
   val (FALSE, _) =
     _symbol "GLFW_FFI_FALSE" public : ( unit -> int ) * ( int -> unit );
-  val (SAMPLES, _) =
-    _symbol "SAMPLES" public : ( unit -> int ) * ( int -> unit );
 
   (* GLFW functions. *)
   val init = _import "init" public : unit -> unit;
