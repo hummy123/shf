@@ -63,7 +63,7 @@ struct
       val io = TextIO.openIn "temp.txt"
       val lineGap = ioToLineGap (io, LineGap.empty)
       val _ = TextIO.closeIn io
-      val app = AppType.init (lineGap, 1920, 1080)
+      val app = AppType.init (lineGap, 1920, 1080, Time.now ())
 
       (* todo: remove temp line below which tests search list *)
       val app =
