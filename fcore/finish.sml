@@ -9,8 +9,8 @@ struct
   fun clearMode app =
     AppWith.mode (app, NORMAL_MODE "", [])
 
-  fun buildTextAndClear (app: app_type, buffer, cursorIdx, searchList, msgs,
-    bufferModifyTime) =
+  fun buildTextAndClear
+    (app: app_type, buffer, cursorIdx, searchList, msgs, bufferModifyTime) =
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
@@ -38,15 +38,25 @@ struct
       val mode = NORMAL_MODE ""
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList, msgs, bufferModifyTime)
+        ( app
+        , buffer
+        , cursorIdx
+        , mode
+        , startLine
+        , searchList
+        , msgs
+        , bufferModifyTime
+        )
     end
 
   fun withSearchList (app: app_type, searchList) =
     let
       val {buffer, searchString, cursorIdx, bufferModifyTime, ...} = app
-      val app = AppWith.searchList (app, searchList, buffer, searchString, bufferModifyTime)
+      val app = AppWith.searchList
+        (app, searchList, buffer, searchString, bufferModifyTime)
     in
-      buildTextAndClear (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+      buildTextAndClear
+        (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 
   fun resizeText (app: app_type, newWidth, newHeight) =
@@ -78,7 +88,14 @@ struct
         )
     in
       AppWith.bufferAndSize
-        (app, newBuffer, newWidth, newHeight, searchList, drawMsg, bufferModifyTime)
+        ( app
+        , newBuffer
+        , newWidth
+        , newHeight
+        , searchList
+        , drawMsg
+        , bufferModifyTime
+        )
     end
 
   (* Difference between this and buildTextAndClear is that 
@@ -116,7 +133,15 @@ struct
       val mode = NORMAL_MODE ""
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg, bufferModifyTime)
+        ( app
+        , buffer
+        , cursorIdx
+        , mode
+        , startLine
+        , searchList
+        , drawMsg
+        , bufferModifyTime
+        )
     end
 
   fun centreToCursor (app: app_type) =
@@ -152,6 +177,14 @@ struct
         )
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, NORMAL_MODE "", startLine, searchList, drawMsg, bufferModifyTime)
+        ( app
+        , buffer
+        , cursorIdx
+        , NORMAL_MODE ""
+        , startLine
+        , searchList
+        , drawMsg
+        , bufferModifyTime
+        )
     end
 end

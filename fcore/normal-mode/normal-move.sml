@@ -4,9 +4,15 @@ struct
 
   fun moveToStart (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, searchList, searchString,
-      bufferModifyTime, ...} =
-        app
+      val
+        { buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
+        , bufferModifyTime
+        , ...
+        } = app
 
       val cursorIdx = 0
       val startLine = 0
@@ -26,14 +32,28 @@ struct
       val mode = NORMAL_MODE ""
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg, bufferModifyTime)
+        ( app
+        , buffer
+        , cursorIdx
+        , mode
+        , startLine
+        , searchList
+        , drawMsg
+        , bufferModifyTime
+        )
     end
 
   fun moveToEnd (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, searchList, searchString,
-      bufferModifyTime, ...} =
-        app
+      val
+        { buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
+        , bufferModifyTime
+        , ...
+        } = app
 
       val buffer = LineGap.goToEnd buffer
       val {line = bufferLine, idx = bufferIdx, ...} = buffer
@@ -68,7 +88,15 @@ struct
       val mode = NORMAL_MODE ""
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, bufferIdx, mode, bufferLine, searchList, drawMsg, bufferModifyTime)
+        ( app
+        , buffer
+        , bufferIdx
+        , mode
+        , bufferLine
+        , searchList
+        , drawMsg
+        , bufferModifyTime
+        )
     end
 
   fun moveToLine (app: app_type, reqLine) =
@@ -112,7 +140,15 @@ struct
         val mode = NORMAL_MODE ""
       in
         AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg, bufferModifyTime)
+          ( app
+          , buffer
+          , cursorIdx
+          , mode
+          , startLine
+          , searchList
+          , drawMsg
+          , bufferModifyTime
+          )
       end
 
   fun moveToMatchingPair (app: app_type) =
@@ -200,8 +236,16 @@ struct
 
   fun firstNonSpaceChr (app: app_type) =
     let
-      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, searchList,
-      bufferModifyTime, ...} = app
+      val
+        { buffer
+        , cursorIdx
+        , windowWidth
+        , windowHeight
+        , startLine
+        , searchList
+        , bufferModifyTime
+        , ...
+        } = app
 
       (* move LineGap and buffer to start of line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -211,7 +255,8 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.firstNonSpaceChr (buffer, cursorIdx)
     in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+      Finish.buildTextAndClear
+        (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =

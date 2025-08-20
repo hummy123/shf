@@ -17,6 +17,16 @@ fcore/app-type.sml
 fcore/app-with.sml
 
 fcore/text-constants.sml
+ann
+  "allowVectorExps true"
+in
+  fcore/rect.sml
+  fcore/text-builder.sml
+  fcore/cursor-dfa/make-dfa-loop.sml
+  fcore/cursor-dfa/vi-WORD-dfa.sml
+  fcore/cursor-dfa/vi-word-dfa.sml
+  fcore/cursor-dfa/vi-dlr-dfa.sml
+end
 fcore/cursor.sml
 fcore/text-window.sml
 

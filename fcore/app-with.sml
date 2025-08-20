@@ -3,8 +3,14 @@ struct
   open AppType
 
   fun bufferAndSize
-    (app: app_type, newBuffer, newWidth, newHeight, newSearchList, newMsgs,
-    newBufferModifyTime) =
+    ( app: app_type
+    , newBuffer
+    , newWidth
+    , newHeight
+    , newSearchList
+    , newMsgs
+    , newBufferModifyTime
+    ) =
     let
       val
         { mode
@@ -97,7 +103,13 @@ struct
       }
     end
 
-  fun searchList (app: app_type, newSearchList, newBuffer, newSearchString, newBufferModifyTime) =
+  fun searchList
+    ( app: app_type
+    , newSearchList
+    , newBuffer
+    , newSearchString
+    , newBufferModifyTime
+    ) =
     let
       val
         { searchList = _

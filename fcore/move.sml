@@ -15,8 +15,8 @@ struct
       let
         val {searchList, bufferModifyTime, ...} = app
       in
-        Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [],
-        bufferModifyTime)
+        Finish.buildTextAndClear
+          (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
       end
     else
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
@@ -67,7 +67,8 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Fn.fMove (buffer, cursorIdx, count)
     in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+      Finish.buildTextAndClear
+        (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 end
 
