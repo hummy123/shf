@@ -12,7 +12,12 @@ functor MakeMove(Fn: MOVE): MAKE_MOVE =
 struct
   fun helpMove (app: AppType.app_type, buffer, cursorIdx, count) =
     if count = 0 then
-      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app, [])
+      let
+        val {searchList, bufferModifyTime, ...} = app
+      in
+        Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [],
+        bufferModifyTime)
+      end
     else
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       let
@@ -58,11 +63,11 @@ functor MakeDfaMove(Fn: DFA_MOVE): MAKE_DFA_MOVE =
 struct
   fun move (app: AppType.app_type, count) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, bufferModifyTime, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Fn.fMove (buffer, cursorIdx, count)
     in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app, [])
+      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 end
 

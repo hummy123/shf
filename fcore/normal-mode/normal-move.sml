@@ -4,7 +4,8 @@ struct
 
   fun moveToStart (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, searchList, searchString, ...} =
+      val {buffer, windowWidth, windowHeight, searchList, searchString,
+      bufferModifyTime, ...} =
         app
 
       val cursorIdx = 0
@@ -25,12 +26,13 @@ struct
       val mode = NORMAL_MODE ""
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
+        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg, bufferModifyTime)
     end
 
   fun moveToEnd (app: app_type) =
     let
-      val {buffer, windowWidth, windowHeight, searchList, searchString, ...} =
+      val {buffer, windowWidth, windowHeight, searchList, searchString,
+      bufferModifyTime, ...} =
         app
 
       val buffer = LineGap.goToEnd buffer
@@ -66,7 +68,7 @@ struct
       val mode = NORMAL_MODE ""
     in
       AppWith.bufferAndCursorIdx
-        (app, buffer, bufferIdx, mode, bufferLine, searchList, drawMsg)
+        (app, buffer, bufferIdx, mode, bufferLine, searchList, drawMsg, bufferModifyTime)
     end
 
   fun moveToLine (app: app_type, reqLine) =
@@ -81,6 +83,7 @@ struct
           , startLine = origLine
           , searchList
           , searchString
+          , bufferModifyTime
           , ...
           } = app
         val buffer = LineGap.goToLine (reqLine, buffer)
@@ -109,7 +112,7 @@ struct
         val mode = NORMAL_MODE ""
       in
         AppWith.bufferAndCursorIdx
-          (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg)
+          (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg, bufferModifyTime)
       end
 
   fun moveToMatchingPair (app: app_type) =
@@ -122,6 +125,7 @@ struct
         , startLine
         , searchList
         , searchString
+        , bufferModifyTime
         , ...
         } = app
 
@@ -157,6 +161,7 @@ struct
             , startLine
             , searchList
             , drawMsg
+            , bufferModifyTime
             )
         end
       else
@@ -188,13 +193,15 @@ struct
             , startLine
             , searchList
             , drawMsg
+            , bufferModifyTime
             )
         end
     end
 
   fun firstNonSpaceChr (app: app_type) =
     let
-      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, searchList,
+      bufferModifyTime, ...} = app
 
       (* move LineGap and buffer to start of line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -204,13 +211,13 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.firstNonSpaceChr (buffer, cursorIdx)
     in
-      Finish.buildTextAndClear (app, buffer, cursorIdx, #searchList app, [])
+      Finish.buildTextAndClear (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
       Finish.buildTextAndClearAfterChr
-        (app, buffer, cursorIdx, #searchList app, [])
+        (app, buffer, cursorIdx, #searchList app, [], #bufferModifyTime app)
     else
       let
         (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
@@ -228,25 +235,25 @@ struct
 
   fun moveToNextMatch (app: app_type, count) =
     let
-      val {cursorIdx, searchList, buffer, ...} = app
+      val {cursorIdx, searchList, buffer, bufferModifyTime, ...} = app
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
         Finish.clearMode app
       else
         Finish.buildTextAndClearAfterChr
-          (app, buffer, newCursorIdx, searchList, [])
+          (app, buffer, newCursorIdx, searchList, [], bufferModifyTime)
     end
 
   fun moveToPrevMatch (app: app_type, count) =
     let
-      val {cursorIdx, searchList, buffer, ...} = app
+      val {cursorIdx, searchList, buffer, bufferModifyTime, ...} = app
       val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
         Finish.clearMode app
       else
         Finish.buildTextAndClearAfterChr
-          (app, buffer, newCursorIdx, searchList, [])
+          (app, buffer, newCursorIdx, searchList, [], bufferModifyTime)
     end
 end

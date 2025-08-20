@@ -3,11 +3,13 @@ struct
   open AppType
 
   fun bufferAndSize
-    (app: app_type, newBuffer, newWidth, newHeight, newSearchList, newMsgs) =
+    (app: app_type, newBuffer, newWidth, newHeight, newSearchList, newMsgs,
+    newBufferModifyTime) =
     let
       val
         { mode
         , buffer = _
+        , bufferModifyTime = _
         , windowWidth = _
         , windowHeight = _
         , searchList = _
@@ -19,6 +21,7 @@ struct
     in
       { mode = mode
       , buffer = newBuffer
+      , bufferModifyTime = newBufferModifyTime
       , windowWidth = newWidth
       , windowHeight = newHeight
       , searchList = newSearchList
@@ -37,11 +40,13 @@ struct
     , newStartLine
     , newSearchList
     , newMsgs
+    , newBufferModifyTime
     ) =
     let
       val
         { mode = _
         , buffer = _
+        , bufferModifyTime = _
         , cursorIdx = _
         , startLine = _
         , searchList = _
@@ -53,6 +58,7 @@ struct
     in
       { mode = newMode
       , buffer = newBuffer
+      , bufferModifyTime = newBufferModifyTime
       , cursorIdx = newCursorIdx
       , startLine = newStartLine
       , searchList = newSearchList
@@ -69,6 +75,7 @@ struct
         { mode = _
         , msgs = _
         , buffer
+        , bufferModifyTime
         , searchList
         , searchString
         , cursorIdx
@@ -80,6 +87,7 @@ struct
       { mode = newMode
       , msgs = newMsgs
       , buffer = buffer
+      , bufferModifyTime = bufferModifyTime
       , searchList = searchList
       , searchString = searchString
       , cursorIdx = cursorIdx
@@ -89,11 +97,12 @@ struct
       }
     end
 
-  fun searchList (app: app_type, newSearchList, newBuffer, newSearchString) =
+  fun searchList (app: app_type, newSearchList, newBuffer, newSearchString, newBufferModifyTime) =
     let
       val
         { searchList = _
         , buffer = _
+        , bufferModifyTime
         , searchString = _
         , msgs
         , mode
@@ -105,6 +114,7 @@ struct
     in
       { searchList = newSearchList
       , buffer = newBuffer
+      , bufferModifyTime = newBufferModifyTime
       , searchString = newSearchString
       , msgs = msgs
       , mode = mode
@@ -120,6 +130,7 @@ struct
       val
         { startLine
         , buffer
+        , bufferModifyTime
         , searchList
         , searchString
         , mode
@@ -131,6 +142,7 @@ struct
     in
       { startLine = startLine
       , buffer = buffer
+      , bufferModifyTime = bufferModifyTime
       , searchList = searchList
       , searchString = searchString
       , mode = mode

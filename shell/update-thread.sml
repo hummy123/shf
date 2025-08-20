@@ -20,20 +20,12 @@ struct
 
   fun loop (app: AppType.app_type, inputMailbox, drawMailbox, searchMailbox) =
     let
+      val time = Time.now ()
       val inputMsg = Mailbox.recv inputMailbox
-      val () =
-        (* if a certain CHAR_EVENT is sent, 
-         * we trigger an exception and log the command history.
-         * This is helpful for manually triggering logs when,
-         * for example, we encounter a bug and would like to see
-         * the history of events that caused it. *)
-        case inputMsg of
-          CHAR_EVENT #"~" => ExceptionLogger.log (Fail "")
-        | _ => ()
 
       val () = ExceptionLogger.addCommand inputMsg
 
-      val app = AppUpdate.update (app, inputMsg)
+      val app = AppUpdate.update (app, inputMsg, time)
                 handle e => ExceptionLogger.log e
 
       val () = sendMsgs (#msgs app, drawMailbox, searchMailbox)
