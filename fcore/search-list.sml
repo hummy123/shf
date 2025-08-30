@@ -8,7 +8,7 @@ struct
     if pos = String.size hd then
       case tl of
         hd :: tl => loopSearch (0, hd, absIdx, tl, acc, searchPos, searchString)
-      | [] => acc
+      | [] => PersistentVector.toVector acc
     else
       let
         val bufferChr = String.sub (hd, pos)
@@ -26,27 +26,82 @@ struct
           else
             loopSearch
               (pos + 1, hd, absIdx + 1, tl, acc, searchPos + 1, searchString)
-        else if searchPos = 0 then
-          loopSearch (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString)
         else
-          loopSearch (pos, hd, absIdx, tl, acc, 0, searchString)
+          (if searchPos = 0 then
+             loopSearch (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString)
+           else
+             loopSearch (pos, hd, absIdx, tl, acc, 0, searchString))
       end
 
   fun search ({rightStrings, leftStrings, ...}: LineGap.t, searchString) =
     case rightStrings of
       hd :: tl =>
-        let
-          val result = loopSearch
-            (0, hd, 0, tl, PersistentVector.empty, 0, searchString)
-        in
-          PersistentVector.toVector result
-        end
+        loopSearch (0, hd, 0, tl, PersistentVector.empty, 0, searchString)
     | [] => empty
 
-  (* Prerequisite: move buffer/LineGap to end *)
+  (* Prerequisite: move buffer/LineGap to start *)
   fun build (buffer, searchString) =
     if String.size searchString > 0 then search (buffer, searchString)
     else empty
+
+  fun loopRange (pos, hd, absIdx, tl, acc, searchPos, searchString, finish) =
+    if pos = String.size hd then
+      case tl of
+        hd :: tl =>
+          loopRange (0, hd, absIdx, tl, acc, searchPos, searchString, finish)
+      | [] => PersistentVector.toVector acc
+    else if absIdx = finish then
+      PersistentVector.toVector acc
+    else
+      let
+        val bufferChr = String.sub (hd, pos)
+        val searchChr = String.sub (searchString, searchPos)
+      in
+        if bufferChr = searchChr then
+          if searchPos + 1 = String.size searchString then
+            (* full match *)
+            let
+              val foundIdx = absIdx - String.size searchString + 1
+              val acc = PersistentVector.append (foundIdx, acc)
+            in
+              loopRange
+                (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, finish)
+            end
+          else
+            loopRange
+              ( pos + 1
+              , hd
+              , absIdx + 1
+              , tl
+              , acc
+              , searchPos + 1
+              , searchString
+              , finish
+              )
+        else
+          ((if searchPos = 0 then
+              loopRange
+                (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, finish)
+            else
+              loopRange (pos, hd, absIdx, tl, acc, 0, searchString, finish)))
+      end
+
+  fun searchRange (buffer: LineGap.t, searchString, finish) =
+    let
+      val {rightStrings, idx = absIdx, ...} = buffer
+    in
+      case rightStrings of
+        hd :: tl =>
+          loopRange
+            (0, hd, absIdx, tl, PersistentVector.empty, 0, searchString, finish)
+      | [] => empty
+    end
+
+  fun buildRange (buffer, searchString, finish) =
+    if String.size searchString > 0 then
+      searchRange (buffer, searchString, finish)
+    else
+      empty
 
   fun loopNextMatch (pos, searchList, count) =
     if count = 0 then
@@ -96,87 +151,4 @@ struct
         loopPrevMatch (pos, searchList, count)
       end
 
-  fun rangeSearchStep (pos, hd, absIdx, tl, acc, searchPos, searchString, low) =
-    if searchPos < 0 then
-      raise Fail "todo"
-    else if absIdx < low then
-      acc
-    else if pos < 0 then
-      case tl of
-        hd :: tl =>
-          rangeSearchStep
-            ( String.size hd - 1
-            , hd
-            , absIdx
-            , tl
-            , acc
-            , searchPos
-            , searchString
-            , low
-            )
-      | [] => acc
-    else
-      let
-        val bufferChr = String.sub (hd, pos)
-        val searchChr = String.sub (searchString, searchPos)
-      in
-        if bufferChr = searchChr then
-          rangeSearchStep
-            (pos - 1, hd, absIdx - 1, tl, acc, searchPos - 1, searchString, low)
-        else
-          acc
-      end
-
-  fun loopRange (pos, hd, absIdx, tl, acc, searchString, low) =
-    if absIdx < low then
-      Vector.fromList acc
-    else if pos < 0 then
-      case tl of
-        hd :: tl =>
-          loopRange (String.size hd - 1, hd, absIdx, tl, acc, searchString, low)
-      | [] => Vector.fromList acc
-    else
-      let
-        val acc = rangeSearchStep
-          ( pos
-          , hd
-          , absIdx
-          , tl
-          , acc
-          , String.size searchString - 1
-          , searchString
-          , low
-          )
-      in
-        loopRange (pos - 1, hd, absIdx - 1, tl, acc, searchString, low)
-      end
-
-  fun searchRange (buffer: LineGap.t, searchString, low) =
-    let
-      val low = Int.max (low, 0)
-      val {rightStrings, leftStrings, idx = absIdx, ...} = buffer
-    in
-      case rightStrings of
-        hd :: _ =>
-          let
-            val pos = String.size hd - 1
-            val absIdx = absIdx + String.size hd - 1
-          in
-            loopRange (pos, hd, absIdx, leftStrings, [], searchString, low)
-          end
-      | [] =>
-          (case leftStrings of
-             hd :: tl =>
-               let
-                 val pos = String.size hd - 1
-                 val absIdx = absIdx - 1
-               in
-                 loopRange (pos, hd, absIdx, tl, [], searchString, low)
-               end
-           | [] => empty)
-    end
-
-  fun buildRange (buffer, searchString, low) =
-    if String.size searchString > 0 then searchRange (buffer, searchString, low)
-    else empty
 end

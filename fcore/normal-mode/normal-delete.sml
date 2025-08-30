@@ -11,8 +11,8 @@ struct
       val buffer = LineGap.goToStart buffer
       val initialMsg = [SEARCH (buffer, searchString)]
 
-      val buffer = LineGap.goToIdx (low + 777, buffer)
-      val searchList = SearchList.buildRange (buffer, searchString, low - 777)
+      val buffer = LineGap.goToIdx (low - 777, buffer)
+      val searchList = SearchList.buildRange (buffer, searchString, low + 777)
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
@@ -27,9 +27,9 @@ struct
         val buffer = LineGap.goToStart buffer
         val initialMsg = [SEARCH (buffer, searchString)]
 
-        val buffer = LineGap.goToIdx (cursorIdx + 777, buffer)
+        val buffer = LineGap.goToIdx (cursorIdx - 777, buffer)
         val searchList =
-          SearchList.buildRange (buffer, searchString, cursorIdx - 777)
+          SearchList.buildRange (buffer, searchString, cursorIdx + 777)
       in
         Finish.buildTextAndClear
           (app, buffer, cursorIdx, searchList, initialMsg, time)
@@ -109,9 +109,9 @@ struct
         val searchString = #searchString app
         val initialMsg = [SEARCH (buffer, searchString)]
 
-        val buffer = LineGap.goToIdx (cursorIdx + 777, buffer)
+        val buffer = LineGap.goToIdx (cursorIdx - 777, buffer)
         val searchList =
-          SearchList.buildRange (buffer, searchString, cursorIdx - 777)
+          SearchList.buildRange (buffer, searchString, cursorIdx + 777)
 
         (* If we have deleted from the buffer so that cursorIdx
         * is no longer a valid idx,
@@ -296,9 +296,9 @@ struct
       val buffer = LineGap.goToStart buffer
       val initialMsg = [SEARCH (buffer, #searchString app)]
 
-      val buffer = LineGap.goToIdx (cursorIdx + 777, buffer)
+      val buffer = LineGap.goToIdx (cursorIdx - 777, buffer)
       val searchList =
-        SearchList.buildRange (buffer, searchString, cursorIdx - 777)
+        SearchList.buildRange (buffer, searchString, cursorIdx + 777)
 
       val cursorIdx = 0
       val startLine = 0
@@ -330,8 +330,8 @@ struct
       val buffer = LineGap.goToStart buffer
       val initialMsg = [SEARCH (buffer, searchString)]
 
-      val buffer = LineGap.goToIdx (low + 777, buffer)
-      val searchList = SearchList.buildRange (buffer, searchString, low - 777)
+      val buffer = LineGap.goToIdx (low - 777, buffer)
+      val searchList = SearchList.buildRange (buffer, searchString, low + 777)
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
@@ -377,9 +377,9 @@ struct
           val buffer = LineGap.goToStart buffer
           val initialMsg = [SEARCH (buffer, searchString)]
 
-          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val buffer = LineGap.goToIdx (low - 777, buffer)
           val searchList =
-            SearchList.buildRange (buffer, searchString, low - 777)
+            SearchList.buildRange (buffer, searchString, low + 777)
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
@@ -405,9 +405,9 @@ struct
           val buffer = LineGap.goToStart buffer
           val initialMsg = [SEARCH (buffer, searchString)]
 
-          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val buffer = LineGap.goToIdx (low - 777, buffer)
           val searchList =
-            SearchList.buildRange (buffer, searchString, low - 777)
+            SearchList.buildRange (buffer, searchString, low + 777)
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
@@ -429,8 +429,8 @@ struct
         val buffer = LineGap.goToStart buffer
         val initialMsg = [SEARCH (buffer, searchString)]
 
-        val buffer = LineGap.goToIdx (low + 777, buffer)
-        val searchList = SearchList.buildRange (buffer, searchString, low - 777)
+        val buffer = LineGap.goToIdx (low - 777, buffer)
+        val searchList = SearchList.buildRange (buffer, searchString, low + 777)
 
         val buffer = LineGap.goToIdx (origLow, buffer)
       in
@@ -524,9 +524,9 @@ struct
           val buffer = LineGap.goToStart buffer
           val initialMsg = [SEARCH (buffer, searchString)]
 
-          val buffer = LineGap.goToIdx (low + 777, buffer)
+          val buffer = LineGap.goToIdx (low - 777, buffer)
           val searchList =
-            SearchList.buildRange (buffer, searchString, low - 777)
+            SearchList.buildRange (buffer, searchString, low + 777)
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
