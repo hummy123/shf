@@ -11,7 +11,11 @@ message-types/draw-msg.sml
 message-types/mailbox-type.sml
 
 fcore/bin-search.sml
-fcore/search-list.sml
+ann
+  "allowVectorExps true"
+in
+  fcore/search-list.sml
+end
 
 fcore/app-type.sml
 fcore/app-with.sml

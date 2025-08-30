@@ -2,6 +2,86 @@ structure SearchList =
 struct
   type t = int vector
 
+  structure PersistentVector =
+  struct
+    (* Clojure-style persistent vector, 
+     * as intermediary data structure 
+     * for building search list *)
+    datatype t =
+      BRANCH of t vector
+    | LEAF of int vector
+
+    val maxSize = 32
+
+    val empty = LEAF (Vector.fromList [])
+
+    datatype append_result = APPEND of t | UPDATE of t
+
+    fun helpAppend (key, tree) =
+      case tree of
+        BRANCH nodes =>
+          let
+            val lastNode = Vector.sub (nodes, Vector.length nodes - 1)
+          in
+            case helpAppend (key, lastNode) of
+              UPDATE newLast =>
+                let
+                  val newNode = Vector.update
+                    (nodes, Vector.length nodes - 1, newLast)
+                  val newNode = BRANCH newNode
+                in
+                  UPDATE newNode
+                end
+            | APPEND newVec =>
+                if Vector.length nodes + 1 > maxSize then
+                  let val newNode = BRANCH #[newVec]
+                  in APPEND newNode
+                  end
+                else
+                  let
+                    val newNodes = Vector.concat [nodes, #[newVec]]
+                    val newNodes = BRANCH newNodes
+                  in
+                    UPDATE newNodes
+                  end
+          end
+      | LEAF vec =>
+          if Vector.length vec + 1 > maxSize then
+            let val newNode = LEAF #[key]
+            in APPEND newNode
+            end
+          else
+            let
+              val newNode = Vector.concat [vec, #[key]]
+              val newNode = LEAF newNode
+            in
+              UPDATE newNode
+            end
+
+    fun append (key, tree) =
+      case helpAppend (key, tree) of
+        UPDATE t => t
+      | APPEND newNode => BRANCH #[tree, newNode]
+
+    fun branchToList (pos, nodes, acc) =
+      if pos < 0 then
+        acc
+      else
+        let
+          val node = Vector.sub (nodes, pos)
+          val acc = helpToVector (node, acc)
+        in
+          branchToList (pos - 1, nodes, acc)
+        end
+
+    and helpToVector (tree, acc) =
+      case tree of
+        BRANCH nodes => branchToList (Vector.length nodes - 1, nodes, acc)
+      | LEAF vec => vec :: acc
+
+    fun toVector tree = helpToVector (tree, [])
+  end
+
   val empty = Vector.fromList []
 
   (* 
@@ -32,17 +112,27 @@ struct
    * there should be two results: "[abba]bb[abba]".
    * However, the last result gets filtered out.
    * *)
-  fun cons (foundIdx, searchStringSize, acc) =
+  fun cons (foundIdx, searchStringSize, acc, lastFilteredIdx) =
     case acc of
       hd :: tl =>
-        if foundIdx + searchStringSize >= hd then foundIdx :: tl
-        else foundIdx :: acc
-    | [] => foundIdx :: acc
+        if foundIdx + searchStringSize >= hd then
+          case lastFilteredIdx of
+            ~1 => (foundIdx :: tl, hd)
+          | _ =>
+              if hd + searchStringSize >= lastFilteredIdx then
+                (foundIdx :: lastFilteredIdx :: tl, hd)
+              else
+                (foundIdx :: tl, hd)
+        else
+          (foundIdx :: acc, lastFilteredIdx)
+    | [] => (foundIdx :: acc, lastFilteredIdx)
 
-  fun searchStep (pos, hd, absIdx, tl, acc, searchPos, searchString) =
+  fun searchStep
+    (pos, hd, absIdx, tl, acc, searchPos, searchString, lastFilteredIdx) =
     if searchPos < 0 then
       let
-        val acc = cons (absIdx + 1, String.size searchString, acc)
+        val (acc, lastFilteredIdx) =
+          cons (absIdx + 1, String.size searchString, acc, lastFilteredIdx)
       in
         searchStep
           ( pos + 1
@@ -52,13 +142,22 @@ struct
           , acc
           , String.size searchString - 1
           , searchString
+          , lastFilteredIdx
           )
       end
     else if pos < 0 then
       case tl of
         hd :: tl =>
           searchStep
-            (String.size hd - 1, hd, absIdx, tl, acc, searchPos, searchString)
+            ( String.size hd - 1
+            , hd
+            , absIdx
+            , tl
+            , acc
+            , searchPos
+            , searchString
+            , lastFilteredIdx
+            )
       | [] => acc
     else
       let
@@ -67,7 +166,15 @@ struct
       in
         if bufferChr = searchChr then
           searchStep
-            (pos - 1, hd, absIdx - 1, tl, acc, searchPos - 1, searchString)
+            ( pos - 1
+            , hd
+            , absIdx - 1
+            , tl
+            , acc
+            , searchPos - 1
+            , searchString
+            , lastFilteredIdx
+            )
         else
           searchStep
             ( pos - 1
@@ -77,13 +184,22 @@ struct
             , acc
             , String.size searchString - 1
             , searchString
+            , lastFilteredIdx
             )
       end
 
   fun loopSearch (pos, hd, absIdx, tl, acc, searchString) =
     let
       val acc = searchStep
-        (pos, hd, absIdx, tl, acc, String.size searchString - 1, searchString)
+        ( pos
+        , hd
+        , absIdx
+        , tl
+        , acc
+        , String.size searchString - 1
+        , searchString
+        , ~1
+        )
     in
       Vector.fromList acc
     end
@@ -153,7 +269,7 @@ struct
 
   fun rangeSearchStep (pos, hd, absIdx, tl, acc, searchPos, searchString, low) =
     if searchPos < 0 then
-      cons (absIdx + 1, String.size searchString, acc)
+      raise Fail "todo"
     else if absIdx < low then
       acc
     else if pos < 0 then
