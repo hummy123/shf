@@ -4,9 +4,56 @@ struct
 
   val empty = Vector.fromList []
 
+  (* 
+   * There is some slightly-unintuitive behaviour in most text
+   * search functionality, including in Firefox, Vim and kwrite.
+   * Say we have the text "abbabba" and we want to search for
+   * "abba".
+   * It looks like the search should highlight both
+   * "[abba]bba" and "abb[abba]"
+   * However, only the first of these two results is matched.
+   * This is not a bug, and the behaviour is consistent across
+   * different programs.
+   *
+   * In principle, we could match both, but we want to stick to the
+   * same behaviour found in other programs.
+   * Our search functionality here is implemented from back to
+   * front, from the last index of the buffer/string to index 0.
+   * So we can't avoid consing the second match.
+   * However, what we can do is filter the second match: 
+   * if the foundIdx we wish to cons is a "first match" 
+   * in this edge case, then we can remove the hd of the list
+   * and this will give us equivalent behaviour.
+   *
+   * This 'cons' function handles that edge case and abstracts over it.
+   *
+   * Todo: Handle another edge case:
+   * When we have a string like "abbabbabba" and search for "abba",
+   * there should be two results: "[abba]bb[abba]".
+   * However, the last result gets filtered out.
+   * *)
+  fun cons (foundIdx, searchStringSize, acc) =
+    case acc of
+      hd :: tl =>
+        if foundIdx + searchStringSize >= hd then foundIdx :: tl
+        else foundIdx :: acc
+    | [] => foundIdx :: acc
+
   fun searchStep (pos, hd, absIdx, tl, acc, searchPos, searchString) =
     if searchPos < 0 then
-      (absIdx + 1) :: acc
+      let
+        val acc = cons (absIdx + 1, String.size searchString, acc)
+      in
+        searchStep
+          ( pos + 1
+          , hd
+          , absIdx + 1
+          , tl
+          , acc
+          , String.size searchString - 1
+          , searchString
+          )
+      end
     else if pos < 0 then
       case tl of
         hd :: tl =>
@@ -22,22 +69,24 @@ struct
           searchStep
             (pos - 1, hd, absIdx - 1, tl, acc, searchPos - 1, searchString)
         else
-          acc
+          searchStep
+            ( pos - 1
+            , hd
+            , absIdx - 1
+            , tl
+            , acc
+            , String.size searchString - 1
+            , searchString
+            )
       end
 
   fun loopSearch (pos, hd, absIdx, tl, acc, searchString) =
-    if pos < 0 then
-      case tl of
-        hd :: tl =>
-          loopSearch (String.size hd - 1, hd, absIdx, tl, acc, searchString)
-      | [] => Vector.fromList acc
-    else
-      let
-        val acc = searchStep
-          (pos, hd, absIdx, tl, acc, String.size searchString - 1, searchString)
-      in
-        loopSearch (pos - 1, hd, absIdx - 1, tl, acc, searchString)
-      end
+    let
+      val acc = searchStep
+        (pos, hd, absIdx, tl, acc, String.size searchString - 1, searchString)
+    in
+      Vector.fromList acc
+    end
 
   fun search (buffer: LineGap.t, searchString) =
     let
@@ -104,7 +153,7 @@ struct
 
   fun rangeSearchStep (pos, hd, absIdx, tl, acc, searchPos, searchString, low) =
     if searchPos < 0 then
-      (absIdx + 1) :: acc
+      cons (absIdx + 1, String.size searchString, acc)
     else if absIdx < low then
       acc
     else if pos < 0 then
