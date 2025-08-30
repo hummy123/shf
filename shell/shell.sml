@@ -68,7 +68,7 @@ struct
       val app =
         let
           val buffer = #buffer app
-          val buffer = LineGap.goToEnd buffer
+          val buffer = LineGap.goToStart buffer
           val searchString = "abba"
           val searchList = SearchList.build (buffer, searchString)
           val buffer = LineGap.goToStart buffer
