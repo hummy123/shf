@@ -324,6 +324,16 @@ struct
     in absIdx >= searchIdx + searchLen
     end
 
+  fun advanceSearchPos (absIdx, searchPos, searchHd, searchLen) =
+    let
+      val searchIdx = Vector.sub (searchHd, searchPos)
+    in
+      if absIdx >= searchIdx andalso absIdx < searchIdx + searchLen then
+        searchPos
+      else
+        searchPos + 1
+    end
+
   fun buildTextStringSearch
     ( pos
     , str
@@ -357,158 +367,43 @@ struct
         , bgAcc
         , env
         )
-    else if pos < String.size str then
-      case String.sub (str, pos) of
-        #" " =>
-          (* if inside cursor, then create cursorAcc;
-           * else, just skip as usual *)
-          if absIdx <> cursorPos then
-            (* not in cursur *)
-            if isInSearchRange (absIdx, searchPos, searchHd, searchLen) then
-              (* draw *)
-              let
-                (* todo: temp colours *)
-                val r: Real32.real = 0.3
-                val g: Real32.real = 0.1
-                val b: Real32.real = 0.1
-                val {fw, fh, ...} = env
+    else
+      let
+        val searchPos =
+          advanceSearchPos (absIdx, searchPos, searchHd, searchLen)
+      in
+        if searchPos = Vector.length searchHd then
+          (* exhausted search list so call normal build function *)
+          buildTextString
+            ( pos
+            , str
+            , acc
+            , posX
+            , posY
+            , startX
+            , tl
+            , absIdx
+            , cursorPos
+            , cursorAcc
+            , bgAcc
+            , env
+            )
 
-                val space = makeRect (posX, posY, fw, fh, r, g, b)
-                val bgAcc = space :: bgAcc
-              in
-                buildTextStringSearch
-                  ( pos + 1
-                  , str
-                  , acc
-                  , posX + xSpace
-                  , posY
-                  , startX
-                  , tl
-                  , absIdx + 1
-                  , cursorPos
-                  , cursorAcc
-                  , bgAcc
-                  , env
-                  , searchHd
-                  , searchPos
-                  , searchLen
-                  )
-              end
-            else
-              buildTextStringSearch
-                ( pos + 1
-                , str
-                , acc
-                , posX + xSpace
-                , posY
-                , startX
-                , tl
-                , absIdx + 1
-                , cursorPos
-                , cursorAcc
-                , bgAcc
-                , env
-                , searchHd
-                , searchPos
-                , searchLen
-                )
-          else
-            (* in cursor *)
-            let
-              val {fw, fh, r, g, b, ...} = env
-
-              val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
-            in
-              buildTextStringSearch
-                ( pos + 1
-                , str
-                , acc
-                , posX + xSpace
-                , posY
-                , startX
-                , tl
-                , absIdx + 1
-                , cursorPos
-                , cursorAcc
-                , bgAcc
-                , env
-                , searchHd
-                , searchPos
-                , searchLen
-                )
-            end
-      | #"\n" =>
-          if posY + ySpace < #h env then
-            if absIdx <> cursorPos then
-              (* not in cursor position, so iterate like normal *)
-              buildTextStringSearch
-                ( pos + 1
-                , str
-                , acc
-                , startX
-                , posY + ySpace
-                , startX
-                , tl
-                , absIdx + 1
-                , cursorPos
-                , cursorAcc
-                , bgAcc
-                , env
-                , searchHd
-                , searchPos
-                , searchLen
-                )
-            else
-              (* in cursor position, so build cursorAcc *)
-              let
-                val {fw, fh, r, g, b, ...} = env
-
-                val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
-              in
-                buildTextStringSearch
-                  ( pos + 1
-                  , str
-                  , acc
-                  , startX
-                  , posY + ySpace
-                  , startX
-                  , tl
-                  , absIdx + 1
-                  , cursorPos
-                  , cursorAcc
-                  , bgAcc
-                  , env
-                  , searchHd
-                  , searchPos
-                  , searchLen
-                  )
-              end
-          else
-            accToDrawMsg (acc, cursorAcc, bgAcc, env)
-      | chr =>
-          let
-            val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
-          in
-            if absIdx <> cursorPos then
-              (* not equal to cursor *)
-              if posX + xSpace < #w env then
+        else if pos < String.size str then
+          case String.sub (str, pos) of
+            #" " =>
+              (* if inside cursor, then create cursorAcc;
+               * else, just skip as usual *)
+              if absIdx <> cursorPos then
+                (* not in cursur *)
                 if isInSearchRange (absIdx, searchPos, searchHd, searchLen) then
+                  (* draw *)
                   let
-                    val {fw, fh, ...} = env
-
                     (* todo: temp colours *)
-                    val r: Real32.real = 0.7
-                    val g: Real32.real = 0.7
-                    val b: Real32.real = 0.7
-
-                    (* build char vec *)
-                    val chrVec = makeChr (chr, posX, posY, fw, fh, r, g, b)
-                    val acc = chrVec :: acc
-
-                    (* build cursor (behind text) vec *)
                     val r: Real32.real = 0.3
                     val g: Real32.real = 0.1
                     val b: Real32.real = 0.1
+                    val {fw, fh, ...} = env
 
                     val space = makeRect (posX, posY, fw, fh, r, g, b)
                     val bgAcc = space :: bgAcc
@@ -532,50 +427,36 @@ struct
                       )
                   end
                 else
-                  let
-                    val {fw, fh, r, g, b, ...} = env
-
-                    val chrVec = makeChr (chr, posX, posY, fw, fh, r, g, b)
-                    val acc = chrVec :: acc
-                    val searchPos =
-                      if
-                        isAfterSearchRange
-                          (absIdx, searchPos, searchHd, searchLen)
-                      then searchPos + 1
-                      else searchPos
-                  in
-                    buildTextStringSearch
-                      ( pos + 1
-                      , str
-                      , acc
-                      , posX + xSpace
-                      , posY
-                      , startX
-                      , tl
-                      , absIdx + 1
-                      , cursorPos
-                      , cursorAcc
-                      , bgAcc
-                      , env
-                      , searchHd
-                      , searchPos
-                      , searchLen
-                      )
-                  end
-              else if posY + ySpace < #h env then
+                  buildTextStringSearch
+                    ( pos + 1
+                    , str
+                    , acc
+                    , posX + xSpace
+                    , posY
+                    , startX
+                    , tl
+                    , absIdx + 1
+                    , cursorPos
+                    , cursorAcc
+                    , bgAcc
+                    , env
+                    , searchHd
+                    , searchPos
+                    , searchLen
+                    )
+              else
+                (* in cursor *)
                 let
                   val {fw, fh, r, g, b, ...} = env
 
-                  val chrVec = makeChr
-                    (chr, startX, posY + ySpace, fw, fh, r, g, b)
-                  val acc = chrVec :: acc
+                  val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
                 in
                   buildTextStringSearch
                     ( pos + 1
                     , str
                     , acc
-                    , startX + xSpace
-                    , posY + ySpace
+                    , posX + xSpace
+                    , posY
                     , startX
                     , tl
                     , absIdx + 1
@@ -588,52 +469,39 @@ struct
                     , searchLen
                     )
                 end
-              else
-                accToDrawMsg (acc, cursorAcc, bgAcc, env)
-            else
-              (* equal to cursor *)
-              let
-                val {fw, fh, r, g, b, hr, hg, hb, ...} = env
-                val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
-              in
-                if posX + xSpace < #w env then
+          | #"\n" =>
+              if posY + ySpace < #h env then
+                if absIdx <> cursorPos then
+                  (* not in cursor position, so iterate like normal *)
+                  buildTextStringSearch
+                    ( pos + 1
+                    , str
+                    , acc
+                    , startX
+                    , posY + ySpace
+                    , startX
+                    , tl
+                    , absIdx + 1
+                    , cursorPos
+                    , cursorAcc
+                    , bgAcc
+                    , env
+                    , searchHd
+                    , searchPos
+                    , searchLen
+                    )
+                else
+                  (* in cursor position, so build cursorAcc *)
                   let
-                    val chrVec = makeChr (chr, posX, posY, fw, fh, hr, hg, hb)
-                    val acc = chrVec :: acc
+                    val {fw, fh, r, g, b, ...} = env
+
+                    val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
                   in
-                    (* can start building after cursor now, 
-                     * since cursor was built *)
                     buildTextStringSearch
                       ( pos + 1
                       , str
                       , acc
-                      , posX + xSpace
-                      , posY
                       , startX
-                      , tl
-                      , absIdx + 1
-                      , cursorPos
-                      , cursorAcc
-                      , bgAcc
-                      , env
-                      , searchHd
-                      , searchPos
-                      , searchLen
-                      )
-                  end
-                else if posY + ySpace < #h env then
-                  let
-                    val chrVec = makeChr
-                      (chr, startX, posY + ySpace, fw, fh, hr, hg, hb)
-                    val acc = chrVec :: acc
-                  in
-                    (* can start building after cursor now, 
-                     * since cursor was built *)
-                    buildTextStringSearch
-                      ( pos + 1
-                      , str
-                      , acc
-                      , startX + xSpace
                       , posY + ySpace
                       , startX
                       , tl
@@ -647,32 +515,192 @@ struct
                       , searchLen
                       )
                   end
+              else
+                accToDrawMsg (acc, cursorAcc, bgAcc, env)
+          | chr =>
+              let
+                val chrFun = Vector.sub (CozetteAscii.asciiTable, Char.ord chr)
+              in
+                if absIdx <> cursorPos then
+                  (* not equal to cursor *)
+                  if posX + xSpace < #w env then
+                    if isInSearchRange (absIdx, searchPos, searchHd, searchLen) then
+                      let
+                        val {fw, fh, ...} = env
+
+                        (* todo: temp colours *)
+                        val r: Real32.real = 0.7
+                        val g: Real32.real = 0.7
+                        val b: Real32.real = 0.7
+
+                        (* build char vec *)
+                        val chrVec = makeChr (chr, posX, posY, fw, fh, r, g, b)
+                        val acc = chrVec :: acc
+
+                        (* build cursor (behind text) vec *)
+                        val r: Real32.real = 0.3
+                        val g: Real32.real = 0.1
+                        val b: Real32.real = 0.1
+
+                        val space = makeRect (posX, posY, fw, fh, r, g, b)
+                        val bgAcc = space :: bgAcc
+                      in
+                        buildTextStringSearch
+                          ( pos + 1
+                          , str
+                          , acc
+                          , posX + xSpace
+                          , posY
+                          , startX
+                          , tl
+                          , absIdx + 1
+                          , cursorPos
+                          , cursorAcc
+                          , bgAcc
+                          , env
+                          , searchHd
+                          , searchPos
+                          , searchLen
+                          )
+                      end
+                    else
+                      let
+                        val {fw, fh, r, g, b, ...} = env
+
+                        val chrVec = makeChr (chr, posX, posY, fw, fh, r, g, b)
+                        val acc = chrVec :: acc
+                      in
+                        buildTextStringSearch
+                          ( pos + 1
+                          , str
+                          , acc
+                          , posX + xSpace
+                          , posY
+                          , startX
+                          , tl
+                          , absIdx + 1
+                          , cursorPos
+                          , cursorAcc
+                          , bgAcc
+                          , env
+                          , searchHd
+                          , searchPos
+                          , searchLen
+                          )
+                      end
+                  else if posY + ySpace < #h env then
+                    let
+                      val {fw, fh, r, g, b, ...} = env
+
+                      val chrVec = makeChr
+                        (chr, startX, posY + ySpace, fw, fh, r, g, b)
+                      val acc = chrVec :: acc
+                    in
+                      buildTextStringSearch
+                        ( pos + 1
+                        , str
+                        , acc
+                        , startX + xSpace
+                        , posY + ySpace
+                        , startX
+                        , tl
+                        , absIdx + 1
+                        , cursorPos
+                        , cursorAcc
+                        , bgAcc
+                        , env
+                        , searchHd
+                        , searchPos
+                        , searchLen
+                        )
+                    end
+                  else
+                    accToDrawMsg (acc, cursorAcc, bgAcc, env)
                 else
-                  accToDrawMsg (acc, cursorAcc, bgAcc, env)
+                  (* equal to cursor *)
+                  let
+                    val {fw, fh, r, g, b, hr, hg, hb, ...} = env
+                    val cursorAcc = makeRect (posX, posY, fw, fh, r, g, b)
+                  in
+                    if posX + xSpace < #w env then
+                      let
+                        val chrVec = makeChr
+                          (chr, posX, posY, fw, fh, hr, hg, hb)
+                        val acc = chrVec :: acc
+                      in
+                        (* can start building after cursor now, 
+                         * since cursor was built *)
+                        buildTextStringSearch
+                          ( pos + 1
+                          , str
+                          , acc
+                          , posX + xSpace
+                          , posY
+                          , startX
+                          , tl
+                          , absIdx + 1
+                          , cursorPos
+                          , cursorAcc
+                          , bgAcc
+                          , env
+                          , searchHd
+                          , searchPos
+                          , searchLen
+                          )
+                      end
+                    else if posY + ySpace < #h env then
+                      let
+                        val chrVec = makeChr
+                          (chr, startX, posY + ySpace, fw, fh, hr, hg, hb)
+                        val acc = chrVec :: acc
+                      in
+                        (* can start building after cursor now, 
+                         * since cursor was built *)
+                        buildTextStringSearch
+                          ( pos + 1
+                          , str
+                          , acc
+                          , startX + xSpace
+                          , posY + ySpace
+                          , startX
+                          , tl
+                          , absIdx + 1
+                          , cursorPos
+                          , cursorAcc
+                          , bgAcc
+                          , env
+                          , searchHd
+                          , searchPos
+                          , searchLen
+                          )
+                      end
+                    else
+                      accToDrawMsg (acc, cursorAcc, bgAcc, env)
+                  end
               end
-          end
-    else
-      (* change to searching in string's tl *)
-      case tl of
-        hd :: tl =>
-          buildTextStringSearch
-            ( 0
-            , hd
-            , acc
-            , posX
-            , posY
-            , startX
-            , tl
-            , absIdx
-            , cursorPos
-            , cursorAcc
-            , bgAcc
-            , env
-            , searchHd
-            , searchPos
-            , searchLen
-            )
-      | [] => accToDrawMsg (acc, cursorAcc, bgAcc, env)
+        else
+          (* change to searching in string's tl *)
+          case tl of
+            hd :: tl =>
+              buildTextStringSearch
+                ( 0
+                , hd
+                , acc
+                , posX
+                , posY
+                , startX
+                , tl
+                , absIdx
+                , cursorPos
+                , cursorAcc
+                , bgAcc
+                , env
+                , searchHd
+                , searchPos
+                , searchLen
+                )
+          | [] => accToDrawMsg (acc, cursorAcc, bgAcc, env)
+      end
 
   (* gets line start idx, relative to right hd *)
   fun helpGetLineStartIdx (startLine, curLine, rLnHd) =
