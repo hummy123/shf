@@ -31,7 +31,7 @@ struct
 
       val mode = NORMAL_MODE ""
     in
-      AppWith.bufferAndCursorIdx
+      NormalModeWith.bufferAndCursorIdx
         ( app
         , buffer
         , cursorIdx
@@ -87,7 +87,7 @@ struct
 
       val mode = NORMAL_MODE ""
     in
-      AppWith.bufferAndCursorIdx
+      NormalModeWith.bufferAndCursorIdx
         ( app
         , buffer
         , bufferIdx
@@ -139,7 +139,7 @@ struct
 
         val mode = NORMAL_MODE ""
       in
-        AppWith.bufferAndCursorIdx
+        NormalModeWith.bufferAndCursorIdx
           ( app
           , buffer
           , cursorIdx
@@ -189,7 +189,7 @@ struct
             , []
             )
         in
-          AppWith.bufferAndCursorIdx
+          NormalModeWith.bufferAndCursorIdx
             ( app
             , buffer
             , cursorIdx
@@ -221,7 +221,7 @@ struct
             , []
             )
         in
-          AppWith.bufferAndCursorIdx
+          NormalModeWith.bufferAndCursorIdx
             ( app
             , buffer
             , cursorIdx
@@ -255,13 +255,13 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.firstNonSpaceChr (buffer, cursorIdx)
     in
-      Finish.buildTextAndClear
+      NormalFinish.buildTextAndClear
         (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
-      Finish.buildTextAndClearAfterChr
+      NormalFinish.buildTextAndClearAfterChr
         (app, buffer, cursorIdx, #searchList app, [], #bufferModifyTime app)
     else
       let
@@ -284,9 +284,9 @@ struct
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
-        Finish.clearMode app
+        NormalFinish.clearMode app
       else
-        Finish.buildTextAndClearAfterChr
+        NormalFinish.buildTextAndClearAfterChr
           (app, buffer, newCursorIdx, searchList, [], bufferModifyTime)
     end
 
@@ -296,9 +296,9 @@ struct
       val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
-        Finish.clearMode app
+        NormalFinish.clearMode app
       else
-        Finish.buildTextAndClearAfterChr
+        NormalFinish.buildTextAndClearAfterChr
           (app, buffer, newCursorIdx, searchList, [], bufferModifyTime)
     end
 end

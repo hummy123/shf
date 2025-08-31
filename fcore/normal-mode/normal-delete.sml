@@ -16,7 +16,8 @@ struct
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
-      Finish.buildTextAndClear (app, buffer, low, searchList, initialMsg, time)
+      NormalFinish.buildTextAndClear
+        (app, buffer, low, searchList, initialMsg, time)
     end
 
   (* equivalent of vi's 'x' command **)
@@ -31,7 +32,7 @@ struct
         val searchList =
           SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
       in
-        Finish.buildTextAndClear
+        NormalFinish.buildTextAndClear
           (app, buffer, cursorIdx, searchList, initialMsg, time)
       end
     else
@@ -119,7 +120,7 @@ struct
         val buffer = LineGap.goToIdx (low, buffer)
         val cursorIdx = Cursor.clipIdx (buffer, low)
       in
-        Finish.buildTextAndClear
+        NormalFinish.buildTextAndClear
           (app, buffer, cursorIdx, searchList, initialMsg, time)
       end
     else
@@ -158,7 +159,7 @@ struct
       if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
         (* if we are on \n, we don't want to delete or do anything
         * so reset the mode *)
-        Finish.clearMode app
+        NormalFinish.clearMode app
       else
         let
           (* viDlr takes us to the last chr in the line 
@@ -317,7 +318,7 @@ struct
 
       val mode = NORMAL_MODE ""
     in
-      AppWith.bufferAndCursorIdx
+      NormalModeWith.bufferAndCursorIdx
         (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg, time)
     end
 
@@ -335,7 +336,8 @@ struct
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
-      Finish.buildTextAndClear (app, buffer, low, searchList, initialMsg, time)
+      NormalFinish.buildTextAndClear
+        (app, buffer, low, searchList, initialMsg, time)
     end
 
   fun deleteToNextMatch (app: app_type, count, time) =
@@ -344,7 +346,7 @@ struct
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 orelse newCursorIdx <= cursorIdx then
-        Finish.clearMode app
+        NormalFinish.clearMode app
       else
         helpDeleteToMatch (app, cursorIdx, newCursorIdx, time)
     end
@@ -355,7 +357,7 @@ struct
       val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 orelse newCursorIdx >= cursorIdx then
-        Finish.clearMode app
+        NormalFinish.clearMode app
       else
         helpDeleteToMatch (app, newCursorIdx, cursorIdx, time)
     end
@@ -383,7 +385,7 @@ struct
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
-          Finish.buildTextAndClear
+          NormalFinish.buildTextAndClear
             (app, buffer, low, searchList, initialMsg, time)
         end
     end
@@ -411,14 +413,14 @@ struct
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
-          Finish.buildTextAndClear
+          NormalFinish.buildTextAndClear
             (app, buffer, low, searchList, initialMsg, time)
         end
     end
 
   fun finishAfterDeleteInside (app: app_type, origLow, high, time) =
     if origLow = high then
-      Finish.clearMode app
+      NormalFinish.clearMode app
     else
       let
         val {cursorIdx, buffer, searchString, ...} = app
@@ -430,11 +432,12 @@ struct
         val initialMsg = [SEARCH (buffer, searchString)]
 
         val buffer = LineGap.goToIdx (low - 1111, buffer)
-        val searchList = SearchList.buildRange (buffer, searchString, low + 1111)
+        val searchList =
+          SearchList.buildRange (buffer, searchString, low + 1111)
 
         val buffer = LineGap.goToIdx (origLow, buffer)
       in
-        Finish.buildTextAndClear
+        NormalFinish.buildTextAndClear
           (app, buffer, origLow, searchList, initialMsg, time)
       end
 
@@ -477,7 +480,7 @@ struct
       val buffer = LineGap.goToIdx (low, buffer)
       val high = Cursor.matchPair (buffer, low)
     in
-      if low = high then Finish.clearMode app
+      if low = high then NormalFinish.clearMode app
       else deleteAndFinish (app, low, high - low + 1, buffer, time)
     end
 
@@ -492,7 +495,7 @@ struct
       val buffer = LineGap.goToIdx (high, buffer)
       val low = Cursor.matchPair (buffer, high)
     in
-      if low = high then Finish.clearMode app
+      if low = high then NormalFinish.clearMode app
       else deleteAndFinish (app, low, high - low + 1, buffer, time)
     end
 
@@ -502,7 +505,7 @@ struct
       val otherIdx = Cursor.matchPair (buffer, cursorIdx)
     in
       if otherIdx = cursorIdx then
-        Finish.clearMode app
+        NormalFinish.clearMode app
       else
         let
           val low = Int.min (cursorIdx, otherIdx)
@@ -530,7 +533,7 @@ struct
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
-          Finish.buildTextAndClear
+          NormalFinish.buildTextAndClear
             (app, buffer, low, searchList, initialMsg, time)
         end
     end

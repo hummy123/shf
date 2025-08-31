@@ -20,6 +20,7 @@ fcore/bin-search.sml
 fcore/search-list.sml
 
 fcore/app-type.sml
+fcore/normal-mode/normal-mode-with.sml
 fcore/app-with.sml
 
 fcore/text-constants.sml
@@ -36,7 +37,7 @@ end
 fcore/cursor.sml
 fcore/text-window.sml
 
-fcore/finish.sml
+fcore/normal-mode/normal-finish.sml
 fcore/move.sml
 
 fcore/normal-mode/normal-move.sml

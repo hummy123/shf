@@ -12,7 +12,7 @@ struct
         NORMAL_SEARCH_MODE
           {searchString = "", tempSearchList = Vector.fromList []}
     in
-      AppWith.mode (app, mode, [])
+      NormalModeWith.mode (app, mode, [])
     end
 
   fun getNumLength (pos, str) =
@@ -28,7 +28,7 @@ struct
       val str = str ^ Char.toString chr
       val mode = NORMAL_MODE str
     in
-      AppWith.mode (app, mode, [])
+      NormalModeWith.mode (app, mode, [])
     end
 
   fun parseMoveToChr (count, app, fMove, chrCmd) =
@@ -39,7 +39,7 @@ struct
       #"e" => MoveToEndOfPrevWord.move (app, count)
     | #"E" => MoveToEndOfPrevWORD.move (app, count)
     | #"g" => NormalMove.moveToStart app
-    | _ => Finish.clearMode app
+    | _ => NormalFinish.clearMode app
 
   fun parseChr (app: app_type, count, chr, str, time) =
     case chr of
@@ -55,7 +55,7 @@ struct
     | #"E" => MoveToEndOfWORD.move (app, count)
     | #"n" => NormalMove.moveToNextMatch (app, count)
     | #"N" => NormalMove.moveToPrevMatch (app, count)
-    | #"z" => Finish.centreToCursor app
+    | #"z" => NormalFinish.centreToCursor app
     (* can only move to start or end of line once 
      * so hardcode count as 1 *)
     | #"0" =>
@@ -75,7 +75,7 @@ struct
                 val str = str ^ chr
                 val mode = NORMAL_MODE str
               in
-                AppWith.mode (app, mode, [])
+                NormalModeWith.mode (app, mode, [])
               end
             else
               MoveToStartOfLine.move (app, 1)
@@ -110,7 +110,7 @@ struct
           val str = if Char.isDigit chr then str ^ Char.toString chr else ""
           val mode = NORMAL_MODE str
         in
-          AppWith.mode (app, mode, [])
+          NormalModeWith.mode (app, mode, [])
         end
 
   fun parseDeleteInside (app, chr, time) =
@@ -125,7 +125,7 @@ struct
     | #"]" => NormalDelete.deleteInsideChrClose (app, chr, time)
     | #"}" => NormalDelete.deleteInsideChrClose (app, chr, time)
     | #">" => NormalDelete.deleteInsideChrClose (app, chr, time)
-    | _ => Finish.clearMode app
+    | _ => NormalFinish.clearMode app
 
   fun parseDeleteAround (app, chr, time) =
     case chr of
@@ -137,7 +137,7 @@ struct
     | #"]" => NormalDelete.deleteAroundChrClose (app, chr, time)
     | #"}" => NormalDelete.deleteAroundChrClose (app, chr, time)
     | #">" => NormalDelete.deleteAroundChrClose (app, chr, time)
-    | _ => Finish.clearMode app
+    | _ => NormalFinish.clearMode app
 
   fun parseDeleteTerminal (str, count, app, chrCmd, time) =
     case chrCmd of
@@ -174,14 +174,14 @@ struct
     | #"i" => appendChr (app, chrCmd, str)
     | #"a" => appendChr (app, chrCmd, str)
     (* invalid command: reset mode *)
-    | _ => Finish.clearMode app
+    | _ => NormalFinish.clearMode app
 
   fun parseDeleteGo (app, count, chrCmd, time) =
     case chrCmd of
       #"e" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWord, time)
     | #"E" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWORD, time)
     | #"g" => NormalDelete.deleteToStart (app, time)
-    | _ => Finish.clearMode app
+    | _ => NormalFinish.clearMode app
 
   fun parseDelete (strPos, str, count, app, chrCmd, time) =
     if strPos = String.size str - 1 then
@@ -204,7 +204,7 @@ struct
       | #"g" => parseDeleteGo (app, count, chrCmd, time)
       | #"i" => parseDeleteInside (app, chrCmd, time)
       | #"a" => parseDeleteAround (app, chrCmd, time)
-      | _ => Finish.clearMode app
+      | _ => NormalFinish.clearMode app
 
   (* useful reference as list of non-terminal commands *)
   fun parseAfterCount (strPos, str, count, app, chrCmd, time) =
@@ -224,7 +224,7 @@ struct
     | #"T" =>
         (* to just before chr, backward *)
         parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
-    | #"y" => (* yank *) Finish.clearMode app
+    | #"y" => (* yank *) NormalFinish.clearMode app
     | #"d" => (* delete *) parseDelete (strPos, str, count, app, chrCmd, time)
     | #"f" =>
         (* to chr, forward *)
@@ -233,11 +233,11 @@ struct
         (* to chr, backward *)
         parseMoveToChr (count, app, Cursor.toPrevChr, chrCmd)
     | #"g" => (* go *) parseGo (count, app, chrCmd)
-    | #"c" => (* change *) Finish.clearMode app
+    | #"c" => (* change *) NormalFinish.clearMode app
     | _ =>
         (* isn't a non-terminal cmd
          * this case should never happen*)
-        Finish.clearMode app
+        NormalFinish.clearMode app
 
   fun parseNormalModeCommand (app, str, chrCmd, time) =
     if String.size str = 0 then
@@ -266,8 +266,10 @@ struct
   fun update (app, str, msg, time) =
     case msg of
       CHAR_EVENT chrCmd => parseNormalModeCommand (app, str, chrCmd, time)
-    | KEY_ESC => Finish.clearMode app
-    | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
-    | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
+    | KEY_ESC => NormalFinish.clearMode app
+    | RESIZE_EVENT (width, height) =>
+        NormalFinish.resizeText (app, width, height)
+    | WITH_SEARCH_LIST searchList =>
+        NormalFinish.withSearchList (app, searchList)
     | KEY_ENTER => app
 end

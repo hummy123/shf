@@ -75,7 +75,7 @@ struct
           val searchList = SearchList.build (buffer, searchString)
           val buffer = LineGap.goToStart buffer
         in
-          AppWith.searchList
+          NormalModeWith.searchList
             (app, searchList, buffer, searchString, Time.now ())
         end
 

@@ -1,4 +1,4 @@
-structure Finish =
+structure NormalFinish =
 struct
   open AppType
 
@@ -7,7 +7,7 @@ struct
   open InputMsg
 
   fun clearMode app =
-    AppWith.mode (app, NORMAL_MODE "", [])
+    NormalModeWith.mode (app, NORMAL_MODE "", [])
 
   fun buildTextAndClear
     (app: app_type, buffer, cursorIdx, searchList, msgs, bufferModifyTime) =
@@ -37,7 +37,7 @@ struct
 
       val mode = NORMAL_MODE ""
     in
-      AppWith.bufferAndCursorIdx
+      NormalModeWith.bufferAndCursorIdx
         ( app
         , buffer
         , cursorIdx
@@ -52,7 +52,7 @@ struct
   fun withSearchList (app: app_type, searchList) =
     let
       val {buffer, searchString, cursorIdx, bufferModifyTime, ...} = app
-      val app = AppWith.searchList
+      val app = NormalModeWith.searchList
         (app, searchList, buffer, searchString, bufferModifyTime)
     in
       buildTextAndClear
@@ -87,7 +87,7 @@ struct
         , []
         )
     in
-      AppWith.bufferAndSize
+      NormalModeWith.bufferAndSize
         ( app
         , newBuffer
         , newWidth
@@ -132,7 +132,7 @@ struct
 
       val mode = NORMAL_MODE ""
     in
-      AppWith.bufferAndCursorIdx
+      NormalModeWith.bufferAndCursorIdx
         ( app
         , buffer
         , cursorIdx
@@ -176,7 +176,7 @@ struct
         , []
         )
     in
-      AppWith.bufferAndCursorIdx
+      NormalModeWith.bufferAndCursorIdx
         ( app
         , buffer
         , cursorIdx
