@@ -25,6 +25,8 @@ struct
     in
       if key = KEY_ESC andalso action = PRESS andalso mods = 0 then
         Mailbox.send (inputMailbox, InputMsg.KEY_ESC)
+      else if key = KEY_ENTER andalso action = PRESS andalso mods = 0 then
+        Mailbox.send (inputMailbox, InputMsg.KEY_ENTER)
       else
         ()
     end

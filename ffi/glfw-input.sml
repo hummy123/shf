@@ -33,4 +33,7 @@ struct
   val (KEY_ESC, _) =
     _symbol "KEY_ESC" public : ( unit -> int ) * ( int -> unit );
   val KEY_ESC = KEY_ESC ()
+  val (KEY_ENTER, _) =
+    _symbol "KEY_ENTER" public : ( unit -> int ) * ( int -> unit );
+  val KEY_ENTER = KEY_ENTER ()
 end

@@ -7,6 +7,7 @@ int PRESS = GLFW_PRESS;
 int REPEAT = GLFW_REPEAT;
 int RELEASE = GLFW_RELEASE;
 int KEY_ESC = GLFW_KEY_ESCAPE;
+int KEY_ENTER = GLFW_KEY_ENTER;
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);

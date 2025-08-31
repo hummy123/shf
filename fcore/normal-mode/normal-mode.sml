@@ -5,6 +5,16 @@ struct
   open AppType
   open InputMsg
 
+  (* todo: create draw msg showing search bar *)
+  fun switchToNormalSearchMode (app: app_type) =
+    let
+      val mode =
+        NORMAL_SEARCH_MODE
+          {searchString = "", tempSearchList = Vector.fromList []}
+    in
+      AppWith.mode (app, mode, [])
+    end
+
   fun getNumLength (pos, str) =
     if pos = String.size str then
       pos
@@ -82,6 +92,7 @@ struct
         else NormalMove.moveToLine (app, count - 1)
     | #"%" => NormalMove.moveToMatchingPair app
     | #"x" => NormalDelete.removeChr (app, count, time)
+    | #"/" => switchToNormalSearchMode app
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
@@ -258,4 +269,5 @@ struct
     | KEY_ESC => Finish.clearMode app
     | RESIZE_EVENT (width, height) => Finish.resizeText (app, width, height)
     | WITH_SEARCH_LIST searchList => Finish.withSearchList (app, searchList)
+    | KEY_ENTER => app
 end
