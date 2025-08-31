@@ -19,6 +19,7 @@ end
 structure TextBuilder :> TEXT_BUILDER =
 struct
   open TextConstants
+  structure TC = TextConstants
 
   type env_data =
     { r: Real32.real
@@ -30,6 +31,13 @@ struct
     , hg: Real32.real
     , hb: Real32.real
 
+    , startX: int
+    , startY: int
+
+    (* w = width, h = height.
+     * These do no necessarily correspond to the whole window's width and height.
+     * For example, in some cases we want to horizontally centre text on the screen.
+     * In that case, "w" means "end width/pixel, which causes a line break". *)
     , w: int
     , h: int
 
@@ -734,6 +742,48 @@ struct
       | [] => (* should never happen *) 0
     end
 
+  fun initEnv (windowWidth, windowHeight, msgs) =
+  let
+    val fw = Real32.fromInt windowWidth
+    val fh = Real32.fromInt windowHeight
+  in
+    if TC.textLineWidth > windowWidth then
+      { w = windowWidth
+      , h = windowHeight
+      , startX = 5
+      , startY = 5
+      , fw = fw
+      , fh = fh
+      , r = 0.67
+      , g = 0.51
+      , b = 0.83
+      , hr = 0.211
+      , hg = 0.219
+      , hb = 0.25
+      , msgs = msgs
+      }
+    else
+      let
+        val startX = (windowWidth - TC.textLineWidth) div 2
+        val finishWidth = startX + TC.textLineWidth
+      in
+        { w = finishWidth
+        , h = windowHeight
+        , startX = startX
+        , startY = 5
+        , fw = fw
+        , fh = fh
+        , r = 0.67
+        , g = 0.51
+        , b = 0.83
+        , hr = 0.211
+        , hg = 0.219
+        , hb = 0.25
+        , msgs = msgs
+        }
+      end
+  end
+
   fun build
     ( startLine
     , cursorPos
@@ -756,19 +806,8 @@ struct
             (* get absolute idx of line *)
             val absIdx = curIdx + startIdx
 
-            val env =
-              { w = windowWidth
-              , h = windowHeight
-              , fw = Real32.fromInt windowWidth
-              , fh = Real32.fromInt windowHeight
-              , r = 0.67
-              , g = 0.51
-              , b = 0.83
-              , hr = 0.211
-              , hg = 0.219
-              , hb = 0.25
-              , msgs = msgs
-              }
+            val env = initEnv (windowWidth, windowHeight, msgs)
+            val {startX, startY, ...} = env
 
             val cursorAcc = Vector.fromList []
             val searchPos = BinSearch.equalOrMore (absIdx, searchList)
@@ -778,9 +817,9 @@ struct
                 ( startIdx
                 , rStrHd
                 , []
-                , 5
-                , 5
-                , 5
+                , startX
+                , startY
+                , startX
                 , rStrTl
                 , absIdx
                 , cursorPos
@@ -796,9 +835,9 @@ struct
                 ( startIdx
                 , rStrHd
                 , []
-                , 5
-                , 5
-                , 5
+                , startX
+                , startY
+                , startX
                 , rStrTl
                 , absIdx
                 , cursorPos
