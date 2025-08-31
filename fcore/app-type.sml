@@ -1,6 +1,6 @@
 structure AppType =
 struct
-  datatype mode = NORMAL_MODE of string
+  datatype mode = NORMAL_MODE of string | NORMAL_SEARCH_MODE of string
 
   type app_type =
     { mode: mode
