@@ -21,6 +21,7 @@ fcore/search-list.sml
 
 fcore/app-type.sml
 fcore/normal-mode/normal-mode-with.sml
+fcore/normal-mode/normal-search-mode-with.sml
 fcore/app-with.sml
 
 fcore/text-constants.sml
