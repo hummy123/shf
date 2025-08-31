@@ -2,6 +2,10 @@ structure TextWindow =
 struct
   open TextConstants
 
+  (* todo: at some point, make sure the functions in the TextWindow structure
+   * all act as if the screen is centered 
+   * if the window width is more than 80 chars long *)
+
   fun getStartLineBefore (sIdx, shd, lineNum, absIdx, cursorIdx, stl) =
     if sIdx < 0 then
       case stl of
