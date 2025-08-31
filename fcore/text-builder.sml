@@ -102,7 +102,6 @@ struct
     , acc
     , posX
     , posY
-    , startX
     , tl
     , absIdx
     , cursorPos
@@ -123,7 +122,6 @@ struct
               , acc
               , posX + xSpace
               , posY
-              , startX
               , tl
               , absIdx + 1
               , cursorPos
@@ -144,7 +142,6 @@ struct
                 , acc
                 , posX + xSpace
                 , posY
-                , startX
                 , tl
                 , absIdx + 1
                 , cursorPos
@@ -161,9 +158,8 @@ struct
                 ( pos + 1
                 , str
                 , acc
-                , startX
+                , #startX env
                 , posY + ySpace
-                , startX
                 , tl
                 , absIdx + 1
                 , cursorPos
@@ -182,9 +178,8 @@ struct
                   ( pos + 1
                   , str
                   , acc
-                  , startX
+                  , #startX env
                   , posY + ySpace
-                  , startX
                   , tl
                   , absIdx + 1
                   , cursorPos
@@ -212,7 +207,6 @@ struct
                     , acc
                     , posX + xSpace
                     , posY
-                    , startX
                     , tl
                     , absIdx + 1
                     , cursorPos
@@ -226,16 +220,15 @@ struct
                   val {r, g, b, fw, fh, ...} = env
 
                   val chrVec = makeChr
-                    (chr, startX, posY + ySpace, fw, fh, r, g, b)
+                    (chr, #startX env, posY + ySpace, fw, fh, r, g, b)
                   val acc = chrVec :: acc
                 in
                   buildTextString
                     ( pos + 1
                     , str
                     , acc
-                    , startX + xSpace
+                    , #startX env + xSpace
                     , posY + ySpace
-                    , startX
                     , tl
                     , absIdx + 1
                     , cursorPos
@@ -266,7 +259,6 @@ struct
                       , acc
                       , posX + xSpace
                       , posY
-                      , startX
                       , tl
                       , absIdx + 1
                       , cursorPos
@@ -278,7 +270,7 @@ struct
                 else if posY + ySpace < #h env then
                   let
                     val chrVec = makeChr
-                      (chr, startX, posY + ySpace, fw, fh, hr, hg, hb)
+                      (chr, #startX env, posY + ySpace, fw, fh, hr, hg, hb)
                     val acc = chrVec :: acc
                   in
                     (* can start building after cursor now, 
@@ -287,9 +279,8 @@ struct
                       ( pos + 1
                       , str
                       , acc
-                      , startX + xSpace
+                      , #startX env + xSpace
                       , posY + ySpace
-                      , startX
                       , tl
                       , absIdx + 1
                       , cursorPos
@@ -312,7 +303,6 @@ struct
             , acc
             , posX
             , posY
-            , startX
             , tl
             , absIdx
             , cursorPos
@@ -344,7 +334,6 @@ struct
     , acc
     , posX
     , posY
-    , startX
     , tl
     , absIdx
     , cursorPos
@@ -363,7 +352,6 @@ struct
         , acc
         , posX
         , posY
-        , startX
         , tl
         , absIdx
         , cursorPos
@@ -384,7 +372,6 @@ struct
             , acc
             , posX
             , posY
-            , startX
             , tl
             , absIdx
             , cursorPos
@@ -418,7 +405,6 @@ struct
                       , acc
                       , posX + xSpace
                       , posY
-                      , startX
                       , tl
                       , absIdx + 1
                       , cursorPos
@@ -437,7 +423,6 @@ struct
                     , acc
                     , posX + xSpace
                     , posY
-                    , startX
                     , tl
                     , absIdx + 1
                     , cursorPos
@@ -461,7 +446,6 @@ struct
                     , acc
                     , posX + xSpace
                     , posY
-                    , startX
                     , tl
                     , absIdx + 1
                     , cursorPos
@@ -481,9 +465,8 @@ struct
                     ( pos + 1
                     , str
                     , acc
-                    , startX
+                    , #startX env
                     , posY + ySpace
-                    , startX
                     , tl
                     , absIdx + 1
                     , cursorPos
@@ -505,9 +488,8 @@ struct
                       ( pos + 1
                       , str
                       , acc
-                      , startX
+                      , #startX env
                       , posY + ySpace
-                      , startX
                       , tl
                       , absIdx + 1
                       , cursorPos
@@ -555,7 +537,6 @@ struct
                           , acc
                           , posX + xSpace
                           , posY
-                          , startX
                           , tl
                           , absIdx + 1
                           , cursorPos
@@ -580,7 +561,6 @@ struct
                           , acc
                           , posX + xSpace
                           , posY
-                          , startX
                           , tl
                           , absIdx + 1
                           , cursorPos
@@ -597,16 +577,15 @@ struct
                       val {fw, fh, r, g, b, ...} = env
 
                       val chrVec = makeChr
-                        (chr, startX, posY + ySpace, fw, fh, r, g, b)
+                        (chr, #startX env, posY + ySpace, fw, fh, r, g, b)
                       val acc = chrVec :: acc
                     in
                       buildTextStringSearch
                         ( pos + 1
                         , str
                         , acc
-                        , startX + xSpace
+                        , #startX env + xSpace
                         , posY + ySpace
-                        , startX
                         , tl
                         , absIdx + 1
                         , cursorPos
@@ -640,7 +619,6 @@ struct
                           , acc
                           , posX + xSpace
                           , posY
-                          , startX
                           , tl
                           , absIdx + 1
                           , cursorPos
@@ -655,7 +633,7 @@ struct
                     else if posY + ySpace < #h env then
                       let
                         val chrVec = makeChr
-                          (chr, startX, posY + ySpace, fw, fh, hr, hg, hb)
+                          (chr, #startX env, posY + ySpace, fw, fh, hr, hg, hb)
                         val acc = chrVec :: acc
                       in
                         (* can start building after cursor now, 
@@ -664,9 +642,8 @@ struct
                           ( pos + 1
                           , str
                           , acc
-                          , startX + xSpace
+                          , #startX env + xSpace
                           , posY + ySpace
-                          , startX
                           , tl
                           , absIdx + 1
                           , cursorPos
@@ -692,7 +669,6 @@ struct
                 , acc
                 , posX
                 , posY
-                , startX
                 , tl
                 , absIdx
                 , cursorPos
@@ -739,33 +715,14 @@ struct
     end
 
   fun initEnv (windowWidth, windowHeight, msgs) =
-  let
-    val fw = Real32.fromInt windowWidth
-    val fh = Real32.fromInt windowHeight
-  in
-    if TC.textLineWidth > windowWidth then
-      { w = windowWidth
-      , h = windowHeight
-      , startX = 5
-      , startY = 5
-      , fw = fw
-      , fh = fh
-      , r = 0.67
-      , g = 0.51
-      , b = 0.83
-      , hr = 0.211
-      , hg = 0.219
-      , hb = 0.25
-      , msgs = msgs
-      }
-    else
-      let
-        val startX = (windowWidth - TC.textLineWidth) div 2
-        val finishWidth = startX + TC.textLineWidth
-      in
-        { w = finishWidth
+    let
+      val fw = Real32.fromInt windowWidth
+      val fh = Real32.fromInt windowHeight
+    in
+      if TC.textLineWidth > windowWidth then
+        { w = windowWidth
         , h = windowHeight
-        , startX = startX
+        , startX = 5
         , startY = 5
         , fw = fw
         , fh = fh
@@ -777,8 +734,27 @@ struct
         , hb = 0.25
         , msgs = msgs
         }
-      end
-  end
+      else
+        let
+          val startX = (windowWidth - TC.textLineWidth) div 2
+          val finishWidth = startX + TC.textLineWidth
+        in
+          { w = finishWidth
+          , h = windowHeight
+          , startX = startX
+          , startY = 5
+          , fw = fw
+          , fh = fh
+          , r = 0.67
+          , g = 0.51
+          , b = 0.83
+          , hr = 0.211
+          , hg = 0.219
+          , hb = 0.25
+          , msgs = msgs
+          }
+        end
+    end
 
   fun build
     ( startLine
@@ -815,7 +791,6 @@ struct
                 , []
                 , startX
                 , startY
-                , startX
                 , rStrTl
                 , absIdx
                 , cursorPos
@@ -833,7 +808,6 @@ struct
                 , []
                 , startX
                 , startY
-                , startX
                 , rStrTl
                 , absIdx
                 , cursorPos
