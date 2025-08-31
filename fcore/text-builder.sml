@@ -714,18 +714,34 @@ struct
       | [] => (* should never happen *) 0
     end
 
-  fun initEnv (windowWidth, windowHeight, msgs) =
-    let
-      val fw = Real32.fromInt windowWidth
-      val fh = Real32.fromInt windowHeight
-    in
-      if TC.textLineWidth > windowWidth then
-        { w = windowWidth
+  fun initEnv
+    (windowWidth, windowHeight, floatWindowWidth, floatWindowHeight, msgs) =
+    if TC.textLineWidth > windowWidth then
+      { w = windowWidth
+      , h = windowHeight
+      , startX = 5
+      , startY = 5
+      , fw = floatWindowWidth
+      , fh = floatWindowHeight
+      , r = 0.67
+      , g = 0.51
+      , b = 0.83
+      , hr = 0.211
+      , hg = 0.219
+      , hb = 0.25
+      , msgs = msgs
+      }
+    else
+      let
+        val startX = (windowWidth - TC.textLineWidth) div 2
+        val finishWidth = startX + TC.textLineWidth
+      in
+        { w = finishWidth
         , h = windowHeight
-        , startX = 5
+        , startX = startX
         , startY = 5
-        , fw = fw
-        , fh = fh
+        , fw = floatWindowWidth
+        , fh = floatWindowHeight
         , r = 0.67
         , g = 0.51
         , b = 0.83
@@ -734,37 +750,24 @@ struct
         , hb = 0.25
         , msgs = msgs
         }
-      else
-        let
-          val startX = (windowWidth - TC.textLineWidth) div 2
-          val finishWidth = startX + TC.textLineWidth
-        in
-          { w = finishWidth
-          , h = windowHeight
-          , startX = startX
-          , startY = 5
-          , fw = fw
-          , fh = fh
-          , r = 0.67
-          , g = 0.51
-          , b = 0.83
-          , hr = 0.211
-          , hg = 0.219
-          , hb = 0.25
-          , msgs = msgs
-          }
-        end
-    end
+      end
 
-  fun build
+  (* todo: add startX and startY parameters, 
+   * so we can control where on the * screen the text starts from. 
+   * Not worth doing until we have/in preparation of tiling functionality *)
+  fun buildWithExisting
     ( startLine
     , cursorPos
     , lineGap: LineGap.t
     , windowWidth
     , windowHeight
+    , floatWindowWidth
+    , floatWindowHeight
     , searchList: SearchList.t
     , searchString
     , msgs
+    , textAcc
+    , bgAcc
     ) =
     let
       val {rightStrings, rightLines, line = curLine, idx = curIdx, ...} =
@@ -778,43 +781,34 @@ struct
             (* get absolute idx of line *)
             val absIdx = curIdx + startIdx
 
-            val env = initEnv (windowWidth, windowHeight, msgs)
+            val env = initEnv
+              ( windowWidth
+              , windowHeight
+              , floatWindowWidth
+              , floatWindowHeight
+              , msgs
+              )
             val {startX, startY, ...} = env
 
             val cursorAcc = Vector.fromList []
             val searchPos = BinSearch.equalOrMore (absIdx, searchList)
           in
-            if searchPos < Vector.length searchList then
-              buildTextStringSearch
-                ( startIdx
-                , rStrHd
-                , []
-                , startX
-                , startY
-                , rStrTl
-                , absIdx
-                , cursorPos
-                , cursorAcc
-                , []
-                , env
-                , searchList
-                , searchPos
-                , String.size searchString
-                )
-            else
-              buildTextString
-                ( startIdx
-                , rStrHd
-                , []
-                , startX
-                , startY
-                , rStrTl
-                , absIdx
-                , cursorPos
-                , cursorAcc
-                , []
-                , env
-                )
+            buildTextStringSearch
+              ( startIdx
+              , rStrHd
+              , textAcc
+              , startX
+              , startY
+              , rStrTl
+              , absIdx
+              , cursorPos
+              , cursorAcc
+              , bgAcc
+              , env
+              , searchList
+              , searchPos
+              , String.size searchString
+              )
           end
       | (_, _) =>
           (* requested line goes beyond the buffer,
@@ -822,4 +816,29 @@ struct
            * else we can do. *)
           []
     end
+
+  fun build
+    ( startLine
+    , cursorPos
+    , lineGap: LineGap.t
+    , windowWidth
+    , windowHeight
+    , searchList: SearchList.t
+    , searchString
+    , msgs
+    ) =
+    buildWithExisting
+      ( startLine
+      , cursorPos
+      , lineGap : LineGap.t
+      , windowWidth
+      , windowHeight
+      , Real32.fromInt windowWidth
+      , Real32.fromInt windowHeight
+      , searchList : SearchList.t
+      , searchString
+      , msgs
+      , []
+      , []
+      )
 end
