@@ -333,14 +333,10 @@ struct
     end
 
   fun advanceSearchPos (absIdx, searchPos, searchHd, searchLen) =
-    let
-      val searchIdx = Vector.sub (searchHd, searchPos)
-    in
-      if absIdx >= searchIdx andalso absIdx < searchIdx + searchLen then
-        searchPos
-      else
-        searchPos + 1
-    end
+    if isAfterSearchRange (absIdx, searchPos, searchHd, searchLen) then
+      searchPos + 1
+    else
+      searchPos
 
   fun buildTextStringSearch
     ( pos
