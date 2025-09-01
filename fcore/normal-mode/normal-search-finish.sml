@@ -2,14 +2,17 @@ structure NormalSearchFinish =
 struct
   open AppType
 
-  fun onSearchChanged (app: app_type, searchString, tempSearchList, buffer) =
+  fun onSearchChanged
+    (app: app_type, searchString, tempSearchList, searchCursorIdx, buffer) =
     let
       open DrawMsg
 
       val {buffer, cursorIdx, startLine, windowWidth, windowHeight, ...} = app
-      val mode =
-        NORMAL_SEARCH_MODE
-          {searchString = searchString, tempSearchList = tempSearchList}
+      val mode = NORMAL_SEARCH_MODE
+        { searchString = searchString
+        , tempSearchList = tempSearchList
+        , searchCursorIdx = searchCursorIdx
+        }
 
       val floatWindowWidth = Real32.fromInt windowWidth
       val floatWindowHeight = Real32.fromInt windowHeight

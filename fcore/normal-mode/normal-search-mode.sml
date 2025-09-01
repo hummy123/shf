@@ -4,19 +4,30 @@ struct
   open InputMsg
   open MailboxType
 
-  fun addChr (app: app_type, searchString, chr) =
+  fun addChr (app: app_type, searchString, searchCurosrIdx, chr) =
     let
       val {cursorIdx, buffer, ...} = app
 
       val c = String.implode [chr]
-      val searchString = searchString ^ c
+      val searchString =
+        if searchCurosrIdx = String.size searchString then
+          searchString ^ c
+        else
+          let
+            val sub1 = Substring.extract (searchString, 0, SOME searchCurosrIdx)
+            val sub2 = Substring.full c
+            val sub3 = Substring.extract (searchString, searchCurosrIdx, NONE)
+          in
+            Substring.concat [sub1, sub2, sub3]
+          end
+      val searchCurosrIdx = searchCurosrIdx + 1
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
       val tempSearchList =
         SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
     in
       NormalSearchFinish.onSearchChanged
-        (app, searchString, tempSearchList, buffer)
+        (app, searchString, tempSearchList, searchCurosrIdx, buffer)
     end
 
   (* return to normal mode, keeping the same searchString and searchList
@@ -67,9 +78,9 @@ struct
   fun backspace (app: app_type, searchString, tempSearchList) =
     raise Fail "normal-search-mode: KEY_BACKSPACE unimplemented"
 
-  fun update (app, {searchString, tempSearchList}, msg, time) =
+  fun update (app, {searchString, tempSearchList, searchCursorIdx}, msg, time) =
     case msg of
-      CHAR_EVENT chr => addChr (app, searchString, chr)
+      CHAR_EVENT chr => addChr (app, searchString, searchCursorIdx, chr)
     | KEY_BACKSPACE => backspace (app, searchString, tempSearchList)
     | KEY_ESC => exitToNormalMode app
     | KEY_ENTER => saveSearch (app, searchString, tempSearchList)

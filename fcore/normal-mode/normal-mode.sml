@@ -6,14 +6,8 @@ struct
   open InputMsg
 
   fun switchToNormalSearchMode (app: app_type) =
-    let
-      val mode =
-        NORMAL_SEARCH_MODE
-          {searchString = "", tempSearchList = Vector.fromList []}
-    in
-      NormalSearchFinish.onSearchChanged
-        (app, "", Vector.fromList [], #buffer app)
-    end
+    NormalSearchFinish.onSearchChanged
+      (app, "", Vector.fromList [], 0, #buffer app)
 
   fun getNumLength (pos, str) =
     if pos = String.size str then
