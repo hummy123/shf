@@ -39,6 +39,7 @@ fcore/cursor.sml
 fcore/text-window.sml
 
 fcore/normal-mode/normal-finish.sml
+fcore/normal-mode/normal-search-finish.sml
 fcore/move.sml
 
 fcore/normal-mode/normal-move.sml

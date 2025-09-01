@@ -5,14 +5,14 @@ struct
   open AppType
   open InputMsg
 
-  (* todo: create draw msg showing search bar *)
   fun switchToNormalSearchMode (app: app_type) =
     let
       val mode =
         NORMAL_SEARCH_MODE
           {searchString = "", tempSearchList = Vector.fromList []}
     in
-      NormalModeWith.mode (app, mode, [])
+      NormalSearchFinish.onSearchChanged
+        (app, "", Vector.fromList [], #buffer app)
     end
 
   fun getNumLength (pos, str) =
