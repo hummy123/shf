@@ -1,22 +1,4 @@
-signature TEXT_BUILDER =
-sig
-  (* Prerequisites: LineGap is moved to requested line first. *)
-  val getLineAbsIdx: int * LineGap.t -> int
-
-  (* Prerequisites: LineGap is moved to requested line first. *)
-  val build:
-    int
-    * int
-    * LineGap.t
-    * int
-    * int
-    * SearchList.t
-    * string
-    * MailboxType.t list
-    -> MailboxType.t list
-end
-
-structure TextBuilder :> TEXT_BUILDER =
+structure TextBuilder =
 struct
   open TextConstants
   structure TC = TextConstants
@@ -361,7 +343,8 @@ struct
         end
   in
     (* builds a single text line from a string.
-     * Used for getting Real32.real vector representing search input. *)
+     * Used for getting Real32.real vector representing search input. 
+     * Todo: Add | cursor to show position of search-string-cursor. *)
     fun buildLineToList
       (str, startX, startY, endX, floatWindowWidth, floatWindowHeight) =
       loop
