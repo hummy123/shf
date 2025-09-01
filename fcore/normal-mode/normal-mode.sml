@@ -267,4 +267,9 @@ struct
         NormalFinish.withSearchList (app, searchList)
     | KEY_ENTER => app
     | KEY_BACKSPACE => app
+    (* todo *)
+    | ARROW_RIGHT => app
+    | ARROW_LEFT => app
+    | ARROW_UP => app
+    | ARROW_DOWN => app
 end

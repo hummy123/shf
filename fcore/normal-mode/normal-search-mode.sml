@@ -102,6 +102,28 @@ struct
           (app, searchString, tempSearchList, searchCursorIdx, buffer)
       end
 
+  fun moveLeft (app, searchString, tempSearchList, searchCursorIdx) =
+    if searchCursorIdx = 0 then
+      app
+    else
+      let
+        val searchCursorIdx = searchCursorIdx - 1
+      in
+        NormalSearchFinish.onSearchChanged
+          (app, searchString, tempSearchList, searchCursorIdx, #buffer app)
+      end
+
+  fun moveRight (app, searchString, tempSearchList, searchCursorIdx) =
+    if searchCursorIdx = String.size searchString then
+      app
+    else
+      let
+        val searchCursorIdx = searchCursorIdx + 1
+      in
+        NormalSearchFinish.onSearchChanged
+          (app, searchString, tempSearchList, searchCursorIdx, #buffer app)
+      end
+
   fun update (app, {searchString, tempSearchList, searchCursorIdx}, msg, time) =
     case msg of
       CHAR_EVENT chr => addChr (app, searchString, searchCursorIdx, chr)
@@ -111,4 +133,10 @@ struct
     | KEY_ENTER => saveSearch (app, searchString, tempSearchList)
     | RESIZE_EVENT (width, height) => app
     | WITH_SEARCH_LIST searchList => app
+    | ARROW_LEFT =>
+        moveLeft (app, searchString, tempSearchList, searchCursorIdx)
+    | ARROW_RIGHT =>
+        moveRight (app, searchString, tempSearchList, searchCursorIdx)
+    | ARROW_UP => app
+    | ARROW_DOWN => app
 end
