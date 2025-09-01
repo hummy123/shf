@@ -265,9 +265,14 @@ struct
         NormalFinish.resizeText (app, width, height)
     | WITH_SEARCH_LIST searchList =>
         NormalFinish.withSearchList (app, searchList)
+
+    (* Don't need to handle these keys in normal mode.
+     * Everything that is possible through them in Vi and Vim
+     * is also possible through other keys,
+     * and it is better to use those othe keys to encourage 
+     * staying on the home row. *)
     | KEY_ENTER => app
     | KEY_BACKSPACE => app
-    (* todo *)
     | ARROW_RIGHT => app
     | ARROW_LEFT => app
     | ARROW_UP => app
