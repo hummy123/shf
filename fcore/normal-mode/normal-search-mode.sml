@@ -77,7 +77,7 @@ struct
     end
 
   (* save search string and tempSearchList and return to normal mode *)
-  fun finishSearch (app: app_type, searchString, tempSearchList) =
+  fun saveSearch (app: app_type, searchString, tempSearchList) =
     let
       val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
       val buffer = LineGap.goToStart buffer
@@ -114,7 +114,7 @@ struct
     case msg of
       CHAR_EVENT chr => addChr (app, searchString, chr)
     | KEY_ESC => exitToNormalMode app
-    | KEY_ENTER => finishSearch (app, searchString, tempSearchList)
+    | KEY_ENTER => saveSearch (app, searchString, tempSearchList)
     | RESIZE_EVENT (width, height) => app
     | WITH_SEARCH_LIST searchList => app
 end

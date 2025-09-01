@@ -347,8 +347,25 @@ struct
      * Todo: Add | cursor to show position of search-string-cursor. *)
     fun buildLineToList
       (str, startX, startY, endX, floatWindowWidth, floatWindowHeight) =
-      loop
-        (0, str, startX, startY, endX, [], floatWindowWidth, floatWindowHeight)
+      let
+        val r: Real32.real = 0.67
+        val g: Real32.real = 0.51
+        val b: Real32.real = 0.83
+        val acc = makeChr
+          (#"/", startX, startY, floatWindowWidth, floatWindowHeight, r, g, b)
+        val posX = startX + TC.xSpace
+      in
+        loop
+          ( 0
+          , str
+          , posX
+          , startY
+          , endX
+          , [acc]
+          , floatWindowWidth
+          , floatWindowHeight
+          )
+      end
   end
 
   fun buildTextStringSearch
