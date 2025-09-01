@@ -27,6 +27,8 @@ struct
         Mailbox.send (inputMailbox, InputMsg.KEY_ESC)
       else if key = KEY_ENTER andalso action = PRESS andalso mods = 0 then
         Mailbox.send (inputMailbox, InputMsg.KEY_ENTER)
+      else if key = KEY_BACKSPACE andalso action <> RELEASE andalso mods = 0 then
+        Mailbox.send (inputMailbox, InputMsg.KEY_BACKSPACE)
       else
         ()
     end

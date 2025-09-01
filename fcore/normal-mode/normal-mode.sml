@@ -272,4 +272,5 @@ struct
     | WITH_SEARCH_LIST searchList =>
         NormalFinish.withSearchList (app, searchList)
     | KEY_ENTER => app
+    | KEY_BACKSPACE => app
 end

@@ -110,9 +110,14 @@ struct
         (app, buffer, searchString, tempSearchList, startLine, mode, msgs)
     end
 
+  (* todo: implement *)
+  fun backspace (app: app_type, searchString, tempSearchList) =
+    raise Fail "normal-search-mode: KEY_BACKSPACE unimplemented"
+
   fun update (app, {searchString, tempSearchList}, msg, time) =
     case msg of
       CHAR_EVENT chr => addChr (app, searchString, chr)
+    | KEY_BACKSPACE => backspace (app, searchString, tempSearchList)
     | KEY_ESC => exitToNormalMode app
     | KEY_ENTER => saveSearch (app, searchString, tempSearchList)
     | RESIZE_EVENT (width, height) => app
