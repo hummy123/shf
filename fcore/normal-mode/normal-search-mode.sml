@@ -66,6 +66,16 @@ struct
       onSearchChanged (app, searchString, tempSearchList, buffer)
     end
 
+  (* return to normal mode, keeping the same searchString and searchList
+   * from before entering this mode. *)
+  fun exitToNormalMode (app: app_type) =
+    let
+      val {buffer, cursorIdx, searchList, bufferModifyTime, ...} = app
+    in
+      NormalFinish.buildTextAndClear
+        (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+    end
+
   (* save search string and tempSearchList and return to normal mode *)
   fun finishSearch (app: app_type, searchString, tempSearchList) =
     let
@@ -103,7 +113,7 @@ struct
   fun update (app, {searchString, tempSearchList}, msg, time) =
     case msg of
       CHAR_EVENT chr => addChr (app, searchString, chr)
-    | KEY_ESC => NormalFinish.clearMode app
+    | KEY_ESC => exitToNormalMode app
     | KEY_ENTER => finishSearch (app, searchString, tempSearchList)
     | RESIZE_EVENT (width, height) => app
     | WITH_SEARCH_LIST searchList => app
