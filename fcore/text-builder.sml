@@ -45,6 +45,8 @@ struct
     , fw: Real32.real
     , fh: Real32.real
     , msgs: MailboxType.t list
+    , searchList: int vector
+    , searchLen: int
     }
 
   fun accToDrawMsg (textAcc, cursorAcc, bgAcc, env: env_data) =
@@ -312,18 +314,18 @@ struct
             )
       | [] => accToDrawMsg (acc, cursorAcc, bgAcc, env)
 
-  fun isInSearchRange (absIdx, searchPos, searchHd, searchLen) =
-    let val searchIdx = Vector.sub (searchHd, searchPos)
+  fun isInSearchRange (absIdx, searchPos, searchList, searchLen) =
+    let val searchIdx = Vector.sub (searchList, searchPos)
     in absIdx >= searchIdx andalso absIdx < searchIdx + searchLen
     end
 
-  fun isAfterSearchRange (absIdx, searchPos, searchHd, searchLen) =
-    let val searchIdx = Vector.sub (searchHd, searchPos)
+  fun isAfterSearchRange (absIdx, searchPos, searchList, searchLen) =
+    let val searchIdx = Vector.sub (searchList, searchPos)
     in absIdx >= searchIdx + searchLen
     end
 
-  fun advanceSearchPos (absIdx, searchPos, searchHd, searchLen) =
-    if isAfterSearchRange (absIdx, searchPos, searchHd, searchLen) then
+  fun advanceSearchPos (absIdx, searchPos, searchList, searchLen) =
+    if isAfterSearchRange (absIdx, searchPos, searchList, searchLen) then
       searchPos + 1
     else
       searchPos
@@ -340,11 +342,9 @@ struct
     , cursorAcc
     , bgAcc
     , env: env_data
-    , searchHd
     , searchPos
-    , searchLen
     ) =
-    if searchPos = Vector.length searchHd then
+    if searchPos = Vector.length (#searchList env) then
       (* exhausted search list so call normal build function *)
       buildTextString
         ( pos
@@ -362,9 +362,9 @@ struct
     else
       let
         val searchPos =
-          advanceSearchPos (absIdx, searchPos, searchHd, searchLen)
+          advanceSearchPos (absIdx, searchPos, #searchList env, #searchLen env)
       in
-        if searchPos = Vector.length searchHd then
+        if searchPos = Vector.length (#searchList env) then
           (* exhausted search list so call normal build function *)
           buildTextString
             ( pos
@@ -387,7 +387,10 @@ struct
                * else, just skip as usual *)
               if absIdx <> cursorPos then
                 (* not in cursur *)
-                if isInSearchRange (absIdx, searchPos, searchHd, searchLen) then
+                if
+                  isInSearchRange
+                    (absIdx, searchPos, #searchList env, #searchLen env)
+                then
                   (* draw *)
                   let
                     (* todo: temp colours *)
@@ -411,9 +414,7 @@ struct
                       , cursorAcc
                       , bgAcc
                       , env
-                      , searchHd
                       , searchPos
-                      , searchLen
                       )
                   end
                 else
@@ -429,9 +430,7 @@ struct
                     , cursorAcc
                     , bgAcc
                     , env
-                    , searchHd
                     , searchPos
-                    , searchLen
                     )
               else
                 (* in cursor *)
@@ -452,9 +451,7 @@ struct
                     , cursorAcc
                     , bgAcc
                     , env
-                    , searchHd
                     , searchPos
-                    , searchLen
                     )
                 end
           | #"\n" =>
@@ -473,9 +470,7 @@ struct
                     , cursorAcc
                     , bgAcc
                     , env
-                    , searchHd
                     , searchPos
-                    , searchLen
                     )
                 else
                   (* in cursor position, so build cursorAcc *)
@@ -496,9 +491,7 @@ struct
                       , cursorAcc
                       , bgAcc
                       , env
-                      , searchHd
                       , searchPos
-                      , searchLen
                       )
                   end
               else
@@ -510,7 +503,10 @@ struct
                 if absIdx <> cursorPos then
                   (* not equal to cursor *)
                   if posX + xSpace < #w env then
-                    if isInSearchRange (absIdx, searchPos, searchHd, searchLen) then
+                    if
+                      isInSearchRange
+                        (absIdx, searchPos, #searchList env, #searchLen env)
+                    then
                       let
                         val {fw, fh, ...} = env
 
@@ -543,9 +539,7 @@ struct
                           , cursorAcc
                           , bgAcc
                           , env
-                          , searchHd
                           , searchPos
-                          , searchLen
                           )
                       end
                     else
@@ -567,9 +561,7 @@ struct
                           , cursorAcc
                           , bgAcc
                           , env
-                          , searchHd
                           , searchPos
-                          , searchLen
                           )
                       end
                   else if posY + ySpace < #h env then
@@ -592,9 +584,7 @@ struct
                         , cursorAcc
                         , bgAcc
                         , env
-                        , searchHd
                         , searchPos
-                        , searchLen
                         )
                     end
                   else
@@ -625,9 +615,7 @@ struct
                           , cursorAcc
                           , bgAcc
                           , env
-                          , searchHd
                           , searchPos
-                          , searchLen
                           )
                       end
                     else if posY + ySpace < #h env then
@@ -650,9 +638,7 @@ struct
                           , cursorAcc
                           , bgAcc
                           , env
-                          , searchHd
                           , searchPos
-                          , searchLen
                           )
                       end
                     else
@@ -675,9 +661,7 @@ struct
                 , cursorAcc
                 , bgAcc
                 , env
-                , searchHd
                 , searchPos
-                , searchLen
                 )
           | [] => accToDrawMsg (acc, cursorAcc, bgAcc, env)
       end
@@ -715,7 +699,14 @@ struct
     end
 
   fun initEnv
-    (windowWidth, windowHeight, floatWindowWidth, floatWindowHeight, msgs) =
+    ( windowWidth
+    , windowHeight
+    , floatWindowWidth
+    , floatWindowHeight
+    , msgs
+    , searchList
+    , searchLen
+    ) =
     if TC.textLineWidth > windowWidth then
       { w = windowWidth
       , h = windowHeight
@@ -730,6 +721,8 @@ struct
       , hg = 0.219
       , hb = 0.25
       , msgs = msgs
+      , searchList = searchList
+      , searchLen = searchLen
       }
     else
       let
@@ -749,6 +742,8 @@ struct
         , hg = 0.219
         , hb = 0.25
         , msgs = msgs
+        , searchList = searchList
+        , searchLen = searchLen
         }
       end
 
@@ -787,6 +782,8 @@ struct
               , floatWindowWidth
               , floatWindowHeight
               , msgs
+              , searchList
+              , String.size searchString
               )
             val {startX, startY, ...} = env
 
@@ -805,9 +802,7 @@ struct
               , cursorAcc
               , bgAcc
               , env
-              , searchList
               , searchPos
-              , String.size searchString
               )
           end
       | (_, _) =>
