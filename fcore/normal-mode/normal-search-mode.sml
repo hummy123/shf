@@ -4,6 +4,11 @@ struct
   open InputMsg
   open MailboxType
 
+  fun buildTempSearchList (searchString, buffer, cursorIdx) =
+    let val unescapedString = EscapeString.unescape searchString
+    in SearchList.buildRange (buffer, unescapedString, cursorIdx + 1111)
+    end
+
   fun addChr (app: app_type, searchString, searchCursorIdx, chr) =
     let
       val {cursorIdx, buffer, ...} = app
@@ -23,8 +28,7 @@ struct
       val searchCursorIdx = searchCursorIdx + 1
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
-      val tempSearchList =
-        SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
+      val tempSearchList = buildTempSearchList (searchString, buffer, cursorIdx)
     in
       NormalSearchFinish.onSearchChanged
         (app, searchString, tempSearchList, searchCursorIdx, buffer)
@@ -44,7 +48,9 @@ struct
   fun saveSearch (app: app_type, searchString, tempSearchList) =
     let
       val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+
       val buffer = LineGap.goToStart buffer
+      val searchString = EscapeString.unescape searchString
       val initialMsg = [SEARCH (buffer, searchString)]
 
       (* move LineGap to first line displayed on screen *)
@@ -96,7 +102,7 @@ struct
         val {cursorIdx, buffer, ...} = app
         val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
         val tempSearchList =
-          SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
+          buildTempSearchList (searchString, buffer, cursorIdx)
       in
         NormalSearchFinish.onSearchChanged
           (app, searchString, tempSearchList, searchCursorIdx, buffer)
