@@ -4,30 +4,30 @@ struct
   open InputMsg
   open MailboxType
 
-  fun addChr (app: app_type, searchString, searchCurosrIdx, chr) =
+  fun addChr (app: app_type, searchString, searchCursorIdx, chr) =
     let
       val {cursorIdx, buffer, ...} = app
 
       val c = String.implode [chr]
       val searchString =
-        if searchCurosrIdx = String.size searchString then
+        if searchCursorIdx = String.size searchString then
           searchString ^ c
         else
           let
-            val sub1 = Substring.extract (searchString, 0, SOME searchCurosrIdx)
+            val sub1 = Substring.extract (searchString, 0, SOME searchCursorIdx)
             val sub2 = Substring.full c
-            val sub3 = Substring.extract (searchString, searchCurosrIdx, NONE)
+            val sub3 = Substring.extract (searchString, searchCursorIdx, NONE)
           in
             Substring.concat [sub1, sub2, sub3]
           end
-      val searchCurosrIdx = searchCurosrIdx + 1
+      val searchCursorIdx = searchCursorIdx + 1
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
       val tempSearchList =
         SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
     in
       NormalSearchFinish.onSearchChanged
-        (app, searchString, tempSearchList, searchCurosrIdx, buffer)
+        (app, searchString, tempSearchList, searchCursorIdx, buffer)
     end
 
   (* return to normal mode, keeping the same searchString and searchList
@@ -74,14 +74,39 @@ struct
         (app, buffer, searchString, tempSearchList, startLine, mode, msgs)
     end
 
-  (* todo: implement *)
-  fun backspace (app: app_type, searchString, tempSearchList) =
-    raise Fail "normal-search-mode: KEY_BACKSPACE unimplemented"
+  fun backspace (app: app_type, searchString, tempSearchList, searchCursorIdx) =
+    if searchCursorIdx = 0 then
+      app
+    else
+      let
+        val searchString =
+          if searchCursorIdx = String.size searchString then
+            String.substring (searchString, 0, String.size searchString - 1)
+          else
+            let
+              val sub1 = Substring.extract
+                (searchString, 0, SOME (searchCursorIdx - 1))
+              val sub2 = Substring.extract (searchString, searchCursorIdx, SOME
+                (String.size searchString - searchCursorIdx))
+            in
+              Substring.concat [sub1, sub2]
+            end
+        val searchCursorIdx = searchCursorIdx - 1
+
+        val {cursorIdx, buffer, ...} = app
+        val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
+        val tempSearchList =
+          SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
+      in
+        NormalSearchFinish.onSearchChanged
+          (app, searchString, tempSearchList, searchCursorIdx, buffer)
+      end
 
   fun update (app, {searchString, tempSearchList, searchCursorIdx}, msg, time) =
     case msg of
       CHAR_EVENT chr => addChr (app, searchString, searchCursorIdx, chr)
-    | KEY_BACKSPACE => backspace (app, searchString, tempSearchList)
+    | KEY_BACKSPACE =>
+        backspace (app, searchString, tempSearchList, searchCursorIdx)
     | KEY_ESC => exitToNormalMode app
     | KEY_ENTER => saveSearch (app, searchString, tempSearchList)
     | RESIZE_EVENT (width, height) => app
