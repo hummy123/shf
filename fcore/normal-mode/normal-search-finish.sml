@@ -28,6 +28,27 @@ struct
         , floatWindowHeight
         )
 
+      val cursor =
+        let
+          val xpos = TextConstants.xSpace * (searchCursorIdx + 1) + 5
+          val x = Real32.fromInt xpos
+          val y = Real32.fromInt searchStringPosY
+          val r: Real32.real = 0.67
+          val g: Real32.real = 0.51
+          val b: Real32.real = 0.83
+        in
+          PipeCursor.lerp
+            ( x
+            , y
+            , TextConstants.scale
+            , floatWindowWidth
+            , floatWindowHeight
+            , r
+            , g
+            , b
+            )
+        end
+
       val buffer = LineGap.goToLine (startLine, buffer)
       val startLine = TextWindow.getStartLine
         (buffer, startLine, cursorIdx, windowWidth, windowHeight)
@@ -45,7 +66,7 @@ struct
         , tempSearchList
         , searchString
         , []
-        , initialTextAcc
+        , cursor :: initialTextAcc
         , []
         )
     in

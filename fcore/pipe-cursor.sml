@@ -1,0 +1,35 @@
+structure PipeCursor = 
+struct
+  fun xToNdc (xOffset, xpos, scale, halfWidth) =
+    ((xpos * scale + xOffset) - halfWidth) / halfWidth
+
+  fun yToNdc (yOffset, ypos, scale, halfHeight) =
+   ~(((ypos * scale + yOffset) - halfHeight) / halfHeight)
+
+  fun lerp (xOffset: Real32.real, yOffset, scale, windowWidth, windowHeight, r, g, b) =
+    let
+      val halfWidth = windowWidth / 2.0
+      val halfHeight = windowHeight / 2.0
+    in
+     #[
+xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 1.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 1.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
+r, g, b,
+xToNdc (xOffset, 1.000000000000000, scale, halfWidth),
+yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
+r, g, b
+      ]
+    end
+end
