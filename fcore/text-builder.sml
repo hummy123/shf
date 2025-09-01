@@ -330,6 +330,44 @@ struct
     else
       searchPos
 
+  local
+    fun loop
+      (pos, str, posX, posY, endX, acc, floatWindowWidth, floatWindowHeight) =
+      if pos = String.size str then
+        acc
+      else if posX + TC.xSpace >= endX then
+        acc
+      else
+        let
+          val chr = String.sub (str, pos)
+          val r: Real32.real = 0.67
+          val g: Real32.real = 0.51
+          val b: Real32.real = 0.83
+          val chr = makeChr
+            (chr, posX, posY, floatWindowWidth, floatWindowHeight, r, g, b)
+          val acc = chr :: acc
+          val nextPosX = posX + TC.xSpace
+        in
+          loop
+            ( pos + 1
+            , str
+            , nextPosX
+            , posY
+            , endX
+            , acc
+            , floatWindowWidth
+            , floatWindowHeight
+            )
+        end
+  in
+    (* builds a single text line from a string.
+     * Used for getting Real32.real vector representing search input. *)
+    fun buildLineToList
+      (str, startX, startY, endX, floatWindowWidth, floatWindowHeight) =
+      loop
+        (0, str, startX, startY, endX, [], floatWindowWidth, floatWindowHeight)
+  end
+
   fun buildTextStringSearch
     ( pos
     , str
