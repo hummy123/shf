@@ -1,12 +1,11 @@
 structure NormalSearchFinish =
 struct
   open AppType
+  open DrawMsg
 
   fun onSearchChanged
     (app: app_type, searchString, tempSearchList, searchCursorIdx, buffer) =
     let
-      open DrawMsg
-
       val {buffer, cursorIdx, startLine, windowWidth, windowHeight, ...} = app
       val mode = NORMAL_SEARCH_MODE
         { searchString = searchString
@@ -74,4 +73,73 @@ struct
         (app, buffer, startLine, mode, msgs)
     end
 
+  fun resize
+    ( app: app_type
+    , newWindowWidth
+    , newWindowHeight
+    , searchCursorIdx
+    , tempSearchList
+    ) =
+    let
+      val {buffer, cursorIdx, startLine, searchString, ...} = app
+
+      val floatWindowWidth = Real32.fromInt newWindowWidth
+      val floatWindowHeight = Real32.fromInt newWindowHeight
+
+      val searchStringPosY = newWindowHeight - TextConstants.ySpace - 5
+
+      val initialTextAcc = TextBuilder.buildLineToList
+        ( searchString
+        , 5
+        , searchStringPosY
+        , newWindowWidth
+        , floatWindowWidth
+        , floatWindowHeight
+        )
+
+      val cursor =
+        let
+          val xpos = TextConstants.xSpace * (searchCursorIdx + 1) + 5
+          val x = Real32.fromInt xpos
+          val y = Real32.fromInt searchStringPosY
+          val r: Real32.real = 0.67
+          val g: Real32.real = 0.51
+          val b: Real32.real = 0.83
+        in
+          PipeCursor.lerp
+            ( x
+            , y
+            , TextConstants.scale
+            , floatWindowWidth
+            , floatWindowHeight
+            , r
+            , g
+            , b
+            )
+        end
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+      val startLine = TextWindow.getStartLine
+        (buffer, startLine, cursorIdx, newWindowWidth, newWindowHeight)
+
+      val remainingWindowHeight = newWindowHeight - (TextConstants.ySpace * 2)
+
+      val msgs = TextBuilder.buildWithExisting
+        ( startLine
+        , cursorIdx
+        , buffer
+        , newWindowWidth
+        , remainingWindowHeight
+        , floatWindowWidth
+        , floatWindowHeight
+        , tempSearchList
+        , searchString
+        , []
+        , cursor :: initialTextAcc
+        , []
+        )
+    in
+      NormalSearchModeWith.bufferAndSize
+        (app, buffer, newWindowWidth, newWindowHeight, msgs)
+    end
 end

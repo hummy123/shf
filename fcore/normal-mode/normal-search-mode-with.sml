@@ -66,4 +66,61 @@ struct
       , cursorIdx = cursorIdx
       }
     end
+
+  fun searchList (app: app_type, newSearchList) =
+    let
+      val
+        { mode
+        , buffer
+        , searchString
+        , searchList = _
+        , startLine
+        , msgs
+        , bufferModifyTime
+        , windowWidth
+        , windowHeight
+        , cursorIdx
+        } = app
+    in
+      { mode = mode
+      , searchList = newSearchList
+      , buffer = buffer
+      , startLine = startLine
+      , msgs = msgs
+      , searchString = searchString
+      , bufferModifyTime = bufferModifyTime
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      , cursorIdx = cursorIdx
+      }
+    end
+
+  fun bufferAndSize
+    (app: app_type, newBuffer, newWindowWidth, newWindowHeight, newMsgs) =
+    let
+      val
+        { mode
+        , windowWidth = _
+        , windowHeight = _
+        , msgs = _
+        , buffer = _
+        , searchString
+        , searchList
+        , startLine
+        , bufferModifyTime
+        , cursorIdx
+        } = app
+    in
+      { mode = mode
+      , buffer = newBuffer
+      , windowWidth = newWindowWidth
+      , windowHeight = newWindowHeight
+      , msgs = newMsgs
+      , searchList = searchList
+      , startLine = startLine
+      , searchString = searchString
+      , bufferModifyTime = bufferModifyTime
+      , cursorIdx = cursorIdx
+      }
+    end
 end

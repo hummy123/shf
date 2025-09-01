@@ -131,12 +131,22 @@ struct
         backspace (app, searchString, tempSearchList, searchCursorIdx)
     | KEY_ESC => exitToNormalMode app
     | KEY_ENTER => saveSearch (app, searchString, tempSearchList)
-    | RESIZE_EVENT (width, height) => app
-    | WITH_SEARCH_LIST searchList => app
     | ARROW_LEFT =>
         moveLeft (app, searchString, tempSearchList, searchCursorIdx)
     | ARROW_RIGHT =>
         moveRight (app, searchString, tempSearchList, searchCursorIdx)
+    | WITH_SEARCH_LIST searchList =>
+        NormalSearchModeWith.searchList (app, searchList)
+    | RESIZE_EVENT (width, height) =>
+        NormalSearchFinish.resize
+          (app, width, height, searchCursorIdx, tempSearchList)
+
+    (* In Vim's search mode, the up and down arrows can be used 
+     * to scroll through the search history. 
+     * I don't find this feature too useful as it is often easier to type
+     * the whole search string again, so I'm leaving it unimplemented 
+     * until/unless I find that I wish this functionality was there
+     * while using the program. *)
     | ARROW_UP => app
     | ARROW_DOWN => app
 end
