@@ -39,4 +39,17 @@ struct
   val (KEY_BACKSPACE, _) =
     _symbol "KEY_BACKSPACE" public : ( unit -> int ) * ( int -> unit );
   val KEY_BACKSPACE = KEY_BACKSPACE ()
+
+  val (KEY_ARROW_LEFT, _) =
+    _symbol "KEY_ARROW_LEFT" public : ( unit -> int ) * ( int -> unit );
+  val KEY_ARROW_LEFT = KEY_ARROW_LEFT ()
+  val (KEY_ARROW_UP, _) =
+    _symbol "KEY_ARROW_UP" public : ( unit -> int ) * ( int -> unit );
+  val KEY_ARROW_UP = KEY_ARROW_UP ()
+  val (KEY_ARROW_RIGHT, _) =
+    _symbol "KEY_ARROW_RIGHT" public : ( unit -> int ) * ( int -> unit );
+  val KEY_ARROW_RIGHT = KEY_ARROW_RIGHT ()
+  val (KEY_ARROW_DOWN, _) =
+    _symbol "KEY_ARROW_DOWN" public : ( unit -> int ) * ( int -> unit );
+  val KEY_ARROW_DOWN = KEY_ARROW_DOWN ()
 end

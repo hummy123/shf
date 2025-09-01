@@ -10,6 +10,11 @@ int KEY_ESC = GLFW_KEY_ESCAPE;
 int KEY_ENTER = GLFW_KEY_ENTER;
 int KEY_BACKSPACE = GLFW_KEY_BACKSPACE;
 
+int KEY_ARROW_LEFT = GLFW_KEY_LEFT;
+int KEY_ARROW_RIGHT = GLFW_KEY_RIGHT;
+int KEY_ARROW_UP = GLFW_KEY_UP;
+int KEY_ARROW_DOWN = GLFW_KEY_DOWN;
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);
   mltonFramebufferSizeCallback(width, height);

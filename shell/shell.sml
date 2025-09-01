@@ -29,6 +29,14 @@ struct
         Mailbox.send (inputMailbox, InputMsg.KEY_ENTER)
       else if key = KEY_BACKSPACE andalso action <> RELEASE andalso mods = 0 then
         Mailbox.send (inputMailbox, InputMsg.KEY_BACKSPACE)
+      else if key = KEY_ARROW_LEFT andalso action <> RELEASE andalso mods = 0 then
+        Mailbox.send (inputMailbox, InputMsg.ARROW_LEFT)
+      else if key = KEY_ARROW_RIGHT andalso action <> RELEASE andalso mods = 0 then
+        Mailbox.send (inputMailbox, InputMsg.ARROW_RIGHT)
+      else if key = KEY_ARROW_UP andalso action <> RELEASE andalso mods = 0 then
+        Mailbox.send (inputMailbox, InputMsg.ARROW_UP)
+      else if key = KEY_ARROW_DOWN andalso action <> RELEASE andalso mods = 0 then
+        Mailbox.send (inputMailbox, InputMsg.ARROW_DOWN)
       else
         ()
     end

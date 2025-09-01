@@ -7,4 +7,8 @@ struct
   | KEY_BACKSPACE
   | RESIZE_EVENT of int * int
   | WITH_SEARCH_LIST of int vector
+  | ARROW_LEFT
+  | ARROW_UP
+  | ARROW_RIGHT
+  | ARROW_DOWN
 end
