@@ -200,6 +200,46 @@ struct
       | #"a" => parseDeleteAround (app, chrCmd, time)
       | _ => NormalFinish.clearMode app
 
+
+  fun yankWhenMovingBack (app: app_type, fMove, count) =
+    let
+      open DrawMsg
+      open MailboxType
+
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val low = fMove (buffer, cursorIdx, count)
+
+      val length = cursorIdx - low
+      val str = LineGap.substring (low, length, buffer)
+
+      val msg = YANK str
+      val mode = NORMAL_MODE ""
+    in
+      NormalModeWith.mode (app, mode, [DRAW msg])
+    end
+
+  fun yankWhenMovingForward (app: app_type, fMove, count) =
+    let
+      open DrawMsg
+      open MailboxType
+
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val high = fMove (buffer, cursorIdx, count)
+
+      val buffer = LineGap.goToIdx (high, buffer)
+      val length = high - cursorIdx
+      val str = LineGap.substring (cursorIdx, length, buffer)
+
+      val msg = YANK str
+      val mode = NORMAL_MODE ""
+    in
+      NormalModeWith.mode (app, mode, [DRAW msg])
+    end
+
   fun parseYankTerminal (str, count, app, chrCmd, time) =
     case chrCmd of
       #"y" =>
@@ -218,11 +258,15 @@ struct
           val buffer = LineGap.goToIdx (high, buffer)
           val length = high - low
           val str = LineGap.substring (low, length, buffer)
-          val msg = YANK str
 
+          val msg = YANK str
           val mode = NORMAL_MODE ""
         in
           NormalModeWith.mode (app, mode, [DRAW msg])
+        end
+    | #"0" =>
+        let val f = fn (buffer, cursorIdx, _) => Cursor.vi0 (buffer, cursorIdx)
+        in yankWhenMovingBack (app, f, 1)
         end
     | _ => app
 
