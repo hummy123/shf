@@ -103,6 +103,35 @@ struct
       }
     end
 
+  fun modeAndBuffer (app: app_type, newBuffer, newMode, newMsgs) =
+    let
+      val
+        { mode = _
+        , msgs = _
+        , buffer = _
+        , bufferModifyTime
+        , searchList
+        , searchString
+        , cursorIdx
+        , windowWidth
+        , windowHeight
+        , startLine
+        } = app
+    in
+      { mode = newMode
+      , msgs = newMsgs
+      , buffer = newBuffer
+      , bufferModifyTime = bufferModifyTime
+      , searchList = searchList
+      , searchString = searchString
+      , cursorIdx = cursorIdx
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      , startLine = startLine
+      }
+    end
+
+
   fun searchList
     ( app: app_type
     , newSearchList

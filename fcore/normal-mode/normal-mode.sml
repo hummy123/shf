@@ -216,7 +216,7 @@ struct
       val msg = YANK str
       val mode = NORMAL_MODE ""
     in
-      NormalModeWith.mode (app, mode, [DRAW msg])
+      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
     end
 
   fun yankWhenMovingForward (app: app_type, fMove, count) =
@@ -236,7 +236,7 @@ struct
       val msg = YANK str
       val mode = NORMAL_MODE ""
     in
-      NormalModeWith.mode (app, mode, [DRAW msg])
+      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
     end
 
   fun parseYankTerminal (str, count, app, chrCmd, time) =
@@ -261,7 +261,7 @@ struct
           val msg = YANK str
           val mode = NORMAL_MODE ""
         in
-          NormalModeWith.mode (app, mode, [DRAW msg])
+          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
         end
     | #"0" =>
         let val f = fn (buffer, cursorIdx, _) => Cursor.vi0 (buffer, cursorIdx)
@@ -295,19 +295,54 @@ struct
           val msg = YANK str
           val mode = NORMAL_MODE ""
         in
-          NormalModeWith.mode (app, mode, [DRAW msg])
+          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
         end
-    (* todo:
     | #"G" =>
-        (* if str has a size larger than 0,
-         * interpret as "go to line" command;
-         * else, interpret as a command to move to end *)
-        if String.size str = 0 then NormalMove.moveToEnd app
-        else NormalMove.moveToLine (app, count - 1)
-    | #"%" => NormalMove.moveToMatchingPair app
-    *)
+        let
+          open DrawMsg
+          open MailboxType
 
-    (* todo: non-terminal chars *)
+          val {buffer, cursorIdx, ...} = app
+
+          val buffer = LineGap.goToEnd buffer
+          val {rightStrings, idx, ...} = buffer
+          val finishIdx = Int.max (0, idx - 1)
+
+          val length = finishIdx - cursorIdx
+          val str = LineGap.substring (cursorIdx, length, buffer)
+
+          val msg = YANK str
+          val mode = NORMAL_MODE ""
+        in
+          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+        end
+    | #"%" =>
+        let
+          open DrawMsg
+          open MailboxType
+
+          val {buffer, cursorIdx, ...} = app
+
+          val otherIdx = Cursor.matchPair (buffer, cursorIdx)
+        in
+          if cursorIdx = otherIdx then
+            NormalFinish.clearMode app
+          else
+            let
+              val low = Int.min (cursorIdx, otherIdx)
+              val high = Int.max (cursorIdx, otherIdx)
+              val length = high - low + 1
+
+              val buffer = LineGap.goToIdx (high, buffer)
+              val str = LineGap.substring (low, length, buffer)
+
+              val msg = YANK str
+              val mode = NORMAL_MODE ""
+            in
+              NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+            end
+        end
+    (* todo: non-terminal chars, 'n' (go to next match) *)
     | _ => NormalFinish.clearMode app
 
   fun parseYank (strPos, str, count, app, chrCmd, time) =
