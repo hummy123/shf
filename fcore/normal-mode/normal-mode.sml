@@ -273,7 +273,42 @@ struct
     | #"B" => yankWhenMovingBack (app, Cursor.prevWORD, count)
     | #"e" => yankWhenMovingForward (app, Cursor.endOfWordForDelete, count)
     | #"E" => yankWhenMovingForward (app, Cursor.endOfWORDForDelete, count)
-    | _ => app
+
+    | #"$" => yankWhenMovingForward (app, Cursor.viDlr, 1)
+    | #"^" =>
+        let
+          open DrawMsg
+          open MailboxType
+
+          val {buffer, cursorIdx, ...} = app
+
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val low = Cursor.vi0 (buffer, cursorIdx)
+
+          val buffer = LineGap.goToIdx (low, buffer)
+          val high = Cursor.firstNonSpaceChr (buffer, low)
+
+          val buffer = LineGap.goToIdx (high, buffer)
+          val length = high - low
+          val str = LineGap.substring (low, length, buffer)
+
+          val msg = YANK str
+          val mode = NORMAL_MODE ""
+        in
+          NormalModeWith.mode (app, mode, [DRAW msg])
+        end
+    (* todo:
+    | #"G" =>
+        (* if str has a size larger than 0,
+         * interpret as "go to line" command;
+         * else, interpret as a command to move to end *)
+        if String.size str = 0 then NormalMove.moveToEnd app
+        else NormalMove.moveToLine (app, count - 1)
+    | #"%" => NormalMove.moveToMatchingPair app
+    *)
+
+    (* todo: non-terminal chars *)
+    | _ => NormalFinish.clearMode app
 
   fun parseYank (strPos, str, count, app, chrCmd, time) =
     if strPos = String.size str - 1 then
