@@ -200,7 +200,6 @@ struct
       | #"a" => parseDeleteAround (app, chrCmd, time)
       | _ => NormalFinish.clearMode app
 
-
   fun yankWhenMovingBack (app: app_type, fMove, count) =
     let
       open DrawMsg
@@ -270,6 +269,10 @@ struct
         end
     | #"w" => yankWhenMovingForward (app, Cursor.nextWord, count)
     | #"W" => yankWhenMovingForward (app, Cursor.nextWORD, count)
+    | #"b" => yankWhenMovingBack (app, Cursor.prevWord, count)
+    | #"B" => yankWhenMovingBack (app, Cursor.prevWORD, count)
+    | #"e" => yankWhenMovingForward (app, Cursor.endOfWordForDelete, count)
+    | #"E" => yankWhenMovingForward (app, Cursor.endOfWORDForDelete, count)
     | _ => app
 
   fun parseYank (strPos, str, count, app, chrCmd, time) =
