@@ -259,49 +259,8 @@ struct
     | #"^" => NormalYank.yankToFirstNonSpaceChr app
     | #"G" => NormalYank.yankToEndOfText app
     | #"%" => NormalYank.yankToMatchingPair app
-    | #"n" =>
-        let
-          open DrawMsg
-          open MailboxType
-
-          val {cursorIdx, searchList, buffer, ...} = app
-          val high = SearchList.nextMatch (cursorIdx, searchList, count)
-        in
-          if high = ~1 orelse high <= cursorIdx then
-            NormalFinish.clearMode app
-          else
-            let
-              val length = high - cursorIdx
-              val buffer = LineGap.goToIdx (high, buffer)
-
-              val str = LineGap.substring (cursorIdx, length, buffer)
-              val msg = YANK str
-              val mode = NORMAL_MODE ""
-            in
-              NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
-            end
-        end
-    | #"N" =>
-        let
-          open DrawMsg
-          open MailboxType
-
-          val {cursorIdx, searchList, buffer, ...} = app
-          val low = SearchList.prevMatch (cursorIdx, searchList, count)
-        in
-          if low = ~1 orelse low >= cursorIdx then
-            NormalFinish.clearMode app
-          else
-            let
-              val length = cursorIdx - low
-
-              val str = LineGap.substring (low, length, buffer)
-              val msg = YANK str
-              val mode = NORMAL_MODE ""
-            in
-              NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
-            end
-        end
+    | #"n" => NormalYank.yankToNextMatch (app, count)
+    | #"N" => NormalYank.yankToPrevMatch (app, count)
     (* todo: non-terminal chars *)
     | _ => NormalFinish.clearMode app
 
