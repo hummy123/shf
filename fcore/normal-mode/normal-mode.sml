@@ -268,6 +268,8 @@ struct
         let val f = fn (buffer, cursorIdx, _) => Cursor.vi0 (buffer, cursorIdx)
         in yankWhenMovingBack (app, f, 1)
         end
+    | #"w" => yankWhenMovingForward (app, Cursor.nextWord, count)
+    | #"W" => yankWhenMovingForward (app, Cursor.nextWORD, count)
     | _ => app
 
   fun parseYank (strPos, str, count, app, chrCmd, time) =

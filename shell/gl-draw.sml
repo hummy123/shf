@@ -231,9 +231,8 @@ struct
   fun yank (shellState: t, str) =
     let
       (* print when text is yanked *)
-      val msg = String.toCString str
+      val msg = "|" ^ String.toCString str ^ "|\n"
       val () = print msg
-      val () = print "\n"
       val () = Glfw.setClipboardString (#window shellState, str)
     in
       shellState
