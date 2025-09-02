@@ -200,6 +200,38 @@ struct
       | #"a" => parseDeleteAround (app, chrCmd, time)
       | _ => NormalFinish.clearMode app
 
+  fun parseYankTerminal (str, count, app, chrCmd, time) =
+    case chrCmd of
+      #"y" =>
+        let
+          open DrawMsg
+          open MailboxType
+
+          val {buffer, cursorIdx, ...} = app
+
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val low = Cursor.vi0 (buffer, cursorIdx)
+
+          val buffer = LineGap.goToIdx (low, buffer)
+          val high = Cursor.viDlrForDelete (buffer, low, 1)
+
+          val buffer = LineGap.goToIdx (high, buffer)
+          val length = high - low
+          val str = LineGap.substring (low, length, buffer)
+          val msg = YANK str
+
+          val mode = NORMAL_MODE ""
+        in
+          NormalModeWith.mode (app, mode, [DRAW msg])
+        end
+    | _ => app
+
+  fun parseYank (strPos, str, count, app, chrCmd, time) =
+    if strPos = String.size str - 1 then
+      parseYankTerminal (str, count, app, chrCmd, time)
+    else
+      app
+
   (* useful reference as list of non-terminal commands *)
   fun parseAfterCount (strPos, str, count, app, chrCmd, time) =
     (* we are trying to parse multi-char but non-terminal strings here.
@@ -218,7 +250,7 @@ struct
     | #"T" =>
         (* to just before chr, backward *)
         parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
-    | #"y" => (* yank *) NormalFinish.clearMode app
+    | #"y" => (* yank *) parseYank (strPos, str, count, app, chrCmd, time)
     | #"d" => (* delete *) parseDelete (strPos, str, count, app, chrCmd, time)
     | #"f" =>
         (* to chr, forward *)
