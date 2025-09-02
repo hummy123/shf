@@ -600,29 +600,29 @@ struct
   val nextWord = ViWordDfa.startOfNextWord
 
   (* equivalent of vi's 'W' command *)
-  val nextWORD = ViWORDDfa.startOfNextWORD
+  val nextWORD = ViCapsWordDfa.startOfNextWORD
 
   (* equivalent of vi's 'b' command *)
   val prevWord = ViWordDfa.startOfCurrentWord
   val prevWordStrict = ViWordDfa.startOfCurrentWordStrict
 
   (* equivalent of vi's 'B' command *)
-  val prevWORD = ViWORDDfa.startOfCurrentWORD
-  val prevWORDStrict = ViWORDDfa.startOfCurrentWORDStrict
+  val prevWORD = ViCapsWordDfa.startOfCurrentWORD
+  val prevWORDStrict = ViCapsWordDfa.startOfCurrentWORDStrict
 
   (* equivalent of vi's 'ge' command *)
   val endOfPrevWord = ViWordDfa.endOfPrevWord
 
   (* equivalent of vi's 'gE' command *)
-  val endOfPrevWORD = ViWORDDfa.endOfPrevWORD
+  val endOfPrevWORD = ViCapsWordDfa.endOfPrevWORD
 
   (* equivalent of vi's `e` command *)
   val endOfWord = ViWordDfa.endOfCurrentWord
   val endOfWordForDelete = ViWordDfa.endOfCurrentWordForDelete
 
   (* equivalent of vi's `E` command *)
-  val endOfWORD = ViWORDDfa.endOfCurrentWORD
-  val endOfWORDForDelete = ViWORDDfa.endOfCurrentWORDForDelete
+  val endOfWORD = ViCapsWordDfa.endOfCurrentWORD
+  val endOfWORDForDelete = ViCapsWordDfa.endOfCurrentWORDForDelete
 
   (* Prerequisite: 
    * LineGap has been moved to start of line (provided with vi0). *)

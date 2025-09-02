@@ -1,4 +1,4 @@
-structure ViWORDDfa =
+structure ViCapsWordDfa =
 struct
   val startState: Word8.word = 0w0
   val startNonBlankState: Word8.word = 0w1
