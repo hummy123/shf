@@ -229,7 +229,15 @@ struct
     end
 
   fun yank (shellState: t, str) =
-    (Glfw.setClipboardString (#window shellState, str); shellState)
+    let
+      (* print when text is yanked *)
+      val msg = String.toCString str
+      val () = print msg
+      val () = print "\n"
+      val () = Glfw.setClipboardString (#window shellState, str)
+    in
+      shellState
+    end
 
   fun consumeDrawEvent (shellState, msg) =
     let
