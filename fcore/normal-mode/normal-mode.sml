@@ -241,40 +241,21 @@ struct
 
   fun parseYankTerminal (str, count, app, chrCmd, time) =
     case chrCmd of
-      #"y" =>
-        let
-          open DrawMsg
-          open MailboxType
-
-          val {buffer, cursorIdx, ...} = app
-
-          val buffer = LineGap.goToIdx (cursorIdx, buffer)
-          val low = Cursor.vi0 (buffer, cursorIdx)
-
-          val buffer = LineGap.goToIdx (low, buffer)
-          val high = Cursor.viDlrForDelete (buffer, low, 1)
-
-          val buffer = LineGap.goToIdx (high, buffer)
-          val length = high - low
-          val str = LineGap.substring (low, length, buffer)
-
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
-        in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
-        end
-    | #"0" =>
-        let val f = fn (buffer, cursorIdx, _) => Cursor.vi0 (buffer, cursorIdx)
-        in yankWhenMovingBack (app, f, 1)
-        end
-    | #"w" => yankWhenMovingForward (app, Cursor.nextWord, count)
-    | #"W" => yankWhenMovingForward (app, Cursor.nextWORD, count)
-    | #"b" => yankWhenMovingBack (app, Cursor.prevWord, count)
-    | #"B" => yankWhenMovingBack (app, Cursor.prevWORD, count)
-    | #"e" => yankWhenMovingForward (app, Cursor.endOfWordForDelete, count)
-    | #"E" => yankWhenMovingForward (app, Cursor.endOfWORDForDelete, count)
-
-    | #"$" => yankWhenMovingForward (app, Cursor.viDlr, 1)
+    (* motions like yh / yj / yk / yl are not really needed.
+     * Vim supports them, but I never use them.
+     * I also don't need yx (yank a character and then remove it)
+     * because I never do that. *)
+      #"y" => NormalYank.yankLine (app, count)
+    | #"0" => NormalYank.yankToStartOfLine app
+    | #"w" => NormalYank.yankWhenMovingForward (app, Cursor.nextWord, count)
+    | #"W" => NormalYank.yankWhenMovingForward (app, Cursor.nextWORD, count)
+    | #"b" => NormalYank.yankWhenMovingBack (app, Cursor.prevWord, count)
+    | #"B" => NormalYank.yankWhenMovingBack (app, Cursor.prevWORD, count)
+    | #"e" =>
+        NormalYank.yankWhenMovingForward (app, Cursor.endOfWordForDelete, count)
+    | #"E" =>
+        NormalYank.yankWhenMovingForward (app, Cursor.endOfWORDForDelete, count)
+    | #"$" => NormalYank.yankWhenMovingForward (app, Cursor.viDlr, 1)
     | #"^" =>
         let
           open DrawMsg
@@ -283,19 +264,36 @@ struct
           val {buffer, cursorIdx, ...} = app
 
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
-          val low = Cursor.vi0 (buffer, cursorIdx)
+          val otherIdx = Cursor.vi0 (buffer, cursorIdx)
 
-          val buffer = LineGap.goToIdx (low, buffer)
-          val high = Cursor.firstNonSpaceChr (buffer, low)
-
-          val buffer = LineGap.goToIdx (high, buffer)
-          val length = high - low
-          val str = LineGap.substring (low, length, buffer)
-
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
+          val buffer = LineGap.goToIdx (otherIdx, buffer)
+          val otherIdx = Cursor.firstNonSpaceChr (buffer, otherIdx)
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          if cursorIdx > otherIdx then
+            (* yanking backwards from cursorIdx *)
+            let
+              val () = print "272\n"
+              val length = cursorIdx - otherIdx + 1
+              val buffer = LineGap.goToIdx (otherIdx, buffer)
+
+              val str = LineGap.substring (otherIdx, length, buffer)
+              val msg = YANK str
+              val mode = NORMAL_MODE ""
+            in
+              NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+            end
+          else if cursorIdx < otherIdx then
+            (* yanking forward from cursorIdx *)
+            let
+              val length = otherIdx - cursorIdx
+              val str = LineGap.substring (cursorIdx, length, buffer)
+              val msg = YANK str
+              val mode = NORMAL_MODE ""
+            in
+              NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+            end
+          else
+            NormalFinish.clearMode app
         end
     | #"G" =>
         let
