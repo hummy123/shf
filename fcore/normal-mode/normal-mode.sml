@@ -261,13 +261,25 @@ struct
     | #"%" => NormalYank.yankToMatchingPair app
     | #"n" => NormalYank.yankToNextMatch (app, count)
     | #"N" => NormalYank.yankToPrevMatch (app, count)
-    (* todo: non-terminal chars *)
+    (* append non-terminal characters to string *)
+    | #"d" =>
+        let (* 'yd' motion, like 'ydw'; meant to be 'yank then delete' *)
+        in appendChr (app, chrCmd, str)
+        end
+    | #"t" => appendChr (app, chrCmd, str)
+    | #"T" => appendChr (app, chrCmd, str)
+    | #"f" => appendChr (app, chrCmd, str)
+    | #"F" => appendChr (app, chrCmd, str)
+    | #"g" => appendChr (app, chrCmd, str)
+    | #"i" => appendChr (app, chrCmd, str)
+    | #"a" => appendChr (app, chrCmd, str)
     | _ => NormalFinish.clearMode app
 
   fun parseYank (strPos, str, count, app, chrCmd, time) =
     if strPos = String.size str - 1 then
       parseYankTerminal (str, count, app, chrCmd, time)
     else
+      (* todo: handle non-terminal characters *)
       app
 
   (* useful reference as list of non-terminal commands *)
