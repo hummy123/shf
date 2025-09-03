@@ -188,4 +188,42 @@ struct
           NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
         end
     end
+
+  fun helpYankToChr
+    (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, fInc, chr) =
+    if count = 0 then
+      let
+        val low = Int.min (cursorIdx, otherIdx)
+        val high = Int.max (cursorIdx, otherIdx)
+        val length = high - low
+
+        val buffer = LineGap.goToIdx (high, buffer)
+        val str = LineGap.substring (low, length, buffer)
+        val msg = YANK str
+        val mode = NORMAL_MODE ""
+      in
+        NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      end
+    else
+      let
+        val buffer = LineGap.goToIdx (otherIdx, buffer)
+        val newOtherIdx = fMove (buffer, otherIdx, chr)
+        val newCount = if newOtherIdx = otherIdx then 0 else count - 1
+        val newOtherIdx = fInc (newOtherIdx, 1)
+      in
+        helpYankToChr
+          (app, buffer, cursorIdx, newOtherIdx, newCount, fMove, fInc, chr)
+      end
+
+  fun yankToChr (app: app_type, count, fMove, fInc, chr) =
+    helpYankToChr
+      ( app
+      , #buffer app
+      , #cursorIdx app
+      , #cursorIdx app
+      , count
+      , fMove
+      , fInc
+      , chr
+      )
 end

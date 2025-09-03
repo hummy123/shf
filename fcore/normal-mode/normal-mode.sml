@@ -280,7 +280,18 @@ struct
       parseYankTerminal (str, count, app, chrCmd, time)
     else
       (* todo: handle non-terminal characters *)
-      app
+      case String.sub (str, strPos + 1) of
+        #"t" => NormalYank.yankToChr (app, 1, Cursor.tillNextChr, op+, chrCmd)
+      | #"T" => NormalYank.yankToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
+      | #"f" => NormalYank.yankToChr (app, count, Cursor.toNextChr, op+, chrCmd)
+      | #"F" => NormalYank.yankToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
+      (* todo: implement
+        | #"g" => 
+        | #"i" => 
+        | #"a" => 
+        | #"d" => 
+      *)
+      | _ => NormalFinish.clearMode app
 
   (* useful reference as list of non-terminal commands *)
   fun parseAfterCount (strPos, str, count, app, chrCmd, time) =
