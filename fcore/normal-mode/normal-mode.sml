@@ -172,8 +172,8 @@ struct
 
   fun parseDeleteGo (app, count, chrCmd, time) =
     case chrCmd of
-      #"e" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWord, time)
-    | #"E" => NormalDelete.deleteByDfa (app, count, Cursor.endOfPrevWORD, time)
+      #"e" => NormalDelete.deleteToEndOfPrevWord (app, count, time)
+    | #"E" => NormalDelete.deleteToEndOfPrevWORD (app, count, time)
     | #"g" => NormalDelete.deleteToStart (app, time)
     | _ => NormalFinish.clearMode app
 

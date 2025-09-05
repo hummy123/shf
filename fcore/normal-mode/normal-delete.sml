@@ -152,6 +152,30 @@ struct
       deleteAndFinish (app, low, length, buffer, time)
     end
 
+  fun deleteToEndOfPrevWord (app: app_type, count, time) =
+    let
+      val {buffer, cursorIdx, searchString, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val low = Cursor.endOfPrevWord (buffer, cursorIdx, count)
+
+      val length = (cursorIdx + 1) - low
+    in
+      deleteAndFinish (app, low, length, buffer, time)
+    end
+
+  fun deleteToEndOfPrevWORD (app: app_type, count, time) =
+    let
+      val {buffer, cursorIdx, searchString, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val low = Cursor.endOfPrevWORD (buffer, cursorIdx, count)
+
+      val length = (cursorIdx + 1) - low
+    in
+      deleteAndFinish (app, low, length, buffer, time)
+    end
+
   fun deleteToEndOfLine (app: app_type, time) =
     let
       val {buffer, cursorIdx, ...} = app
@@ -291,6 +315,8 @@ struct
     let
       val {cursorIdx, buffer, windowWidth, windowHeight, searchString, ...} =
         app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorIdx = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
 
       val buffer = LineGap.delete (0, cursorIdx, buffer)
 

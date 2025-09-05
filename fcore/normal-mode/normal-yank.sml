@@ -246,6 +246,7 @@ struct
   fun yankToStart (app: app_type) =
     let
       val {cursorIdx, buffer, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
       val buffer = LineGap.goToIdx (high, buffer)
