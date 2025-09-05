@@ -275,6 +275,15 @@ struct
     | #"a" => appendChr (app, chrCmd, str)
     | _ => NormalFinish.clearMode app
 
+  fun parseYankGo (count, app, chrCmd) =
+    case chrCmd of
+      #"e" =>
+        NormalYank.yankWhenMovingBackPlusOne (app, Cursor.endOfPrevWord, count)
+    | #"E" =>
+        NormalYank.yankWhenMovingBackPlusOne (app, Cursor.endOfPrevWORD, count)
+    | #"g" => NormalYank.yankToStart app
+    | _ => NormalFinish.clearMode app
+
   fun parseYank (strPos, str, count, app, chrCmd, time) =
     if strPos = String.size str - 1 then
       parseYankTerminal (str, count, app, chrCmd, time)
@@ -285,11 +294,11 @@ struct
       | #"T" => NormalYank.yankToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
       | #"f" => NormalYank.yankToChr (app, count, Cursor.toNextChr, op+, chrCmd)
       | #"F" => NormalYank.yankToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
-      (* todo: implement
-        | #"g" => 
-        | #"i" => 
-        | #"a" => 
-        | #"d" => 
+      | #"g" => parseYankGo (count, app, chrCmd)
+      (*
+      | #"i" => 
+      | #"a" => 
+      | #"d" => 
       *)
       | _ => NormalFinish.clearMode app
 

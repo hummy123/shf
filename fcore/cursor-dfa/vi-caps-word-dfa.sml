@@ -68,7 +68,7 @@ struct
          val startState = startState
 
          structure Folder =
-           MakeCharFolderNext
+           MakeCharFolderPrev
              (struct
                 val startState = startState
                 val tables = tables
@@ -78,7 +78,7 @@ struct
                   currentState = nonBlankAfterSpaceState
               end)
 
-         val fStart = Folder.foldNext
+         val fStart = Folder.foldPrev
        end)
 
   structure StartOfCurrentWORDFolder =

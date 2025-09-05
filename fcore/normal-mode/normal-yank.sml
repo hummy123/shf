@@ -56,6 +56,22 @@ struct
       NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
     end
 
+  fun yankWhenMovingBackPlusOne (app: app_type, fMove, count) =
+    let
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val low = fMove (buffer, cursorIdx, count)
+
+      val length = (cursorIdx + 1) - low
+      val str = LineGap.substring (low, length, buffer)
+
+      val msg = YANK str
+      val mode = NORMAL_MODE ""
+    in
+      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+    end
+
   fun yankWhenMovingForward (app: app_type, fMove, count) =
     let
       val {buffer, cursorIdx, ...} = app
@@ -226,4 +242,18 @@ struct
       , fInc
       , chr
       )
+
+  fun yankToStart (app: app_type) =
+    let
+      val {cursorIdx, buffer, ...} = app
+
+      val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
+      val buffer = LineGap.goToIdx (high, buffer)
+
+      val str = LineGap.substring (0, high, buffer)
+      val msg = YANK str
+      val mode = NORMAL_MODE ""
+    in
+      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+    end
 end
