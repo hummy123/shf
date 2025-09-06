@@ -113,7 +113,6 @@ struct
         helpRemoveLineBreaks (app, buffer, newCursorIdx, newCount, time)
       end
 
-  (* todo: first loop should be here, like do-while *)
   fun removeLineBreaks (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, ...} = app
