@@ -26,18 +26,7 @@ struct
   (* equivalent of vi's 'x' command **)
   fun helpRemoveChr (app: app_type, buffer, cursorIdx, count, time) =
     if count = 0 then
-      let
-        val searchString = #searchString app
-        val buffer = LineGap.goToStart buffer
-        val initialMsg = [SEARCH (buffer, searchString)]
-
-        val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
-        val searchList =
-          SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
-      in
-        NormalFinish.buildTextAndClear
-          (app, buffer, cursorIdx, searchList, initialMsg, time)
-      end
+      finishAfterDeletingBuffer (app, cursorIdx, buffer, time)
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
