@@ -79,7 +79,8 @@ struct
              loopSearch
                (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, prevTl)
            else
-             loopSearch (pos, hd, absIdx, tl, acc, 0, searchString, prevTl))
+             backtrackFull
+               (pos, hd, absIdx, tl, acc, searchPos, searchString, prevTl))
       end
 
   fun search ({rightStrings, leftStrings, ...}: LineGap.t, searchString) =
@@ -93,11 +94,64 @@ struct
     if String.size searchString > 0 then search (buffer, searchString)
     else empty
 
-  fun loopRange (pos, hd, absIdx, tl, acc, searchPos, searchString, finish) =
+  fun backtrackRange
+    (pos, hd, absIdx, tl, acc, searchPos, searchString, finish, prevTl) =
+    if searchPos <= 1 then
+      loopRange (pos, hd, absIdx, tl, acc, 0, searchString, finish, prevTl)
+    else if pos < 0 then
+      case prevTl of
+        prevHd :: prevTl =>
+          let
+            val tl = hd :: tl
+          in
+            backtrackRange
+              ( String.size prevHd - 1
+              , prevHd
+              , absIdx
+              , tl
+              , acc
+              , searchPos
+              , searchString
+              , finish
+              , prevTl
+              )
+          end
+      | [] =>
+          (* Should never be called *)
+          raise Fail "SearchList.backtrackRange error: line 120\n"
+    else
+      backtrackRange
+        ( pos - 1
+        , hd
+        , absIdx - 1
+        , tl
+        , acc
+        , searchPos - 1
+        , searchString
+        , finish
+        , prevTl
+        )
+
+  and loopRange
+    (pos, hd, absIdx, tl, acc, searchPos, searchString, finish, prevTl) =
     if pos = String.size hd then
       case tl of
-        hd :: tl =>
-          loopRange (0, hd, absIdx, tl, acc, searchPos, searchString, finish)
+        newHd :: newTl =>
+          let
+            val prevTl = hd :: prevTl
+          in
+            loopRange
+              ( 0
+              , newHd
+              , absIdx
+              , newTl
+              , acc
+              , searchPos
+              , searchString
+              , finish
+              , prevTl
+              )
+          end
       | [] => PersistentVector.toVector acc
     else if absIdx = finish then
       PersistentVector.toVector acc
@@ -114,7 +168,16 @@ struct
               val acc = PersistentVector.append (foundIdx, acc)
             in
               loopRange
-                (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, finish)
+                ( pos + 1
+                , hd
+                , absIdx + 1
+                , tl
+                , acc
+                , 0
+                , searchString
+                , finish
+                , prevTl
+                )
             end
           else
             loopRange
@@ -126,13 +189,33 @@ struct
               , searchPos + 1
               , searchString
               , finish
+              , prevTl
               )
         else
           ((if searchPos = 0 then
               loopRange
-                (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, finish)
+                ( pos + 1
+                , hd
+                , absIdx + 1
+                , tl
+                , acc
+                , 0
+                , searchString
+                , finish
+                , prevTl
+                )
             else
-              loopRange (pos, hd, absIdx, tl, acc, 0, searchString, finish)))
+              backtrackRange
+                ( pos
+                , hd
+                , absIdx
+                , tl
+                , acc
+                , searchPos
+                , searchString
+                , finish
+                , prevTl
+                )))
       end
 
   fun searchRange (buffer: LineGap.t, searchString, finish) =
@@ -142,7 +225,16 @@ struct
       case rightStrings of
         hd :: tl =>
           loopRange
-            (0, hd, absIdx, tl, PersistentVector.empty, 0, searchString, finish)
+            ( 0
+            , hd
+            , absIdx
+            , tl
+            , PersistentVector.empty
+            , 0
+            , searchString
+            , finish
+            , []
+            )
       | [] => empty
     end
 
@@ -199,5 +291,4 @@ struct
       in
         loopPrevMatch (pos, searchList, count)
       end
-
 end
