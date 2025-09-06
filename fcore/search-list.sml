@@ -4,10 +4,49 @@ struct
 
   val empty = Vector.fromList []
 
-  fun loopSearch (pos, hd, absIdx, tl, acc, searchPos, searchString) =
+  fun backtrackFull (pos, hd, absIdx, tl, acc, searchPos, searchString, prevTl) =
+    if searchPos <= 1 then
+      (* we are trying to backtrack to index 1, 
+       * and then continue are search from here *)
+      loopSearch (pos, hd, absIdx, tl, acc, 0, searchString, prevTl)
+    else if pos < 0 then
+      case prevTl of
+        prevHd :: prevTl =>
+          let
+            val tl = hd :: tl
+          in
+            backtrackFull
+              ( String.size prevHd - 1
+              , prevHd
+              , absIdx
+              , tl
+              , acc
+              , searchPos
+              , searchString
+              , prevTl
+              )
+          end
+      | [] =>
+          (* Should never be called *)
+          raise Fail "SearchList.backtrackFull error: line 24\n"
+    else
+      backtrackFull
+        (pos - 1, hd, absIdx - 1, tl, acc, searchPos - 1, searchString, prevTl)
+
+  and loopSearch (pos, hd, absIdx, tl, acc, searchPos, searchString, prevTl) =
     if pos = String.size hd then
       case tl of
-        hd :: tl => loopSearch (0, hd, absIdx, tl, acc, searchPos, searchString)
+        newHd :: newTl =>
+          loopSearch
+            ( 0
+            , newHd
+            , absIdx
+            , newTl
+            , acc
+            , searchPos
+            , searchString
+            , hd :: prevTl
+            )
       | [] => PersistentVector.toVector acc
     else
       let
@@ -21,22 +60,32 @@ struct
               val foundIdx = absIdx - String.size searchString + 1
               val acc = PersistentVector.append (foundIdx, acc)
             in
-              loopSearch (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString)
+              loopSearch
+                (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, prevTl)
             end
           else
             loopSearch
-              (pos + 1, hd, absIdx + 1, tl, acc, searchPos + 1, searchString)
+              ( pos + 1
+              , hd
+              , absIdx + 1
+              , tl
+              , acc
+              , searchPos + 1
+              , searchString
+              , prevTl
+              )
         else
           (if searchPos = 0 then
-             loopSearch (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString)
+             loopSearch
+               (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, prevTl)
            else
-             loopSearch (pos, hd, absIdx, tl, acc, 0, searchString))
+             loopSearch (pos, hd, absIdx, tl, acc, 0, searchString, prevTl))
       end
 
   fun search ({rightStrings, leftStrings, ...}: LineGap.t, searchString) =
     case rightStrings of
       hd :: tl =>
-        loopSearch (0, hd, 0, tl, PersistentVector.empty, 0, searchString)
+        loopSearch (0, hd, 0, tl, PersistentVector.empty, 0, searchString, [])
     | [] => empty
 
   (* Prerequisite: move buffer/LineGap to start *)
