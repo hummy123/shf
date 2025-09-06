@@ -125,10 +125,10 @@ struct
 
     fun parseDeleteAround (app, chr, time) =
       case chr of
-        #"(" => NormalDelete.deleteInsideChrOpen (app, chr, time)
-      | #"[" => NormalDelete.deleteInsideChrOpen (app, chr, time)
-      | #"{" => NormalDelete.deleteInsideChrOpen (app, chr, time)
-      | #"<" => NormalDelete.deleteInsideChrOpen (app, chr, time)
+        #"(" => NormalDelete.deleteAroundChrOpen (app, chr, time)
+      | #"[" => NormalDelete.deleteAroundChrOpen (app, chr, time)
+      | #"{" => NormalDelete.deleteAroundChrOpen (app, chr, time)
+      | #"<" => NormalDelete.deleteAroundChrOpen (app, chr, time)
       | #")" => NormalDelete.deleteAroundChrClose (app, chr, time)
       | #"]" => NormalDelete.deleteAroundChrClose (app, chr, time)
       | #"}" => NormalDelete.deleteAroundChrClose (app, chr, time)
@@ -297,23 +297,20 @@ struct
       case chr of
         #"w" => NormalYank.yankInsideWord app
       | #"W" => NormalYank.yankInsideWORD app
-      (*
-      | #"(" => NormalDelete.deleteInsideChrOpen (app, chr)
-      | #"[" => NormalDelete.deleteInsideChrOpen (app, chr)
-      | #"{" => NormalDelete.deleteInsideChrOpen (app, chr)
-      | #"<" => NormalDelete.deleteInsideChrOpen (app, chr)
-      | #")" => NormalDelete.deleteInsideChrClose (app, chr)
-      | #"]" => NormalDelete.deleteInsideChrClose (app, chr)
-      | #"}" => NormalDelete.deleteInsideChrClose (app, chr)
-      | #">" => NormalDelete.deleteInsideChrClose (app, chr)
-      *)
+      | #"(" => NormalYank.yankInsideChrOpen (app, chr)
+      | #"[" => NormalYank.yankInsideChrOpen (app, chr)
+      | #"{" => NormalYank.yankInsideChrOpen (app, chr)
+      | #"<" => NormalYank.yankInsideChrOpen (app, chr)
+      | #")" => NormalYank.yankInsideChrClose (app, chr)
+      | #"]" => NormalYank.yankInsideChrClose (app, chr)
+      | #"}" => NormalYank.yankInsideChrClose (app, chr)
+      | #">" => NormalYank.yankInsideChrClose (app, chr)
       | _ => NormalFinish.clearMode app
 
     fun parseYank (strPos, str, count, app, chrCmd, time) =
       if strPos = String.size str - 1 then
         parseYankTerminal (str, count, app, chrCmd, time)
       else
-        (* todo: handle non-terminal characters *)
         case String.sub (str, strPos + 1) of
           #"t" => NormalYank.yankToChr (app, 1, Cursor.tillNextChr, op+, chrCmd)
         | #"T" => NormalYank.yankToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
@@ -323,7 +320,7 @@ struct
             NormalYank.yankToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
         | #"g" => parseYankGo (count, app, chrCmd)
         | #"i" => parseYankInside (app, chrCmd)
-        (*
+        (* todo: implement "yankaround" and "yankDelete"
         | #"a" => 
         | #"d" => 
         *)
