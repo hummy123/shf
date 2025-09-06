@@ -401,10 +401,10 @@ struct
      * is also possible through other keys,
      * and it is better to use those othe keys to encourage 
      * staying on the home row. *)
-    | KEY_ENTER => app
-    | KEY_BACKSPACE => app
-    | ARROW_RIGHT => app
-    | ARROW_LEFT => app
-    | ARROW_UP => app
-    | ARROW_DOWN => app
+    | KEY_ENTER => NormalFinish.clearMode app
+    | KEY_BACKSPACE => NormalFinish.clearMode app
+    | ARROW_RIGHT => NormalFinish.clearMode app
+    | ARROW_LEFT => NormalFinish.clearMode app
+    | ARROW_UP => NormalFinish.clearMode app
+    | ARROW_DOWN => NormalFinish.clearMode app
 end
