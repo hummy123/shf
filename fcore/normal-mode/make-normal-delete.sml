@@ -100,34 +100,85 @@ struct
    * 1J delettes 1 line break, 2J deletes 2, and so on. *)
   fun helpRemoveLineBreaks (app, buffer, cursorIdx, count, time) =
     if count = 0 then
-      finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+      (* we don't use Fn.initMsgs in this function.
+       * Removing line breaks is a discrete action which doesn't operate
+       * as a range the way that motions like 'dw' or 'diw'.
+       * Instead, a single character is deleted at different places. 
+       * So it doesn't make any sense to use Fn.initMsgs 
+       * which expects a range. *)
+      let
+        val buffer = LineGap.goToStart buffer
+        val searchString = #searchString app
+        val initialMsg = [SEARCH (buffer, searchString)]
+      in
+        finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
+      end
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
-
-        val buffer = LineGap.delete (newCursorIdx, 1, buffer)
-        val buffer = LineGap.insert (newCursorIdx, " ", buffer)
-        val newCount = if newCursorIdx = cursorIdx then 0 else count - 1
       in
-        helpRemoveLineBreaks (app, buffer, newCursorIdx, newCount, time)
+        if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
+          (* if the cursor is at a linebreak, delete the linebreak
+           * and don't insert a space. *)
+          let val buffer = LineGap.delete (cursorIdx, 1, buffer)
+          in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
+          end
+        else
+          let
+            val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
+            val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+            val clippedIdx = Cursor.clipIdx (buffer, newCursorIdx)
+
+            val buffer =
+              if clippedIdx = newCursorIdx then
+                let val buffer = LineGap.delete (newCursorIdx, 1, buffer)
+                in LineGap.insert (newCursorIdx, " ", buffer)
+                end
+              else
+                (* if clippedIdx and newCursorIdx are different,
+                * that means our previous search brought us past
+                * the ending #"\n" in the file.
+                * We don't want to delete the last newline in the file
+                * because of Unix convention
+                * so don't modify the buffer. *)
+                buffer
+            val newCount = if clippedIdx = cursorIdx then 0 else count - 1
+          in
+            helpRemoveLineBreaks (app, buffer, clippedIdx, newCount, time)
+          end
       end
 
   fun removeLineBreaks (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
     in
-      if cursorIdx = newCursorIdx then
-        (* no change *)
-        NormalFinish.clearMode app
+      if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
+        let val buffer = LineGap.delete (cursorIdx, 1, buffer)
+        in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
+        end
       else
         let
-          val buffer = LineGap.delete (newCursorIdx, 1, buffer)
-          val buffer = LineGap.insert (newCursorIdx, " ", buffer)
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
+          val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+          val clippedIdx = Cursor.clipIdx (buffer, newCursorIdx)
         in
-          helpRemoveLineBreaks (app, buffer, newCursorIdx, count - 1, time)
+          if cursorIdx = newCursorIdx orelse newCursorIdx <> clippedIdx then
+            (* no change, either because no #"\n" was found
+             * or because the next #"\n" found is the last character in the
+             * file.
+             * We don't delete the last #"\n" in the file
+             * because Unix convention is that text files always
+             * end with newlines. *)
+            NormalFinish.clearMode app
+          else
+            let
+              val buffer = LineGap.delete (newCursorIdx, 1, buffer)
+              val buffer = LineGap.insert (newCursorIdx, " ", buffer)
+            in
+              helpRemoveLineBreaks (app, buffer, newCursorIdx, count - 1, time)
+            end
         end
     end
 
