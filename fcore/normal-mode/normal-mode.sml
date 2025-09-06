@@ -307,6 +307,18 @@ struct
       | #">" => NormalYank.yankInsideChrClose (app, chr)
       | _ => NormalFinish.clearMode app
 
+    fun parseYankAround (app, chr) =
+      case chr of
+        #"(" => NormalYank.yankAroundChrOpen (app, chr)
+      | #"[" => NormalYank.yankAroundChrOpen (app, chr)
+      | #"{" => NormalYank.yankAroundChrOpen (app, chr)
+      | #"<" => NormalYank.yankAroundChrOpen (app, chr)
+      | #")" => NormalYank.yankAroundChrClose (app, chr)
+      | #"]" => NormalYank.yankAroundChrClose (app, chr)
+      | #"}" => NormalYank.yankAroundChrClose (app, chr)
+      | #">" => NormalYank.yankAroundChrClose (app, chr)
+      | _ => NormalFinish.clearMode app
+
     fun parseYank (strPos, str, count, app, chrCmd, time) =
       if strPos = String.size str - 1 then
         parseYankTerminal (str, count, app, chrCmd, time)
@@ -320,8 +332,8 @@ struct
             NormalYank.yankToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
         | #"g" => parseYankGo (count, app, chrCmd)
         | #"i" => parseYankInside (app, chrCmd)
+        | #"a" => parseYankAround (app, chrCmd)
         (* todo: implement "yankaround" and "yankDelete"
-        | #"a" => 
         | #"d" => 
         *)
         | _ => NormalFinish.clearMode app

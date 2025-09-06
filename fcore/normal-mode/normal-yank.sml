@@ -317,9 +317,10 @@ struct
       val buffer = LineGap.goToIdx (low, buffer)
       val high = Cursor.matchPair (buffer, low)
       val buffer = LineGap.goToIdx (high, buffer)
+      val low = low + 1
     in
       if low = high then NormalFinish.clearMode app
-      else finishAfterYankInside (app, low + 1, high, buffer)
+      else finishAfterYankInside (app, low, high, buffer)
     end
 
   fun yankInsideChrClose (app: app_type, chr) =
@@ -331,7 +332,40 @@ struct
 
       val high = Cursor.toNextChr (buffer, start, chr)
       val buffer = LineGap.goToIdx (high, buffer)
+      val low = Cursor.matchPair (buffer, high) + 1
+    in
+      if low = high then NormalFinish.clearMode app
+      else finishAfterYankInside (app, low, high, buffer)
+    end
+
+  fun yankAroundChrOpen (app: app_type, chr) =
+    let
+      val {cursorIdx, buffer, ...} = app
+
+      val start = cursorIdx + 1
+      val buffer = LineGap.goToIdx (start, buffer)
+
+      val low = Cursor.toPrevChr (buffer, start, chr)
+      val buffer = LineGap.goToIdx (low, buffer)
+      val high = Cursor.matchPair (buffer, low) + 1
+      val buffer = LineGap.goToIdx (high, buffer)
+      val low = low
+    in
+      if low = high then NormalFinish.clearMode app
+      else finishAfterYankInside (app, low, high, buffer)
+    end
+
+  fun yankAroundChrClose (app: app_type, chr) =
+    let
+      val {cursorIdx, buffer, ...} = app
+
+      val start = Int.max (cursorIdx - 1, 0)
+      val buffer = LineGap.goToIdx (start, buffer)
+
+      val high = Cursor.toNextChr (buffer, start, chr)
+      val buffer = LineGap.goToIdx (high, buffer)
       val low = Cursor.matchPair (buffer, high)
+      val high = high + 1
     in
       if low = high then NormalFinish.clearMode app
       else finishAfterYankInside (app, low, high, buffer)
