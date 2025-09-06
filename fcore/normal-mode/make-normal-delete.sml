@@ -91,6 +91,47 @@ struct
   fun removeChr (app: app_type, count, time) =
     helpRemoveChr (app, #buffer app, #cursorIdx app, count, time)
 
+  (* Note: The below implementation of removing line breaks with the 'J' 
+   * command slightly differs from the implementation in Vim.
+   * In Vim, the J, 1J, and 2J commands all have the same effect.
+   * 3J, 4J, 5J, etc. all have different effects because of the different counts
+   * though.
+   * Our implementation has a different effect for each count. 
+   * 1J delettes 1 line break, 2J deletes 2, and so on. *)
+  fun helpRemoveLineBreaks (app, buffer, cursorIdx, count, time) =
+    if count = 0 then
+      finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+    else
+      let
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
+
+        val buffer = LineGap.delete (newCursorIdx, 1, buffer)
+        val buffer = LineGap.insert (newCursorIdx, " ", buffer)
+        val newCount = if newCursorIdx = cursorIdx then 0 else count - 1
+      in
+        helpRemoveLineBreaks (app, buffer, newCursorIdx, newCount, time)
+      end
+
+  (* todo: first loop should be here, like do-while *)
+  fun removeLineBreaks (app: app_type, count, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
+    in
+      if cursorIdx = newCursorIdx then
+        (* no change *)
+        NormalFinish.clearMode app
+      else
+        let
+          val buffer = LineGap.delete (newCursorIdx, 1, buffer)
+          val buffer = LineGap.insert (newCursorIdx, " ", buffer)
+        in
+          helpRemoveLineBreaks (app, buffer, newCursorIdx, count - 1, time)
+        end
+    end
+
   fun helpDelete
     (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, time) =
     (* As a small optimisation to reduce allocations, 

@@ -86,6 +86,7 @@ struct
         else NormalMove.moveToLine (app, count - 1)
     | #"%" => NormalMove.moveToMatchingPair app
     | #"x" => NormalDelete.removeChr (app, count, time)
+    | #"J" => NormalDelete.removeLineBreaks (app, count, time)
     | #"/" => switchToNormalSearchMode app
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
