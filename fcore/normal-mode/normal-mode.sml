@@ -203,6 +203,104 @@ struct
         | _ => NormalFinish.clearMode app
   end
 
+  structure ParseYankDelete =
+  struct
+    fun parseDeleteInside (app, chr, time) =
+      case chr of
+        #"w" => NormalYankDelete.deleteInsideWord (app, time)
+      | #"W" => NormalYankDelete.deleteInsideWORD (app, time)
+      | #"(" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
+      | #"[" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
+      | #"{" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
+      | #"<" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
+      | #")" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
+      | #"]" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
+      | #"}" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
+      | #">" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
+      | _ => NormalFinish.clearMode app
+
+    fun parseDeleteAround (app, chr, time) =
+      case chr of
+        #"(" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
+      | #"[" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
+      | #"{" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
+      | #"<" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
+      | #")" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
+      | #"]" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
+      | #"}" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
+      | #">" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
+      | _ => NormalFinish.clearMode app
+
+    fun parseDeleteTerminal (str, count, app, chrCmd, time) =
+      case chrCmd of
+      (* terminal commands: require no input after *)
+        #"h" => NormalYankDelete.delete (app, count, Cursor.viH, time)
+      | #"l" => NormalYankDelete.delete (app, count, Cursor.viL, time)
+      (* vi's 'j' and 'k' commands move up or down a column
+       * but 'dj' or 'dk' delete whole lines
+       * so their implementation differs from
+       * other cursor motions *)
+      | #"j" => NormalYankDelete.deleteLine (app, count + 1, time)
+      | #"k" => NormalYankDelete.deleteLineBack (app, count, time)
+      | #"w" => NormalYankDelete.deleteByDfa (app, count, Cursor.nextWord, time)
+      | #"W" => NormalYankDelete.deleteByDfa (app, count, Cursor.nextWORD, time)
+      | #"b" => NormalYankDelete.deleteByDfa (app, count, Cursor.prevWord, time)
+      | #"B" => NormalYankDelete.deleteByDfa (app, count, Cursor.prevWORD, time)
+      | #"e" =>
+          NormalYankDelete.deleteByDfa
+            (app, count, Cursor.endOfWordForDelete, time)
+      | #"E" =>
+          NormalYankDelete.deleteByDfa
+            (app, count, Cursor.endOfWORDForDelete, time)
+      | #"0" => NormalYankDelete.delete (app, 1, Cursor.vi0, time)
+      | #"$" => NormalYankDelete.deleteToEndOfLine (app, time)
+      | #"^" => NormalYankDelete.deleteToFirstNonSpaceChr (app, time)
+      | #"d" => NormalYankDelete.deleteLine (app, count, time)
+      | #"n" => NormalYankDelete.deleteToNextMatch (app, count, time)
+      | #"N" => NormalYankDelete.deleteToPrevMatch (app, count, time)
+      | #"%" => NormalYankDelete.deletePair (app, time)
+      (* non-terminal commands which require appending chr *)
+      | #"t" => appendChr (app, chrCmd, str)
+      | #"T" => appendChr (app, chrCmd, str)
+      | #"f" => appendChr (app, chrCmd, str)
+      | #"F" => appendChr (app, chrCmd, str)
+      | #"g" => appendChr (app, chrCmd, str)
+      | #"i" => appendChr (app, chrCmd, str)
+      | #"a" => appendChr (app, chrCmd, str)
+      (* invalid command: reset mode *)
+      | _ => NormalFinish.clearMode app
+
+    fun parseDeleteGo (app, count, chrCmd, time) =
+      case chrCmd of
+        #"e" => NormalYankDelete.deleteToEndOfPrevWord (app, count, time)
+      | #"E" => NormalYankDelete.deleteToEndOfPrevWORD (app, count, time)
+      | #"g" => NormalYankDelete.deleteToStart (app, time)
+      | _ => NormalFinish.clearMode app
+
+    fun parseDelete (strPos, str, count, app, chrCmd, time) =
+      if strPos = String.size str - 1 then
+        parseDeleteTerminal (str, count, app, chrCmd, time)
+      else
+        (* have to continue parsing string *)
+        case String.sub (str, strPos + 1) of
+          #"t" =>
+            NormalYankDelete.deleteToChr
+              (app, 1, Cursor.tillNextChr, op+, chrCmd, time)
+        | #"T" =>
+            NormalYankDelete.deleteToChr
+              (app, 1, Cursor.tillPrevChr, op-, chrCmd, time)
+        | #"f" =>
+            NormalYankDelete.deleteToChr
+              (app, count, Cursor.toNextChr, op+, chrCmd, time)
+        | #"F" =>
+            NormalYankDelete.deleteToChr
+              (app, count, Cursor.toPrevChr, op-, chrCmd, time)
+        | #"g" => parseDeleteGo (app, count, chrCmd, time)
+        | #"i" => parseDeleteInside (app, chrCmd, time)
+        | #"a" => parseDeleteAround (app, chrCmd, time)
+        | _ => NormalFinish.clearMode app
+  end
+
   structure ParseYank =
   struct
     fun yankWhenMovingBack (app: app_type, fMove, count) =
@@ -333,9 +431,9 @@ struct
         | #"g" => parseYankGo (count, app, chrCmd)
         | #"i" => parseYankInside (app, chrCmd)
         | #"a" => parseYankAround (app, chrCmd)
-        (* todo: implement "yankaround" and "yankDelete"
-        | #"d" => 
-        *)
+        | #"d" =>
+            ParseYankDelete.parseDelete
+              (strPos + 1, str, count, app, chrCmd, time)
         | _ => NormalFinish.clearMode app
   end
 
