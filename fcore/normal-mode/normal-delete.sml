@@ -3,10 +3,8 @@ struct
   open AppType
   open MailboxType
 
-  fun deleteAndFinish (app: app_type, low, length, buffer, time) =
+  fun finishAfterDeletingBuffer (app: app_type, low, buffer, time) =
     let
-      val buffer = LineGap.delete (low, length, buffer)
-
       val searchString = #searchString app
       val buffer = LineGap.goToStart buffer
       val initialMsg = [SEARCH (buffer, searchString)]
@@ -18,6 +16,11 @@ struct
     in
       NormalFinish.buildTextAndClear
         (app, buffer, low, searchList, initialMsg, time)
+    end
+
+  fun deleteAndFinish (app: app_type, low, length, buffer, time) =
+    let val buffer = LineGap.delete (low, length, buffer)
+    in finishAfterDeletingBuffer (app, low, buffer, time)
     end
 
   (* equivalent of vi's 'x' command **)
@@ -507,6 +510,18 @@ struct
       finishAfterDeleteInside (app, origLow, high, time)
     end
 
+  fun finishDeleteAroundChr (app, low, high, buffer, time) =
+    let
+      val length = high - low + 1
+      val buffer = LineGap.delete (low, length, buffer)
+      val buffer = LineGap.goToIdx (low, buffer)
+      val low =
+        if Cursor.isCursorAtStartOfLine (buffer, low) then Int.max (low - 1, 0)
+        else low
+    in
+      finishAfterDeletingBuffer (app, low, buffer, time)
+    end
+
   fun deleteAroundChrOpen (app: app_type, chr, time) =
     let
       val {cursorIdx, buffer, ...} = app
@@ -519,7 +534,7 @@ struct
       val high = Cursor.matchPair (buffer, low)
     in
       if low = high then NormalFinish.clearMode app
-      else deleteAndFinish (app, low, high - low + 1, buffer, time)
+      else finishDeleteAroundChr (app, low, high, buffer, time)
     end
 
   fun deleteAroundChrClose (app: app_type, chr, time) =
@@ -534,7 +549,7 @@ struct
       val low = Cursor.matchPair (buffer, high)
     in
       if low = high then NormalFinish.clearMode app
-      else deleteAndFinish (app, low, high - low + 1, buffer, time)
+      else finishDeleteAroundChr (app, low, high, buffer, time)
     end
 
   fun deletePair (app: app_type, time) =
