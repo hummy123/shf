@@ -624,6 +624,7 @@ struct
   (* equivalent of vi's `E` command *)
   val endOfWORD = ViCapsWordDfa.endOfCurrentWORD
   val endOfWORDForDelete = ViCapsWordDfa.endOfCurrentWORDForDelete
+  val endOfWORDStrict = ViCapsWordDfa.endOfCurrentWORDStrict
 
   (* Prerequisite: 
    * LineGap has been moved to start of line (provided with vi0). *)

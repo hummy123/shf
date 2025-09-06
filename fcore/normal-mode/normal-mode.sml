@@ -296,8 +296,8 @@ struct
     fun parseYankInside (app, chr) =
       case chr of
         #"w" => NormalYank.yankInsideWord app
+      | #"W" => NormalYank.yankInsideWORD app
       (*
-      | #"W" => NormalDelete.deleteInsideWORD app
       | #"(" => NormalDelete.deleteInsideChrOpen (app, chr)
       | #"[" => NormalDelete.deleteInsideChrOpen (app, chr)
       | #"{" => NormalDelete.deleteInsideChrOpen (app, chr)
