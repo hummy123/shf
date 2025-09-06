@@ -46,6 +46,7 @@ fcore/move.sml
 
 fcore/normal-mode/normal-move.sml
 fcore/normal-mode/normal-yank.sml
+fcore/normal-mode/make-normal-delete.sml
 fcore/normal-mode/normal-delete.sml
 fcore/normal-mode/normal-mode.sml
 fcore/normal-mode/normal-search-mode.sml
