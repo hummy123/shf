@@ -619,6 +619,7 @@ struct
   (* equivalent of vi's `e` command *)
   val endOfWord = ViWordDfa.endOfCurrentWord
   val endOfWordForDelete = ViWordDfa.endOfCurrentWordForDelete
+  val endOfWordStrict = ViWordDfa.endOfCurrentWordStrict
 
   (* equivalent of vi's `E` command *)
   val endOfWORD = ViCapsWordDfa.endOfCurrentWORD

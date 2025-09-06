@@ -388,16 +388,23 @@ struct
         helpDeleteToMatch (app, newCursorIdx, cursorIdx, time)
     end
 
+  (* check if we are trying to delete from an empty buffer
+   * or a buffer which consists of only one character which is \n *)
+  fun canDeleteInsideOrAround (buffer, low, length) =
+    not (length = 1 andalso LineGap.substring (low, 1, buffer) = "\n")
+
   fun deleteInsideWord (app: app_type, time) =
     let
       val {buffer, cursorIdx, searchString, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
       val low = Cursor.prevWordStrict (buffer, cursorIdx, 1)
-      val high = Cursor.endOfWordForDelete (buffer, cursorIdx, 1)
+      val high = Cursor.endOfWordStrict (buffer, cursorIdx, 1) + 1
+
+      val buffer = LineGap.goToIdx (high, buffer)
+      val length = high - low
     in
-      if low = high then
-        app
-      else
+      if canDeleteInsideOrAround (buffer, low, length) then
         let
           val length = high - low
           val buffer = LineGap.delete (low, length, buffer)
@@ -414,20 +421,23 @@ struct
           NormalFinish.buildTextAndClear
             (app, buffer, low, searchList, initialMsg, time)
         end
+      else
+        app
     end
 
   fun deleteInsideWORD (app: app_type, time) =
     let
       val {buffer, cursorIdx, searchString, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val low = Cursor.prevWORDStrict (buffer, cursorIdx, 1)
-      val high = Cursor.endOfWORDForDelete (buffer, cursorIdx, 1)
+
+      val low = Cursor.prevWordStrict (buffer, cursorIdx, 1)
+      val high = Cursor.endOfWordStrict (buffer, cursorIdx, 1) + 1
+
+      val buffer = LineGap.goToIdx (high, buffer)
+      val length = high - low
     in
-      if low = high then
-        app
-      else
+      if canDeleteInsideOrAround (buffer, low, length) then
         let
-          val length = high - low
           val buffer = LineGap.delete (low, length, buffer)
 
           val buffer = LineGap.goToStart buffer
@@ -442,6 +452,8 @@ struct
           NormalFinish.buildTextAndClear
             (app, buffer, low, searchList, initialMsg, time)
         end
+      else
+        app
     end
 
   fun finishAfterDeleteInside (app: app_type, origLow, high, time) =
