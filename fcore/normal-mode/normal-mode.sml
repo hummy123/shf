@@ -59,40 +59,80 @@ struct
       loop (app, #cursorIdx app, #buffer app, count, time)
   end
 
-  (* todo: use count to find number of lines to dedent *)
-  fun dedentLine (app: app_type, count, time) =
-    let
-      open MailboxType
-
-      val {cursorIdx, buffer, searchString, ...} = app
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-
-      val lineStart = Cursor.vi0 (buffer, cursorIdx)
-      val firstNonSpaceChr = Cursor.firstNonSpaceChr (buffer, lineStart)
-    in
-      if lineStart = firstNonSpaceChr then
-        (* can't dedent; no leading spaces *)
-        app
+  local
+    fun loop (cursorIdx, buffer, count) =
+      if count = 0 then
+        buffer
       else
         let
-          (* calculate length to delete *)
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val lineStart = Cursor.vi0 (buffer, cursorIdx)
+          val firstNonSpaceChr = Cursor.firstNonSpaceChr (buffer, lineStart)
+
+          (* delete from buffer *)
           val difference = firstNonSpaceChr - lineStart
-          val deleteLength = if difference < 2 then difference else 2
+          val deleteLength = Int.min (difference, 2)
+          val buffer =
+            if difference = 0 then
+              (* can't dedent as there is no leading space *)
+              buffer
+            else
+              LineGap.delete (lineStart, deleteLength, buffer)
 
-          val buffer = LineGap.delete (lineStart, deleteLength, buffer)
-          val buffer = LineGap.goToStart buffer
-          val initialMsg = [SEARCH (buffer, searchString, time)]
-
-          (* The cursorIdx might be past the current line after we dedent.
-           * If it is, we put the cursorIdx at the last char of the line. *)
+          (* get next line to dedent *)
           val buffer = LineGap.goToIdx (lineStart, buffer)
           val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
-          val cursorIdx = if lineEnd < cursorIdx then lineEnd else cursorIdx
+          val buffer = LineGap.goToIdx (lineEnd, buffer)
+          val nextLine = Cursor.viL (buffer, lineEnd)
+
+          val count = if lineEnd = nextLine then 0 else count - 1
         in
-          NormalDelete.finishAfterDeletingBuffer
-            (app, cursorIdx, buffer, time, initialMsg)
+          loop (nextLine, buffer, count)
         end
-    end
+  in
+    fun dedentLine (app: app_type, count, time) =
+      let
+        open MailboxType
+
+        val {cursorIdx, buffer, searchString, ...} = app
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+        val lineStart = Cursor.vi0 (buffer, cursorIdx)
+        val firstNonSpaceChr = Cursor.firstNonSpaceChr (buffer, lineStart)
+
+        (* calculate length to delete *)
+        val difference = firstNonSpaceChr - lineStart
+        val deleteLength = Int.min (difference, 2)
+
+        (* delete once *)
+        val buffer =
+          if deleteLength = 0 then buffer
+          else LineGap.delete (lineStart, deleteLength, buffer)
+
+        (* Calculate nextLine and newCursorIdx.
+         * The cursorIdx might be past the current line after we dedent.
+         * If it is, we put the cursorIdx at the last char of the line. *)
+        val buffer = LineGap.goToIdx (lineStart, buffer)
+        val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
+        val buffer = LineGap.goToIdx (lineEnd, buffer)
+        val nextLine = Cursor.viL (buffer, lineEnd)
+        val newCursorIdx = Int.min (lineEnd, cursorIdx)
+
+        val buffer =
+          if lineEnd = nextLine then
+            (* at end of file, so we cannot dedent anymore *)
+            buffer
+          else
+            (* dedent remaining lines specified by count *)
+            loop (nextLine, buffer, count - 1)
+
+        val buffer = LineGap.goToStart buffer
+        val initialMsg = [SEARCH (buffer, searchString, time)]
+      in
+        NormalDelete.finishAfterDeletingBuffer
+          (app, newCursorIdx, buffer, time, initialMsg)
+      end
+  end
 
   fun parseMoveToChr (count, app, fMove, chrCmd) =
     NormalMove.moveToChr (app, count, fMove, chrCmd)
