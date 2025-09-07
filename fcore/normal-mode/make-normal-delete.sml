@@ -106,13 +106,7 @@ struct
        * Instead, a single character is deleted at different places. 
        * So it doesn't make any sense to use Fn.initMsgs 
        * which expects a range. *)
-      let
-        val buffer = LineGap.goToStart buffer
-        val searchString = #searchString app
-        val initialMsg = [SEARCH (buffer, searchString)]
-      in
-        finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
-      end
+        finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)

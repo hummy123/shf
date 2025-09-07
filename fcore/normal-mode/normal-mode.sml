@@ -25,6 +25,26 @@ struct
       NormalModeWith.mode (app, mode, [])
     end
 
+  fun makeSpace _ = #" "
+
+  fun indnetLine (app: app_type, count, time) =
+    let
+      open MailboxType
+
+      val {cursorIdx, buffer, searchString, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val lineStart = Cursor.vi0 (buffer, cursorIdx)
+
+      val indentString = CharVector.tabulate (count * 2, makeSpace)
+      val buffer = LineGap.insert (lineStart, indentString, buffer)
+
+      val buffer = LineGap.goToStart buffer
+      val initialMsg = [SEARCH (buffer, searchString)]
+    in
+      NormalDelete.finishAfterDeletingBuffer
+        (app, cursorIdx, buffer, time, initialMsg)
+    end
+
   fun parseMoveToChr (count, app, fMove, chrCmd) =
     NormalMove.moveToChr (app, count, fMove, chrCmd)
 
@@ -88,6 +108,7 @@ struct
     | #"x" => NormalDelete.removeChr (app, count, time)
     | #"J" => NormalDelete.removeLineBreaks (app, count, time)
     | #"/" => switchToNormalSearchMode app
+    | #">" => indnetLine (app, count, time)
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
