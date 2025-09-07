@@ -102,7 +102,6 @@ struct
       if cursorIdx > otherIdx then
         (* yanking backwards from cursorIdx *)
         let
-          val () = print "272\n"
           val length = cursorIdx - otherIdx + 1
           val buffer = LineGap.goToIdx (otherIdx, buffer)
 

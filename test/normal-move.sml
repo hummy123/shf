@@ -1482,6 +1482,24 @@ struct
              (* assert *)
              Expect.isTrue (oldIdx = newIdx)
            end)
+    , test "does not move cursor when cursor is on a newline" (fn _ =>
+        let
+          (* arrange *)
+          val buffer = LineGap.fromString "hello\n\nworld\n"
+          val app = TestUtils.init buffer
+          val app = AppWith.idx (app, 6)
+          val oldIdx = #cursorIdx app
+
+          (* act *)
+          val app = TestUtils.update (app, CHAR_EVENT #"$")
+          val newIdx = #cursorIdx app
+
+          val nchr = getChr app
+          val nchr = Char.toString nchr ^ "\n"
+        in
+          (* assert *)
+          Expect.isTrue (oldIdx = newIdx)
+        end)
     ]
 
   val hatMove = describe "move motion '^'"
