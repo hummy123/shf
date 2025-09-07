@@ -478,6 +478,7 @@ struct
       | #"%" => NormalYank.yankToMatchingPair app
       | #"n" => NormalYank.yankToNextMatch (app, count)
       | #"N" => NormalYank.yankToPrevMatch (app, count)
+      | #"x" => NormalYankDelete.removeChr (app, count, time)
       (* append non-terminal characters to string *)
       | #"d" =>
           let (* 'yd' motion, like 'ydw'; meant to be 'yank then delete' *)
