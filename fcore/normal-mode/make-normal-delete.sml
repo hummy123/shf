@@ -12,7 +12,7 @@ struct
     let
       val searchString = #searchString app
       val buffer = LineGap.goToStart buffer
-      val msgs = SEARCH (buffer, searchString) :: initialMsg
+      val msgs = SEARCH (buffer, searchString, time) :: initialMsg
 
       val buffer = LineGap.goToIdx (low - 1111, buffer)
       val searchList = SearchList.buildRange (buffer, searchString, low + 1111)
@@ -106,7 +106,7 @@ struct
        * Instead, a single character is deleted at different places. 
        * So it doesn't make any sense to use Fn.initMsgs 
        * which expects a range. *)
-        finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+      finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -198,7 +198,7 @@ struct
         val buffer = LineGap.delete (low, length, buffer)
         val buffer = LineGap.goToStart buffer
         val searchString = #searchString app
-        val initialMsg = SEARCH (buffer, searchString) :: initialMsg
+        val initialMsg = SEARCH (buffer, searchString, time) :: initialMsg
 
         val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
         val searchList =
@@ -413,7 +413,7 @@ struct
 
       val buffer = LineGap.delete (0, cursorIdx, buffer)
       val buffer = LineGap.goToStart buffer
-      val initialMsg = SEARCH (buffer, #searchString app) :: initialMsg
+      val initialMsg = SEARCH (buffer, #searchString app, time) :: initialMsg
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
       val searchList =
@@ -449,7 +449,7 @@ struct
 
       val buffer = LineGap.delete (low, length, buffer)
       val buffer = LineGap.goToStart buffer
-      val initialMsg = SEARCH (buffer, searchString) :: initialMsg
+      val initialMsg = SEARCH (buffer, searchString, time) :: initialMsg
 
       val buffer = LineGap.goToIdx (low - 1111, buffer)
       val searchList = SearchList.buildRange (buffer, searchString, low + 1111)
@@ -507,7 +507,7 @@ struct
           val buffer = LineGap.delete (low, length, buffer)
 
           val buffer = LineGap.goToStart buffer
-          val initialMsg = SEARCH (buffer, searchString) :: initialMsg
+          val initialMsg = SEARCH (buffer, searchString, time) :: initialMsg
 
           val buffer = LineGap.goToIdx (low - 1111, buffer)
           val searchList =
@@ -539,7 +539,7 @@ struct
           val buffer = LineGap.delete (low, length, buffer)
 
           val buffer = LineGap.goToStart buffer
-          val initialMsg = SEARCH (buffer, searchString) :: initialMsg
+          val initialMsg = SEARCH (buffer, searchString, time) :: initialMsg
 
           val buffer = LineGap.goToIdx (low - 1111, buffer)
           val searchList =
@@ -568,7 +568,7 @@ struct
 
         val buffer = LineGap.delete (low, length, buffer)
         val buffer = LineGap.goToStart buffer
-        val initialMsg = SEARCH (buffer, searchString) :: initialMsg
+        val initialMsg = SEARCH (buffer, searchString, time) :: initialMsg
 
         val buffer = LineGap.goToIdx (low - 1111, buffer)
         val searchList =
@@ -682,7 +682,7 @@ struct
 
           val searchString = #searchString app
           val buffer = LineGap.goToStart buffer
-          val initialMsg = SEARCH (buffer, searchString) :: initialMsg
+          val initialMsg = SEARCH (buffer, searchString, time) :: initialMsg
 
           val buffer = LineGap.goToIdx (low - 1111, buffer)
           val searchList =

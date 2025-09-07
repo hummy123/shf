@@ -45,13 +45,13 @@ struct
     end
 
   (* save search string and tempSearchList and return to normal mode *)
-  fun saveSearch (app: app_type, searchString, tempSearchList) =
+  fun saveSearch (app: app_type, searchString, tempSearchList, time) =
     let
       val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
 
       val buffer = LineGap.goToStart buffer
       val searchString = EscapeString.unescape searchString
-      val initialMsg = [SEARCH (buffer, searchString)]
+      val initialMsg = [SEARCH (buffer, searchString, time)]
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -136,7 +136,7 @@ struct
     | KEY_BACKSPACE =>
         backspace (app, searchString, tempSearchList, searchCursorIdx)
     | KEY_ESC => exitToNormalMode app
-    | KEY_ENTER => saveSearch (app, searchString, tempSearchList)
+    | KEY_ENTER => saveSearch (app, searchString, tempSearchList, time)
     | ARROW_LEFT =>
         moveLeft (app, searchString, tempSearchList, searchCursorIdx)
     | ARROW_RIGHT =>

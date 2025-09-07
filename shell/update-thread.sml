@@ -7,8 +7,8 @@ struct
   fun sendMsg (msg, drawMailbox, searchMailbox) =
     case msg of
       DRAW msg => Mailbox.send (drawMailbox, msg)
-    | SEARCH (buffer, searchString) =>
-        Mailbox.send (searchMailbox, (buffer, searchString))
+    | SEARCH (buffer, searchString, time) =>
+        Mailbox.send (searchMailbox, (buffer, searchString, time))
 
   fun sendMsgs (msgList, drawMailbox, searchMailbox) =
     case msgList of

@@ -5,7 +5,7 @@ struct
   (* Prerequisite to sending message: move buffer to end. *)
   fun loop (searchMailbox, inputMailbox) =
     let
-      val (buffer, searchString) = Mailbox.recv searchMailbox
+      val (buffer, searchString, time) = Mailbox.recv searchMailbox
       val searchList = SearchList.build (buffer, searchString)
       val () = Mailbox.send (inputMailbox, InputMsg.WITH_SEARCH_LIST searchList)
     in

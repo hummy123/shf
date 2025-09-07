@@ -39,7 +39,7 @@ struct
       val buffer = LineGap.insert (lineStart, indentString, buffer)
 
       val buffer = LineGap.goToStart buffer
-      val initialMsg = [SEARCH (buffer, searchString)]
+      val initialMsg = [SEARCH (buffer, searchString, time)]
     in
       NormalDelete.finishAfterDeletingBuffer
         (app, cursorIdx, buffer, time, initialMsg)
