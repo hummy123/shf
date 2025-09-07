@@ -8,19 +8,18 @@ struct
   open AppType
   open MailboxType
 
-  fun finishAfterDeletingBuffer (app: app_type, low, buffer, time, initialMsg) =
+  fun finishAfterDeletingBuffer (app: app_type, low, buffer, time, msgs) =
     let
       val searchString = #searchString app
       val buffer = LineGap.goToStart buffer
-      val msgs = SEARCH (buffer, searchString, time) :: initialMsg
+      val msgs = SEARCH (buffer, searchString, time) :: msgs
 
       val buffer = LineGap.goToIdx (low - 1111, buffer)
       val searchList = SearchList.buildRange (buffer, searchString, low + 1111)
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
-      NormalFinish.buildTextAndClear
-        (app, buffer, low, searchList, initialMsg, time)
+      NormalFinish.buildTextAndClear (app, buffer, low, searchList, msgs, time)
     end
 
   fun deleteAndFinish (app: app_type, low, length, buffer, time) =
@@ -91,23 +90,21 @@ struct
   fun removeChr (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, ...} = app
-
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val lineStart = Cursor.vi0 (buffer, cursorIdx)
-      val lineEnd = Cursor.viDlr (buffer, cursorIdx, 1)
-
-      val buffer = LineGap.goToIdx (lineEnd, buffer)
     in
-      if
-        cursorIdx = lineEnd
-        andalso Cursor.isCursorAtStartOfLine (buffer, lineEnd)
-      then
+      if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
         NormalFinish.clearMode app
       else
         let
+          val lineStart = Cursor.vi0 (buffer, cursorIdx)
           val lineEnd = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
+          val buffer = LineGap.goToIdx (lineEnd, buffer)
+
+          (* if specified length (cursorIdx + count) extends 
+           * beyond current line's length,
+          *  then clip the length, to ensure we don't delete the newline *)
           val high = cursorIdx + count
-          val high = Int.min (lineEnd, high)
+          val high = Int.min (lineEnd - 1, high)
           val length = high - cursorIdx
 
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
