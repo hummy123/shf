@@ -25,24 +25,39 @@ struct
       NormalModeWith.mode (app, mode, [])
     end
 
-  (* todo: use count to find number of lines to indent *)
-  fun indnetLine (app: app_type, count, time) =
-    let
-      open MailboxType
+  local
+    fun loop (app: app_type, cursorIdx, buffer, count, time) =
+      if count = 0 then
+        let
+          open MailboxType
 
-      val {cursorIdx, buffer, searchString, ...} = app
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val lineStart = Cursor.vi0 (buffer, cursorIdx)
+          val {cursorIdx = origCursorIdx, searchString, ...} = app
+          val buffer = LineGap.goToStart buffer
+          val initialMsg = [SEARCH (buffer, searchString, time)]
+        in
+          NormalDelete.finishAfterDeletingBuffer
+            (app, origCursorIdx, buffer, time, initialMsg)
+        end
+      else
+        let
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val lineStart = Cursor.vi0 (buffer, cursorIdx)
 
-      val indentString = "  "
-      val buffer = LineGap.insert (lineStart, indentString, buffer)
+          val buffer = LineGap.insert (lineStart, "  ", buffer)
 
-      val buffer = LineGap.goToStart buffer
-      val initialMsg = [SEARCH (buffer, searchString, time)]
-    in
-      NormalDelete.finishAfterDeletingBuffer
-        (app, cursorIdx, buffer, time, initialMsg)
-    end
+          val buffer = LineGap.goToIdx (lineStart, buffer)
+          val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
+          val buffer = LineGap.goToIdx (lineEnd, buffer)
+          val nextLine = Cursor.viL (buffer, lineEnd)
+
+          val count = if lineEnd = nextLine then 0 else count - 1
+        in
+          loop (app, nextLine, buffer, count, time)
+        end
+  in
+    fun indnetLine (app: app_type, count, time) =
+      loop (app, #cursorIdx app, #buffer app, count, time)
+  end
 
   (* todo: use count to find number of lines to dedent *)
   fun dedentLine (app: app_type, count, time) =
