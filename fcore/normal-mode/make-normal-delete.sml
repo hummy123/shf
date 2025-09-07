@@ -89,7 +89,38 @@ struct
       end
 
   fun removeChr (app: app_type, count, time) =
-    helpRemoveChr (app, #buffer app, #cursorIdx app, count, time)
+    let
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val lineStart = Cursor.vi0 (buffer, cursorIdx)
+      val lineEnd = Cursor.viDlr (buffer, cursorIdx, 1)
+
+      val buffer = LineGap.goToIdx (lineEnd, buffer)
+    in
+      if
+        cursorIdx = lineEnd
+        andalso Cursor.isCursorAtStartOfLine (buffer, lineEnd)
+      then
+        NormalFinish.clearMode app
+      else
+        let
+          val lineEnd = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
+          val high = cursorIdx + count
+          val high = Int.min (lineEnd, high)
+          val length = high - cursorIdx
+
+          val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
+          val buffer = LineGap.delete (cursorIdx, length, buffer)
+
+          (* figure out where to place cursor *)
+          val buffer = LineGap.goToIdx (lineStart, buffer)
+          val lineEndAfterDelete = Cursor.viDlr (buffer, lineStart, 1)
+          val cursorIdx = Int.min (lineEndAfterDelete, cursorIdx)
+        in
+          finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
+        end
+    end
 
   (* Note: The below implementation of removing line breaks with the 'J' 
    * command slightly differs from the implementation in Vim.
