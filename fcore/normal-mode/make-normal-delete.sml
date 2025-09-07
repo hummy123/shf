@@ -32,61 +32,6 @@ struct
     end
 
   (* equivalent of vi's 'x' command **)
-  (* todo: instead of deleting in a loop, add an otherIdx accumulator instead.
-   * This will enable us to substring and yank the text that gets deleted. *)
-  fun helpRemoveChr (app: app_type, buffer, cursorIdx, count, time) =
-    if count = 0 then
-      finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
-    else
-      let
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-
-        (* Explanation of how Vi's 'x' command behaves:
-        * If the cursor is at the end of the file, 
-        * then it is decremented by 1.
-        * If the character after the cursor is a line break,
-        * then it is also decremented by 1.
-        * If the character before the cursor is a linee break, the cursor stays
-        * where it is.
-        * If the chracter AT the cursor is a line break and the characater
-        * AFTER the cursor is also a line break, then nothing is deleted. 
-        * Otherwise, the same cursor is returned.
-        * All decrement cases do not decrement when the cursor is 0. *)
-        val cursorIsStart = Cursor.isCursorAtStartOfLine (buffer, cursorIdx)
-        val nextIsEnd = Cursor.isNextChrEndOfLine (buffer, cursorIdx)
-      in
-        if nextIsEnd andalso cursorIsStart then
-          (* vi simply doesn't do anything on 'x' command
-          * when cursor is at start of line, and next chr is line break 
-          * so skip to end of loop by passing count of 0 *)
-          helpRemoveChr (app, buffer, cursorIdx, 0, time)
-        else if cursorIsStart then
-          helpRemoveChr (app, buffer, cursorIdx, 0, time)
-        else if nextIsEnd then
-          let
-            (* delete char at cursor and then decrement cursorIdx by 1
-            * if cursorIdx is not 0 *)
-            val searchString = #searchString app
-            val buffer = LineGap.delete (cursorIdx, 1, buffer)
-
-            val cursorIdx =
-              if
-                Cursor.isPrevChrStartOfLine (buffer, cursorIdx)
-                orelse cursorIdx = 0
-              then cursorIdx
-              else cursorIdx - 1
-          in
-            helpRemoveChr (app, buffer, cursorIdx, count - 1, time)
-          end
-        else
-          let
-            val searchString = #searchString app
-            val buffer = LineGap.delete (cursorIdx, 1, buffer)
-          in
-            helpRemoveChr (app, buffer, cursorIdx, count - 1, time)
-          end
-      end
-
   fun removeChr (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, ...} = app
@@ -304,17 +249,23 @@ struct
         NormalFinish.clearMode app
       else
         let
-          (* viDlr takes us to the last chr in the line 
-          * but does not delete that last chr
-          * so we call helpRemoveChr to delete that last chr. 
-          * We also rely on helpRemoveChr to handle backwards-movement logic:
-          * If cursorIdx is at \n after deletion, then stop.
-          * Else, move back one chr. *)
-          val lastChr = Cursor.viDlr (buffer, cursorIdx, 1)
-          val length = lastChr - cursorIdx
+          val lineStart = Cursor.vi0 (buffer, cursorIdx)
+          val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1) - 1
+          val length = high - cursorIdx
+
+          val buffer = LineGap.goToIdx (high, buffer)
+          val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
           val buffer = LineGap.delete (cursorIdx, length, buffer)
+
+          (* calculate new cursorIdx.
+           * Because we deleted the cursor that this line is on,
+           * we need to set the cursorIdx to the place
+           * that is considered to be the "end of line"
+           * after having performed the deletion. *)
+          val buffer = LineGap.goToIdx (lineStart, buffer)
+          val cursorIdx = Cursor.viDlr (buffer, lineStart, 1)
         in
-          helpRemoveChr (app, buffer, cursorIdx, 1, time)
+          finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
         end
     end
 
