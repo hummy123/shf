@@ -141,8 +141,8 @@ struct
         moveLeft (app, searchString, tempSearchList, searchCursorIdx)
     | ARROW_RIGHT =>
         moveRight (app, searchString, tempSearchList, searchCursorIdx)
-    | WITH_SEARCH_LIST searchList =>
-        NormalSearchModeWith.searchList (app, searchList)
+    | WITH_SEARCH_LIST (searchList, time) =>
+        NormalFinish.withSearchList (app, searchList, time)
     | RESIZE_EVENT (width, height) =>
         NormalSearchFinish.resize
           (app, width, height, searchCursorIdx, tempSearchList)

@@ -6,7 +6,7 @@ struct
   | KEY_ENTER
   | KEY_BACKSPACE
   | RESIZE_EVENT of int * int
-  | WITH_SEARCH_LIST of int vector
+  | WITH_SEARCH_LIST of int vector * Time.time
   | ARROW_LEFT
   | ARROW_UP
   | ARROW_RIGHT

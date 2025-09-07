@@ -522,8 +522,8 @@ struct
     | KEY_ESC => NormalFinish.clearMode app
     | RESIZE_EVENT (width, height) =>
         NormalFinish.resizeText (app, width, height)
-    | WITH_SEARCH_LIST searchList =>
-        NormalFinish.withSearchList (app, searchList)
+    | WITH_SEARCH_LIST (searchList, time) =>
+        NormalFinish.withSearchList (app, searchList, time)
 
     (* Don't need to handle these keys in normal mode.
      * Everything that is possible through them in Vi and Vim
