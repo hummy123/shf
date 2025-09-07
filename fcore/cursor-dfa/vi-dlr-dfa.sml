@@ -30,7 +30,15 @@ struct
                 val isFinal = isFinal
               end)
 
-         val fStart = Folder.foldNext
+         fun fStart (idx, absIdx, str, tl, currentState, counter) =
+           if String.sub (str, idx) = #"\n" then
+             if counter = 1 then
+               absIdx
+             else
+               Folder.foldNext
+                 (idx + 1, absIdx + 1, str, tl, currentState, counter - 1)
+           else
+             Folder.foldNext (idx, absIdx, str, tl, currentState, counter)
        end)
 
   structure ViDlrForDelete =
