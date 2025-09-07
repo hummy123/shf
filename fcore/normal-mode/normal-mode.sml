@@ -25,8 +25,7 @@ struct
       NormalModeWith.mode (app, mode, [])
     end
 
-  fun makeSpace _ = #" "
-
+  (* todo: use count to find number of lines to indent *)
   fun indnetLine (app: app_type, count, time) =
     let
       open MailboxType
@@ -35,7 +34,7 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val lineStart = Cursor.vi0 (buffer, cursorIdx)
 
-      val indentString = CharVector.tabulate (count * 2, makeSpace)
+      val indentString = "  "
       val buffer = LineGap.insert (lineStart, indentString, buffer)
 
       val buffer = LineGap.goToStart buffer
@@ -43,6 +42,41 @@ struct
     in
       NormalDelete.finishAfterDeletingBuffer
         (app, cursorIdx, buffer, time, initialMsg)
+    end
+
+  (* todo: use count to find number of lines to dedent *)
+  fun dedentLine (app: app_type, count, time) =
+    let
+      open MailboxType
+
+      val {cursorIdx, buffer, searchString, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val lineStart = Cursor.vi0 (buffer, cursorIdx)
+      val firstNonSpaceChr = Cursor.firstNonSpaceChr (buffer, lineStart)
+    in
+      if lineStart = firstNonSpaceChr then
+        (* can't dedent; no leading spaces *)
+        app
+      else
+        let
+          (* calculate length to delete *)
+          val difference = firstNonSpaceChr - lineStart
+          val deleteLength = if difference < 2 then difference else 2
+
+          val buffer = LineGap.delete (lineStart, deleteLength, buffer)
+          val buffer = LineGap.goToStart buffer
+          val initialMsg = [SEARCH (buffer, searchString, time)]
+
+          (* The cursorIdx might be past the current line after we dedent.
+           * If it is, we put the cursorIdx at the last char of the line. *)
+          val buffer = LineGap.goToIdx (lineStart, buffer)
+          val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
+          val cursorIdx = if lineEnd < cursorIdx then lineEnd else cursorIdx
+        in
+          NormalDelete.finishAfterDeletingBuffer
+            (app, cursorIdx, buffer, time, initialMsg)
+        end
     end
 
   fun parseMoveToChr (count, app, fMove, chrCmd) =
@@ -109,6 +143,7 @@ struct
     | #"J" => NormalDelete.removeLineBreaks (app, count, time)
     | #"/" => switchToNormalSearchMode app
     | #">" => indnetLine (app, count, time)
+    | #"<" => dedentLine (app, count, time)
     (* multi-char commands which can be appended *)
     | #"t" => appendChr (app, chr, str)
     | #"T" => appendChr (app, chr, str)
