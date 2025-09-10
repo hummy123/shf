@@ -1,6 +1,5 @@
-structure UpdateThread =
+structure Updater =
 struct
-  open CML
   open MailboxType
   open InputMsg
 

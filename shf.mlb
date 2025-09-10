@@ -78,7 +78,7 @@ shell/search-mailbox.sml
 
 shell/exception-logger.sml
 shell/search-thread.sml
-shell/update-thread.sml
+shell/updater.sml
 shell/gl-shaders.sml
 shell/gl-draw.sml
 shell/shell.sml

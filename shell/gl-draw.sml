@@ -265,7 +265,7 @@ struct
       else
         let
           val msg = Vector.sub (msgVec, pos)
-          val app = UpdateThread.update (app, msg)
+          val app = Updater.update (app, msg)
         in
           updateLoop (pos + 1, msgVec, app)
         end
