@@ -8,6 +8,7 @@ lib/cozette-sml/fonts/cozette-ascii.mlb
 (* FUNCTIONAL CORE *)
 message-types/input-msg.sml
 message-types/draw-msg.sml
+message-types/search-msg.sml
 message-types/mailbox-type.sml
 
 ann
@@ -73,6 +74,7 @@ in
 end
 shell/input-mailbox.sml
 shell/draw-mailbox.sml
+shell/search-mailbox.sml
 
 shell/exception-logger.sml
 shell/search-thread.sml

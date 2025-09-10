@@ -21,7 +21,6 @@ struct
     , bgProgram: Word32.word
     , bgDrawLength: int
 
-    , drawMailbox: DrawMsg.t Mailbox.mbox
     , window: MLton.Pointer.t
     }
 
@@ -44,7 +43,7 @@ struct
       program
     end
 
-  fun create (drawMailbox, window) =
+  fun create window =
     let
       (* create vertex buffer, program, etc. for text. *)
       val textVertexBuffer = Gles3.createBuffer ()
@@ -80,7 +79,6 @@ struct
       , bgProgram = bgProgram
       , bgDrawLength = 0
 
-      , drawMailbox = drawMailbox
       , window = window
       }
     end
@@ -98,7 +96,6 @@ struct
         , bgProgram
         , bgDrawLength
         , window
-        , drawMailbox
         } = shellState
 
       val _ = Gles3.bindBuffer textVertexBuffer
@@ -114,7 +111,6 @@ struct
       , bgVertexBuffer = bgVertexBuffer
       , bgProgram = bgProgram
       , bgDrawLength = bgDrawLength
-      , drawMailbox = drawMailbox
       , window = window
       }
     end
@@ -132,7 +128,6 @@ struct
         , bgProgram
         , bgDrawLength
         , window
-        , drawMailbox
         } = shellState
 
       val _ = Gles3.bindBuffer cursorVertexBuffer
@@ -148,7 +143,6 @@ struct
       , bgVertexBuffer = bgVertexBuffer
       , bgProgram = bgProgram
       , bgDrawLength = bgDrawLength
-      , drawMailbox = drawMailbox
       , window = window
       }
     end
@@ -166,7 +160,6 @@ struct
         , bgProgram
         , bgDrawLength = _
         , window
-        , drawMailbox
         } = shellState
 
       val _ = Gles3.bindBuffer bgVertexBuffer
@@ -182,7 +175,6 @@ struct
       , bgVertexBuffer = bgVertexBuffer
       , bgProgram = bgProgram
       , bgDrawLength = newBgDrawLength
-      , drawMailbox = drawMailbox
       , window = window
       }
     end
@@ -240,14 +232,8 @@ struct
 
   fun consumeDrawEvent (shellState, msg) =
     let
-      val
-        { textVertexBuffer
-        , textProgram
-        , window
-        , drawMailbox
-        , textDrawLength = _
-        , ...
-        } = shellState
+      val {textVertexBuffer, textProgram, window, textDrawLength = _, ...} =
+        shellState
     in
       case msg of
         REDRAW_TEXT textVec => uploadText (shellState, textVec)
@@ -256,15 +242,39 @@ struct
       | YANK str => yank (shellState, str)
     end
 
-  fun consumeDrawEvents (shellState as {drawMailbox, ...}: t) =
-    case Mailbox.recvPoll drawMailbox of
-      NONE => shellState
-    | SOME msg =>
-        let val shellState = consumeDrawEvent (shellState, msg)
-        in consumeDrawEvents shellState
+  local
+    fun loop (pos, msgVec, shellState) =
+      if pos = Vector.length msgVec then
+        shellState
+      else
+        let
+          val msg = Vector.sub (msgVec, pos)
+          val shellState = consumeDrawEvent (shellState, msg)
+        in
+          loop (pos + 1, msgVec, shellState)
         end
+  in
+    fun consumeDrawEvents shellState =
+      loop (0, DrawMailbox.getMessagesAndClear (), shellState)
+  end
 
-  fun helpLoop (shellState as {window, ...}: t) =
+  local
+    fun updateLoop (pos, msgVec, app) =
+      if pos = Vector.length msgVec then
+        app
+      else
+        let
+          val msg = Vector.sub (msgVec, pos)
+          val app = UpdateThread.update (app, msg)
+        in
+          updateLoop (pos + 1, msgVec, app)
+        end
+  in
+    fun update app =
+      updateLoop (0, InputMailbox.getMessagesAndClear (), app)
+  end
+
+  fun helpLoop (app, shellState as {window, ...}: t) =
     case Glfw.windowShouldClose window of
       false =>
         let
@@ -273,17 +283,18 @@ struct
           val _ = Gles3.clearColor (0.087, 0.095, 0.13, 1.0)
           val _ = Gles3.clear ()
 
+          val app = update app
           val _ = draw shellState
 
           val _ = Glfw.swapBuffers window
           val _ = Glfw.waitEvents ()
         in
-          helpLoop shellState
+          helpLoop (app, shellState)
         end
     | true => Glfw.terminate ()
 
-  fun loop (drawMailbox, window) =
-    let val shellState = create (drawMailbox, window)
-    in helpLoop shellState
+  fun loop (app, window) =
+    let val shellState = create window
+    in helpLoop (app, shellState)
     end
 end

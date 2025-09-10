@@ -1,2 +1,2 @@
 structure MailboxType =
-struct datatype t = DRAW of DrawMsg.t | SEARCH of LineGap.t * string * Time.time end
+struct datatype t = DRAW of DrawMsg.t | SEARCH of SearchMsg.t end

@@ -1,22 +1,16 @@
 structure Shell =
 struct
-  open CML
   open InputMsg
 
-  (* create mailboxes for CML communication *)
-  val inputMailbox = Mailbox.mailbox ()
-  val drawMailbox = Mailbox.mailbox ()
-  val searchMailbox = Mailbox.mailbox ()
-
   fun frameBufferSizeCallback (width, height) =
-    Mailbox.send (inputMailbox, RESIZE_EVENT (width, height))
+    InputMailbox.append (RESIZE_EVENT (width, height))
 
   fun charCallback word =
     let
       val word = Word32.toInt word
       val chr = Char.chr word
     in
-      Mailbox.send (inputMailbox, CHAR_EVENT chr)
+      InputMailbox.append (CHAR_EVENT chr)
     end
 
   fun keyCallback (key, scancode, action, mods) =
@@ -24,19 +18,19 @@ struct
       open Input
     in
       if key = KEY_ESC andalso action = PRESS andalso mods = 0 then
-        Mailbox.send (inputMailbox, InputMsg.KEY_ESC)
+        InputMailbox.append (InputMsg.KEY_ESC)
       else if key = KEY_ENTER andalso action = PRESS andalso mods = 0 then
-        Mailbox.send (inputMailbox, InputMsg.KEY_ENTER)
+        InputMailbox.append (InputMsg.KEY_ENTER)
       else if key = KEY_BACKSPACE andalso action <> RELEASE andalso mods = 0 then
-        Mailbox.send (inputMailbox, InputMsg.KEY_BACKSPACE)
+        InputMailbox.append (InputMsg.KEY_BACKSPACE)
       else if key = KEY_ARROW_LEFT andalso action <> RELEASE andalso mods = 0 then
-        Mailbox.send (inputMailbox, InputMsg.ARROW_LEFT)
+        InputMailbox.append (InputMsg.ARROW_LEFT)
       else if key = KEY_ARROW_RIGHT andalso action <> RELEASE andalso mods = 0 then
-        Mailbox.send (inputMailbox, InputMsg.ARROW_RIGHT)
+        InputMailbox.append (InputMsg.ARROW_RIGHT)
       else if key = KEY_ARROW_UP andalso action <> RELEASE andalso mods = 0 then
-        Mailbox.send (inputMailbox, InputMsg.ARROW_UP)
+        InputMailbox.append (InputMsg.ARROW_UP)
       else if key = KEY_ARROW_DOWN andalso action <> RELEASE andalso mods = 0 then
-        Mailbox.send (inputMailbox, InputMsg.ARROW_DOWN)
+        InputMailbox.append (InputMsg.ARROW_DOWN)
       else
         ()
     end
@@ -76,26 +70,10 @@ struct
       val _ = TextIO.closeIn io
       val app = AppType.init (lineGap, 1920, 1080, Time.now ())
 
-      (* todo: remove temp line below which tests search list *)
-      val app =
-        let
-          val buffer = #buffer app
-          val buffer = LineGap.goToStart buffer
-          val searchString = "val "
-          val searchList = SearchList.build (buffer, searchString)
-          val buffer = LineGap.goToStart buffer
-        in
-          NormalModeWith.searchList
-            (app, searchList, buffer, searchString, Time.now ())
-        end
-
       val () = registerCallbacks window
 
-      val _ = CML.spawn (fn () => GlDraw.loop (drawMailbox, window))
-      val _ = CML.spawn (fn () =>
-        UpdateThread.loop (app, inputMailbox, drawMailbox, searchMailbox))
-      val _ = CML.spawn (fn () =>
-        SearchThread.loop (searchMailbox, inputMailbox))
+      val _ = CML.spawn (fn () => GlDraw.loop (app, window))
+      val _ = CML.spawn SearchThread.loop
     in
       ()
     end
