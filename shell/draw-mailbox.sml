@@ -1,0 +1,1 @@
+structure DrawMailbox = MakeMailbox(DrawMsg)

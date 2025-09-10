@@ -66,6 +66,14 @@ in
   ffi/glfw-input.sml
 end
 
+ann
+  "allowVectorExps true"
+in
+  shell/make-mailbox.sml
+end
+shell/input-mailbox.sml
+shell/draw-mailbox.sml
+
 shell/exception-logger.sml
 shell/search-thread.sml
 shell/update-thread.sml
