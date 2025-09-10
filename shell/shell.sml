@@ -79,4 +79,4 @@ struct
     end
 end
 
-val _ = RunCML.doit (Shell.main, NONE)
+val _ = RunCML.doit (Shell.main, SOME (Time.fromMicroseconds 555))
