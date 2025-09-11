@@ -41,7 +41,7 @@ struct
       val textAcc = Vector.concat textAcc
       val bgAcc = Vector.concat bgAcc
       val vec = Vector.concat [textAcc, bgAcc, cursorAcc]
-      val drawMsg = DRAW_TEXT vec
+      val drawMsg = DRAW_TEXT cursorAcc
     in
       DRAW drawMsg :: msgs
     end
@@ -63,7 +63,16 @@ struct
 
   fun makeRect (posX, posY, fw, fh, r, g, b) =
     Rect.lerp
-      (Real32.fromInt (posX - 1), Real32.fromInt posY, scale, fw, fh, r, g, b)
+      ( Real32.fromInt (posX - 1)
+      , Real32.fromInt posY
+      , 0.01
+      , scale
+      , fw
+      , fh
+      , r
+      , g
+      , b
+      )
 
   fun makeChr (chr, posX, posY, windowWidth, windowHeight, r, g, b) =
     CozetteAscii.make

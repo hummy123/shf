@@ -39,6 +39,7 @@ struct
           PipeCursor.lerp
             ( x
             , y
+            , 0.01
             , TextConstants.scale
             , floatWindowWidth
             , floatWindowHeight
@@ -109,6 +110,7 @@ struct
           PipeCursor.lerp
             ( x
             , y
+            , 0.01
             , TextConstants.scale
             , floatWindowWidth
             , floatWindowHeight
