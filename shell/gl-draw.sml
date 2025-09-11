@@ -1,7 +1,7 @@
 structure GlDraw =
 struct
   open CML
-  open DrawMsg
+  open DrawMsg K
   (* The name doesn't make it clear, but this structure
    * couples GLFW and OpenGL.
    * I'm not sure if I will use native windowing systems
@@ -12,15 +12,6 @@ struct
     { textVertexBuffer: Word32.word
     , textProgram: Word32.word
     , textDrawLength: int
-
-    , cursorVertexBuffer: Word32.word
-    , cursorProgram: Word32.word
-    , cursorDrawLength: int
-
-    , bgVertexBuffer: Word32.word
-    , bgProgram: Word32.word
-    , bgDrawLength: int
-
     , window: MLton.Pointer.t
     }
 
@@ -47,177 +38,59 @@ struct
     let
       (* create vertex buffer, program, etc. for text. *)
       val textVertexBuffer = Gles3.createBuffer ()
-      val xyrgbVertexShader = createShader
-        (Gles3.VERTEX_SHADER, GlShaders.xyrgbVertexShaderString)
+      val xyzRgbVertexShader = createShader
+        (Gles3.VERTEX_SHADER, GlShaders.xyzRgbVertexShaderString)
 
       val rgbFragmentShader = createShader
         (Gles3.FRAGMENT_SHADER, GlShaders.rgbFragmentShaderString)
 
-      val textProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
-
-      (* create cursor buffer, program, etc. *)
-      val cursorVertexBuffer = Gles3.createBuffer ()
-      val cursorProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
-
-      (* create background buffer and program *)
-      val bgVertexBuffer = Gles3.createBuffer ()
-      val bgProgram = createProgram (xyrgbVertexShader, rgbFragmentShader)
+      val textProgram = createProgram (xyzRgbVertexShader, rgbFragmentShader)
 
       (* clean up shaders which are no longer needed once progran is linked. *)
-      val _ = Gles3.deleteShader xyrgbVertexShader
+      val _ = Gles3.deleteShader xyzRgbVertexShader
       val _ = Gles3.deleteShader rgbFragmentShader
+
+      (* because we only have a single vertex buffer, 
+       * we only need to bind and set attributes once. *)
+      val _ = Gles3.bindBuffer textVertexBuffer
+
+      (* enable xyz component from uploaded array *)
+      val _ = Gles3.vertexAttribPointer (0, 3, 6, 0)
+      val _ = Gles3.enableVertexAttribArray 0
+      (* enable rgb component from uploaded array *)
+      val _ = Gles3.vertexAttribPointer (1, 3, 6, 12)
+      val _ = Gles3.enableVertexAttribArray 1
+
+      val _ = Gles3.useProgram textProgram
     in
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
       , textDrawLength = 0
-
-      , cursorVertexBuffer = cursorVertexBuffer
-      , cursorProgram = cursorProgram
-      , cursorDrawLength = 0
-
-      , bgVertexBuffer = bgVertexBuffer
-      , bgProgram = bgProgram
-      , bgDrawLength = 0
-
       , window = window
       }
     end
 
   fun uploadText (shellState: t, vec) =
     let
-      val
-        { textVertexBuffer
-        , textProgram
-        , textDrawLength = _
-        , cursorVertexBuffer
-        , cursorProgram
-        , cursorDrawLength
-        , bgVertexBuffer
-        , bgProgram
-        , bgDrawLength
-        , window
-        } = shellState
+      val {textVertexBuffer, textProgram, textDrawLength = _, window} =
+        shellState
 
-      val _ = Gles3.bindBuffer textVertexBuffer
       val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
       val newTextDrawLength = Vector.length vec div 5
     in
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
       , textDrawLength = newTextDrawLength
-      , cursorVertexBuffer = cursorVertexBuffer
-      , cursorProgram = cursorProgram
-      , cursorDrawLength = cursorDrawLength
-      , bgVertexBuffer = bgVertexBuffer
-      , bgProgram = bgProgram
-      , bgDrawLength = bgDrawLength
       , window = window
       }
     end
-
-  fun uploadCursor (shellState: t, vec) =
-    let
-      val
-        { textVertexBuffer
-        , textProgram
-        , textDrawLength
-        , cursorVertexBuffer
-        , cursorProgram
-        , cursorDrawLength = _
-        , bgVertexBuffer
-        , bgProgram
-        , bgDrawLength
-        , window
-        } = shellState
-
-      val _ = Gles3.bindBuffer cursorVertexBuffer
-      val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
-      val newCursorDrawLength = Vector.length vec div 5
-    in
-      { textVertexBuffer = textVertexBuffer
-      , textProgram = textProgram
-      , textDrawLength = textDrawLength
-      , cursorVertexBuffer = cursorVertexBuffer
-      , cursorProgram = cursorProgram
-      , cursorDrawLength = newCursorDrawLength
-      , bgVertexBuffer = bgVertexBuffer
-      , bgProgram = bgProgram
-      , bgDrawLength = bgDrawLength
-      , window = window
-      }
-    end
-
-  fun uploadBg (shellState: t, vec) =
-    let
-      val
-        { textVertexBuffer
-        , textProgram
-        , textDrawLength
-        , cursorVertexBuffer
-        , cursorProgram
-        , cursorDrawLength
-        , bgVertexBuffer
-        , bgProgram
-        , bgDrawLength = _
-        , window
-        } = shellState
-
-      val _ = Gles3.bindBuffer bgVertexBuffer
-      val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
-      val newBgDrawLength = Vector.length vec div 5
-    in
-      { textVertexBuffer = textVertexBuffer
-      , textProgram = textProgram
-      , textDrawLength = textDrawLength
-      , cursorVertexBuffer = cursorVertexBuffer
-      , cursorProgram = cursorProgram
-      , cursorDrawLength = cursorDrawLength
-      , bgVertexBuffer = bgVertexBuffer
-      , bgProgram = bgProgram
-      , bgDrawLength = newBgDrawLength
-      , window = window
-      }
-    end
-
-  fun drawXyrgb (vertexBuffer, program, drawLength) =
-    if drawLength > 0 then
-      let
-        val _ = Gles3.bindBuffer vertexBuffer
-        (* enable xy component from uploaded array *)
-        val _ = Gles3.vertexAttribPointer (0, 2, 5, 0)
-        val _ = Gles3.enableVertexAttribArray 0
-        (* enable rgb component from uploaded array *)
-        val _ = Gles3.vertexAttribPointer (1, 3, 5, 8)
-        val _ = Gles3.enableVertexAttribArray 1
-
-        val _ = Gles3.useProgram program
-        val _ = Gles3.drawArrays (Gles3.TRIANGLES, 0, drawLength)
-      in
-        ()
-      end
-    else
-      ()
 
   fun draw (drawObject: t) =
     let
-      val
-        { textVertexBuffer
-        , textDrawLength
-        , textProgram
-        , cursorVertexBuffer
-        , cursorDrawLength
-        , cursorProgram
-        , bgVertexBuffer
-        , bgProgram
-        , bgDrawLength
-        , ...
-        } = drawObject
-
-      val _ = drawXyrgb (bgVertexBuffer, bgProgram, bgDrawLength)
-      val _ = drawXyrgb (cursorVertexBuffer, cursorProgram, cursorDrawLength)
-      val _ = drawXyrgb (textVertexBuffer, textProgram, textDrawLength)
+      val {textVertexBuffer, textDrawLength, textProgram, window = _} =
+        drawObject
     in
-      ()
+      Gles3.drawArrays (Gles3.TRIANGLES, 0, drawLength)
     end
 
   fun yank (shellState: t, str) =
@@ -236,9 +109,7 @@ struct
         shellState
     in
       case msg of
-        REDRAW_TEXT textVec => uploadText (shellState, textVec)
-      | REDRAW_CURSOR cursorVec => uploadCursor (shellState, cursorVec)
-      | REDRAW_BG bgVec => uploadBg (shellState, bgVec)
+        DRAW vec => uploadText (shellState, textVec)
       | YANK str => yank (shellState, str)
     end
 
