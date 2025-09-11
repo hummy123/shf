@@ -14,6 +14,10 @@ struct
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
+      (* calculate scroll column *)
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val visualScrollColumn = TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
 

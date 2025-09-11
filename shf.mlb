@@ -40,6 +40,7 @@ in
 end
 fcore/cursor.sml
 fcore/text-window.sml
+fcore/text-scroll.sml
 
 fcore/normal-mode/normal-finish.sml
 fcore/normal-mode/normal-search-finish.sml
