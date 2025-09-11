@@ -41,7 +41,7 @@ struct
       val textAcc = Vector.concat textAcc
       val bgAcc = Vector.concat bgAcc
       val vec = Vector.concat [textAcc, bgAcc, cursorAcc]
-      val drawMsg = DRAW_TEXT cursorAcc
+      val drawMsg = DRAW_TEXT vec
     in
       DRAW drawMsg :: msgs
     end
@@ -79,6 +79,7 @@ struct
       ( chr
       , Real32.fromInt posX
       , Real32.fromInt posY
+      , 0.05
       , scale
       , windowWidth
       , windowHeight

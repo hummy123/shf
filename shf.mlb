@@ -3,7 +3,7 @@ $(SML_LIB)/basis/basis.mlb
 (* LIBRARIES *)
 lib/brolib-sml/src/line_gap.sml
 lib/brolib-sml/src/gap_set.sml
-lib/cozette-sml/fonts/cozette-ascii.mlb
+lib/cozette-sml/fonts-with-z-index/cozette-ascii.mlb
 
 (* FUNCTIONAL CORE *)
 message-types/input-msg.sml
