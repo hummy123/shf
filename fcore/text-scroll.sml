@@ -16,7 +16,9 @@ struct
             if windowWidth >= TC.textLineWidth then TC.textLineCount
             else windowWidth div TC.xSpace
         in
-          columnDifference mod howManyColumnsCanWeFit
+          if columnDifference < howManyColumnsCanWeFit then 0
+          else
+            columnDifference - howManyColumnsCanWeFit
         end
     end
 end
