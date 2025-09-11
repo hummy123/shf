@@ -16,7 +16,8 @@ struct
 
       (* calculate scroll column *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val visualScrollColumn = TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+      val visualScrollColumn =
+        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -50,6 +51,7 @@ struct
         , searchList
         , msgs
         , bufferModifyTime
+        , visualScrollColumn
         )
     end
 
@@ -84,7 +86,10 @@ struct
         , ...
         } = app
 
-      val newBuffer = LineGap.goToLine (startLine, buffer)
+      val newBuffer = LineGap.goToIdx (cursorIdx, buffer)
+      val visualScrollColumn =
+        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+      val newBuffer = LineGap.goToLine (startLine, newBuffer)
       val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
 
       val drawMsg = TextBuilder.build
@@ -106,6 +111,7 @@ struct
         , searchList
         , drawMsg
         , bufferModifyTime
+        , visualScrollColumn
         )
     end
 
@@ -118,6 +124,10 @@ struct
     (app: app_type, buffer, cursorIdx, searchList, initialMsg, bufferModifyTime) =
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val visualScrollColumn =
+        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -152,6 +162,7 @@ struct
         , searchList
         , drawMsg
         , bufferModifyTime
+        , visualScrollColumn
         )
     end
 
@@ -187,15 +198,20 @@ struct
         , []
         )
     in
-      NormalModeWith.bufferAndCursorIdx
-        ( app
-        , buffer
-        , cursorIdx
-        , NORMAL_MODE ""
-        , startLine
-        , searchList
-        , drawMsg
-        , bufferModifyTime
-        )
+      let
+        val _ = raise Fail "centering to line is unimplemented\n"
+      in
+        NormalModeWith.bufferAndCursorIdx
+          ( app
+          , buffer
+          , cursorIdx
+          , NORMAL_MODE ""
+          , startLine
+          , searchList
+          , drawMsg
+          , bufferModifyTime
+          , #visualScrollColumn app
+          )
+      end
     end
 end

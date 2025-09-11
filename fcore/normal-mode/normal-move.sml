@@ -40,6 +40,7 @@ struct
         , searchList
         , drawMsg
         , bufferModifyTime
+        , 0
         )
     end
 
@@ -63,6 +64,8 @@ struct
       val bufferLine = bufferLine - 1
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
+      val visualScrollColumn =
+        TextScroll.getScrollColumn (buffer, bufferIdx, windowWidth)
       val bufferLine =
         let
           val maxHeight = windowHeight - TextConstants.ySpace
@@ -96,6 +99,7 @@ struct
         , searchList
         , drawMsg
         , bufferModifyTime
+        , visualScrollColumn
         )
     end
 
@@ -120,6 +124,8 @@ struct
         val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
 
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val visualScrollColumn =
+          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
         val startLine = TextWindow.getStartLineWithCursorCentered
           (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
@@ -148,6 +154,7 @@ struct
           , searchList
           , drawMsg
           , bufferModifyTime
+          , visualScrollColumn
           )
       end
 
@@ -172,66 +179,39 @@ struct
       val buffer = LineGap.goToLine (startLine, buffer)
       val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
     in
-      if
-        TextWindow.isCursorVisible
-          (buffer, cursorIdx, startLine, windowWidth, windowHeight)
-      then
-        (* if visible, just need to redraw; no need to get line *)
-        let
-          val drawMsg = TextBuilder.build
-            ( startLine
-            , cursorIdx
-            , buffer
-            , windowWidth
-            , windowHeight
-            , searchList
-            , searchString
-            , []
-            )
-        in
-          NormalModeWith.bufferAndCursorIdx
-            ( app
-            , buffer
-            , cursorIdx
-            , NORMAL_MODE ""
-            , startLine
-            , searchList
-            , drawMsg
-            , bufferModifyTime
-            )
-        end
-      else
-        (* not visible, so need to get startLine where cursor is visible *)
-        let
-          val buffer = LineGap.goToIdx (cursorIdx, buffer)
-          val startLine = TextWindow.getStartLineWithCursorCentered
-            (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
+      let
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val visualScrollColumn =
+          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+        val startLine = TextWindow.getStartLineWithCursorCentered
+          (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
 
-          val buffer = LineGap.goToLine (startLine, buffer)
-          val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+        val buffer = LineGap.goToLine (startLine, buffer)
+        val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
 
-          val drawMsg = TextBuilder.build
-            ( startLine
-            , cursorIdx
-            , buffer
-            , windowWidth
-            , windowHeight
-            , searchList
-            , searchString
-            , []
-            )
-        in
-          NormalModeWith.bufferAndCursorIdx
-            ( app
-            , buffer
-            , cursorIdx
-            , NORMAL_MODE ""
-            , startLine
-            , searchList
-            , drawMsg
-            , bufferModifyTime
-            )
-        end
+        val drawMsg = TextBuilder.build
+          ( startLine
+          , cursorIdx
+          , buffer
+          , windowWidth
+          , windowHeight
+          , searchList
+          , searchString
+          , []
+          )
+      in
+        NormalModeWith.bufferAndCursorIdx
+          ( app
+          , buffer
+          , cursorIdx
+          , NORMAL_MODE ""
+          , startLine
+          , searchList
+          , drawMsg
+          , bufferModifyTime
+          , visualScrollColumn
+          )
+      end
     end
 
   fun firstNonSpaceChr (app: app_type) =

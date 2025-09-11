@@ -400,6 +400,7 @@ struct
 
       val cursorIdx = 0
       val startLine = 0
+      val visualScrollColumn = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val drawMsg = TextBuilder.build
@@ -416,7 +417,16 @@ struct
       val mode = NORMAL_MODE ""
     in
       NormalModeWith.bufferAndCursorIdx
-        (app, buffer, cursorIdx, mode, startLine, searchList, drawMsg, time)
+        ( app
+        , buffer
+        , cursorIdx
+        , mode
+        , startLine
+        , searchList
+        , drawMsg
+        , time
+        , visualScrollColumn
+        )
     end
 
   fun helpDeleteToMatch (app: app_type, low, high, time) =
