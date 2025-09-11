@@ -65,13 +65,13 @@ struct
     Rect.lerp
       ( Real32.fromInt (posX - 1)
       , Real32.fromInt posY
-      , 0.01
+      , 0.9
       , scale
       , fw
       , fh
-      , r
-      , g
-      , b
+      , 1.0
+      , 1.0
+      , 1.0
       )
 
   fun makeChr (chr, posX, posY, windowWidth, windowHeight, r, g, b) =
@@ -79,7 +79,7 @@ struct
       ( chr
       , Real32.fromInt posX
       , Real32.fromInt posY
-      , 0.05
+      , 0.1
       , scale
       , windowWidth
       , windowHeight

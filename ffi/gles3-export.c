@@ -13,6 +13,7 @@ unsigned int DYNAMIC_DRAW = GL_DYNAMIC_DRAW;
 // OpenGL functions used below
 void loadGlad() {
   gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+  glEnable(GL_DEPTH_TEST);
 }
 
 void viewport(int width, int height) {
@@ -24,7 +25,7 @@ void clearColor(float r, float g, float b, float a) {
 }
 
 void clear() {
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 unsigned int createBuffer() {
