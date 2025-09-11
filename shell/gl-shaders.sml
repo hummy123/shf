@@ -1,6 +1,6 @@
 structure GlShaders =
 struct
-  val xyrgbVertexShaderString =
+  val xyzRgbVertexShaderString =
     "#version 300 es\n\
     \layout (location = 0) in vec3 apos;\n\
     \layout (location = 1) in vec3 col;\n\

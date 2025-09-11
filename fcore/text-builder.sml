@@ -40,12 +40,10 @@ struct
 
       val textAcc = Vector.concat textAcc
       val bgAcc = Vector.concat bgAcc
-
-      val textMsg = REDRAW_TEXT textAcc
-      val cursorMsg = REDRAW_CURSOR cursorAcc
-      val bgMsg = REDRAW_BG bgAcc
+      val vec = Vector.concat [textAcc, bgAcc, cursorAcc]
+      val drawMsg = DRAW_TEXT vec
     in
-      DRAW bgMsg :: DRAW textMsg :: DRAW cursorMsg :: msgs
+      DRAW drawMsg :: msgs
     end
 
   (* builds text from a string with char-wrap.

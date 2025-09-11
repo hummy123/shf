@@ -1,7 +1,8 @@
 structure GlDraw =
 struct
   open CML
-  open DrawMsg K
+  open DrawMsg
+
   (* The name doesn't make it clear, but this structure
    * couples GLFW and OpenGL.
    * I'm not sure if I will use native windowing systems
@@ -76,7 +77,7 @@ struct
         shellState
 
       val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
-      val newTextDrawLength = Vector.length vec div 5
+      val newTextDrawLength = Vector.length vec div 6
     in
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
@@ -90,7 +91,7 @@ struct
       val {textVertexBuffer, textDrawLength, textProgram, window = _} =
         drawObject
     in
-      Gles3.drawArrays (Gles3.TRIANGLES, 0, drawLength)
+      Gles3.drawArrays (Gles3.TRIANGLES, 0, textDrawLength)
     end
 
   fun yank (shellState: t, str) =
@@ -109,7 +110,7 @@ struct
         shellState
     in
       case msg of
-        DRAW vec => uploadText (shellState, textVec)
+        DRAW_TEXT textVec => uploadText (shellState, textVec)
       | YANK str => yank (shellState, str)
     end
 
