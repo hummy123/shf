@@ -17,7 +17,6 @@ struct
       (* calculate scroll column *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val visualScrollColumn = TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
-      val () = print (Int.toString visualScrollColumn ^ "\n")
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
