@@ -23,6 +23,7 @@ struct
         , windowWidth
         , windowHeight
         , cursorIdx
+        , visualScrollColumn
         } = app
     in
       { mode = newMode
@@ -35,6 +36,7 @@ struct
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       , cursorIdx = cursorIdx
+      , visualScrollColumn = visualScrollColumn
       }
     end
 
@@ -52,6 +54,7 @@ struct
         , windowWidth
         , windowHeight
         , cursorIdx
+        , visualScrollColumn
         } = app
     in
       { mode = newMode
@@ -64,6 +67,7 @@ struct
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       , cursorIdx = cursorIdx
+      , visualScrollColumn = visualScrollColumn
       }
     end
 
@@ -80,6 +84,7 @@ struct
         , windowWidth
         , windowHeight
         , cursorIdx
+        , visualScrollColumn
         } = app
     in
       { mode = mode
@@ -92,6 +97,7 @@ struct
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       , cursorIdx = cursorIdx
+      , visualScrollColumn = visualScrollColumn
       }
     end
 
@@ -109,6 +115,7 @@ struct
         , startLine
         , bufferModifyTime
         , cursorIdx
+        , visualScrollColumn
         } = app
     in
       { mode = mode
@@ -121,6 +128,7 @@ struct
       , searchString = searchString
       , bufferModifyTime = bufferModifyTime
       , cursorIdx = cursorIdx
+      , visualScrollColumn = visualScrollColumn
       }
     end
 end

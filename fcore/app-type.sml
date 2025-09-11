@@ -17,6 +17,8 @@ struct
     , startLine: int
     (* absolute index of movable cursor *)
     , cursorIdx: int
+    (* column to start drawing text at for horizontal scrolling. *)
+    , visualScrollColumn: int
     (* msgs to send after an update.
      * The list of messages is reset on each invocation of AppUpdate.update. *)
     , msgs: MailboxType.t list
@@ -32,6 +34,7 @@ struct
     , windowHeight = windowHeight
     , startLine = 0
     , cursorIdx = 0
+    , visualScrollColumn = 0
     , msgs = []
     }
 end
