@@ -520,8 +520,8 @@ struct
       val {buffer, cursorIdx, searchString, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
-      val low = Cursor.prevWordStrict (buffer, cursorIdx, 1)
-      val high = Cursor.endOfWordStrict (buffer, cursorIdx, 1) + 1
+      val low = Cursor.prevWORDStrict (buffer, cursorIdx, 1)
+      val high = Cursor.endOfWORDStrict (buffer, cursorIdx, 1) + 1
 
       val buffer = LineGap.goToIdx (high, buffer)
       val length = high - low

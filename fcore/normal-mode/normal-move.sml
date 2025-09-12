@@ -84,7 +84,7 @@ struct
 
       val drawMsg = NormalModeTextBuilder.build
         ( bufferLine
-        , lineIdx
+        , bufferIdx
         , buffer
         , windowWidth
         , windowHeight

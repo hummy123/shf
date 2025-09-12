@@ -41,7 +41,7 @@ struct
         )
       val drawMsg = Vector.concat drawMsg
       val drawMsg = DRAW_TEXT drawMsg
-      val drawMsg = [DRAW drawMsg]
+      val msgs = DRAW drawMsg :: msgs
 
       val mode = NORMAL_MODE ""
     in
@@ -91,7 +91,7 @@ struct
 
       val newBuffer = LineGap.goToIdx (cursorIdx, buffer)
       val visualScrollColumn =
-        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+        TextScroll.getScrollColumn (buffer, cursorIdx, newWidth)
       val newBuffer = LineGap.goToLine (startLine, newBuffer)
       val lineIdx = TextBuilderUtils.getLineAbsIdxFromBuffer (startLine, buffer)
 
@@ -99,15 +99,15 @@ struct
         ( startLine
         , cursorIdx
         , buffer
-        , windowWidth
-        , windowHeight
+        , newWidth
+        , newHeight
         , searchList
         , searchString
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
       val drawMsg = DRAW_TEXT drawMsg
-      val drawMsg = [DRAW drawMsg]
+      val msgs = [DRAW drawMsg]
     in
       NormalModeWith.bufferAndSize
         ( app
@@ -115,7 +115,7 @@ struct
         , newWidth
         , newHeight
         , searchList
-        , drawMsg
+        , msgs
         , bufferModifyTime
         , visualScrollColumn
         )
@@ -159,7 +159,7 @@ struct
         )
       val drawMsg = Vector.concat drawMsg
       val drawMsg = DRAW_TEXT drawMsg
-      val drawMsg = [DRAW drawMsg]
+      val msgs = DRAW drawMsg :: initialMsg
 
       val mode = NORMAL_MODE ""
     in
@@ -170,7 +170,7 @@ struct
         , mode
         , startLine
         , searchList
-        , drawMsg
+        , msgs
         , bufferModifyTime
         , visualScrollColumn
         )

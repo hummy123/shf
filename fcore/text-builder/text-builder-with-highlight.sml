@@ -270,8 +270,8 @@ struct
               let
                 val acc =
                   if absIdx = cursorIdx then
-                    Utils.makeCursor (posX, posY, env)
-                    :: Utils.makeCursorOnChr (chr, posX, posY, env) :: acc
+                    Utils.makeCursorOnChr (chr, posX, posY, env)
+                    :: Utils.makeCursor (posX, posY, env) :: acc
                   else if Utils.isInSearchRange (absIdx, searchPos, env) then
                     Utils.makeHighlightChr (chr, posX, posY, env)
                     :: Utils.makeHighlight (posX, posY, env) :: acc

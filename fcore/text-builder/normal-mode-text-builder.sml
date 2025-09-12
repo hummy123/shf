@@ -27,7 +27,6 @@ struct
             (* get relative index of line to start building from *)
             val strPos =
               Utils.getRelativeLineStartFromRightHead (startLine, curLine, lhd)
-              + 1
             (* get absolute idx of line *)
             val absIdx = curIdx + strPos
             val searchPos = BinSearch.equalOrMore (absIdx, searchList)
