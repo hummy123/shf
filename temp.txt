@@ -1,11 +1,3 @@
-signature TEXT_BUILDER = aaron baron carrot durian
-  (* Prerequisite: LineGap is moved to requested line first. *)
-  val build: int * int * LineGap.t * int * int
-             -> MailboxType.t list
-end
-
-
-
 structure TextBuilder :> TEXT_BUILDER =
 struct
   val xSpace = 13

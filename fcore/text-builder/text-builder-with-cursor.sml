@@ -15,13 +15,12 @@ struct
             val posY = posY + TC.ySpace
             val lineNumber = lineNumber + 1
           in
-            build
+            skipToFirstVisibleColumn
               ( strPos
               , shd
               , stl
               , lhd
               , ltl
-              , #startX env
               , posY
               , 0
               , lineNumber
@@ -78,13 +77,12 @@ struct
             val posY = posY + TC.ySpace
             val lineNumber = lineNumber + 1
           in
-            build
+            skipToFirstVisibleColumn
               ( newStrPos
               , str
               , stl
               , line
               , ltl
-              , #startX env
               , posY
               , 0
               , lineNumber
@@ -150,19 +148,23 @@ struct
       case String.sub (str, pos) of
         #"\n" =>
           let
-            (* increment line lineNumber and posY, and then call build function *)
+            (* increment line lineNumber and posY, 
+             * and then call skipToFirstVisibleColumn recursively.
+             * The recursive call check this condition:
+             * Is the new column 0 the same as the column the scroll starts at?
+             * If it is, then we call build, or else we continue skipping 
+             * until we reach the start column. *)
             val posY = posY + TC.ySpace
             val lineNumber = lineNumber + 1
           in
-            build
+            skipToFirstVisibleColumn
               ( pos + 1
               , str
               , stl
               , line
               , ltl
-              , #startX env
               , posY
-              , #scrollColumnStart env
+              , 0
               , lineNumber
               , absIdx + 1
               , cursorIdx
