@@ -235,4 +235,40 @@ struct
   fun advanceSearchPos (absIdx, searchPos, env) =
     if isAfterSearchRange (absIdx, searchPos, env) then searchPos + 1
     else searchPos
+
+  (* gets line start idx, relative to right hd *)
+  fun getRelativeLineStartFromRightHead (startLine, curLine, rLnHd) =
+    if startLine > curLine then
+      let val lnPos = startLine - curLine - 1
+      in Vector.sub (rLnHd, lnPos) + 1
+      end
+    else
+      0
+
+  (* gets line start idx, absolute *)
+  fun getAbsoluteLineStartFromRightHead (curIdx, startLine, curLine, rLnHd) =
+    let
+      val startIdx =
+        if startLine > curLine then
+          let val lnPos = startLine - curLine - 1
+          in Vector.sub (rLnHd, lnPos) + 1
+          end
+        else
+          0
+    in
+      curIdx + startIdx
+    end
+
+  fun getLineAbsIdxFromBuffer (startLine, buffer: LineGap.t) =
+    let
+      val {rightLines, line = curLine, idx = curIdx, ...} = buffer
+    in
+      case rightLines of
+        rLnHd :: _ =>
+          getAbsoluteLineStartFromRightHead (curIdx, startLine, curLine, rLnHd)
+      | [] =>
+          raise Fail
+            "text-builder-utils.sml 268:\ 
+            \should never call function when at end of buffer"
+    end
 end
