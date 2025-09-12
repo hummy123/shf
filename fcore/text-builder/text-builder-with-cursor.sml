@@ -45,7 +45,7 @@ struct
             )
     | (_, _) => acc
 
-  and skipToColumnStart
+  and skipToNextLine
     (pos, str, stl, line, ltl, posY, lineNumber, absIdx, cursorIdx, env, acc) =
     if Vector.length line = 0 then
       let
@@ -96,6 +96,96 @@ struct
           end
       end
 
+  and skipToFirstVisibleColumn
+    ( pos
+    , str
+    , stl
+    , line
+    , ltl
+    , posY
+    , column
+    , lineNumber
+    , absIdx
+    , cursorIdx
+    , env: Utils.env_data
+    , acc
+    ) =
+    if column = #scrollColumnStart env then
+      (* return to build function *)
+      build
+        ( pos
+        , str
+        , stl
+        , line
+        , ltl
+        , #startX env
+        , posY
+        , column
+        , lineNumber
+        , absIdx
+        , cursorIdx
+        , env
+        , acc
+        )
+    else if pos = String.size str then
+      (* go to next node *)
+      case (stl, ltl) of
+        (shd :: stl, lhd :: ltl) =>
+          skipToFirstVisibleColumn
+            ( 0
+            , shd
+            , stl
+            , lhd
+            , ltl
+            , posY
+            , column
+            , lineNumber
+            , absIdx
+            , cursorIdx
+            , env
+            , acc
+            )
+      | (_, _) => acc
+    else
+      case String.sub (str, pos) of
+        #"\n" =>
+          let
+            (* increment line lineNumber and posY, and then call build function *)
+            val posY = posY + TC.ySpace
+            val lineNumber = lineNumber + 1
+          in
+            build
+              ( pos + 1
+              , str
+              , stl
+              , line
+              , ltl
+              , #startX env
+              , posY
+              , #scrollColumnStart env
+              , lineNumber
+              , absIdx + 1
+              , cursorIdx
+              , env
+              , acc
+              )
+          end
+      | chr =>
+          skipToFirstVisibleColumn
+            ( pos + 1
+            , str
+            , stl
+            , line
+            , ltl
+            , posY
+            , column + 1
+            , lineNumber
+            , absIdx + 1
+            , cursorIdx
+            , env
+            , acc
+            )
+
   and build
     ( pos
     , str
@@ -131,7 +221,22 @@ struct
             )
       | (_, _) => acc
     else if column < #scrollColumnStart env then
-      skipToColumnStart
+      skipToFirstVisibleColumn
+        ( pos
+        , str
+        , stl
+        , line
+        , ltl
+        , posY
+        , column
+        , lineNumber
+        , absIdx
+        , cursorIdx
+        , env
+        , acc
+        )
+    else if column > #scrollColumnEnd env then
+      skipToNextLine
         ( pos
         , str
         , stl
