@@ -47,7 +47,15 @@ struct
   (* save search string and tempSearchList and return to normal mode *)
   fun saveSearch (app: app_type, searchString, tempSearchList, time) =
     let
-      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+      val
+        { buffer
+        , cursorIdx
+        , windowWidth
+        , windowHeight
+        , startLine
+        , visualScrollColumn
+        , ...
+        } = app
 
       val buffer = LineGap.goToStart buffer
       val searchString = EscapeString.unescape searchString
@@ -63,7 +71,7 @@ struct
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
-      val msgs = TextBuilder.build
+      val drawMsg = NormalModeTextBuilder.build
         ( startLine
         , cursorIdx
         , buffer
@@ -71,8 +79,11 @@ struct
         , windowHeight
         , tempSearchList
         , searchString
-        , initialMsg
+        , visualScrollColumn
         )
+      val drawMsg = Vector.concat drawMsg
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val msgs = DRAW drawMsg :: initialMsg
 
       val mode = NORMAL_MODE ""
     in

@@ -276,7 +276,7 @@ struct
                     Utils.makeHighlightChr (chr, posX, posY, env)
                     :: Utils.makeHighlight (posX, posY, env) :: acc
                   else
-                    acc
+                    Utils.makeChr (chr, posX, posY, env) :: acc
               in
                 build
                   ( pos + 1

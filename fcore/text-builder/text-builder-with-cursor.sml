@@ -207,7 +207,8 @@ struct
                 in Utils.makeCursorOnChr (chr, posX, posY, env) :: acc
                 end
               else
-                Utils.makeCursor (posX, posY, env) :: acc
+                Utils.makeChr (chr, posX, posY, env)
+                :: Utils.makeCursor (posX, posY, env) :: acc
           in
             build
               ( pos + 1

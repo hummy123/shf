@@ -77,7 +77,8 @@ struct
         , cursor :: initialTextAcc
         )
       val drawMsg = Vector.concat drawMsg
-      val msgs = [DrawMsg.DRAW_TEXT drawMsg]
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val msgs = [MailboxType.DRAW drawMsg]
     in
       NormalSearchModeWith.changeTempSearchString
         (app, buffer, startLine, mode, msgs)
@@ -150,7 +151,8 @@ struct
         , cursor :: initialTextAcc
         )
       val drawMsg = Vector.concat drawMsg
-      val msgs = [DrawMsg.DRAW_TEXT drawMsg]
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val msgs = [MailboxType.DRAW drawMsg]
     in
       NormalSearchModeWith.bufferAndSize
         (app, buffer, newWindowWidth, newWindowHeight, msgs)
