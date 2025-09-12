@@ -155,7 +155,7 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
 
       val mode = NORMAL_MODE ""
     in
