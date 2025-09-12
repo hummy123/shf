@@ -7,11 +7,6 @@ struct
     , charG: Real32.real
     , charB: Real32.real
 
-    (* different colours for char when cursor is on char *)
-    , cursorOnCharR: Real32.real
-    , cursorOnCharG: Real32.real
-    , cursorOnCharB: Real32.real
-
     , cursorR: Real32.real
     , cursorG: Real32.real
     , cursorB: Real32.real
@@ -19,6 +14,15 @@ struct
     , highlightR: Real32.real
     , highlightG: Real32.real
     , highlightB: Real32.real
+
+    (* different colours for char when cursor is on char *)
+    , cursorOnCharR: Real32.real
+    , cursorOnCharG: Real32.real
+    , cursorOnCharB: Real32.real
+
+    , highlightOnCharR: Real32.real
+    , highlightOnCharG: Real32.real
+    , highlightOnCharB: Real32.real
 
     , charZ: Real32.real
     , cursorZ: Real32.real
@@ -38,6 +42,114 @@ struct
     , searchList: int vector
     , searchLen: int
     }
+
+  fun initEnv
+    ( endX
+    , endY
+    , floatWindowWidth
+    , floatWindowHeight
+    , searchList
+    , searchLen
+    , visualScrollColumn
+    , startLine
+    ) : env_data =
+    if TC.textLineWidth > endX then
+      { charR = 0.67
+      , charG = 0.51
+      , charB = 0.83
+
+      , highlightR = 0.211
+      , highlightG = 0.219
+      , highlightB = 0.25
+
+      , cursorR = 1.0
+      , cursorG = 1.0
+      , cursorB = 1.0
+
+      , highlightOnCharR = 0.0
+      , highlightOnCharG = 0.0
+      , highlightOnCharB = 0.0
+
+      , cursorOnCharR = 0.67
+      , cursorOnCharG = 0.51
+      , cursorOnCharB = 0.83
+
+      , charZ = 0.01
+      , cursorZ = 0.05
+      , highlightZ = 0.03
+
+      , startX = 5
+      , startY = 5
+
+      , scrollColumnStart = visualScrollColumn
+      , scrollColumnEnd = let val width = endX - 5
+                          in width div TC.xSpace + visualScrollColumn
+                          end
+
+      , lastLineNumber =
+          let
+            val height = endY - 5
+            val howManyLines = height div TC.ySpace
+          in
+            startLine + howManyLines
+          end
+
+      , fw = floatWindowWidth
+      , fh = floatWindowHeight
+
+      , searchList = searchList
+      , searchLen = searchLen
+      }
+    else
+      let
+        val startX = (endX - TC.textLineWidth) div 2
+        val finishWidth = startX + TC.textLineWidth
+      in
+        { charR = 0.67
+        , charG = 0.51
+        , charB = 0.83
+
+        , highlightR = 0.211
+        , highlightG = 0.219
+        , highlightB = 0.25
+
+        , cursorR = 1.0
+        , cursorG = 1.0
+        , cursorB = 1.0
+
+        , highlightOnCharR = 0.0
+        , highlightOnCharG = 0.0
+        , highlightOnCharB = 0.0
+
+        , cursorOnCharR = 0.67
+        , cursorOnCharG = 0.51
+        , cursorOnCharB = 0.83
+
+        , charZ = 0.01
+        , cursorZ = 0.05
+        , highlightZ = 0.03
+
+        , startX = startX
+        , startY = 5
+
+        , scrollColumnStart = visualScrollColumn
+        , scrollColumnEnd = TC.textLineCount
+
+        , lastLineNumber =
+            let
+              val height = endY - 5
+              val howManyLines = height div TC.ySpace
+            in
+              startLine + howManyLines
+            end
+
+        , fw = floatWindowWidth
+        , fh = floatWindowHeight
+
+        , searchList = searchList
+        , searchLen = searchLen
+        }
+      end
 
   (* different functions to make vectors of different things we want to draw. *)
   fun makeCursor (posX, posY, env: env_data) =
@@ -92,6 +204,20 @@ struct
       , #cursorOnCharR env
       , #cursorOnCharG env
       , #cursorOnCharB env
+      )
+
+  fun makeHighlightChr (chr, posX, posY, env: env_data) =
+    CozetteAscii.make
+      ( chr
+      , Real32.fromInt posX
+      , Real32.fromInt posY
+      , #charZ env
+      , TC.scale
+      , #fw env
+      , #fh env
+      , #highlightOnCharR env
+      , #highlightOnCharG env
+      , #highlightOnCharB env
       )
 
   fun isInSearchRange

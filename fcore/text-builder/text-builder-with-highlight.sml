@@ -273,7 +273,7 @@ struct
                     Utils.makeCursor (posX, posY, env)
                     :: Utils.makeCursorOnChr (chr, posX, posY, env) :: acc
                   else if Utils.isInSearchRange (absIdx, searchPos, env) then
-                    Utils.makeCursorOnChr (chr, posX, posY, env)
+                    Utils.makeHighlightChr (chr, posX, posY, env)
                     :: Utils.makeHighlight (posX, posY, env) :: acc
                   else
                     acc
