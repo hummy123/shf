@@ -121,7 +121,8 @@ struct
             , posX
             , posY
             , column
-            , lineNumber absIdx
+            , lineNumber
+            , absIdx
             , cursorIdx
             , env
             , acc
@@ -141,11 +142,83 @@ struct
         , env
         , acc
         )
-    else if lineNumber > #lastLineNumber env then
-      acc
     else
       case String.sub (str, pos) of
-        chr => raise Fail "unimplemented"
+        #" " =>
+          let
+            val acc =
+              if absIdx = cursorIdx then makeCursor (posX, posY, env) :: acc
+              else acc
+          in
+            buildTextString
+              ( pos + 1
+              , str
+              , stl
+              , line
+              , ltl
+              , posX + TC.xSpace
+              , posY
+              , column + 1
+              , lineNumber
+              , absIdx + 1
+              , cursorIdx
+              , env
+              , acc
+              )
+          end
+      | #"\n" =>
+          let
+            val acc =
+              if absIdx = cursorIdx then makeCursor (posX, posY, env) :: acc
+              else acc
+
+            val nextLineNumber = lineNumber + 1
+          in
+            if nextLineNumber > #lastLineNumber env then
+              acc
+            else
+              buildTextString
+                ( pos + 1
+                , str
+                , stl
+                , line
+                , ltl
+                , #startX env
+                , posY + TC.ySpace
+                , 0
+                , lineNumber + 1
+                , absIdx + 1
+                , cursorIdx
+                , env
+                , acc
+                )
+          end
+      | chr =>
+          let
+            val acc =
+              if absIdx = cursorIdx then
+                let val acc = makeCursor (posX, posY, env) :: acc
+                in makeCursorOnChr (chr, posX, posY, env) :: acc
+                end
+              else
+                makeCursor (chr, posX, posY, env) :: acc
+          in
+            buildTextString
+              ( pos + 1
+              , str
+              , stl
+              , line
+              , ltl
+              , posX + TC.xSpace
+              , posY
+              , column + 1
+              , lineNumber
+              , absIdx + 1
+              , cursorIdx
+              , env
+              , acc
+              )
+          end
 
   fun buildTextString
     ( pos
