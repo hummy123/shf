@@ -8,9 +8,9 @@ struct
     , charB: Real32.real
 
     (* different colours for char when cursor is on char *)
-    , cusorOnCharR: Real32.real
-    , cusorOnCharG: Real32.real
-    , cusorOnCharB: Real32.real
+    , cursorOnCharR: Real32.real
+    , cursorOnCharG: Real32.real
+    , cursorOnCharB: Real32.real
 
     , cursorR: Real32.real
     , cursorG: Real32.real
@@ -40,12 +40,12 @@ struct
     }
 
   (* different functions to make vectors of different things we want to draw. *)
-  fun makeCursor (posX, posY, env: t) =
+  fun makeCursor (posX, posY, env: env_data) =
     Rect.lerp
       ( Real32.fromInt (posX - 1)
       , Real32.fromInt posY
       , #cursorZ env
-      , scale
+      , TC.scale
       , #fw env
       , #fh env
       , #cursorR env
@@ -53,26 +53,26 @@ struct
       , #cursorB env
       )
 
-  fun makeHighlight (posX, posY, env: t) =
+  fun makeHighlight (posX, posY, env: env_data) =
     Rect.lerp
       ( Real32.fromInt (posX - 1)
       , Real32.fromInt posY
-      , #highLightZ env
-      , scale
+      , #highlightZ env
+      , TC.scale
       , #fw env
       , #fh env
-      , #highLightR env
-      , #highLightG env
-      , #highLightB env
+      , #highlightR env
+      , #highlightG env
+      , #highlightB env
       )
 
-  fun makeChr (chr, posX, posY, env: t) =
+  fun makeChr (chr, posX, posY, env: env_data) =
     CozetteAscii.make
       ( chr
       , Real32.fromInt posX
       , Real32.fromInt posY
       , #charZ env
-      , scale
+      , TC.scale
       , #fw env
       , #fh env
       , #charR env
@@ -80,13 +80,13 @@ struct
       , #charB env
       )
 
-  fun makeCursorOnChr (chr, posX, posY, env: t) =
+  fun makeCursorOnChr (chr, posX, posY, env: env_data) =
     CozetteAscii.make
       ( chr
       , Real32.fromInt posX
       , Real32.fromInt posY
       , #charZ env
-      , scale
+      , TC.scale
       , #fw env
       , #fh env
       , #cursorOnCharR env
@@ -152,9 +152,9 @@ struct
       else
         (* bin search lines *)
         let
-          val searchPos = BinSearch.equalOrMore (pos + 1, searchList)
+          val searchPos = BinSearch.equalOrMore (pos + 1, #searchList env)
         in
-          if searchPos = Vector.length lines then
+          if searchPos = Vector.length line then
             (* next line is not in this node *)
             let
               val absIdx = absIdx - pos
@@ -296,7 +296,7 @@ struct
                   in makeCursorOnChr (chr, posX, posY, env) :: acc
                   end
                 else
-                  makeCursor (chr, posX, posY, env) :: acc
+                  makeCursor (posX, posY, env) :: acc
             in
               build
                 ( pos + 1
