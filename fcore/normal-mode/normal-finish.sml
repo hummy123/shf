@@ -203,7 +203,7 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
     in
       let
         val _ = raise Fail "centering to line is unimplemented\n"

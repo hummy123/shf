@@ -6,7 +6,15 @@ struct
   fun onSearchChanged
     (app: app_type, searchString, tempSearchList, searchCursorIdx, buffer) =
     let
-      val {buffer, cursorIdx, startLine, windowWidth, windowHeight, ...} = app
+      val
+        { buffer
+        , cursorIdx
+        , startLine
+        , windowWidth
+        , windowHeight
+        , visualScrollColumn
+        , ...
+        } = app
       val mode = NORMAL_SEARCH_MODE
         { searchString = searchString
         , tempSearchList = tempSearchList
@@ -55,7 +63,7 @@ struct
 
       val remainingWindowHeight = windowHeight - (TextConstants.ySpace * 2)
 
-      val msgs = TextBuilder.buildWithExisting
+      val drawMsg = NormalModeTextBuilder.startBuild
         ( startLine
         , cursorIdx
         , buffer
@@ -65,10 +73,11 @@ struct
         , floatWindowHeight
         , tempSearchList
         , searchString
-        , []
+        , visualScrollColumn
         , cursor :: initialTextAcc
-        , []
         )
+      val drawMsg = Vector.concat drawMsg
+      val msgs = [DrawMsg.DRAW_TEXT drawMsg]
     in
       NormalSearchModeWith.changeTempSearchString
         (app, buffer, startLine, mode, msgs)
@@ -82,7 +91,8 @@ struct
     , tempSearchList
     ) =
     let
-      val {buffer, cursorIdx, startLine, searchString, ...} = app
+      val {buffer, cursorIdx, startLine, searchString, visualScrollColumn, ...} =
+        app
 
       val floatWindowWidth = Real32.fromInt newWindowWidth
       val floatWindowHeight = Real32.fromInt newWindowHeight
@@ -126,7 +136,7 @@ struct
 
       val remainingWindowHeight = newWindowHeight - (TextConstants.ySpace * 2)
 
-      val msgs = TextBuilder.buildWithExisting
+      val drawMsg = NormalModeTextBuilder.startBuild
         ( startLine
         , cursorIdx
         , buffer
@@ -136,10 +146,11 @@ struct
         , floatWindowHeight
         , tempSearchList
         , searchString
-        , []
+        , visualScrollColumn
         , cursor :: initialTextAcc
-        , []
         )
+      val drawMsg = Vector.concat drawMsg
+      val msgs = [DrawMsg.DRAW_TEXT drawMsg]
     in
       NormalSearchModeWith.bufferAndSize
         (app, buffer, newWindowWidth, newWindowHeight, msgs)
