@@ -29,7 +29,7 @@ struct
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
-      val msgs = TextBuilder.build
+      val drawMsg = NormalModeTextBuilder.build
         ( startLine
         , cursorIdx
         , buffer
@@ -37,8 +37,10 @@ struct
         , windowHeight
         , searchList
         , searchString
-        , msgs
+        , visualScrollColumn
         )
+      val drawMsg = Vector.concat drawMsg
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
 
       val mode = NORMAL_MODE ""
     in
@@ -90,18 +92,20 @@ struct
       val visualScrollColumn =
         TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
       val newBuffer = LineGap.goToLine (startLine, newBuffer)
-      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
+      val lineIdx = TextBuilderUtils.getLineAbsIdxFromBuffer (startLine, buffer)
 
-      val drawMsg = TextBuilder.build
+      val drawMsg = NormalModeTextBuilder.build
         ( startLine
         , cursorIdx
-        , newBuffer
-        , newWidth
-        , newHeight
+        , buffer
+        , windowWidth
+        , windowHeight
         , searchList
         , searchString
-        , []
+        , visualScrollColumn
         )
+      val drawMsg = Vector.concat drawMsg
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
     in
       NormalModeWith.bufferAndSize
         ( app
@@ -137,10 +141,10 @@ struct
         (buffer, startLine, cursorIdx, windowWidth, windowHeight)
 
       (* move buffer to new startLine as required by TextBuilder.build 
-      * and move searchList to idx where line starts as well *)
+       * and move searchList to idx where line starts as well *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
-      val drawMsg = TextBuilder.build
+      val drawMsg = NormalModeTextBuilder.build
         ( startLine
         , cursorIdx
         , buffer
@@ -148,8 +152,10 @@ struct
         , windowHeight
         , searchList
         , searchString
-        , []
+        , visualScrollColumn
         )
+      val drawMsg = Vector.concat drawMsg
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
 
       val mode = NORMAL_MODE ""
     in
@@ -177,6 +183,7 @@ struct
         , searchList
         , searchString
         , bufferModifyTime
+        , visualScrollColumn
         , ...
         } = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -185,9 +192,7 @@ struct
         (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
       val buffer = LineGap.goToLine (startLine, buffer)
-      val lineIdx = TextBuilder.getLineAbsIdx (startLine, buffer)
-
-      val drawMsg = TextBuilder.build
+      val drawMsg = NormalModeTextBuilder.build
         ( startLine
         , cursorIdx
         , buffer
@@ -195,8 +200,10 @@ struct
         , windowHeight
         , searchList
         , searchString
-        , []
+        , visualScrollColumn
         )
+      val drawMsg = Vector.concat drawMsg
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
     in
       let
         val _ = raise Fail "centering to line is unimplemented\n"
