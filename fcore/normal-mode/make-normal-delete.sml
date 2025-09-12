@@ -6,6 +6,7 @@ end
 functor MakeNormalDelete(Fn: MAKE_NORMAL_DELETE) =
 struct
   open AppType
+  open DrawMsg
   open MailboxType
 
   fun finishAfterDeletingBuffer (app: app_type, low, buffer, time, msgs) =
@@ -380,7 +381,7 @@ struct
       , time
       )
 
-  fun deleteToStart (app: app_type, time) =
+  fun deleteToStart (app: app_type, time) : AppType.app_type =
     let
       val {cursorIdx, buffer, windowWidth, windowHeight, searchString, ...} =
         app
@@ -403,7 +404,7 @@ struct
       val visualScrollColumn = 0
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
-      val drawMsg = TextBuilder.build
+      val drawMsg = NormalModeTextBuilder.build
         ( startLine
         , cursorIdx
         , buffer
@@ -411,9 +412,12 @@ struct
         , windowHeight
         , searchList
         , searchString
-        , initialMsg
+        , visualScrollColumn
         )
+      val drawMsg = Vector.concat drawMsg
+      val drawMsg = DRAW_TEXT drawMsg
 
+      val msgs = DRAW drawMsg :: initialMsg
       val mode = NORMAL_MODE ""
     in
       NormalModeWith.bufferAndCursorIdx
@@ -423,7 +427,7 @@ struct
         , mode
         , startLine
         , searchList
-        , drawMsg
+        , msgs
         , time
         , visualScrollColumn
         )

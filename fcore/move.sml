@@ -61,7 +61,7 @@ end
 
 functor MakeDfaMove(Fn: DFA_MOVE): MAKE_DFA_MOVE =
 struct
-  fun move (app: AppType.app_type, count) =
+  fun move (app: AppType.app_type, count) : AppType.app_type =
     let
       val {buffer, cursorIdx, searchList, bufferModifyTime, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)

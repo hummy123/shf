@@ -40,7 +40,8 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val drawMsg = DRAW_TEXT drawMsg
+      val drawMsg = [DRAW drawMsg]
 
       val mode = NORMAL_MODE ""
     in
@@ -105,7 +106,8 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val drawMsg = DRAW_TEXT drawMsg
+      val drawMsg = [DRAW drawMsg]
     in
       NormalModeWith.bufferAndSize
         ( app
@@ -125,7 +127,8 @@ struct
    * Since the cursor may move away a lot, it is best to recenter.
    * *)
   fun buildTextAndClearAfterChr
-    (app: app_type, buffer, cursorIdx, searchList, initialMsg, bufferModifyTime) =
+    (app: app_type, buffer, cursorIdx, searchList, initialMsg, bufferModifyTime) :
+    AppType.app_type =
     let
       val {windowWidth, windowHeight, startLine, searchString, ...} = app
 
@@ -155,7 +158,8 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
+      val drawMsg = DRAW_TEXT drawMsg
+      val drawMsg = [DRAW drawMsg]
 
       val mode = NORMAL_MODE ""
     in
@@ -203,7 +207,8 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
+      val drawMsg = DRAW_TEXT drawMsg
+      val drawMsg = [DRAW drawMsg]
     in
       let
         val _ = raise Fail "centering to line is unimplemented\n"

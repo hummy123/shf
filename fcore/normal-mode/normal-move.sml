@@ -2,7 +2,7 @@ structure NormalMove =
 struct
   open AppType
 
-  fun moveToStart (app: app_type) =
+  fun moveToStart (app: app_type) : AppType.app_type =
     let
       val
         { buffer
@@ -30,7 +30,8 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val drawMsg = [MailboxType.DRAW drawMsg]
 
       val mode = NORMAL_MODE ""
     in
@@ -92,7 +93,8 @@ struct
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
-      val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val drawMsg = [MailboxType.DRAW drawMsg]
 
       val mode = NORMAL_MODE ""
     in
@@ -148,7 +150,8 @@ struct
           , visualScrollColumn
           )
         val drawMsg = Vector.concat drawMsg
-        val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
+        val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+        val drawMsg = [MailboxType.DRAW drawMsg]
 
         val mode = NORMAL_MODE ""
       in
@@ -207,7 +210,8 @@ struct
           , visualScrollColumn
           )
         val drawMsg = Vector.concat drawMsg
-        val drawMsg = [DrawMsg.DRAW_TEXT drawMsg]
+        val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+        val drawMsg = [MailboxType.DRAW drawMsg]
       in
         NormalModeWith.bufferAndCursorIdx
           ( app
@@ -269,7 +273,14 @@ struct
 
   fun moveToNextMatch (app: app_type, count) =
     let
-      val {cursorIdx, searchList, buffer, bufferModifyTime, ...} = app
+      val
+        { cursorIdx
+        , searchList
+        , buffer
+        , bufferModifyTime
+        , visualScrollColumn
+        , ...
+        } = app
       val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
