@@ -34,6 +34,7 @@ in
   fcore/pipe-cursor.sml
   fcore/text-builder/text-builder-utils.sml
   fcore/text-builder/text-builder-with-cursor.sml
+  fcore/text-builder/text-builder-with-highlight.sml
   fcore/text-builder.sml
   fcore/cursor-dfa/make-dfa-loop.sml
   fcore/cursor-dfa/vi-word-dfa.sml

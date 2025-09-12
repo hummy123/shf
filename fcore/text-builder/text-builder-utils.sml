@@ -34,7 +34,7 @@ struct
     (* fw/fh = float window width and float window height *)
     , fw: Real32.real
     , fh: Real32.real
-    , msgs: MailboxType.t list
+
     , searchList: int vector
     , searchLen: int
     }
@@ -93,4 +93,20 @@ struct
       , #cursorOnCharG env
       , #cursorOnCharB env
       )
+
+  fun isInSearchRange
+    (absIdx, searchPos, {searchList, searchLen, ...}: env_data) =
+    let val searchIdx = Vector.sub (searchList, searchPos)
+    in absIdx >= searchIdx andalso absIdx < searchIdx + searchLen
+    end
+
+  fun isAfterSearchRange
+    (absIdx, searchPos, {searchList, searchLen, ...}: env_data) =
+    let val searchIdx = Vector.sub (searchList, searchPos)
+    in absIdx >= searchIdx + searchLen
+    end
+
+  fun advanceSearchPos (absIdx, searchPos, env) =
+    if isAfterSearchRange (absIdx, searchPos, env) then searchPos + 1
+    else searchPos
 end
