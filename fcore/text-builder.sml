@@ -1,27 +1,35 @@
 structure TextBuilder =
 struct
-  open TextConstants
   structure TC = TextConstants
 
   type env_data =
-    { r: Real32.real
-    , g: Real32.real
-    , b: Real32.real
+    { charR: Real32.real
+    , charG: Real32.real
+    , charB: Real32.real
 
-    (* hr/hg/hb = highlight red/green/blue *)
-    , hr: Real32.real
-    , hg: Real32.real
-    , hb: Real32.real
+    (* different colours for char when cursor is on char *)
+    , cusorOnCharR: Real32.real
+    , cusorOnCharG: Real32.real
+    , cusorOnCharB: Real32.real
+
+    , cursorR: Real32.real
+    , cursorG: Real32.real
+    , cursorB: Real32.real
+
+    , highlightR: Real32.real
+    , highlightG: Real32.real
+    , highlightB: Real32.real
+
+    , charZ: Real32.real
+    , cursorZ: Real32.real
+    , highlightZ: Real32.real
 
     , startX: int
     , startY: int
 
-    (* w = width, h = height.
-     * These do no necessarily correspond to the whole window's width and height.
-     * For example, in some cases we want to horizontally centre text on the screen.
-     * In that case, "w" means "end width/pixel, which causes a line break". *)
-    , w: int
-    , h: int
+    , scrollColumnStart: int
+    , scrollColumnEnd: int
+    , lastLineNumber: int
 
     (* fw/fh = float window width and float window height *)
     , fw: Real32.real
@@ -31,62 +39,113 @@ struct
     , searchLen: int
     }
 
-  fun accToDrawMsg (textAcc, cursorAcc, bgAcc, env: env_data) =
-    let
-      open MailboxType
-      open DrawMsg
-
-      val msgs = #msgs env
-
-      val textAcc = Vector.concat textAcc
-      val bgAcc = Vector.concat bgAcc
-      val vec = Vector.concat [textAcc, bgAcc, cursorAcc]
-      val drawMsg = DRAW_TEXT vec
-    in
-      DRAW drawMsg :: msgs
-    end
-
-  (* builds text from a string with char-wrap.
-   * char-wrap is a similar concept to word-wrap, 
-   * but it breaks on character in the middle of a word.
-   *
-   * Will likely want multiple versions of these two mutually recursive
-   * functions for each selection and cursor type:
-   * cursor over an individual character, 
-   * range selection where multiple characters are selected, etc.
-   *
-   * Todo: 
-   * - Possibly add visual horizontal indentation when char-wrap occurs
-   *   on an indented line *)
-  (* same as buildTextStringAfterCursor, except this keeps track of absolute
-   * index and cursor pos too *)
-
-  fun makeRect (posX, posY, fw, fh, r, g, b) =
+  (* different functions to make vectors of different things we want to draw. *)
+  fun makeCursor (posX, posY, env: t) =
     Rect.lerp
       ( Real32.fromInt (posX - 1)
       , Real32.fromInt posY
-      , 0.9
+      , #cursorZ env
       , scale
-      , fw
-      , fh
-      , 1.0
-      , 1.0
-      , 1.0
+      , #fw env
+      , #fh env
+      , #cursorR env
+      , #cursorG env
+      , #cursorB env
       )
 
-  fun makeChr (chr, posX, posY, windowWidth, windowHeight, r, g, b) =
+  fun makeHighlight (posX, posY, env: t) =
+    Rect.lerp
+      ( Real32.fromInt (posX - 1)
+      , Real32.fromInt posY
+      , #highLightZ env
+      , scale
+      , #fw env
+      , #fh env
+      , #highLightR env
+      , #highLightG env
+      , #highLightB env
+      )
+
+  fun makeChr (chr, posX, posY, env: t) =
     CozetteAscii.make
       ( chr
       , Real32.fromInt posX
       , Real32.fromInt posY
-      , 0.1
+      , #charZ env
       , scale
-      , windowWidth
-      , windowHeight
-      , r
-      , g
-      , b
+      , #fw env
+      , #fh env
+      , #charR env
+      , #charG env
+      , #charB env
       )
+
+  fun makeCursorOnChr (chr, posX, posY, env: t) =
+    CozetteAscii.make
+      ( chr
+      , Real32.fromInt posX
+      , Real32.fromInt posY
+      , #charZ env
+      , scale
+      , #fw env
+      , #fh env
+      , #cursorOnCharR env
+      , #cursorOnCharG env
+      , #cursorOnCharB env
+      )
+
+  fun buildTextString
+    ( pos
+    , str
+    , stl
+    , line
+    , ltl
+    , posX
+    , posY
+    , column
+    , lineNumber
+    , absIdx
+    , cursorIdx
+    , env: env_data
+    , acc
+    ) =
+    if pos = String.size str then
+      case (stl, ltl) of
+        (str :: stl, line :: ltl) =>
+          buildTextString
+            ( 0
+            , str
+            , stl
+            , line
+            , ltl
+            , posX
+            , posY
+            , column
+            , lineNumber absIdx
+            , cursorIdx
+            , env
+            , acc
+            )
+      | (_, _) => acc
+    else if column < #scrollColumnStart env then
+      skipToColumnStart
+        ( pos
+        , str
+        , stl
+        , line
+        , ltl
+        , posY
+        , lineNumber
+        , absIdx
+        , cursorIdx
+        , env
+        , acc
+        )
+    else if lineNumber > #lastLineNumber env then
+      acc
+    else
+      case String.sub (str, pos) of
+        chr => raise Fail "unimplemented"
 
   fun buildTextString
     ( pos
@@ -758,6 +817,7 @@ struct
       , h = windowHeight
       , startX = 5
       , startY = 5
+      , z = 0.01
       , fw = floatWindowWidth
       , fh = floatWindowHeight
       , r = 0.67
@@ -779,6 +839,7 @@ struct
         , h = windowHeight
         , startX = startX
         , startY = 5
+        , z = 0.01
         , fw = floatWindowWidth
         , fh = floatWindowHeight
         , r = 0.67
