@@ -94,131 +94,227 @@ struct
       , #cursorOnCharB env
       )
 
-  fun buildTextString
-    ( pos
-    , str
-    , stl
-    , line
-    , ltl
-    , posX
-    , posY
-    , column
-    , lineNumber
-    , absIdx
-    , cursorIdx
-    , env: env_data
-    , acc
-    ) =
-    if pos = String.size str then
+  structure TextWithCursor =
+  struct
+    fun goToFirstLineAfter
+      (stl, ltl, posY, lineNumber, absIdx, cursorIdx, env, acc) =
       case (stl, ltl) of
-        (str :: stl, line :: ltl) =>
-          buildTextString
-            ( 0
-            , str
-            , stl
-            , line
-            , ltl
-            , posX
-            , posY
-            , column
-            , lineNumber
-            , absIdx
-            , cursorIdx
-            , env
-            , acc
-            )
-      | (_, _) => acc
-    else if column < #scrollColumnStart env then
-      skipToColumnStart
-        ( pos
-        , str
-        , stl
-        , line
-        , ltl
-        , posY
-        , lineNumber
-        , absIdx
-        , cursorIdx
-        , env
-        , acc
-        )
-    else
-      case String.sub (str, pos) of
-        #" " =>
-          let
-            val acc =
-              if absIdx = cursorIdx then makeCursor (posX, posY, env) :: acc
-              else acc
-          in
-            buildTextString
-              ( pos + 1
-              , str
-              , stl
-              , line
+        (shd :: stl, lhd :: ltl) =>
+          if Vector.length lhd > 0 then
+            let
+              val lineOffset = Vector.sub (lhd, 0)
+              val strPos = lineOffset + 1
+              val absIdx = absIdx + strPos
+              val posY = posY + TC.ySpace
+              val lineNumber = lineNumber + 1
+            in
+              build
+                ( strPos
+                , shd
+                , stl
+                , lhd
+                , ltl
+                , #startX env
+                , posY
+                , 0
+                , lineNumber
+                , absIdx
+                , cursorIdx
+                , env : env_data
+                , acc
+                )
+            end
+          else
+            (* keep looping until we find a linebreak *)
+            goToFirstLineAfter
+              ( stl
               , ltl
-              , posX + TC.xSpace
               , posY
-              , column + 1
               , lineNumber
-              , absIdx + 1
+              , absIdx + String.size shd
               , cursorIdx
               , env
               , acc
               )
-          end
-      | #"\n" =>
-          let
-            val acc =
-              if absIdx = cursorIdx then makeCursor (posX, posY, env) :: acc
-              else acc
+      | (_, _) => acc
 
-            val nextLineNumber = lineNumber + 1
-          in
-            if nextLineNumber > #lastLineNumber env then
-              acc
-            else
-              buildTextString
-                ( pos + 1
+    and skipToColumnStart
+      (pos, str, stl, line, ltl, posY, lineNumber, absIdx, cursorIdx, env, acc) =
+      if Vector.length line = 0 then
+        let
+          (* get index of buffer after this string *)
+          val absIdx = absIdx - pos
+          val absIdx = absIdx + String.size str
+        in
+          goToFirstLineAfter
+            (stl, ltl, posY, lineNumber, absIdx, cursorIdx, env, acc)
+        end
+      else
+        (* bin search lines *)
+        let
+          val searchPos = BinSearch.equalOrMore (pos + 1, searchList)
+        in
+          if searchPos = Vector.length lines then
+            (* next line is not in this node *)
+            let
+              val absIdx = absIdx - pos
+              val absIdx = absIdx + String.size str
+            in
+              goToFirstLineAfter
+                (stl, ltl, posY, lineNumber, absIdx, cursorIdx, env, acc)
+            end
+          else
+            let
+              val lineOffset = Vector.sub (line, searchPos)
+              val newStrPos = lineOffset + 1
+              val absIdx = absIdx - pos + newStrPos
+              val posY = posY + TC.ySpace
+              val lineNumber = lineNumber + 1
+            in
+              build
+                ( newStrPos
                 , str
                 , stl
                 , line
                 , ltl
                 , #startX env
-                , posY + TC.ySpace
+                , posY
                 , 0
-                , lineNumber + 1
+                , lineNumber
+                , absIdx
+                , cursorIdx
+                , env
+                , acc
+                )
+            end
+        end
+
+    and build
+      ( pos
+      , str
+      , stl
+      , line
+      , ltl
+      , posX
+      , posY
+      , column
+      , lineNumber
+      , absIdx
+      , cursorIdx
+      , env: env_data
+      , acc
+      ) =
+      if pos = String.size str then
+        case (stl, ltl) of
+          (str :: stl, line :: ltl) =>
+            build
+              ( 0
+              , str
+              , stl
+              , line
+              , ltl
+              , posX
+              , posY
+              , column
+              , lineNumber
+              , absIdx
+              , cursorIdx
+              , env
+              , acc
+              )
+        | (_, _) => acc
+      else if column < #scrollColumnStart env then
+        skipToColumnStart
+          ( pos
+          , str
+          , stl
+          , line
+          , ltl
+          , posY
+          , lineNumber
+          , absIdx
+          , cursorIdx
+          , env
+          , acc
+          )
+      else
+        case String.sub (str, pos) of
+          #" " =>
+            let
+              val acc =
+                if absIdx = cursorIdx then makeCursor (posX, posY, env) :: acc
+                else acc
+            in
+              build
+                ( pos + 1
+                , str
+                , stl
+                , line
+                , ltl
+                , posX + TC.xSpace
+                , posY
+                , column + 1
+                , lineNumber
                 , absIdx + 1
                 , cursorIdx
                 , env
                 , acc
                 )
-          end
-      | chr =>
-          let
-            val acc =
-              if absIdx = cursorIdx then
-                let val acc = makeCursor (posX, posY, env) :: acc
-                in makeCursorOnChr (chr, posX, posY, env) :: acc
-                end
+            end
+        | #"\n" =>
+            let
+              val acc =
+                if absIdx = cursorIdx then makeCursor (posX, posY, env) :: acc
+                else acc
+
+              val nextLineNumber = lineNumber + 1
+            in
+              if nextLineNumber > #lastLineNumber env then
+                acc
               else
-                makeCursor (chr, posX, posY, env) :: acc
-          in
-            buildTextString
-              ( pos + 1
-              , str
-              , stl
-              , line
-              , ltl
-              , posX + TC.xSpace
-              , posY
-              , column + 1
-              , lineNumber
-              , absIdx + 1
-              , cursorIdx
-              , env
-              , acc
-              )
-          end
+                build
+                  ( pos + 1
+                  , str
+                  , stl
+                  , line
+                  , ltl
+                  , #startX env
+                  , posY + TC.ySpace
+                  , 0
+                  , lineNumber + 1
+                  , absIdx + 1
+                  , cursorIdx
+                  , env
+                  , acc
+                  )
+            end
+        | chr =>
+            let
+              val acc =
+                if absIdx = cursorIdx then
+                  let val acc = makeCursor (posX, posY, env) :: acc
+                  in makeCursorOnChr (chr, posX, posY, env) :: acc
+                  end
+                else
+                  makeCursor (chr, posX, posY, env) :: acc
+            in
+              build
+                ( pos + 1
+                , str
+                , stl
+                , line
+                , ltl
+                , posX + TC.xSpace
+                , posY
+                , column + 1
+                , lineNumber
+                , absIdx + 1
+                , cursorIdx
+                , env
+                , acc
+                )
+            end
+  end
 
   fun buildTextString
     ( pos
