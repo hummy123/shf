@@ -30,6 +30,10 @@ fcore/text-constants.sml
 ann
   "allowVectorExps true"
 in
+  fcore/cursor-dfa/make-dfa-loop.sml
+  fcore/cursor-dfa/vi-word-dfa.sml
+  fcore/cursor-dfa/vi-caps-word-dfa.sml
+  fcore/cursor-dfa/vi-dlr-dfa.sml
   fcore/rect.sml
   fcore/pipe-cursor.sml
 end
@@ -37,6 +41,7 @@ fcore/text-builder/text-builder-utils.sml
 fcore/text-builder/text-builder-with-cursor.sml
 fcore/text-builder/text-builder-with-highlight.sml
 fcore/text-builder/normal-mode-text-builder.sml
+  fcore/text-builder.sml
 
 fcore/cursor.sml
 fcore/text-window.sml

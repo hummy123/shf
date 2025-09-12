@@ -16,8 +16,23 @@ struct
           val r: Real32.real = 0.67
           val g: Real32.real = 0.51
           val b: Real32.real = 0.83
-          val chr = makeChr
-            (chr, posX, posY, floatWindowWidth, floatWindowHeight, r, g, b)
+          val fPosX = Real32.fromInt posX
+          val fPosY = Real32.fromInt posY
+          val z: Real32.real = 0.1
+
+          val chr = CozetteAscii.make
+            ( chr
+            , fPosX
+            , fPosY
+            , z
+            , TC.scale
+            , floatWindowWidth
+            , floatWindowHeight
+            , r
+            , g
+            , b
+            )
+
           val acc = chr :: acc
           val nextPosX = posX + TC.xSpace
         in
@@ -42,8 +57,23 @@ struct
         val r: Real32.real = 0.67
         val g: Real32.real = 0.51
         val b: Real32.real = 0.83
-        val acc = makeChr
-          (#"/", startX, startY, floatWindowWidth, floatWindowHeight, r, g, b)
+        val fPosX = Real32.fromInt startX
+        val fPosY = Real32.fromInt startY
+        val z: Real32.real = 0.1
+
+        val chr = CozetteAscii.make
+          ( #"/"
+          , fPosX
+          , fPosY
+          , z
+          , TC.scale
+          , floatWindowWidth
+          , floatWindowHeight
+          , r
+          , g
+          , b
+          )
+
         val posX = startX + TC.xSpace
       in
         loop
@@ -52,100 +82,10 @@ struct
           , posX
           , startY
           , endX
-          , [acc]
+          , [chr]
           , floatWindowWidth
           , floatWindowHeight
           )
       end
   end
-
-  (* todo: add startX and startY parameters, 
-   * so we can control where on the * screen the text starts from. 
-   * Not worth doing until we have/in preparation of tiling functionality *)
-  fun buildWithExisting
-    ( startLine
-    , cursorPos
-    , lineGap: LineGap.t
-    , windowWidth
-    , windowHeight
-    , floatWindowWidth
-    , floatWindowHeight
-    , searchList: SearchList.t
-    , searchString
-    , msgs
-    , textAcc
-    , bgAcc
-    ) =
-    let
-      val {rightStrings, rightLines, line = curLine, idx = curIdx, ...} =
-        lineGap
-    in
-      case (rightStrings, rightLines) of
-        (rStrHd :: rStrTl, rLnHd :: _) =>
-          let
-            (* get relative index of line to start building from *)
-            val startIdx = helpGetLineStartIdx (startLine, curLine, rLnHd)
-            (* get absolute idx of line *)
-            val absIdx = curIdx + startIdx
-
-            val env = initEnv
-              ( windowWidth
-              , windowHeight
-              , floatWindowWidth
-              , floatWindowHeight
-              , msgs
-              , searchList
-              , String.size searchString
-              )
-            val {startX, startY, ...} = env
-
-            val cursorAcc = Vector.fromList []
-            val searchPos = BinSearch.equalOrMore (absIdx, searchList)
-          in
-            buildTextStringSearch
-              ( startIdx
-              , rStrHd
-              , textAcc
-              , startX
-              , startY
-              , rStrTl
-              , absIdx
-              , cursorPos
-              , cursorAcc
-              , bgAcc
-              , env
-              , searchPos
-              )
-          end
-      | (_, _) =>
-          (* requested line goes beyond the buffer,
-           * so just return empty list as there is nothig
-           * else we can do. *)
-          []
-    end
-
-  fun build
-    ( startLine
-    , cursorPos
-    , lineGap: LineGap.t
-    , windowWidth
-    , windowHeight
-    , searchList: SearchList.t
-    , searchString
-    , msgs
-    ) =
-    buildWithExisting
-      ( startLine
-      , cursorPos
-      , lineGap : LineGap.t
-      , windowWidth
-      , windowHeight
-      , Real32.fromInt windowWidth
-      , Real32.fromInt windowHeight
-      , searchList : SearchList.t
-      , searchString
-      , msgs
-      , []
-      , []
-      )
 end
