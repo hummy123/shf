@@ -133,7 +133,7 @@ struct
         , startY = 5
 
         , scrollColumnStart = visualScrollColumn
-        , scrollColumnEnd = TC.textLineCount
+        , scrollColumnEnd = visualScrollColumn + TC.textLineCount
 
         , lastLineNumber =
             let
