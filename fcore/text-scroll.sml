@@ -34,7 +34,6 @@ struct
       (* cursorLine > prevLineNumber *)
       let
         val howManyLinesWeCanFit = windowHeight div TC.ySpace
-        val howManyLinesWeCanFit = howManyLinesWeCanFit
       in
         if cursorLine > prevLineNumber + (howManyLinesWeCanFit - 3) then
           (* cursorLine is after the visible part of the screen
@@ -43,4 +42,12 @@ struct
         else
           prevLineNumber
       end
+
+  fun getLineCentre (cursorLine, windowHeight) =
+    let
+      val howManyLinesWeCanFit = windowHeight div TC.ySpace
+      val startLine = cursorLine - (howManyLinesWeCanFit div 2)
+    in
+      Int.max (startLine, 0)
+    end
 end

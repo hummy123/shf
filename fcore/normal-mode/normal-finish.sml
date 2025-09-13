@@ -128,7 +128,6 @@ struct
         )
     end
 
-  (* todo: check; the way we get the startLine is almost certainly wrong *)
   fun centreToCursor (app: app_type) =
     let
       val
@@ -146,8 +145,7 @@ struct
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
-      val startLine =
-        TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight div 2)
+      val startLine = TextScroll.getLineCentre (cursorLine, windowHeight)
 
       val buffer = LineGap.goToLine (startLine, buffer)
       val drawMsg = NormalModeTextBuilder.build
