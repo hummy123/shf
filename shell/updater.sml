@@ -18,6 +18,12 @@ struct
     let
       val time = Time.now ()
 
+      val () =
+        case inputMsg of
+          CHAR_EVENT #"~" =>
+            ExceptionLogger.log (Fail "intentionally caused exception")
+        | _ => ()
+
       val () = ExceptionLogger.addCommand inputMsg
 
       val app = AppUpdate.update (app, inputMsg, time)
