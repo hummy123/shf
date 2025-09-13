@@ -75,7 +75,7 @@ struct
       let
         val searchPos = BinSearch.equalOrMore (pos + 1, #searchList env)
       in
-        if searchPos = Vector.length line then
+        if searchPos = ~1 then
           (* next line is not in this node *)
           let
             val absIdx = absIdx - pos

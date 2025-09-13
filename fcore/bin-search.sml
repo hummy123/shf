@@ -3,7 +3,7 @@ struct
   local
     fun reverseLinearSearch (findNum, idx, vec) =
       if idx < 0 then
-        idx
+        ~1
       else
         let
           val curVal = Vector.sub (vec, idx)
@@ -38,7 +38,7 @@ struct
   local
     fun forwardLinearSearch (findNum, idx, vec) =
       if idx = Vector.length vec then
-        idx
+        ~1
       else
         let
           val curVal = Vector.sub (vec, idx)

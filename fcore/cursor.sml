@@ -29,7 +29,13 @@ struct
           val linePos = BinSearch.equalOrLess (strPos - 1, lhd)
           val lineIdx = Vector.sub (lhd, linePos)
         in
-          absIdx - strPos + lineIdx + 1
+          if linePos = ~1 then
+            (* no previous line in lhd *)
+            helpVi0 (absIdx - strPos, stl, ltl)
+          else
+            let val lineIdx = Vector.sub (lhd, linePos)
+            in absIdx - strPos + lineIdx + 1
+            end
         end
       else
         helpVi0 (absIdx - strPos, stl, ltl)
@@ -224,6 +230,7 @@ struct
            * because we know lnHd definitely contains
            * a lineIdx less or equal to strIdx *)
           let
+            (* todo: what if BinSearch doesn't find anything? *)
             val lnIdx = BinSearch.equalOrLess (strIdx, lnHd)
             val lnIdx = Vector.sub (lnHd, lnIdx)
           in

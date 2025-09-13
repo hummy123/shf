@@ -262,7 +262,7 @@ struct
     else
       let
         val pos = BinSearch.equalOrMore (cursorIdx + 1, searchList)
-        val pos = if pos < Vector.length searchList then pos else 0
+        val pos = if pos = ~1 then 0 else pos
         val count = count - 1
       in
         loopNextMatch (pos, searchList, count)
@@ -286,7 +286,7 @@ struct
     else
       let
         val pos = BinSearch.equalOrLess (cursorIdx - 1, searchList)
-        val pos = if pos < 0 then Vector.length searchList - 1 else pos
+        val pos = if pos = ~1 then Vector.length searchList - 1 else pos
         val count = count - 1
       in
         loopPrevMatch (pos, searchList, count)

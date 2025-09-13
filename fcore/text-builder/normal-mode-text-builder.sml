@@ -29,7 +29,10 @@ struct
               Utils.getRelativeLineStartFromRightHead (startLine, curLine, lhd)
             (* get absolute idx of line *)
             val absIdx = curIdx + strPos
+
             val searchPos = BinSearch.equalOrMore (absIdx, searchList)
+            val searchPos =
+              if searchPos = ~1 then Vector.length searchList else searchPos
 
             val env = Utils.initEnv
               ( windowWidth
