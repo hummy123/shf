@@ -9,12 +9,13 @@ struct
       val
         { buffer
         , cursorIdx
-        , startLine
+        , startLine = prevLineNumber
         , windowWidth
         , windowHeight
         , visualScrollColumn
         , ...
         } = app
+
       val mode = NORMAL_SEARCH_MODE
         { searchString = searchString
         , tempSearchList = tempSearchList
@@ -57,9 +58,11 @@ struct
             )
         end
 
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
+      val startLine =
+        TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
       val buffer = LineGap.goToLine (startLine, buffer)
-      val startLine = TextWindow.getStartLine
-        (buffer, startLine, cursorIdx, windowWidth, windowHeight)
 
       val remainingWindowHeight = windowHeight - (TextConstants.ySpace * 2)
 
@@ -92,8 +95,14 @@ struct
     , tempSearchList
     ) =
     let
-      val {buffer, cursorIdx, startLine, searchString, visualScrollColumn, ...} =
-        app
+      val
+        { buffer
+        , cursorIdx
+        , startLine = prevLineNumber
+        , searchString
+        , visualScrollColumn
+        , ...
+        } = app
 
       val floatWindowWidth = Real32.fromInt newWindowWidth
       val floatWindowHeight = Real32.fromInt newWindowHeight
@@ -131,9 +140,11 @@ struct
             )
         end
 
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
+      val startLine =
+        TextScroll.getStartLine (prevLineNumber, cursorLine, newWindowHeight)
       val buffer = LineGap.goToLine (startLine, buffer)
-      val startLine = TextWindow.getStartLine
-        (buffer, startLine, cursorIdx, newWindowWidth, newWindowHeight)
 
       val remainingWindowHeight = newWindowHeight - (TextConstants.ySpace * 2)
 

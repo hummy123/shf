@@ -34,12 +34,11 @@ struct
       (* cursorLine > prevLineNumber *)
       let
         val howManyLinesWeCanFit = windowHeight div TC.ySpace
+        val howManyLinesWeCanFit = howManyLinesWeCanFit - 2
       in
-        if prevLineNumber + howManyLinesWeCanFit >= cursorLine then
-          prevLineNumber
+        if cursorLine > prevLineNumber + howManyLinesWeCanFit then
+          cursorLine - howManyLinesWeCanFit
         else
-          let val lineDifference = cursorLine - prevLineNumber
-          in prevLineNumber + lineDifference
-          end
+          prevLineNumber
       end
 end

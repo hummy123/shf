@@ -70,18 +70,11 @@ struct
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
       val visualScrollColumn =
-        TextScroll.getScrollColumn (buffer, bufferIdx, windowWidth, prevScrollColumn)
-      val bufferLine =
-        let
-          val maxHeight = windowHeight - TextConstants.ySpace
-        in
-          TextWindow.getStartLineWithCursorCentered
-            (buffer, bufferIdx, bufferLine, windowWidth, maxHeight)
-        end
+        TextScroll.getScrollColumn
+          (buffer, bufferIdx, windowWidth, prevScrollColumn)
+      val bufferLine = let in raise Fail "todo: fix" end
 
       val buffer = LineGap.goToLine (bufferLine, buffer)
-      val lineIdx =
-        TextBuilderUtils.getLineAbsIdxFromBuffer (bufferLine, buffer)
 
       val drawMsg = NormalModeTextBuilder.build
         ( bufferLine
@@ -121,7 +114,7 @@ struct
           { windowWidth
           , windowHeight
           , buffer
-          , startLine = origLine
+          , startLine = prevLineNumber
           , searchList
           , searchString
           , bufferModifyTime
@@ -135,9 +128,12 @@ struct
 
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val visualScrollColumn =
-          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn)
-        val startLine = TextWindow.getStartLineWithCursorCentered
-          (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
+          TextScroll.getScrollColumn
+            (buffer, cursorIdx, windowWidth, prevScrollColumn)
+
+        val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
+        val startLine =
+          TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
 
         val buffer = LineGap.goToLine (startLine, buffer)
 
@@ -177,7 +173,7 @@ struct
         , cursorIdx
         , windowWidth
         , windowHeight
-        , startLine
+        , startLine = prevLineNumber
         , searchList
         , searchString
         , bufferModifyTime
@@ -188,16 +184,16 @@ struct
       (* move LineGap and buffer to start of line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.matchPair (buffer, cursorIdx)
-
-      val buffer = LineGap.goToLine (startLine, buffer)
-      val lineIdx = TextBuilderUtils.getLineAbsIdxFromBuffer (startLine, buffer)
     in
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val visualScrollColumn =
-          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn)
-        val startLine = TextWindow.getStartLineWithCursorCentered
-          (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
+          TextScroll.getScrollColumn
+            (buffer, cursorIdx, windowWidth, prevScrollColumn)
+
+        val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
+        val startLine =
+          TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
 
         val buffer = LineGap.goToLine (startLine, buffer)
 
@@ -256,7 +252,7 @@ struct
 
   fun helpMoveToChr (app: app_type, buffer, cursorIdx, count, fMove, chr) =
     if count = 0 then
-      NormalFinish.buildTextAndClearAfterChr
+      NormalFinish.buildTextAndClear
         (app, buffer, cursorIdx, #searchList app, [], #bufferModifyTime app)
     else
       let
@@ -288,7 +284,7 @@ struct
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
       else
-        NormalFinish.buildTextAndClearAfterChr
+        NormalFinish.buildTextAndClear
           (app, buffer, newCursorIdx, searchList, [], bufferModifyTime)
     end
 
@@ -300,7 +296,7 @@ struct
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
       else
-        NormalFinish.buildTextAndClearAfterChr
+        NormalFinish.buildTextAndClear
           (app, buffer, newCursorIdx, searchList, [], bufferModifyTime)
     end
 end

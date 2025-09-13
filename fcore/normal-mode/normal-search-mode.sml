@@ -64,10 +64,6 @@ struct
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
 
-      (* get new startLine which may move screen depending on cursor movements *)
-      val startLine = TextWindow.getStartLine
-        (buffer, startLine, cursorIdx, windowWidth, windowHeight)
-
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)
 

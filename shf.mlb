@@ -44,7 +44,6 @@ fcore/text-builder/normal-mode-text-builder.sml
   fcore/text-builder.sml
 
 fcore/cursor.sml
-fcore/text-window.sml
 fcore/text-scroll.sml
 
 fcore/normal-mode/normal-finish.sml
