@@ -15,6 +15,7 @@ struct
           val howManyColumnsCanWeFit =
             if windowWidth >= TC.textLineWidth then TC.textLineCount
             else windowWidth div TC.xSpace
+          val howManyColumnsCanWeFit = howManyColumnsCanWeFit - 1
         in
           if columnDifference < howManyColumnsCanWeFit then 0
           else columnDifference - howManyColumnsCanWeFit
