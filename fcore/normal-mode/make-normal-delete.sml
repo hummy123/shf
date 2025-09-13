@@ -11,6 +11,7 @@ struct
 
   fun finishAfterDeletingBuffer (app: app_type, low, buffer, time, msgs) =
     let
+      val buffer = LineGap.goToIdx (low, buffer)
       val searchString = #searchString app
       val buffer = LineGap.goToStart buffer
       val msgs = SEARCH (buffer, searchString, time) :: msgs
