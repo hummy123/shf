@@ -57,6 +57,7 @@ struct
         , searchList
         , searchString
         , bufferModifyTime
+        , visualScrollColumn = prevScrollColumn
         , ...
         } = app
 
@@ -69,7 +70,7 @@ struct
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
       val visualScrollColumn =
-        TextScroll.getScrollColumn (buffer, bufferIdx, windowWidth)
+        TextScroll.getScrollColumn (buffer, bufferIdx, windowWidth, prevScrollColumn)
       val bufferLine =
         let
           val maxHeight = windowHeight - TextConstants.ySpace
@@ -124,6 +125,7 @@ struct
           , searchList
           , searchString
           , bufferModifyTime
+          , visualScrollColumn = prevScrollColumn
           , ...
           } = app
         val buffer = LineGap.goToLine (reqLine, buffer)
@@ -133,7 +135,7 @@ struct
 
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val visualScrollColumn =
-          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn)
         val startLine = TextWindow.getStartLineWithCursorCentered
           (buffer, cursorIdx, origLine, windowWidth, windowHeight div 2)
 
@@ -179,7 +181,7 @@ struct
         , searchList
         , searchString
         , bufferModifyTime
-        , visualScrollColumn
+        , visualScrollColumn = prevScrollColumn
         , ...
         } = app
 
@@ -193,7 +195,7 @@ struct
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val visualScrollColumn =
-          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+          TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn)
         val startLine = TextWindow.getStartLineWithCursorCentered
           (buffer, cursorIdx, startLine, windowWidth, windowHeight div 2)
 

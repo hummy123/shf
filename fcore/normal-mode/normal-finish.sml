@@ -12,12 +12,13 @@ struct
   fun buildTextAndClear
     (app: app_type, buffer, cursorIdx, searchList, msgs, bufferModifyTime) =
     let
-      val {windowWidth, windowHeight, startLine, searchString, ...} = app
+      val {windowWidth, windowHeight, startLine, searchString,
+      visualScrollColumn = prevScrollColumn, ...} = app
 
       (* calculate scroll column *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val visualScrollColumn =
-        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn)
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -86,12 +87,13 @@ struct
         , searchList
         , searchString
         , bufferModifyTime
+        , visualScrollColumn = prevScrollColumn
         , ...
         } = app
 
       val newBuffer = LineGap.goToIdx (cursorIdx, buffer)
       val visualScrollColumn =
-        TextScroll.getScrollColumn (buffer, cursorIdx, newWidth)
+        TextScroll.getScrollColumn (buffer, cursorIdx, newWidth, prevScrollColumn)
       val newBuffer = LineGap.goToLine (startLine, newBuffer)
       val lineIdx = TextBuilderUtils.getLineAbsIdxFromBuffer (startLine, buffer)
 
@@ -130,11 +132,12 @@ struct
     (app: app_type, buffer, cursorIdx, searchList, initialMsg, bufferModifyTime) :
     AppType.app_type =
     let
-      val {windowWidth, windowHeight, startLine, searchString, ...} = app
+      val {windowWidth, windowHeight, startLine, searchString, visualScrollColumn
+      = prevScrollColumn, ...} = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val visualScrollColumn =
-        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth)
+        TextScroll.getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn)
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)

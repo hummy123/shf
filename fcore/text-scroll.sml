@@ -3,23 +3,26 @@ struct
   structure TC = TextConstants
 
   (* Preqreuisite: move buffer to cursorIdx *)
-  fun getScrollColumn (buffer, cursorIdx, windowWidth) =
+  fun getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn) =
     let
       val startOfLine = Cursor.vi0 (buffer, cursorIdx)
-      val columnDifference = cursorIdx - startOfLine
+      val newColumn = cursorIdx - startOfLine
+      val howManyColumnsCanWeFit =
+        if windowWidth >= TC.textLineWidth then TC.textLineCount
+        else windowWidth div TC.xSpace
+      val howManyColumnsCanWeFit = howManyColumnsCanWeFit - 1
     in
-      if columnDifference = 0 then
-        0
+      if newColumn < prevScrollColumn then
+        (* we are moving the cursor backwards
+         * so make sure that newColumn is on the left side *)
+        newColumn
+      else if newColumn > prevScrollColumn + howManyColumnsCanWeFit then
+        (* we are scrolling forwards *)
+        newColumn - howManyColumnsCanWeFit
       else
-        let
-          val howManyColumnsCanWeFit =
-            if windowWidth >= TC.textLineWidth then TC.textLineCount
-            else windowWidth div TC.xSpace
-          val howManyColumnsCanWeFit = howManyColumnsCanWeFit - 1
-        in
-          if columnDifference < howManyColumnsCanWeFit then 0
-          else columnDifference - howManyColumnsCanWeFit
-        end
+        (* we can display the current column without moving the scroll column
+         * so we do that *)
+        prevScrollColumn
     end
 
   fun getStartLine (prevLineNumber, cursorLine, windowHeight) =
