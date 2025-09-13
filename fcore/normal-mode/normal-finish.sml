@@ -98,7 +98,7 @@ struct
       val newBuffer = LineGap.goToIdx (cursorIdx, buffer)
       val visualScrollColumn =
         TextScroll.getScrollColumn
-          (buffer, cursorIdx, newWidth, prevScrollColumn)
+          (newBuffer, cursorIdx, newWidth, prevScrollColumn)
       val newBuffer = LineGap.goToLine (startLine, newBuffer)
       val lineIdx = TextBuilderUtils.getLineAbsIdxFromBuffer (startLine, buffer)
 
