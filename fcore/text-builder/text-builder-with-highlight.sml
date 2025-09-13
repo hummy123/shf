@@ -15,12 +15,13 @@ struct
             val posY = posY + TC.ySpace
             val lineNumber = lineNumber + 1
           in
-            skipToFirstVisibleColumn
+            build
               ( strPos
               , shd
               , stl
               , lhd
               , ltl
+              , #startX env
               , posY
               , 0
               , lineNumber
@@ -100,12 +101,13 @@ struct
             val posY = posY + TC.ySpace
             val lineNumber = lineNumber + 1
           in
-            skipToFirstVisibleColumn
+            build
               ( newStrPos
               , str
               , stl
               , line
               , ltl
+              , #startX env
               , posY
               , 0
               , lineNumber
@@ -117,105 +119,6 @@ struct
               )
           end
       end
-
-  and skipToFirstVisibleColumn
-    ( pos
-    , str
-    , stl
-    , line
-    , ltl
-    , posY
-    , column
-    , lineNumber
-    , absIdx
-    , cursorIdx
-    , env: Utils.env_data
-    , acc
-    , searchPos
-    ) =
-    if column = #scrollColumnStart env then
-      (* return to build function *)
-      build
-        ( pos
-        , str
-        , stl
-        , line
-        , ltl
-        , #startX env
-        , posY
-        , column
-        , lineNumber
-        , absIdx
-        , cursorIdx
-        , env
-        , acc
-        , searchPos
-        )
-    else if pos = String.size str then
-      (* go to next node *)
-      case (stl, ltl) of
-        (shd :: stl, lhd :: ltl) =>
-          skipToFirstVisibleColumn
-            ( 0
-            , shd
-            , stl
-            , lhd
-            , ltl
-            , posY
-            , column
-            , lineNumber
-            , absIdx
-            , cursorIdx
-            , env
-            , acc
-            , searchPos
-            )
-      | (_, _) => acc
-    else
-      case String.sub (str, pos) of
-        #"\n" =>
-          let
-            (* increment line lineNumber and posY, 
-             * and then call skipToFirstVisibleColumn recursively.
-             * The recursive call check this condition:
-             * Is the new column 0 the same as the column the scroll starts at?
-             * If it is, then we call build, or else we continue skipping 
-             * until we reach the start column. *)
-            val posY = posY + TC.ySpace
-            val lineNumber = lineNumber + 1
-          in
-            skipToFirstVisibleColumn
-              ( pos + 1
-              , str
-              , stl
-              , line
-              , ltl
-              , posY
-              , 0
-              , lineNumber
-              , absIdx + 1
-              , cursorIdx
-              , env
-              , acc
-              , searchPos
-              )
-          end
-      | chr =>
-          skipToFirstVisibleColumn
-            ( pos + 1
-            , str
-            , stl
-            , line
-            , ltl
-            , posY
-            , column + 1
-            , lineNumber
-            , absIdx + 1
-            , cursorIdx
-            , env
-            , acc
-            , searchPos
-            )
 
   and build
     ( pos
@@ -270,37 +173,6 @@ struct
             , searchPos
             )
       | (_, _) => acc
-    else if column < #scrollColumnStart env then
-      skipToFirstVisibleColumn
-        ( pos
-        , str
-        , stl
-        , line
-        , ltl
-        , posY
-        , column
-        , lineNumber
-        , absIdx
-        , cursorIdx
-        , env
-        , acc
-        , searchPos
-        )
-    else if column > #scrollColumnEnd env then
-      skipToNextLine
-        ( pos
-        , str
-        , stl
-        , line
-        , ltl
-        , posY
-        , lineNumber
-        , absIdx
-        , cursorIdx
-        , env
-        , acc
-        , searchPos
-        )
     else
       let
         val searchPos = Utils.advanceSearchPos (absIdx, searchPos, env)
@@ -380,24 +252,14 @@ struct
                   )
               end
           | chr =>
-              let
-                val acc =
-                  if absIdx = cursorIdx then
-                    Utils.makeCursorOnChr (chr, posX, posY, env)
-                    :: Utils.makeCursor (posX, posY, env) :: acc
-                  else if Utils.isInSearchRange (absIdx, searchPos, env) then
-                    Utils.makeHighlightChr (chr, posX, posY, env)
-                    :: Utils.makeHighlight (posX, posY, env) :: acc
-                  else
-                    Utils.makeChr (chr, posX, posY, env) :: acc
-              in
+              if column < #scrollColumnStart env then
                 build
                   ( pos + 1
                   , str
                   , stl
                   , line
                   , ltl
-                  , posX + TC.xSpace
+                  , #startX env
                   , posY
                   , column + 1
                   , lineNumber
@@ -407,6 +269,49 @@ struct
                   , acc
                   , searchPos
                   )
-              end
+              else if column > #scrollColumnEnd env then
+                skipToNextLine
+                  ( pos
+                  , str
+                  , stl
+                  , line
+                  , ltl
+                  , posY
+                  , lineNumber
+                  , absIdx
+                  , cursorIdx
+                  , env
+                  , acc
+                  , searchPos
+                  )
+              else
+                let
+                  val acc =
+                    if absIdx = cursorIdx then
+                      Utils.makeCursorOnChr (chr, posX, posY, env)
+                      :: Utils.makeCursor (posX, posY, env) :: acc
+                    else if Utils.isInSearchRange (absIdx, searchPos, env) then
+                      Utils.makeHighlightChr (chr, posX, posY, env)
+                      :: Utils.makeHighlight (posX, posY, env) :: acc
+                    else
+                      Utils.makeChr (chr, posX, posY, env) :: acc
+                in
+                  build
+                    ( pos + 1
+                    , str
+                    , stl
+                    , line
+                    , ltl
+                    , posX + TC.xSpace
+                    , posY
+                    , column + 1
+                    , lineNumber
+                    , absIdx + 1
+                    , cursorIdx
+                    , env
+                    , acc
+                    , searchPos
+                    )
+                end
       end
 end

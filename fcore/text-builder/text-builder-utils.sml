@@ -75,8 +75,8 @@ struct
       , cursorOnCharB = 0.83
 
       , charZ = 0.01
-      , cursorZ = 0.05
-      , highlightZ = 0.03
+      , cursorZ = 0.03
+      , highlightZ = 0.05
 
       , startX = 5
       , startY = 5
@@ -126,8 +126,8 @@ struct
         , cursorOnCharB = 0.83
 
         , charZ = 0.01
-        , cursorZ = 0.05
-        , highlightZ = 0.03
+        , cursorZ = 0.03
+        , highlightZ = 0.05
 
         , startX = startX
         , startY = 5
