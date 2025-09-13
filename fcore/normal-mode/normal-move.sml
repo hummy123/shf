@@ -58,6 +58,7 @@ struct
         , searchString
         , bufferModifyTime
         , visualScrollColumn = prevScrollColumn
+        , startLine = prevLineNumber
         , ...
         } = app
 
@@ -72,8 +73,9 @@ struct
       val visualScrollColumn =
         TextScroll.getScrollColumn
           (buffer, bufferIdx, windowWidth, prevScrollColumn)
-      val bufferLine = let in raise Fail "todo: fix" end
 
+      val bufferLine =
+        TextScroll.getStartLine (prevLineNumber, bufferLine, windowHeight)
       val buffer = LineGap.goToLine (bufferLine, buffer)
 
       val drawMsg = NormalModeTextBuilder.build
