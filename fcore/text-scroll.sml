@@ -26,18 +26,20 @@ struct
     end
 
   fun getStartLine (prevLineNumber, cursorLine, windowHeight) =
-    if cursorLine <= prevLineNumber then
-      (* if cursorLine is prior or same as prevLineNumber, 
-       * then use cursorLine as scroll-line-start *)
-      cursorLine
+    if cursorLine <= (prevLineNumber + 3) then
+      (* cursorLine is prior to or same as prevLineNumber,
+       * so use cursorLine to calculate the start line we want. *)
+      Int.max (cursorLine - 3, 0)
     else
       (* cursorLine > prevLineNumber *)
       let
         val howManyLinesWeCanFit = windowHeight div TC.ySpace
-        val howManyLinesWeCanFit = howManyLinesWeCanFit - 2
+        val howManyLinesWeCanFit = howManyLinesWeCanFit
       in
-        if cursorLine > prevLineNumber + howManyLinesWeCanFit then
-          cursorLine - howManyLinesWeCanFit
+        if cursorLine > prevLineNumber + (howManyLinesWeCanFit - 3) then
+          (* cursorLine is after the visible part of the screen
+           * so return the mimimum line where cursorLine is visible *)
+          cursorLine - howManyLinesWeCanFit + 3
         else
           prevLineNumber
       end
