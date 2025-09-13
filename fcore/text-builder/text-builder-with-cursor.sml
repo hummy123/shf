@@ -58,9 +58,9 @@ struct
     else
       (* bin search lines *)
       let
-        val searchPos = BinSearch.equalOrMore (pos + 1, line)
+        val linePos = BinSearch.equalOrMore (pos + 1, line)
       in
-        if searchPos = ~1 then
+        if linePos = ~1 then
           (* next line is not in this node *)
           let
             val absIdx = absIdx - pos
@@ -71,7 +71,7 @@ struct
           end
         else
           let
-            val lineOffset = Vector.sub (line, searchPos)
+            val lineOffset = Vector.sub (line, linePos)
             val newStrPos = lineOffset + 1
             val absIdx = absIdx - pos + newStrPos
             val posY = posY + TC.ySpace

@@ -15,13 +15,12 @@ struct
             val posY = posY + TC.ySpace
             val lineNumber = lineNumber + 1
           in
-            build
+            skipToFirstVisibleColumn
               ( strPos
               , shd
               , stl
               , lhd
               , ltl
-              , #startX env
               , posY
               , 0
               , lineNumber
@@ -47,7 +46,7 @@ struct
             )
     | (_, _) => acc
 
-  and skipToColumnStart
+  and skipToNextLine
     ( pos
     , str
     , stl
@@ -73,9 +72,9 @@ struct
     else
       (* bin search lines *)
       let
-        val searchPos = BinSearch.equalOrMore (pos + 1, #searchList env)
+        val linePos = BinSearch.equalOrMore (pos + 1, line)
       in
-        if searchPos = ~1 then
+        if linePos = ~1 then
           (* next line is not in this node *)
           let
             val absIdx = absIdx - pos
@@ -95,19 +94,18 @@ struct
           end
         else
           let
-            val lineOffset = Vector.sub (line, searchPos)
+            val lineOffset = Vector.sub (line, linePos)
             val newStrPos = lineOffset + 1
             val absIdx = absIdx - pos + newStrPos
             val posY = posY + TC.ySpace
             val lineNumber = lineNumber + 1
           in
-            build
+            skipToFirstVisibleColumn
               ( newStrPos
               , str
               , stl
               , line
               , ltl
-              , #startX env
               , posY
               , 0
               , lineNumber
@@ -119,6 +117,105 @@ struct
               )
           end
       end
+
+  and skipToFirstVisibleColumn
+    ( pos
+    , str
+    , stl
+    , line
+    , ltl
+    , posY
+    , column
+    , lineNumber
+    , absIdx
+    , cursorIdx
+    , env: Utils.env_data
+    , acc
+    , searchPos
+    ) =
+    if column = #scrollColumnStart env then
+      (* return to build function *)
+      build
+        ( pos
+        , str
+        , stl
+        , line
+        , ltl
+        , #startX env
+        , posY
+        , column
+        , lineNumber
+        , absIdx
+        , cursorIdx
+        , env
+        , acc
+        , searchPos
+        )
+    else if pos = String.size str then
+      (* go to next node *)
+      case (stl, ltl) of
+        (shd :: stl, lhd :: ltl) =>
+          skipToFirstVisibleColumn
+            ( 0
+            , shd
+            , stl
+            , lhd
+            , ltl
+            , posY
+            , column
+            , lineNumber
+            , absIdx
+            , cursorIdx
+            , env
+            , acc
+            , searchPos
+            )
+      | (_, _) => acc
+    else
+      case String.sub (str, pos) of
+        #"\n" =>
+          let
+            (* increment line lineNumber and posY, 
+             * and then call skipToFirstVisibleColumn recursively.
+             * The recursive call check this condition:
+             * Is the new column 0 the same as the column the scroll starts at?
+             * If it is, then we call build, or else we continue skipping 
+             * until we reach the start column. *)
+            val posY = posY + TC.ySpace
+            val lineNumber = lineNumber + 1
+          in
+            skipToFirstVisibleColumn
+              ( pos + 1
+              , str
+              , stl
+              , line
+              , ltl
+              , posY
+              , 0
+              , lineNumber
+              , absIdx + 1
+              , cursorIdx
+              , env
+              , acc
+              , searchPos
+              )
+          end
+      | chr =>
+          skipToFirstVisibleColumn
+            ( pos + 1
+            , str
+            , stl
+            , line
+            , ltl
+            , posY
+            , column + 1
+            , lineNumber
+            , absIdx + 1
+            , cursorIdx
+            , env
+            , acc
+            , searchPos
+            )
 
   and build
     ( pos
@@ -174,7 +271,23 @@ struct
             )
       | (_, _) => acc
     else if column < #scrollColumnStart env then
-      skipToColumnStart
+      skipToFirstVisibleColumn
+        ( pos
+        , str
+        , stl
+        , line
+        , ltl
+        , posY
+        , column
+        , lineNumber
+        , absIdx
+        , cursorIdx
+        , env
+        , acc
+        , searchPos
+        )
+    else if column > #scrollColumnEnd env then
+      skipToNextLine
         ( pos
         , str
         , stl
