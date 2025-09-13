@@ -58,7 +58,7 @@ struct
     else
       (* bin search lines *)
       let
-        val searchPos = BinSearch.equalOrMore (pos + 1, #searchList env)
+        val searchPos = BinSearch.equalOrMore (pos + 1, line)
       in
         if searchPos = ~1 then
           (* next line is not in this node *)
