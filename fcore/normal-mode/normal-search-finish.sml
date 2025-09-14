@@ -82,22 +82,29 @@ struct
     ( app: app_type
     , newWindowWidth
     , newWindowHeight
+    , searchString
     , searchCursorIdx
     , tempSearchList
     , searchScrollColumn
     ) =
     let
       val
-        { buffer
-        , cursorIdx
-        , startLine = prevLineNumber
-        , searchString
-        , visualScrollColumn
-        , ...
-        } = app
+        {buffer, cursorIdx, startLine = prevLineNumber, visualScrollColumn, ...} =
+        app
 
       val floatWindowWidth = Real32.fromInt newWindowWidth
       val floatWindowHeight = Real32.fromInt newWindowHeight
+
+      val searchScrollColumn =
+        TextScroll.getScrollColumnFromString
+          (searchCursorIdx, newWindowWidth, searchScrollColumn)
+
+      val mode = NORMAL_SEARCH_MODE
+        { searchString = searchString
+        , tempSearchList = tempSearchList
+        , searchCursorIdx = searchCursorIdx
+        , searchScrollColumn = searchScrollColumn
+        }
 
       val searchStringPosY = newWindowHeight - TextConstants.ySpace - 5
 
@@ -111,28 +118,6 @@ struct
         , searchCursorIdx
         , searchScrollColumn
         )
-
-      val cursor =
-        let
-          val xpos = TextConstants.xSpace * (searchCursorIdx + 1) + 5
-          val x = Real32.fromInt xpos
-          val y = Real32.fromInt searchStringPosY
-          val r: Real32.real = 0.67
-          val g: Real32.real = 0.51
-          val b: Real32.real = 0.83
-        in
-          PipeCursor.lerp
-            ( x
-            , y
-            , 0.01
-            , TextConstants.scale
-            , floatWindowWidth
-            , floatWindowHeight
-            , r
-            , g
-            , b
-            )
-        end
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
@@ -153,13 +138,13 @@ struct
         , tempSearchList
         , searchString
         , visualScrollColumn
-        , cursor :: initialTextAcc
+        , initialTextAcc
         )
       val drawMsg = Vector.concat drawMsg
       val drawMsg = DrawMsg.DRAW_TEXT drawMsg
       val msgs = [MailboxType.DRAW drawMsg]
     in
       NormalSearchModeWith.bufferAndSize
-        (app, buffer, newWindowWidth, newWindowHeight, msgs)
+        (app, mode, buffer, newWindowWidth, newWindowHeight, msgs)
     end
 end

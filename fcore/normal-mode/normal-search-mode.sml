@@ -213,6 +213,7 @@ struct
           ( app
           , width
           , height
+          , searchString
           , searchCursorIdx
           , tempSearchList
           , searchScrollColumn

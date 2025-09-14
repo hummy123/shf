@@ -102,10 +102,16 @@ struct
     end
 
   fun bufferAndSize
-    (app: app_type, newBuffer, newWindowWidth, newWindowHeight, newMsgs) =
+    ( app: app_type
+    , newMode
+    , newBuffer
+    , newWindowWidth
+    , newWindowHeight
+    , newMsgs
+    ) =
     let
       val
-        { mode
+        { mode = _
         , windowWidth = _
         , windowHeight = _
         , msgs = _
@@ -118,7 +124,7 @@ struct
         , visualScrollColumn
         } = app
     in
-      { mode = mode
+      { mode = newMode
       , buffer = newBuffer
       , windowWidth = newWindowWidth
       , windowHeight = newWindowHeight
