@@ -90,8 +90,8 @@ struct
         , cursorZ = 0.03
         , highlightZ = 0.05
 
-        , startX = 5
-        , startY = 5
+        , startX = startX
+        , startY = startX
 
         , scrollColumnStart = visualScrollColumn
         , scrollColumnEnd = width div TC.xSpace + visualScrollColumn
@@ -105,7 +105,7 @@ struct
         }
       else
         let
-          val startX = (endX - TC.textLineWidth) div 2
+          val startX = (width - TC.textLineWidth) div 2
         in
           { charR = 0.67
           , charG = 0.51

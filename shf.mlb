@@ -41,7 +41,7 @@ fcore/text-builder/text-builder-utils.sml
 fcore/text-builder/text-builder-with-cursor.sml
 fcore/text-builder/text-builder-with-highlight.sml
 fcore/text-builder/normal-mode-text-builder.sml
-  fcore/text-builder.sml
+fcore/text-builder/search-bar.sml
 
 fcore/cursor.sml
 fcore/text-scroll.sml

@@ -27,36 +27,15 @@ struct
 
       val searchStringPosY = windowHeight - TextConstants.ySpace - 5
 
-      val initialTextAcc = TextBuilder.buildLineToList
+      val initialTextAcc = SearchBar.build
         ( searchString
         , 5
         , searchStringPosY
         , windowWidth
         , floatWindowWidth
         , floatWindowHeight
+        , searchCursorIdx
         )
-
-      val cursor =
-        let
-          val xpos = TextConstants.xSpace * (searchCursorIdx + 1) + 5
-          val x = Real32.fromInt xpos
-          val y = Real32.fromInt searchStringPosY
-          val r: Real32.real = 0.67
-          val g: Real32.real = 0.51
-          val b: Real32.real = 0.83
-        in
-          PipeCursor.lerp
-            ( x
-            , y
-            , 0.01
-            , TextConstants.scale
-            , floatWindowWidth
-            , floatWindowHeight
-            , r
-            , g
-            , b
-            )
-        end
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
@@ -77,7 +56,7 @@ struct
         , tempSearchList
         , searchString
         , visualScrollColumn
-        , cursor :: initialTextAcc
+        , initialTextAcc
         )
       val drawMsg = Vector.concat drawMsg
       val drawMsg = DrawMsg.DRAW_TEXT drawMsg
@@ -109,13 +88,14 @@ struct
 
       val searchStringPosY = newWindowHeight - TextConstants.ySpace - 5
 
-      val initialTextAcc = TextBuilder.buildLineToList
+      val initialTextAcc = SearchBar.build
         ( searchString
         , 5
         , searchStringPosY
         , newWindowWidth
         , floatWindowWidth
         , floatWindowHeight
+        , searchCursorIdx
         )
 
       val cursor =
