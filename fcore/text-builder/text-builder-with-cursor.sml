@@ -168,6 +168,14 @@ struct
                 Utils.makeCursor (posX, posY, env) :: acc
               else
                 acc
+            val posX =
+              if column < #scrollColumnStart env then
+                (* if we are prior to the start column, 
+                 * we want to set the x position to be at the start
+                 * in preparation for when we are at the start column *)
+                #startX env
+              else
+                posX + TC.xSpace
           in
             build
               ( pos + 1
@@ -175,7 +183,7 @@ struct
               , stl
               , line
               , ltl
-              , posX + TC.xSpace
+              , posX
               , posY
               , column + 1
               , lineNumber

@@ -208,6 +208,9 @@ struct
                     Utils.makeHighlight (posX, posY, env) :: acc
                   else
                     acc
+                val posX =
+                  if column < #scrollColumnStart env then #startX env
+                  else posX + TC.xSpace
               in
                 build
                   ( pos + 1
@@ -215,7 +218,7 @@ struct
                   , stl
                   , line
                   , ltl
-                  , posX + TC.xSpace
+                  , posX
                   , posY
                   , column + 1
                   , lineNumber
