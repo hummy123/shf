@@ -2,10 +2,10 @@ structure TextScroll =
 struct
   structure TC = TextConstants
 
-  (* Preqreuisite: move buffer to cursorIdx *)
-  fun getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn) =
+  (* calculates new scroll column from integer arguments *)
+  fun calculateScrollColumn
+    (startOfLine, cursorIdx, windowWidth, prevScrollColumn) =
     let
-      val startOfLine = Cursor.vi0 (buffer, cursorIdx)
       val newColumn = cursorIdx - startOfLine
       val howManyColumnsCanWeFit =
         if windowWidth >= TC.textLineWidth then TC.textLineCount
@@ -23,6 +23,15 @@ struct
         (* we can display the current column without moving the scroll column
          * so we do that *)
         prevScrollColumn
+    end
+
+  (* Preqreuisite: move buffer to cursorIdx *)
+  fun getScrollColumn (buffer, cursorIdx, windowWidth, prevScrollColumn) =
+    let
+      val startOfLine = Cursor.vi0 (buffer, cursorIdx)
+    in
+      calculateScrollColumn
+        (startOfLine, cursorIdx, windowWidth, prevScrollColumn)
     end
 
   fun getStartLine (prevLineNumber, cursorLine, windowHeight) =
