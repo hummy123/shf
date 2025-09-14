@@ -7,7 +7,7 @@ struct
 
   fun switchToNormalSearchMode (app: app_type) =
     NormalSearchFinish.onSearchChanged
-      (app, "", Vector.fromList [], 0, #buffer app)
+      (app, "", Vector.fromList [], 0, 0, #buffer app)
 
   fun getNumLength (pos, str) =
     if pos = String.size str then

@@ -2,8 +2,12 @@ structure AppType =
 struct
   datatype mode =
     NORMAL_MODE of string
-  | NORMAL_SEARCH_MODE of {searchString: string, tempSearchList: int vector,
-  searchCursorIdx: int}
+  | NORMAL_SEARCH_MODE of
+      { searchString: string
+      , tempSearchList: int vector
+      , searchCursorIdx: int
+      , searchScrollColumn: int
+      }
 
   type app_type =
     { mode: mode

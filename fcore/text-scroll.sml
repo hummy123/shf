@@ -34,6 +34,9 @@ struct
         (startOfLine, cursorIdx, windowWidth, prevScrollColumn)
     end
 
+  fun getScrollColumnFromString (cursorIdx, windowWidth, prevScrollColumn) =
+    calculateScrollColumn (0, cursorIdx, windowWidth, prevScrollColumn)
+
   fun getStartLine (prevLineNumber, cursorLine, windowHeight) =
     if cursorLine <= (prevLineNumber + 3) then
       (* cursorLine is prior to or same as prevLineNumber,

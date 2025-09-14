@@ -4,7 +4,13 @@ struct
   open DrawMsg
 
   fun onSearchChanged
-    (app: app_type, searchString, tempSearchList, searchCursorIdx, buffer) =
+    ( app: app_type
+    , searchString
+    , tempSearchList
+    , searchCursorIdx
+    , searchScrollColumn
+    , buffer
+    ) =
     let
       val
         { buffer
@@ -16,10 +22,15 @@ struct
         , ...
         } = app
 
+      val searchScrollColumn =
+        TextScroll.getScrollColumnFromString
+          (searchCursorIdx, windowWidth, searchScrollColumn)
+
       val mode = NORMAL_SEARCH_MODE
         { searchString = searchString
         , tempSearchList = tempSearchList
         , searchCursorIdx = searchCursorIdx
+        , searchScrollColumn = searchScrollColumn
         }
 
       val floatWindowWidth = Real32.fromInt windowWidth

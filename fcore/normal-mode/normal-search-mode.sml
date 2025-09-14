@@ -9,7 +9,8 @@ struct
     in SearchList.buildRange (buffer, unescapedString, cursorIdx + 1111)
     end
 
-  fun addChr (app: app_type, searchString, searchCursorIdx, chr) =
+  fun addChr
+    (app: app_type, searchString, searchCursorIdx, searchScrollColumn, chr) =
     let
       val {cursorIdx, buffer, ...} = app
 
@@ -31,7 +32,13 @@ struct
       val tempSearchList = buildTempSearchList (searchString, buffer, cursorIdx)
     in
       NormalSearchFinish.onSearchChanged
-        (app, searchString, tempSearchList, searchCursorIdx, buffer)
+        ( app
+        , searchString
+        , tempSearchList
+        , searchCursorIdx
+        , searchScrollColumn
+        , buffer
+        )
     end
 
   (* return to normal mode, keeping the same searchString and searchList
@@ -87,7 +94,13 @@ struct
         (app, buffer, searchString, tempSearchList, startLine, mode, msgs)
     end
 
-  fun backspace (app: app_type, searchString, tempSearchList, searchCursorIdx) =
+  fun backspace
+    ( app: app_type
+    , searchString
+    , tempSearchList
+    , searchScrollColumn
+    , searchCursorIdx
+    ) =
     if searchCursorIdx = 0 then
       app
     else
@@ -112,10 +125,17 @@ struct
           buildTempSearchList (searchString, buffer, cursorIdx)
       in
         NormalSearchFinish.onSearchChanged
-          (app, searchString, tempSearchList, searchCursorIdx, buffer)
+          ( app
+          , searchString
+          , tempSearchList
+          , searchCursorIdx
+          , searchScrollColumn
+          , buffer
+          )
       end
 
-  fun moveLeft (app, searchString, tempSearchList, searchCursorIdx) =
+  fun moveLeft
+    (app, searchString, tempSearchList, searchCursorIdx, searchScrollColumn) =
     if searchCursorIdx = 0 then
       app
     else
@@ -123,10 +143,17 @@ struct
         val searchCursorIdx = searchCursorIdx - 1
       in
         NormalSearchFinish.onSearchChanged
-          (app, searchString, tempSearchList, searchCursorIdx, #buffer app)
+          ( app
+          , searchString
+          , tempSearchList
+          , searchCursorIdx
+          , searchScrollColumn
+          , #buffer app
+          )
       end
 
-  fun moveRight (app, searchString, tempSearchList, searchCursorIdx) =
+  fun moveRight
+    (app, searchString, tempSearchList, searchCursorIdx, searchScrollColumn) =
     if searchCursorIdx = String.size searchString then
       app
     else
@@ -134,20 +161,50 @@ struct
         val searchCursorIdx = searchCursorIdx + 1
       in
         NormalSearchFinish.onSearchChanged
-          (app, searchString, tempSearchList, searchCursorIdx, #buffer app)
+          ( app
+          , searchString
+          , tempSearchList
+          , searchCursorIdx
+          , searchScrollColumn
+          , #buffer app
+          )
       end
 
-  fun update (app, {searchString, tempSearchList, searchCursorIdx}, msg, time) =
+  fun update
+    ( app
+    , {searchString, tempSearchList, searchCursorIdx, searchScrollColumn}
+    , msg
+    , time
+    ) =
     case msg of
-      CHAR_EVENT chr => addChr (app, searchString, searchCursorIdx, chr)
+      CHAR_EVENT chr =>
+        addChr (app, searchString, searchCursorIdx, searchScrollColumn, chr)
     | KEY_BACKSPACE =>
-        backspace (app, searchString, tempSearchList, searchCursorIdx)
+        backspace
+          ( app
+          , searchString
+          , tempSearchList
+          , searchScrollColumn
+          , searchCursorIdx
+          )
     | KEY_ESC => exitToNormalMode app
     | KEY_ENTER => saveSearch (app, searchString, tempSearchList, time)
     | ARROW_LEFT =>
-        moveLeft (app, searchString, tempSearchList, searchCursorIdx)
+        moveLeft
+          ( app
+          , searchString
+          , tempSearchList
+          , searchCursorIdx
+          , searchScrollColumn
+          )
     | ARROW_RIGHT =>
-        moveRight (app, searchString, tempSearchList, searchCursorIdx)
+        moveRight
+          ( app
+          , searchString
+          , tempSearchList
+          , searchCursorIdx
+          , searchScrollColumn
+          )
     | WITH_SEARCH_LIST (searchList, time) =>
         NormalFinish.withSearchList (app, searchList, time)
     | RESIZE_EVENT (width, height) =>
