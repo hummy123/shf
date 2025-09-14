@@ -236,23 +236,27 @@ struct
                     Utils.makeCursor (posX, posY, env) :: acc
                   else
                     acc
+                val nextLineNumber = lineNumber + 1
               in
-                build
-                  ( pos + 1
-                  , str
-                  , stl
-                  , line
-                  , ltl
-                  , #startX env
-                  , posY + TC.ySpace
-                  , 0
-                  , lineNumber + 1
-                  , absIdx + 1
-                  , cursorIdx
-                  , env
-                  , acc
-                  , searchPos
-                  )
+                if nextLineNumber > #lastLineNumber env then
+                  acc
+                else
+                  build
+                    ( pos + 1
+                    , str
+                    , stl
+                    , line
+                    , ltl
+                    , #startX env
+                    , posY + TC.ySpace
+                    , 0
+                    , nextLineNumber
+                    , absIdx + 1
+                    , cursorIdx
+                    , env
+                    , acc
+                    , searchPos
+                    )
               end
           | chr =>
               if column < #scrollColumnStart env then
