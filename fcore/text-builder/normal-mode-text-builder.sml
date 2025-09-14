@@ -35,7 +35,9 @@ struct
               if searchPos = ~1 then Vector.length searchList else searchPos
 
             val env = Utils.initEnv
-              ( windowWidth
+              ( 5
+              , 5
+              , windowWidth
               , windowHeight
               , floatWindowWidth
               , floatWindowHeight

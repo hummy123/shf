@@ -44,7 +44,9 @@ struct
     }
 
   fun initEnv
-    ( endX
+    ( startX
+    , startY
+    , endX
     , endY
     , floatWindowWidth
     , floatWindowHeight
@@ -53,58 +55,17 @@ struct
     , visualScrollColumn
     , startLine
     ) : env_data =
-    if TC.textLineWidth > endX then
-      { charR = 0.67
-      , charG = 0.51
-      , charB = 0.83
-
-      , highlightR = 0.211
-      , highlightG = 0.219
-      , highlightB = 0.25
-
-      , cursorR = 1.0
-      , cursorG = 1.0
-      , cursorB = 1.0
-
-      , highlightOnCharR = 0.0
-      , highlightOnCharG = 0.0
-      , highlightOnCharB = 0.0
-
-      , cursorOnCharR = 0.67
-      , cursorOnCharG = 0.51
-      , cursorOnCharB = 0.83
-
-      , charZ = 0.01
-      , cursorZ = 0.03
-      , highlightZ = 0.05
-
-      , startX = 5
-      , startY = 5
-
-      , scrollColumnStart = visualScrollColumn
-      , scrollColumnEnd = let val width = endX - 5
-                          in width div TC.xSpace + visualScrollColumn
-                          end
-
-      , lastLineNumber =
-          let
-            val height = endY - 5
-            val howManyLines = height div TC.ySpace
-          in
-            startLine + howManyLines
-          end
-
-      , fw = floatWindowWidth
-      , fh = floatWindowHeight
-
-      , searchList = searchList
-      , searchLen = searchLen
-      }
-    else
-      let
-        val startX = (endX - TC.textLineWidth) div 2
-        val finishWidth = startX + TC.textLineWidth
-      in
+    let
+      val width = endX - startX
+      val lastLineNumber =
+        let
+          val height = endY - startY
+          val howManyLines = height div TC.ySpace
+        in
+          startLine + howManyLines
+        end
+    in
+      if TC.textLineWidth > width then
         { charR = 0.67
         , charG = 0.51
         , charB = 0.83
@@ -129,19 +90,12 @@ struct
         , cursorZ = 0.03
         , highlightZ = 0.05
 
-        , startX = startX
+        , startX = 5
         , startY = 5
 
         , scrollColumnStart = visualScrollColumn
-        , scrollColumnEnd = visualScrollColumn + TC.textLineCount
-
-        , lastLineNumber =
-            let
-              val height = endY - 5
-              val howManyLines = height div TC.ySpace
-            in
-              startLine + howManyLines
-            end
+        , scrollColumnEnd = width div TC.xSpace + visualScrollColumn
+        , lastLineNumber = lastLineNumber
 
         , fw = floatWindowWidth
         , fh = floatWindowHeight
@@ -149,7 +103,49 @@ struct
         , searchList = searchList
         , searchLen = searchLen
         }
-      end
+      else
+        let
+          val startX = (endX - TC.textLineWidth) div 2
+        in
+          { charR = 0.67
+          , charG = 0.51
+          , charB = 0.83
+
+          , highlightR = 0.211
+          , highlightG = 0.219
+          , highlightB = 0.25
+
+          , cursorR = 1.0
+          , cursorG = 1.0
+          , cursorB = 1.0
+
+          , highlightOnCharR = 0.0
+          , highlightOnCharG = 0.0
+          , highlightOnCharB = 0.0
+
+          , cursorOnCharR = 0.67
+          , cursorOnCharG = 0.51
+          , cursorOnCharB = 0.83
+
+          , charZ = 0.01
+          , cursorZ = 0.03
+          , highlightZ = 0.05
+
+          , startX = startX
+          , startY = startY
+
+          , scrollColumnStart = visualScrollColumn
+          , scrollColumnEnd = visualScrollColumn + TC.textLineCount
+          , lastLineNumber = lastLineNumber
+
+          , fw = floatWindowWidth
+          , fh = floatWindowHeight
+
+          , searchList = searchList
+          , searchLen = searchLen
+          }
+        end
+    end
 
   (* different functions to make vectors of different things we want to draw. *)
   fun makeCursor (posX, posY, env: env_data) =
