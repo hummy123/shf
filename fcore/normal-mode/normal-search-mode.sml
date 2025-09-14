@@ -140,7 +140,7 @@ struct
       app
     else
       let
-        val searchCursorIdx = searchCursorIdx - 1
+        val searchCursorIdx = Int.max (0, searchCursorIdx - 1)
       in
         NormalSearchFinish.onSearchChanged
           ( app
@@ -158,7 +158,8 @@ struct
       app
     else
       let
-        val searchCursorIdx = searchCursorIdx + 1
+        val searchCursorIdx =
+          Int.min (searchCursorIdx + 1, String.size searchString)
       in
         NormalSearchFinish.onSearchChanged
           ( app
@@ -209,7 +210,13 @@ struct
         NormalFinish.withSearchList (app, searchList, time)
     | RESIZE_EVENT (width, height) =>
         NormalSearchFinish.resize
-          (app, width, height, searchCursorIdx, tempSearchList)
+          ( app
+          , width
+          , height
+          , searchCursorIdx
+          , tempSearchList
+          , searchScrollColumn
+          )
 
     (* In Vim's search mode, the up and down arrows can be used 
      * to scroll through the search history. 

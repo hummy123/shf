@@ -58,6 +58,7 @@ struct
     , floatWindowWidth
     , floatWindowHeight
     , searchCursorIdx
+    , searchScrollColumn
     ) =
     let
       val r: Real32.real = 0.67
@@ -95,7 +96,8 @@ struct
 
       val cursor =
         let
-          val xpos = TextConstants.xSpace * (searchCursorIdx + 1) + startX
+          val xpos = (searchCursorIdx + 1) - searchScrollColumn
+          val xpos = TextConstants.xSpace * xpos + startX
           val xpos = Int.min (endX, xpos)
           val x = Real32.fromInt xpos
         in
@@ -115,7 +117,7 @@ struct
       val posX = startX + TC.xSpace
     in
       loop
-        ( 0
+        ( searchScrollColumn
         , str
         , posX
         , startY

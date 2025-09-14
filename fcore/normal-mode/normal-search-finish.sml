@@ -46,6 +46,7 @@ struct
         , floatWindowWidth
         , floatWindowHeight
         , searchCursorIdx
+        , searchScrollColumn
         )
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -83,6 +84,7 @@ struct
     , newWindowHeight
     , searchCursorIdx
     , tempSearchList
+    , searchScrollColumn
     ) =
     let
       val
@@ -107,6 +109,7 @@ struct
         , floatWindowWidth
         , floatWindowHeight
         , searchCursorIdx
+        , searchScrollColumn
         )
 
       val cursor =
