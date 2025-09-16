@@ -164,7 +164,11 @@ struct
       let
         val low = Int.min (cursorIdx, otherIdx)
         val high = Int.max (cursorIdx, otherIdx)
-        val high = Cursor.clipIdx (buffer, high)
+        val high =
+          if high >= #textLength buffer - 2 then
+            Int.max (#textLength buffer - 2, 0)
+          else
+            high
         val length = high - low
 
         val buffer = LineGap.goToIdx (high, buffer)
@@ -183,7 +187,11 @@ struct
         * is no longer a valid idx,
         * clip cursorIdx to the end. *)
         val buffer = LineGap.goToIdx (low, buffer)
-        val cursorIdx = Cursor.clipIdx (buffer, low)
+        val cursorIdx =
+          if low >= #textLength buffer then
+            Int.max (#textLength buffer - 2, low)
+          else
+            low
       in
         NormalFinish.buildTextAndClear
           (app, buffer, cursorIdx, searchList, initialMsg, time)
