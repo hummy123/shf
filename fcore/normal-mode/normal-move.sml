@@ -63,10 +63,9 @@ struct
         } = app
 
       val buffer = LineGap.goToEnd buffer
-      val {line = bufferLine, idx = bufferIdx, ...} = buffer
+      val {line = bufferLine, textLength, ...} = buffer
 
-      val bufferIdx = bufferIdx - 1
-      val bufferIdx = Cursor.clipIdx (buffer, bufferIdx)
+      val bufferIdx = Int.max (0, textLength - 2)
       val bufferLine = bufferLine - 1
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
