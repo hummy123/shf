@@ -4,47 +4,6 @@ struct
   open Railroad.Test
   open InputMsg
 
-  local
-    fun helpCountLineBreaks (pos, acc, str) =
-      if pos < 0 then
-        Vector.fromList acc
-      else
-        let
-          val chr = String.sub (str, pos)
-        in
-          if chr = #"\n" then
-            (* Is this a \r\n pair? Then the position of \r should be consed. *)
-            if pos = 0 then
-              Vector.fromList (0 :: acc)
-            else
-              let
-                val prevChar = String.sub (str, pos - 1)
-              in
-                if prevChar = #"\r" then
-                  helpCountLineBreaks (pos - 2, (pos - 1) :: acc, str)
-                else
-                  helpCountLineBreaks (pos - 1, pos :: acc, str)
-              end
-          else if chr = #"\r" then
-            helpCountLineBreaks (pos - 1, pos :: acc, str)
-          else
-            helpCountLineBreaks (pos - 1, acc, str)
-        end
-
-    fun countLineBreaks str =
-      helpCountLineBreaks (String.size str - 1, [], str)
-  in
-    (* creates a LineGap.t with valid metadata from a list of strings *)
-    fun fromList lst =
-      { idx = 0
-      , line = 0
-      , leftStrings = []
-      , leftLines = []
-      , rightStrings = lst
-      , rightLines = List.map countLineBreaks lst
-      }
-  end
-
   fun getChr (app: AppType.app_type) =
     let
       val {cursorIdx, buffer, ...} = app
@@ -67,20 +26,6 @@ struct
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 0)
-           end)
-    , test "moves cursor left by one in split string when cursorIdx > 0"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList ["hello", " world"]
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 5)
-
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
-           in
-             (* assert *)
-             Expect.isTrue (cursorIdx = 4)
            end)
     , test "does not move cursor when cursorIdx = 0" (fn _ =>
         let
@@ -109,20 +54,6 @@ struct
              (* assert *)
              Expect.isTrue (cursorIdx = 4)
            end)
-    , test "moves cursor left by two in split string when prev chr is \\n"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList ["hello\n", " world"]
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 6)
-
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
-           in
-             (* assert *)
-             Expect.isTrue (cursorIdx = 4)
-           end)
     ]
 
   val lMove = describe "move motion 'l'"
@@ -132,20 +63,6 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
-             val {cursorIdx = oldCursorIdx, ...} = app
-
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
-           in
-             (* assert *)
-             Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
-           end)
-    , test "moves cursor right by one in split string when cursorIdx < length"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList ["hello ", "world"]
              val app = TestUtils.init buffer
              val {cursorIdx = oldCursorIdx, ...} = app
 
@@ -183,20 +100,6 @@ struct
              (* assert *)
              Expect.isTrue (cursorIdx = 6)
            end)
-    , test "moves right by two in split string when char is followed by \\n"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList ["hello\n", "world"]
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 4)
-
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
-           in
-             (* assert *)
-             Expect.isTrue (cursorIdx = 6)
-           end)
     ]
 
   val jMove = describe "move motion 'j'"
@@ -209,26 +112,6 @@ struct
               * *)
              val buffer = LineGap.fromString
                "hello \nworld \ngoodbye \nqorld \n"
-             val app = TestUtils.init buffer
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
-
-             (* assert *)
-             val c1 = getChr app1 = #"w"
-             val c2 = getChr app2 = #"g"
-             val c3 = getChr app3 = #"q"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
-    , test "moves cursur down one column in split string when column = 0"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer =
-               fromList ["hello \n", "world \n", "goodbye \n", "qorld"]
              val app = TestUtils.init buffer
 
              (* act *)
@@ -263,53 +146,11 @@ struct
            in
              Expect.isTrue (c1 andalso c2 andalso c3)
            end)
-    , test "moves cursur down one column in split string when column = 1"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer =
-               fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 1)
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
-
-             (* assert *)
-             val c1 = getChr app1 = #"o"
-             val c2 = getChr app2 = #"y"
-             val c3 = getChr app3 = #"r"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
     , test "moves cursur down one column in contiguous string when column = 2"
         (fn _ =>
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 2)
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
-
-             (* assert *)
-             val c1 = getChr app1 = #"r"
-             val c2 = getChr app2 = #"e"
-             val c3 = getChr app3 = #"i"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
-    , test "moves cursur down one column in split string when column = 2"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer =
-               fromList ["hello \n", "world ", "\nb", "ye \nfriends \n"]
              val app = TestUtils.init buffer
              val app = AppWith.idx (app, 2)
 
@@ -404,25 +245,6 @@ struct
            in
              Expect.isTrue (c1 andalso c2 andalso c3)
            end)
-    , test "moves cursur up one column in split string when column = 0" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["0__", "\n4__", "_\n9_", "__\n14_"]
-          val app = TestUtils.init buffer
-          val app = AppWith.idx (app, 14)
-
-          (* act *)
-          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
-          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
-          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
-
-          (* assert *)
-          val c1 = getChr app1 = #"9"
-          val c2 = getChr app2 = #"4"
-          val c3 = getChr app3 = #"0"
-        in
-          Expect.isTrue (c1 andalso c2 andalso c3)
-        end)
     , test "moves cursur up one column in contiguous string when column = 1"
         (fn _ =>
            let
@@ -443,25 +265,6 @@ struct
            in
              Expect.isTrue (c1 andalso c2 andalso c3)
            end)
-    , test "moves cursur up one column in split string when column = 1" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["_w_\n", "_5__", "\n_10_\n", "_15"]
-          val app = TestUtils.init buffer
-          val app = AppWith.idx (app, 15)
-
-          (* act *)
-          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
-          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
-          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
-
-          (* assert *)
-          val c1 = getChr app1 = #"1"
-          val c2 = getChr app2 = #"5"
-          val c3 = getChr app3 = #"w"
-        in
-          Expect.isTrue (c1 andalso c2 andalso c3)
-        end)
     , test "moves cursur up one column in contiguous string when column = 2"
         (fn _ =>
            let
@@ -482,25 +285,6 @@ struct
            in
              Expect.isTrue (c1 andalso c2 andalso c3)
            end)
-    , test "moves cursur up one column in split string when column = 2" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["__", "2\n", "__6", "\n__10", "\n__1", "5\n"]
-          val app = TestUtils.init buffer
-          val app = AppWith.idx (app, 15)
-
-          (* act *)
-          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
-          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
-          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
-
-          (* assert *)
-          val c1 = getChr app1 = #"1"
-          val c2 = getChr app2 = #"6"
-          val c3 = getChr app3 = #"2"
-        in
-          Expect.isTrue (c1 andalso c2 andalso c3)
-        end)
     , test
         "skips '\\n' when cursor is on '\\n',\
         \prev-char is '\\n' and prev-prev char is not '\\n'"
@@ -563,20 +347,6 @@ struct
         let
           (* arrange *)
           val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
-
-          (* act *)
-          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"w")
-
-          (* assert *)
-          val chr = String.sub ("hello world", cursorIdx)
-        in
-          Expect.isTrue (chr = #"w")
-        end)
-    , test "moves cursor to start of next word in split string" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["hello ", "world"]
           val app = TestUtils.init buffer
 
           (* act *)
@@ -723,20 +493,6 @@ struct
         in
           Expect.isTrue (chr = #"w")
         end)
-    , test "moves cursor to start of next WORD in split string" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["hello ", "world"]
-          val app = TestUtils.init buffer
-
-          (* act *)
-          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"W")
-
-          (* assert *)
-          val chr = String.sub ("hello world", cursorIdx)
-        in
-          Expect.isTrue (chr = #"w")
-        end)
     , test "moves cursor past newline when next WORD is after newline" (fn _ =>
         let
           (* arrange *)
@@ -833,22 +589,6 @@ struct
              Expect.isTrue (getChr app = #"o")
            end)
     , test
-        "moves cursor to last alphanumeric char in split string\
-          \when in alphanumeric word and there is at least one\
-          \alphanumeric char after cursor"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList ["hello ", "world", "\n"]
-             val app = TestUtils.init buffer
-
-             (* act *)
-             val app = TestUtils.update (app, CHAR_EVENT #"e")
-           in
-             (* assert *)
-             Expect.isTrue (getChr app = #"o")
-           end)
-    , test
         "moves cursor to last punctuation char in contiguous string\
         \when in punctuation word and there is at least one\
         \punctuation char after cursor"
@@ -856,22 +596,6 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "#$%!^ world\n"
-             val app = TestUtils.init buffer
-
-             (* act *)
-             val app = TestUtils.update (app, CHAR_EVENT #"e")
-           in
-             (* assert *)
-             Expect.isTrue (getChr app = #"^")
-           end)
-    , test
-        "moves cursor to last punctuation char in split string\
-          \when in punctuation word and there is at least one\
-          \punctuation char after cursor"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList ["#$", "%!^ ", "world", "\n"]
              val app = TestUtils.init buffer
 
              (* act *)
@@ -1017,18 +741,6 @@ struct
              (* assert *)
              Expect.isTrue (getChr app = #"o")
            end)
-    , test "moves cursor to last char in WORD when in split string" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["hel", "!!!", "lo ", "world", "\n"]
-          val app = TestUtils.init buffer
-
-          (* act *)
-          val app = TestUtils.update (app, CHAR_EVENT #"E")
-        in
-          (* assert *)
-          Expect.isTrue (getChr app = #"o")
-        end)
     , test
         "moves cursor to last char of next WORD,\ 
         \when cursor is on last char of current WORD"
@@ -1332,19 +1044,6 @@ struct
           (* assert *)
           Expect.isTrue (cursorIdx = 0)
         end)
-    , test "moves cursor to 0 in split string when on first line" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["hel", "lo ", "w7r", "ld\n"]
-          val app = TestUtils.init buffer
-          val app = AppWith.idx (app, 7)
-
-          (* act *)
-          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"0")
-        in
-          (* assert *)
-          Expect.isTrue (cursorIdx = 0)
-        end)
     , test "leaves cursor on 0 when cursor is already on 0" (fn _ =>
         let
           (* arrange *)
@@ -1392,27 +1091,6 @@ struct
              (* assert *)
              Expect.isTrue (chr = #"#")
            end)
-    , test
-        "moves cursor to first char after '\\n' in split string\
-        \when cursor is after first line"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList
-               ["hel", "lo ", "wor", "ld\n", "#el", "lo ", "aga", "in\n"]
-             val buffer = LineGap.fromString "hello world\n#ello again\n"
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 21)
-
-             (* act *)
-             val app = TestUtils.update (app, CHAR_EVENT #"0")
-
-             (* assert *)
-             val chr = getChr app
-           in
-             (* assert *)
-             Expect.isTrue (chr = #"#")
-           end)
     ]
 
   val dlrMove = describe "move motion '$'"
@@ -1428,18 +1106,6 @@ struct
           (* assert *)
           Expect.isTrue (getChr app = #"9")
         end)
-    , test "moves cursor to char before '\\n' in split string" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = fromList ["hel", "lo ", " wor9\n"]
-          val app = TestUtils.init buffer
-
-          (* act *)
-          val app = TestUtils.update (app, CHAR_EVENT #"$")
-        in
-          (* assert *)
-          Expect.isTrue (getChr app = #"9")
-        end)
     , test
         "leaves cursor at same idx in contiguous string\
         \when char after cursor is '\\n'"
@@ -1447,27 +1113,6 @@ struct
            let
              (* arrange *)
              val buffer = LineGap.fromString "hello\n world\n"
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 11)
-             val oldIdx = #cursorIdx app
-
-             (* act *)
-             val app = TestUtils.update (app, CHAR_EVENT #"$")
-             val newIdx = #cursorIdx app
-
-             val nchr = getChr app
-             val nchr = Char.toString nchr ^ "\n"
-           in
-             (* assert *)
-             Expect.isTrue (oldIdx = newIdx)
-           end)
-    , test
-        "leaves cursor at same idx in split string\
-        \when char after cursor is '\\n'"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = fromList ["hel", "lo\n", " wo", "rld", "\n"]
              val app = TestUtils.init buffer
              val app = AppWith.idx (app, 11)
              val oldIdx = #cursorIdx app

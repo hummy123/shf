@@ -15,6 +15,7 @@ struct
         , windowWidth
         , windowHeight
         , msgs
+        , visualScrollColumn
         , cursorIdx = _
         } = app
     in
@@ -27,6 +28,7 @@ struct
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       , msgs = msgs
+      , visualScrollColumn = visualScrollColumn
       , cursorIdx = newIdx
       }
     end
