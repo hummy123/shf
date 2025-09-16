@@ -275,13 +275,31 @@ struct
     let
       val {buffer, cursorIdx, searchString, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val textLength = #textLength buffer
 
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
       val finishIdx = Cursor.viDlr (buffer, cursorIdx, count) + 2
       val length = finishIdx - startIdx
+
+      val buffer = LineGap.goToIdx (startIdx, buffer)
+      val initialMsg = Fn.initMsgs (startIdx, length, buffer)
+      val buffer = LineGap.delete (startIdx, length, buffer)
+
+      val textLength = #textLength buffer
     in
-      deleteAndFinish (app, startIdx, length, buffer, time)
+      if startIdx >= textLength - 2 andalso textLength > 2 then
+        (* after deletion, we may have deleted the position
+         * that the cursor was previously on.
+         * If so, then we have to move the cursor backwards
+         * to the start of the previous line. *)
+        let
+          val tempIdx = textLength - 2
+          val buffer = LineGap.goToIdx (tempIdx, buffer)
+          val startIdx = Cursor.vi0 (buffer, tempIdx)
+        in
+          finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+        end
+      else
+        finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
     end
 
   fun helpDeleteLineBack (app, buffer, low, high, count, time) =
