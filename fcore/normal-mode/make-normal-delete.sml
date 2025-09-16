@@ -277,6 +277,9 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
+      val buffer = LineGap.goToIdx (startIdx, buffer)
+      val isPrevChrStartOfLine = Cursor.isPrevChrStartOfLine (buffer, startIdx)
+
       val finishIdx = Cursor.viDlr (buffer, cursorIdx, count) + 2
       val length = finishIdx - startIdx
 
@@ -296,7 +299,20 @@ struct
           val buffer = LineGap.goToIdx (tempIdx, buffer)
           val startIdx = Cursor.vi0 (buffer, tempIdx)
         in
-          finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+          if isPrevChrStartOfLine andalso startIdx = #textLength buffer - 2 then
+            (* We also have to handle the edge case where we delete below a
+            * linebreak, such that the linebreak is now at the end of the file.
+            * We have to handle this case because the last file-ending linebreak
+            * is not selectable, and we don't want the user to move the cursor
+            * to the first character of a \n\n pair. *)
+            let
+              val buffer = LineGap.append ("\n", buffer)
+            in
+              finishAfterDeletingBuffer
+                (app, startIdx + 1, buffer, time, initialMsg)
+            end
+          else
+            finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
         end
       else
         finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
