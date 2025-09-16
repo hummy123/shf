@@ -49,10 +49,27 @@ struct
       ()
     end
 
-  fun ioToLineGap (io, acc) =
-    case TextIO.inputLine io of
-      SOME str => ioToLineGap (io, LineGap.append (str, acc))
-    | NONE => LineGap.goToStart acc
+  local
+    fun loop (io, acc, lastCharWasNewline) =
+      case TextIO.inputLine io of
+        SOME str =>
+          let
+            val endsWithNewline =
+              String.size str > 0
+              andalso String.sub (str, String.size str - 1) = #"\n"
+          in
+            loop (io, LineGap.append (str, acc), endsWithNewline)
+          end
+      | NONE =>
+          if lastCharWasNewline then
+            LineGap.goToStart acc
+          else
+            let val acc = LineGap.append ("\n", acc)
+            in LineGap.goToStart acc
+            end
+  in
+    fun ioToLineGap (io, acc) = loop (io, acc, false)
+  end
 
   fun main () =
     let
