@@ -192,7 +192,7 @@ struct
          * interpret as "go to line" command;
          * else, interpret as a command to move to end *)
         if String.size str = 0 then NormalMove.moveToEnd app
-        else NormalMove.moveToLine (app, count - 1)
+        else NormalMove.moveToLine (app, count)
     | #"%" => NormalMove.moveToMatchingPair app
     | #"x" => NormalDelete.removeChr (app, count, time)
     | #"J" => NormalDelete.removeLineBreaks (app, count, time)

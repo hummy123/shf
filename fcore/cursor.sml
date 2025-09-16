@@ -1125,22 +1125,46 @@ struct
   (* Prerequisite: move lineGap to reqLine *)
   fun getLineStartIdx (lineGap: LineGap.t, reqLine) =
     let
-      val {rightStrings, rightLines, line = bufferLine, idx = bufferIdx, ...} =
-        lineGap
+      val
+        { rightStrings
+        , rightLines
+        , line = bufferLine
+        , idx = bufferIdx
+        , leftStrings
+        , leftLines
+        , ...
+        } = lineGap
     in
       case (rightStrings, rightLines) of
         (shd :: stl, lhd :: ltl) =>
           (* reqLine exists in lineGap, so retrieve it *)
           let
             val relativeLine = reqLine - bufferLine - 1
-            val lineIdx = Vector.sub (lhd, relativeLine)
           in
-            if lineIdx = String.size shd - 1 andalso List.null stl then
-              (* if is end of buffer, return last idx in buffer; else, 
-               * increment by 1 as we want to go to first char after line break *)
-              bufferIdx + lineIdx
+            if relativeLine < 0 then
+              (* line is in left node, if it exists *)
+              (case (leftStrings, leftLines) of
+                 (leftShd :: leftStl, leftLhd :: leftLtl) =>
+                   startVi0
+                     ( String.size leftShd - 1
+                     , leftShd
+                     , leftLhd
+                     , bufferIdx - 1
+                     , leftStl
+                     , leftLtl
+                     ) + 1
+               | (_, _) => 0)
             else
-              bufferIdx + lineIdx + 1
+              let
+                val lineIdx = Vector.sub (lhd, relativeLine)
+              in
+                if lineIdx = String.size shd - 1 andalso List.null stl then
+                  (* if is end of buffer, return last idx in buffer; else, 
+                   * increment by 1 as we want to go to first char after line break *)
+                  bufferIdx + lineIdx
+                else
+                  bufferIdx + lineIdx + 1
+              end
           end
       | (_, _) =>
           (* reqLine does not exist in lineGap, so just go to start of last line *)

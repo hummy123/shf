@@ -107,65 +107,69 @@ struct
     end
 
   fun moveToLine (app: app_type, reqLine) =
-    if reqLine = 0 then
-      moveToStart app
-    else
-      let
-        val
-          { windowWidth
-          , windowHeight
-          , buffer
-          , startLine = prevLineNumber
-          , searchList
-          , searchString
-          , bufferModifyTime
-          , visualScrollColumn = prevScrollColumn
-          , ...
-          } = app
-        val buffer = LineGap.goToLine (reqLine, buffer)
+    let
+      val reqLine = reqLine - 1
+    in
+      if reqLine = 0 then
+        moveToStart app
+      else
+        let
+          val
+            { windowWidth
+            , windowHeight
+            , buffer
+            , startLine = prevLineNumber
+            , searchList
+            , searchString
+            , bufferModifyTime
+            , visualScrollColumn = prevScrollColumn
+            , ...
+            } = app
+          val buffer = LineGap.goToLine (reqLine, buffer)
 
-        (* get idx of first chr after linebreak *)
-        val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
+          (* get idx of first chr after linebreak *)
+          val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
 
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val visualScrollColumn =
-          TextScroll.getScrollColumn
-            (buffer, cursorIdx, windowWidth, prevScrollColumn)
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val visualScrollColumn =
+            TextScroll.getScrollColumn
+              (buffer, cursorIdx, windowWidth, prevScrollColumn)
 
-        val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
-        val startLine =
-          TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
+          val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
+          val startLine =
+            TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
 
-        val buffer = LineGap.goToLine (startLine, buffer)
+          val buffer = LineGap.goToLine (startLine, buffer)
 
-        val drawMsg = NormalModeTextBuilder.build
-          ( startLine
-          , cursorIdx
-          , buffer
-          , windowWidth
-          , windowHeight
-          , searchList
-          , searchString
-          , visualScrollColumn
-          )
-        val drawMsg = Vector.concat drawMsg
-        val drawMsg = DrawMsg.DRAW_TEXT drawMsg
-        val drawMsg = [MailboxType.DRAW drawMsg]
+          val drawMsg = NormalModeTextBuilder.build
+            ( startLine
+            , cursorIdx
+            , buffer
+            , windowWidth
+            , windowHeight
+            , searchList
+            , searchString
+            , visualScrollColumn
+            )
+          val drawMsg = Vector.concat drawMsg
+          val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+          val drawMsg = [MailboxType.DRAW drawMsg]
 
-        val mode = NORMAL_MODE ""
-      in
-        NormalModeWith.bufferAndCursorIdx
-          ( app
-          , buffer
-          , cursorIdx
-          , mode
-          , startLine
-          , searchList
-          , drawMsg
-          , bufferModifyTime
-          , visualScrollColumn
-          )
-      end
+          val mode = NORMAL_MODE ""
+        in
+          NormalModeWith.bufferAndCursorIdx
+            ( app
+            , buffer
+            , cursorIdx
+            , mode
+            , startLine
+            , searchList
+            , drawMsg
+            , bufferModifyTime
+            , visualScrollColumn
+            )
+        end
+    end
 
   fun moveToMatchingPair (app: app_type) =
     let
