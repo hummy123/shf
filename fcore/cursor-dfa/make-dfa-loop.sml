@@ -60,6 +60,12 @@ end
 
 functor MakePrevDfaLoop(M: MAKE_DFA_LOOP) =
 struct
+  fun startLeftStrings (leftStrings, absIdx, count) =
+    case leftStrings of
+      lhd :: ltl =>
+        M.fStart (String.size lhd - 1, absIdx, lhd, ltl, M.startState, count)
+    | [] => 0
+
   fun prev (lineGap: LineGap.t, cursorIdx, count) =
     let
       val {rightStrings, leftStrings, idx = bufferIdx, ...} = lineGap
@@ -88,13 +94,19 @@ struct
                      , count
                      )
                  end
-             | [] => cursorIdx)
-      | [] => cursorIdx
+             | [] => startLeftStrings (leftStrings, cursorIdx, count))
+      | [] => startLeftStrings (leftStrings, cursorIdx, count)
     end
 end
 
 functor MakePrevDfaLoopMinus1(M: MAKE_DFA_LOOP) =
 struct
+  fun startLeftStrings (leftStrings, absIdx, count) =
+    case leftStrings of
+      lhd :: ltl =>
+        M.fStart (String.size lhd - 1, absIdx, lhd, ltl, M.startState, count)
+    | [] => 0
+
   fun prev (lineGap: LineGap.t, cursorIdx, count) =
     let
       val {idx = bufferIdx, leftStrings, ...} = lineGap
@@ -102,16 +114,12 @@ struct
       val absIdx = cursorIdx - 1
     in
       if strIdx < 0 then
-        case leftStrings of
-          lhd :: ltl =>
-            M.fStart
-              (String.size lhd - 1, absIdx, lhd, ltl, M.startState, count)
-        | [] => 0
+        startLeftStrings (leftStrings, absIdx, count)
       else
         case #rightStrings lineGap of
           rhd :: _ =>
             M.fStart (strIdx, absIdx, rhd, leftStrings, M.startState, count)
-        | [] => Int.max (0, cursorIdx - 2)
+        | [] => startLeftStrings (leftStrings, absIdx, count)
     end
 end
 
