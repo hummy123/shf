@@ -10,30 +10,30 @@ end
 
 functor MakeMove(Fn: MOVE): MAKE_MOVE =
 struct
+  fun finish (app: AppType.app_type, buffer, cursorIdx) =
+    let
+      val {searchList, bufferModifyTime, ...} = app
+    in
+      NormalFinish.buildTextAndClear
+        (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+    end
+
   fun helpMove (app: AppType.app_type, buffer, cursorIdx, count) =
     if count = 0 then
-      let
-        val {searchList, bufferModifyTime, ...} = app
-      in
-        NormalFinish.buildTextAndClear
-          (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
-      end
+      finish (app, buffer, cursorIdx)
     else
       (* move LineGap to cursorIdx, which is necessary for finding newCursorIdx *)
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val textLength = #textLength buffer
         val newCursorIdx = Fn.fMove (buffer, cursorIdx)
-        val newCursorIdx = Cursor.clipIdx (buffer, newCursorIdx)
-        val newCount =
-          (* it's possible to loop a very high number like 5432131
-           * which will take a long time because of the high number of loops
-           * regardless of the data structure used.
-           * If this happens, and the newCursorIdx is the same as the old one,
-           * then skip to end of loop by going to base case. *)
-          if cursorIdx = newCursorIdx then 0
-          else count - 1
       in
-        helpMove (app, buffer, newCursorIdx, newCount)
+        if newCursorIdx >= textLength - 2 then
+          let val newCursorIdx = Int.max (textLength - 2, 0)
+          in finish (app, buffer, newCursorIdx)
+          end
+        else
+          helpMove (app, buffer, newCursorIdx, count - 1)
       end
 
   fun move (app: AppType.app_type, count) =
