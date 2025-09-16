@@ -87,33 +87,28 @@ struct
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
       in
         if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
-          (* if the cursor is at a linebreak, delete the linebreak
-           * and don't insert a space. *)
-          let val buffer = LineGap.delete (cursorIdx, 1, buffer)
-          in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
-          end
+          if cursorIdx >= #textLength buffer - 2 then
+            finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+          else
+            (* if the cursor is at a linebreak, delete the linebreak
+             * and don't insert a space. *)
+            let val buffer = LineGap.delete (cursorIdx, 1, buffer)
+            in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
+            end
         else
           let
             val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
-            val buffer = LineGap.goToIdx (newCursorIdx, buffer)
-            val clippedIdx = Cursor.clipIdx (buffer, newCursorIdx)
-
-            val buffer =
-              if clippedIdx = newCursorIdx then
-                let val buffer = LineGap.delete (newCursorIdx, 1, buffer)
-                in LineGap.insert (newCursorIdx, " ", buffer)
-                end
-              else
-                (* if clippedIdx and newCursorIdx are different,
-                * that means our previous search brought us past
-                * the ending #"\n" in the file.
-                * We don't want to delete the last newline in the file
-                * because of Unix convention
-                * so don't modify the buffer. *)
-                buffer
-            val newCount = if clippedIdx = cursorIdx then 0 else count - 1
           in
-            helpRemoveLineBreaks (app, buffer, clippedIdx, newCount, time)
+            if newCursorIdx >= #textLength buffer - 2 then
+              finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+            else
+              let
+                val buffer = LineGap.delete (newCursorIdx, 1, buffer)
+                val buffer = LineGap.insert (newCursorIdx, " ", buffer)
+              in
+                helpRemoveLineBreaks
+                  (app, buffer, newCursorIdx, count - 1, time)
+              end
           end
       end
 
@@ -123,17 +118,22 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
     in
       if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
-        let val buffer = LineGap.delete (cursorIdx, 1, buffer)
-        in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
-        end
+        if cursorIdx >= #textLength buffer - 2 then
+          NormalFinish.clearMode app
+        else
+          let val buffer = LineGap.delete (cursorIdx, 1, buffer)
+          in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
+          end
       else
         let
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val newCursorIdx = Cursor.toNextChr (buffer, cursorIdx, #"\n")
           val buffer = LineGap.goToIdx (newCursorIdx, buffer)
-          val clippedIdx = Cursor.clipIdx (buffer, newCursorIdx)
         in
-          if cursorIdx = newCursorIdx orelse newCursorIdx <> clippedIdx then
+          if
+            cursorIdx = newCursorIdx
+            orelse newCursorIdx >= #textLength buffer - 2
+          then
             (* no change, either because no #"\n" was found
              * or because the next #"\n" found is the last character in the
              * file.
