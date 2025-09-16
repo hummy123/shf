@@ -275,10 +275,10 @@ struct
     let
       val {buffer, cursorIdx, searchString, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val textLength = #textLength buffer
 
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
-      val finishIdx = Cursor.viDlrForDelete (buffer, cursorIdx, count)
-
+      val finishIdx = Cursor.viDlr (buffer, cursorIdx, count) + 2
       val length = finishIdx - startIdx
     in
       deleteAndFinish (app, startIdx, length, buffer, time)
