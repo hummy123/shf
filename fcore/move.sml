@@ -66,6 +66,11 @@ struct
       val {buffer, cursorIdx, searchList, bufferModifyTime, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Fn.fMove (buffer, cursorIdx, count)
+
+      val textLength = #textLength buffer
+      val cursorIdx =
+        if cursorIdx >= textLength - 2 then Int.max (textLength - 2, 0)
+        else cursorIdx
     in
       NormalFinish.buildTextAndClear
         (app, buffer, cursorIdx, searchList, [], bufferModifyTime)

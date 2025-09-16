@@ -147,7 +147,7 @@ struct
     if idx = String.size str then
       case tl of
         str :: tl => foldNext (0, absIdx, str, tl, currentState, counter)
-      | [] => Int.max (absIdx - 2, 0)
+      | [] => absIdx
     else
       let
         val chr = String.sub (str, idx)
