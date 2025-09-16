@@ -27,7 +27,7 @@ struct
         TextScroll.getScrollColumn
           (buffer, cursorIdx, windowWidth, prevScrollColumn)
 
-      val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
+      val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
       val startLine =
         TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
 
@@ -144,7 +144,7 @@ struct
         } = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorLine = LineGap.getLineNumberOfIdx (cursorIdx, buffer)
+      val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
       val startLine = TextScroll.getLineCentre (cursorLine, windowHeight)
 
       val buffer = LineGap.goToLine (startLine, buffer)
