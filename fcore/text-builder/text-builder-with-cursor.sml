@@ -133,26 +133,26 @@ struct
     else
       case String.sub (str, pos) of
         #"\n" =>
-          let
-            val acc =
-              if absIdx = cursorIdx then
-                Utils.makeCursor (posX, posY, env) :: acc
-              else
-                acc
-
-            val nextLineNumber = lineNumber + 1
-          in
-            if nextLineNumber > #lastLineNumber env then
-              acc
-            else
+          if lineNumber + 1 > #lastLineNumber env then
+            acc
+          else
+            let
+              val posX = #startX env
+              val posY = posY + TC.ySpace
+              val acc =
+                if absIdx = cursorIdx then
+                  Utils.makeCursor (posX, posY, env) :: acc
+                else
+                  acc
+            in
               build
                 ( pos + 1
                 , str
                 , stl
                 , line
                 , ltl
-                , #startX env
-                , posY + TC.ySpace
+                , posX
+                , posY
                 , 0
                 , lineNumber + 1
                 , absIdx + 1
@@ -160,7 +160,7 @@ struct
                 , env
                 , acc
                 )
-          end
+            end
       | #" " =>
           let
             val acc =
