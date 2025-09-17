@@ -42,7 +42,6 @@ struct
     end
 end
 
-structure MoveViH = MakeMove (struct val fMove = Cursor.viH end)
 structure MoveViJ = MakeMove (struct val fMove = Cursor.viJ end)
 structure MoveViK = MakeMove (struct val fMove = Cursor.viK end)
 
@@ -76,6 +75,7 @@ struct
     end
 end
 
+structure MoveViH = MakeDfaMove (struct val fMove = Cursor.viH end)
 structure MoveViL = MakeDfaMove (struct val fMove = Cursor.viL end)
 
 structure MoveToNextWord = MakeDfaMove (struct val fMove = Cursor.nextWord end)

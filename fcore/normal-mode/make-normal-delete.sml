@@ -337,7 +337,7 @@ struct
     else
       let
         val buffer = LineGap.goToIdx (low, buffer)
-        val low = Cursor.viH (buffer, low)
+        val low = Cursor.viH (buffer, low, 1)
         val buffer = LineGap.goToIdx (low, buffer)
         val low = Cursor.vi0 (buffer, low)
         val newCount = if low = 0 then 0 else count - 1

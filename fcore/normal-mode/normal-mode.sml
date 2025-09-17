@@ -250,7 +250,7 @@ struct
     fun parseDeleteTerminal (str, count, app, chrCmd, time) =
       case chrCmd of
       (* terminal commands: require no input after *)
-        #"h" => NormalDelete.delete (app, count, Cursor.viH, time)
+        #"h" => NormalDelete.deleteByDfa (app, count, Cursor.viH, time)
       | #"l" => NormalDelete.deleteByDfa (app, count, Cursor.viL, time)
       (* vi's 'j' and 'k' commands move up or down a column
        * but 'dj' or 'dk' delete whole lines
@@ -346,7 +346,7 @@ struct
     fun parseDeleteTerminal (str, count, app, chrCmd, time) =
       case chrCmd of
       (* terminal commands: require no input after *)
-        #"h" => NormalYankDelete.delete (app, count, Cursor.viH, time)
+        #"h" => NormalYankDelete.deleteByDfa (app, count, Cursor.viH, time)
       | #"l" => NormalYankDelete.deleteByDfa (app, count, Cursor.viL, time)
       (* vi's 'j' and 'k' commands move up or down a column
        * but 'dj' or 'dk' delete whole lines

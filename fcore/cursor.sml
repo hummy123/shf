@@ -57,77 +57,7 @@ struct
   val viDlrForDelete = ViDlrDfa.nextForDelete
 
   val viL = ViLDfa.next
-
-  structure ViH =
-    MakeIfCharFolderPrev
-      (struct
-         type env = unit
-
-         fun helpViH (strIdx, hd, cursorIdx, leftStrings) =
-           if strIdx > 0 then
-             (* bounds check: can access prev char in hd *)
-             if String.sub (hd, strIdx - 1) = #"\n" then
-               (* prev char is line break *)
-               if strIdx - 1 > 0 then
-                 (* bounds check: can access two chars back in hd *)
-                 if String.sub (hd, strIdx - 2) = #"\n" then
-                   (* line break followed by line break
-                    * so it is fine to decrement by 1 *)
-                   cursorIdx - 1
-                 else
-                   (* non-line break followed by line break 
-                    * so we have to decrement by two,
-                    * skipping over line break *)
-                   cursorIdx - 2
-               else
-                 (* need to check two chars back in leftStrings *)
-                 (case leftStrings of
-                    lhd :: ltl =>
-                      if String.sub (lhd, String.size lhd - 1) = #"\n" then
-                        (* double line break *)
-                        cursorIdx - 1
-                      else
-                        (* non-line break precedes line break *)
-                        cursorIdx - 2
-                  | [] => cursorIdx - 1)
-             else
-               (* prev char is not line break so we can decrement by 1 *)
-               cursorIdx - 1
-           else
-             (* prev char is in leftStrings *)
-             (case leftStrings of
-                lhd :: ltl =>
-                  if String.sub (lhd, String.size lhd - 1) = #"\n" then
-                    (* one line break *)
-                    if String.size lhd > 1 then
-                      (* bounds check: prev-prev chr is in lhd *)
-                      if String.sub (lhd, String.size lhd - 2) = #"\n" then
-                        (* double line break *)
-                        cursorIdx - 1
-                      else
-                        (* non-line break precedes line break *)
-                        cursorIdx - 2
-                    else
-                      (* prev-prev chr is in ltl *)
-                      (case ltl of
-                         ltlhd :: _ =>
-                           if String.sub (ltlhd, String.size ltlhd - 1) = #"\n" then
-                             (* double line break *)
-                             cursorIdx - 1
-                           else
-                             (* non-line break precedes line break *)
-                             cursorIdx - 2
-                       | [] => cursorIdx - 1)
-                  else
-                    (* no line break *)
-                    cursorIdx - 1
-              | [] => 0)
-
-         fun fStart (strIdx, hd, _, cursorIdx, leftStrings, _, _) =
-           helpViH (strIdx, hd, cursorIdx, leftStrings)
-       end)
-
-  fun viH (lineGap, cursorIdx) = ViH.foldPrev (lineGap, cursorIdx, ())
+  val viH = ViLDfa.prev
 
   fun helpGetCursorColumn (distanceFromLine, strList, lineList) =
     case (strList, lineList) of
