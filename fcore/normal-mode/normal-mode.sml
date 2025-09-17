@@ -48,7 +48,7 @@ struct
           val buffer = LineGap.goToIdx (lineStart, buffer)
           val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
           val buffer = LineGap.goToIdx (lineEnd, buffer)
-          val nextLine = Cursor.viL (buffer, lineEnd)
+          val nextLine = Cursor.viL (buffer, lineEnd, 1)
 
           val count = if lineEnd = nextLine then 0 else count - 1
         in
@@ -83,7 +83,7 @@ struct
           val buffer = LineGap.goToIdx (lineStart, buffer)
           val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
           val buffer = LineGap.goToIdx (lineEnd, buffer)
-          val nextLine = Cursor.viL (buffer, lineEnd)
+          val nextLine = Cursor.viL (buffer, lineEnd, 1)
 
           val count = if lineEnd = nextLine then 0 else count - 1
         in
@@ -115,7 +115,7 @@ struct
         val buffer = LineGap.goToIdx (lineStart, buffer)
         val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
         val buffer = LineGap.goToIdx (lineEnd, buffer)
-        val nextLine = Cursor.viL (buffer, lineEnd)
+        val nextLine = Cursor.viL (buffer, lineEnd, 1)
         val newCursorIdx = Int.min (lineEnd, cursorIdx)
 
         val buffer =
@@ -251,7 +251,7 @@ struct
       case chrCmd of
       (* terminal commands: require no input after *)
         #"h" => NormalDelete.delete (app, count, Cursor.viH, time)
-      | #"l" => NormalDelete.delete (app, count, Cursor.viL, time)
+      | #"l" => NormalDelete.deleteByDfa (app, count, Cursor.viL, time)
       (* vi's 'j' and 'k' commands move up or down a column
        * but 'dj' or 'dk' delete whole lines
        * so their implementation differs from
@@ -347,7 +347,7 @@ struct
       case chrCmd of
       (* terminal commands: require no input after *)
         #"h" => NormalYankDelete.delete (app, count, Cursor.viH, time)
-      | #"l" => NormalYankDelete.delete (app, count, Cursor.viL, time)
+      | #"l" => NormalYankDelete.deleteByDfa (app, count, Cursor.viL, time)
       (* vi's 'j' and 'k' commands move up or down a column
        * but 'dj' or 'dk' delete whole lines
        * so their implementation differs from

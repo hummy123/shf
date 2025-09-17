@@ -18,24 +18,41 @@ struct
 
   val tables = #[startTable, notNewlineTable, oneNewlineTable, twoNewLineTable]
 
+  fun next (currentState, chr) =
+    let val table = Vector.sub (tables, Word8.toInt currentState)
+    in Vector.sub (table, Char.ord chr)
+    end
+
   structure ViL =
     MakeNextDfaLoop
       (struct
          val startState = startState
 
-         structure Folder =
-           MakeCharFolderNext
-             (struct
-                val startState = startState
-                val tables = tables
+         fun loop (idx, absIdx, str, tl, currentState, counter) =
+           if idx = String.size str then
+             case tl of
+               str :: tl => loop (0, absIdx, str, tl, currentState, counter)
+             | [] => absIdx
+           else
+             let
+               val chr = String.sub (str, idx)
+               val newState = next (currentState, chr)
+             in
+               if newState = twoNewlineState then
+                 if counter - 1 = ~1 then
+                   absIdx - 1
+                 else
+                   loop (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
+               else if newState = notNewlineState then
+                 if counter - 1 = ~1 then
+                   absIdx
+                 else
+                   loop (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
+               else
+                 loop (idx + 1, absIdx + 1, str, tl, newState, counter)
+             end
 
-                fun finish x = x
-                fun isFinal currentState =
-                  currentState = notNewlineState
-                  orelse currentState = oneNewlineState
-              end)
-
-         val fStart = Folder.foldNext
+         val fStart = loop
        end)
 
   val next = ViL.next

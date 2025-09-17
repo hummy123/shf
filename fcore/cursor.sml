@@ -56,56 +56,7 @@ struct
   val viDlr = ViDlrDfa.next
   val viDlrForDelete = ViDlrDfa.nextForDelete
 
-  fun helpViL (strIdx, hd, cursorIdx, tl) =
-    if String.sub (hd, strIdx) = #"\n" then
-      (* if line break, go to next idx, no matter what chr is there *)
-      cursorIdx + 1
-    else if strIdx + 1 < String.size hd then
-      (* next chr is in hd *)
-      if String.sub (hd, strIdx + 1) = #"\n" then
-        (* if non-line break followed by line break, go to chr + 2 *)
-        cursorIdx + 2
-      else
-        cursorIdx + 1
-    else
-      (case tl of
-         tlhd :: _ =>
-           if String.sub (tlhd, 0) = #"\n" then
-             (* non-line break followed by line break *)
-             cursorIdx + 2
-           else
-             (* non-line break followed by non-line break *)
-             cursorIdx + 1
-       | [] => cursorIdx)
-
-  (* Prerequisite: lineGap is moved to requested idx first 
-   * todo: check if we are in a \r\n pair, but this is not a priority *)
-  fun viL (lineGap: LineGap.t, cursorIdx) =
-    let
-      val {rightStrings, idx = bufferIdx, ...} = lineGap
-    in
-      case rightStrings of
-        hd :: tl =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size hd then
-              (* strIdx is in hd *)
-              helpViL (strIdx, hd, cursorIdx, tl)
-            else
-              (* strIdx is in tl *)
-              (case tl of
-                 tlhd :: tltl =>
-                   let val strIdx = strIdx - String.size hd
-                   in helpViL (strIdx, tlhd, cursorIdx, tltl)
-                   end
-               | [] => cursorIdx)
-          end
-      | [] =>
-          (* return original cursorIdx if there is nothing to the right *)
-          cursorIdx
-    end
+  val viL = ViLDfa.next
 
   structure ViH =
     MakeIfCharFolderPrev

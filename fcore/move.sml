@@ -45,7 +45,6 @@ end
 structure MoveViH = MakeMove (struct val fMove = Cursor.viH end)
 structure MoveViJ = MakeMove (struct val fMove = Cursor.viJ end)
 structure MoveViK = MakeMove (struct val fMove = Cursor.viK end)
-structure MoveViL = MakeMove (struct val fMove = Cursor.viL end)
 
 structure MoveToStartOfLine = MakeMove (struct val fMove = Cursor.vi0 end)
 
@@ -76,6 +75,8 @@ struct
         (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 end
+
+structure MoveViL = MakeDfaMove (struct val fMove = Cursor.viL end)
 
 structure MoveToNextWord = MakeDfaMove (struct val fMove = Cursor.nextWord end)
 structure MoveToNextWORD = MakeDfaMove (struct val fMove = Cursor.nextWORD end)
