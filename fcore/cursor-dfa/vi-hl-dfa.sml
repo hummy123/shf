@@ -1,4 +1,4 @@
-structure ViLDfa =
+structure ViHlDfa =
 struct
   val startState: Word8.word = 0w0
   val notNewlineState: Word8.word = 0w1
@@ -82,7 +82,7 @@ struct
                str :: tl =>
                  loop
                    (String.size str - 1, absIdx, str, tl, currentState, counter)
-             | [] => absIdx
+             | [] => 0
            else
              let
                val chr = String.sub (str, idx)
@@ -108,6 +108,6 @@ struct
          val fStart = loop
        end)
 
-  val next = ViL.next
-  val prev = ViH.prev
+  val l = ViL.next
+  val h = ViH.prev
 end
