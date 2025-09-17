@@ -245,3 +245,41 @@ struct
       | (_, _) => (* nowhere to go, so return cursorIdx *) cursorIdx
     end
 end
+
+functor MakeIfCharFolderNext(Fn: MAKE_IF_CHAR_FOLDER) =
+struct
+  fun foldNext (lineGap: LineGap.t, cursorIdx, env: Fn.env) =
+    let
+      val {rightStrings, idx = bufferIdx, rightLines, ...} = lineGap
+    in
+      case (rightStrings, rightLines) of
+        (strHd :: strTl, lnHd :: lnTl) =>
+          let
+            (* convert absolute cursorIdx to idx relative to hd string *)
+            val strIdx = cursorIdx - bufferIdx
+          in
+            if strIdx < String.size strHd then
+              (* strIdx is in this string *)
+              Fn.fStart (strIdx, strHd, lnHd, cursorIdx, strTl, lnTl, env)
+            else
+              (* strIdx must be in the strTl *)
+              (case (strTl, lnTl) of
+                 (nestStrHd :: nestStrTl, nestLnHd :: nestLnTl) =>
+                   let
+                     val strIdx = strIdx - String.size strHd
+                   in
+                     Fn.fStart
+                       ( strIdx
+                       , nestStrHd
+                       , nestLnHd
+                       , cursorIdx
+                       , nestStrTl
+                       , nestLnTl
+                       , env
+                       )
+                   end
+               | (_, _) => cursorIdx)
+          end
+      | (_, _) => (* nowhere to go, so return cursorIdx *) cursorIdx
+    end
+end
