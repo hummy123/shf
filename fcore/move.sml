@@ -43,7 +43,6 @@ struct
 end
 
 structure MoveViJ = MakeMove (struct val fMove = Cursor.viJ end)
-structure MoveViK = MakeMove (struct val fMove = Cursor.viK end)
 
 structure MoveToStartOfLine = MakeMove (struct val fMove = Cursor.vi0 end)
 
