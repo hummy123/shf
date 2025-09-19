@@ -128,7 +128,7 @@ struct
           val buffer = LineGap.goToLine (reqLine, buffer)
 
           (* get idx of first chr after linebreak *)
-          val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
+          val cursorIdx = LineGap.lineNumberToIdx (reqLine, buffer)
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
           (* we got the line start idx, but we want to move to the index 
