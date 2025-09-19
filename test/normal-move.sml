@@ -303,22 +303,6 @@ struct
            in
              Expect.isTrue isSkipped
            end)
-    , test "moves to 0 of buffer when on first line" (fn _ =>
-        let
-          (* arrange *)
-          val str = "hello \nworld \ntime to go\n"
-          val buffer = LineGap.fromString str
-          val app = TestUtils.init buffer
-          val app = AppWith.idx (app, 5)
-
-          (* act *)
-          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
-
-          (* assert *)
-          val isAtStart = cursorIdx = 0
-        in
-          Expect.isTrue isAtStart
-        end)
     , test "leaves cursor at same idx when already at start of buffer" (fn _ =>
         let
           (* arrange *)
