@@ -148,7 +148,7 @@ struct
     case chr of
       #"h" => MoveViH.move (app, count)
     | #"j" => MoveViJ.move (app, count)
-    | #"k" => MoveViK.move (app, count)
+    | #"k" => NormalMove.moveCursorUp (app, count)
     | #"l" => MoveViL.move (app, count)
     | #"w" => MoveToNextWord.move (app, count)
     | #"W" => MoveToNextWORD.move (app, count)
