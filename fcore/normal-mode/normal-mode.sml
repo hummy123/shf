@@ -147,7 +147,7 @@ struct
   fun parseChr (app: app_type, count, chr, str, time) =
     case chr of
       #"h" => MoveViH.move (app, count)
-    | #"j" => MoveViJ.move (app, count)
+    | #"j" => NormalMove.moveCursorDown (app, count)
     | #"k" => NormalMove.moveCursorUp (app, count)
     | #"l" => MoveViL.move (app, count)
     | #"w" => MoveToNextWord.move (app, count)

@@ -132,6 +132,7 @@ struct
         else
           LineGap.idxToLineNumber (cursorIdx, buffer)
       val newCursorLineNumber = Int.max (cursorLineNumber - count, 0)
+      val column = if newCursorLineNumber = 0 then column - 1 else column
 
       val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
       val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
@@ -143,7 +144,6 @@ struct
       val buffer = LineGap.goToIdx (lineIdx, buffer)
       val endOfLineIdx = Cursor.viDlr (buffer, lineIdx, 1)
 
-      val column = if newCursorLineNumber = 0 then column - 1 else column
       val cursorIdx = Int.min (endOfLineIdx, lineIdx + column)
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -187,6 +187,94 @@ struct
         , visualScrollColumn
         )
     end
+
+  fun moveCursorDown (app: app_type, count) =
+    let
+      val
+        { windowWidth
+        , windowHeight
+        , cursorIdx
+        , buffer
+        , startLine = prevLineNumber
+        , searchList
+        , searchString
+        , bufferModifyTime
+        , visualScrollColumn = prevScrollColumn
+        , ...
+        } = app
+
+      (* calculate new idx to move to *)
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val startOfLine = Cursor.vi0 (buffer, cursorIdx)
+      val column = cursorIdx - startOfLine
+
+      val cursorLineNumber =
+        if Cursor.isNextChrEndOfLine (buffer, cursorIdx) then
+          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+        else
+          LineGap.idxToLineNumber (cursorIdx, buffer)
+
+      val newCursorLineNumber = cursorLineNumber + count
+      val newCursorLineNumber =
+        if cursorLineNumber >= #lineLength buffer - 2 then
+          Int.max (0, #lineLength buffer - 2)
+        else
+          newCursorLineNumber
+
+      val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
+      val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
+      val buffer = LineGap.goToIdx (lineIdx, buffer)
+      val lineIdx =
+        if Cursor.isNextChrEndOfLine (buffer, lineIdx) then lineIdx
+        else lineIdx + 1
+
+      val buffer = LineGap.goToIdx (lineIdx, buffer)
+      val endOfLineIdx = Cursor.viDlr (buffer, lineIdx, 1)
+
+      val cursorIdx = Int.min (endOfLineIdx, lineIdx + column)
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      (* create draw message *)
+      val visualScrollColumn =
+        TextScroll.getScrollColumn
+          (buffer, cursorIdx, windowWidth, prevScrollColumn)
+
+      val startLine =
+        TextScroll.getStartLine
+          (prevLineNumber, newCursorLineNumber, windowHeight)
+
+      val buffer = LineGap.goToLine (startLine, buffer)
+
+      val drawMsg = NormalModeTextBuilder.build
+        ( startLine
+        , cursorIdx
+        , buffer
+        , windowWidth
+        , windowHeight
+        , searchList
+        , searchString
+        , visualScrollColumn
+        )
+      val drawMsg = Vector.concat drawMsg
+      val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+      val drawMsg = [MailboxType.DRAW drawMsg]
+
+      val mode = NORMAL_MODE ""
+    in
+      NormalModeWith.bufferAndCursorIdx
+        ( app
+        , buffer
+        , cursorIdx
+        , mode
+        , startLine
+        , searchList
+        , drawMsg
+        , bufferModifyTime
+        , visualScrollColumn
+        )
+    end
+
 
   fun moveToLine (app: app_type, reqLine) =
     let

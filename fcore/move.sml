@@ -42,8 +42,6 @@ struct
     end
 end
 
-structure MoveViJ = MakeMove (struct val fMove = Cursor.viJ end)
-
 structure MoveToStartOfLine = MakeMove (struct val fMove = Cursor.vi0 end)
 
 signature DFA_MOVE =
