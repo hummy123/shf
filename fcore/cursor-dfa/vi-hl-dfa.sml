@@ -42,7 +42,14 @@ struct
                  if counter - 1 = 0 then
                    absIdx - 1
                  else
-                   loop (idx + 1, absIdx + 1, str, tl, startState, counter - 1)
+                   loop
+                     ( idx + 1
+                     , absIdx + 1
+                     , str
+                     , tl
+                     , oneNewlineState
+                     , counter - 1
+                     )
                else if newState = notNewlineState then
                  if counter - 1 = 0 then
                    absIdx
@@ -73,8 +80,17 @@ struct
                val newState = next (currentState, chr)
              in
                if newState = twoNewlineState then
-                 if counter - 1 = 0 then absIdx
-                 else loop (idx - 1, absIdx - 1, str, tl, newState, counter - 1)
+                 if counter - 1 = 0 then
+                   absIdx
+                 else
+                   loop
+                     ( idx - 1
+                     , absIdx - 1
+                     , str
+                     , tl
+                     , oneNewlineState
+                     , counter - 1
+                     )
                else if newState = notNewlineState then
                  if counter - 1 = 0 then
                    absIdx

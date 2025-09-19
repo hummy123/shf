@@ -5,6 +5,10 @@ struct
   val ySpace = 25
   val fontSize = 30.0
 
+  fun accToDrawMsg (textAcc, cursorAcc) =
+    let
+      open MailboxType
+      open DrawMsg
 
       val textAcc = Vector.concat textAcc
       val cursorAcc = Vector.concat cursorAcc
