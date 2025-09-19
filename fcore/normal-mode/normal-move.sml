@@ -74,7 +74,8 @@ struct
           (buffer, bufferIdx, windowWidth, prevScrollColumn)
 
       val bufferLine =
-        TextScroll.getStartLine (prevLineNumber, bufferLine, windowHeight)
+        TextScroll.getStartLine
+          (prevLineNumber, bufferLine, windowHeight, #lineLength buffer)
       val buffer = LineGap.goToLine (bufferLine, buffer)
 
       val drawMsg = NormalModeTextBuilder.build
@@ -129,6 +130,11 @@ struct
 
       val buffer = LineGap.goToIdx (lineIdx, buffer)
       val endOfLineIdx = Cursor.viDlr (buffer, lineIdx, 1)
+      val endOfLineIdx =
+        if endOfLineIdx >= #textLength buffer - 2 then
+          Int.max (0, #textLength buffer - 2)
+        else
+          endOfLineIdx
 
       val cursorIdx = Int.min (endOfLineIdx, lineIdx + column)
 
@@ -141,7 +147,11 @@ struct
 
       val startLine =
         TextScroll.getStartLine
-          (prevLineNumber, newCursorLineNumber, windowHeight)
+          ( prevLineNumber
+          , newCursorLineNumber
+          , windowHeight
+          , #lineLength buffer
+          )
 
       val buffer = LineGap.goToLine (startLine, buffer)
 
@@ -223,7 +233,7 @@ struct
       val newCursorLineNumber = cursorLineNumber + count
       val newCursorLineNumber =
         if cursorLineNumber >= #lineLength buffer - 2 then
-          Int.max (0, #lineLength buffer - 2)
+          Int.max (0, #lineLength buffer - 1)
         else
           newCursorLineNumber
     in
@@ -270,7 +280,8 @@ struct
 
           val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
           val startLine =
-            TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
+            TextScroll.getStartLine
+              (prevLineNumber, cursorLine, windowHeight, #lineLength buffer)
 
           val buffer = LineGap.goToLine (startLine, buffer)
 
@@ -331,7 +342,8 @@ struct
 
         val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
         val startLine =
-          TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
+          TextScroll.getStartLine
+            (prevLineNumber, cursorLine, windowHeight, #lineLength buffer)
 
         val buffer = LineGap.goToLine (startLine, buffer)
 

@@ -37,7 +37,7 @@ struct
   fun getScrollColumnFromString (cursorIdx, windowWidth, prevScrollColumn) =
     calculateScrollColumn (0, cursorIdx, windowWidth, prevScrollColumn)
 
-  fun getStartLine (prevLineNumber, cursorLine, windowHeight) =
+  fun getStartLine (prevLineNumber, cursorLine, windowHeight, totalLines) =
     if cursorLine <= (prevLineNumber + 3) then
       (* cursorLine is prior to or same as prevLineNumber,
        * so use cursorLine to calculate the start line we want. *)
@@ -50,7 +50,10 @@ struct
         if cursorLine > prevLineNumber + (howManyLinesWeCanFit - 3) then
           (* cursorLine is after the visible part of the screen
            * so return the mimimum line where cursorLine is visible *)
-          cursorLine - howManyLinesWeCanFit + 3
+          if cursorLine >= totalLines - 3 then
+            Int.max (totalLines - howManyLinesWeCanFit, 0)
+          else
+            cursorLine - howManyLinesWeCanFit + 3
         else
           prevLineNumber
       end

@@ -29,7 +29,8 @@ struct
 
       val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
       val startLine =
-        TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
+        TextScroll.getStartLine
+          (prevLineNumber, cursorLine, windowHeight, #lineLength buffer)
 
       (* move buffer to new startLine as required by TextBuilder.build *)
       val buffer = LineGap.goToLine (startLine, buffer)

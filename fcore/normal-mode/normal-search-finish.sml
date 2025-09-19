@@ -52,7 +52,8 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
       val startLine =
-        TextScroll.getStartLine (prevLineNumber, cursorLine, windowHeight)
+        TextScroll.getStartLine
+          (prevLineNumber, cursorLine, windowHeight, #lineLength buffer)
       val buffer = LineGap.goToLine (startLine, buffer)
 
       val remainingWindowHeight = windowHeight - (TextConstants.ySpace * 2)
@@ -122,7 +123,8 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
       val startLine =
-        TextScroll.getStartLine (prevLineNumber, cursorLine, newWindowHeight)
+        TextScroll.getStartLine
+          (prevLineNumber, cursorLine, newWindowHeight, #lineLength buffer)
       val buffer = LineGap.goToLine (startLine, buffer)
 
       val remainingWindowHeight = newWindowHeight - (TextConstants.ySpace * 2)
