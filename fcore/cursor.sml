@@ -1044,7 +1044,7 @@ struct
                    * increment by 1 as we want to go to first char after line break *)
                   bufferIdx + lineIdx
                 else
-                  bufferIdx + lineIdx + 1
+                  bufferIdx + lineIdx
               end
           end
       | (_, _) =>

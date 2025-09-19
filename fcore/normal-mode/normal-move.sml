@@ -129,8 +129,17 @@ struct
 
           (* get idx of first chr after linebreak *)
           val cursorIdx = Cursor.getLineStartIdx (buffer, reqLine)
-
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+          (* we got the line start idx, but we want to move to the index 
+           * after it, where the first character of the line is.
+           * Unless the next character is a line break,
+           * in which case we want to stay at the current idx. *)
+          val cursorIdx =
+            if Cursor.isNextChrEndOfLine (buffer, cursorIdx) then cursorIdx
+            else cursorIdx + 1
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
           val visualScrollColumn =
             TextScroll.getScrollColumn
               (buffer, cursorIdx, windowWidth, prevScrollColumn)
