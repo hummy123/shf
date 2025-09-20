@@ -17,10 +17,7 @@ struct
 
   fun applyChars (historyString, app) = updateLoop (0, historyString, app)
 
-  fun appFromText text =
-    let val buffer = LineGap.fromString text
-    in TestUtils.init buffer
-    end
+  fun appFromText text = TestUtils.init text
 
   fun loadFromFile (io, acc) =
     case TextIO.inputLine io of
@@ -36,22 +33,19 @@ struct
       str
     end
 
-  val initialApp = appFromText initialText
-
   val charEventTests = describe "CHAR_EVENT regressions"
     [ test "SearchList.goToNum vector bounds regression (1)" (fn _ =>
         let
-          val app = appFromText initialText
+          val app = TestUtils.init initialText
           val history = "G12dk"
           val newApp = applyChars (history, app)
         in
           (* just expect that we do not fail or throw an exception *)
           Expect.isTrue true
         end)
-    ,
-      test "idk yet" (fn _ =>
+    , test "No error raised when moving cursor up/down after deleting" (fn _ =>
         let
-          val app = appFromText initialText
+          val app = TestUtils.init initialText
           val history =
             "16G18ddjjjjjjjjjdkdkdkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
           val newApp = applyChars (history, app)

@@ -13,48 +13,19 @@ struct
     end
 
   val hMove = describe "move motion 'h'"
-    [ test "moves cursor left by one in contiguous string when cursorIdx > 0"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 1)
+    [test "moves cursor left by one in contiguous string when cursorIdx > 0"
+       (fn _ =>
+          let
+            (* arrange *)
+            val app = TestUtils.init "hello world"
+            val app = AppWith.idx (app, 1)
 
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
-           in
-             (* assert *)
-             Expect.isTrue (cursorIdx = 0)
-           end)
-    , test "does not move cursor when cursorIdx = 0" (fn _ =>
-        let
-          (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
-          val {cursorIdx = oldCursorIdx, ...} = app
-
-          (* act *)
-          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
-        in
-          (* assert *)
-          Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 0)
-        end)
-    , test "moves cursor left by two in contiguous string when prev chr is \\n"
-        (fn _ =>
-           let
-             (* arrange *)
-             val buffer = LineGap.fromString "hello\nworld"
-             val app = TestUtils.init buffer
-             val app = AppWith.idx (app, 6)
-
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
-           in
-             (* assert *)
-             Expect.isTrue (cursorIdx = 4)
-           end)
-    ]
+            (* act *)
+            val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
+          in
+            (* assert *)
+            Expect.isTrue (cursorIdx = 0)
+          end)]
 
   val lMove = describe "move motion 'l'"
     [ test
@@ -62,8 +33,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
              val {cursorIdx = oldCursorIdx, ...} = app
 
              (* act *)
@@ -75,8 +45,7 @@ struct
     , test "does not move cursor when cursorIdx = length" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -90,8 +59,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello\nworld\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello\nworld\n"
              val app = AppWith.idx (app, 4)
 
              (* act *)
@@ -110,9 +78,7 @@ struct
              (* "world" at end of string is intentionally misspelled as "qorld"
               * since "world" appears twice and it is useful to differentiate them
               * *)
-             val buffer = LineGap.fromString
-               "hello \nworld \ngoodbye \nqorld \n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello \nworld \ngoodbye \nqorld \n"
 
              (* act *)
              val app1 = TestUtils.update (app, CHAR_EVENT #"j")
@@ -130,8 +96,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello \nworld \nbye \nfriends \n"
              val app = AppWith.idx (app, 1)
 
              (* act *)
@@ -150,8 +115,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello \nworld \nbye \nfriends \n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello \nworld \nbye \nfriends \n"
              val app = AppWith.idx (app, 2)
 
              (* act *)
@@ -170,8 +134,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello\n\n nworld\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello\n\n nworld\n"
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
@@ -185,8 +148,7 @@ struct
         let
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
-          val buffer = LineGap.fromString str
-          val app = TestUtils.init buffer
+          val app = TestUtils.init str
           val app = AppWith.idx (app, 15)
 
           (* act *)
@@ -206,8 +168,7 @@ struct
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
           val len = String.size str - 2
-          val buffer = LineGap.fromString str
-          val app = TestUtils.init buffer
+          val app = TestUtils.init str
           val app = AppWith.idx (app, len)
 
           (* act *)
@@ -229,8 +190,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "0__\n4___\n9___\n14_"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "0__\n4___\n9___\n14_"
              val app = AppWith.idx (app, 14)
 
              (* act *)
@@ -249,8 +209,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "_w_\n_5__\n_10_\n_15"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "_w_\n_5__\n_10_\n_15"
              val app = AppWith.idx (app, 15)
 
              (* act *)
@@ -269,8 +228,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "__2\n__6\n__10\n__15\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "__2\n__6\n__10\n__15\n"
              val app = AppWith.idx (app, 15)
 
              (* act *)
@@ -291,8 +249,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello\n\n world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello\n\n world\n"
              val app = AppWith.idx (app, 6)
 
              (* act *)
@@ -307,8 +264,7 @@ struct
         let
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
-          val buffer = LineGap.fromString str
-          val app = TestUtils.init buffer
+          val app = TestUtils.init str
           (* line below does nothing; just for explicitness *)
           val app = AppWith.idx (app, 0)
 
@@ -330,8 +286,7 @@ struct
     [ test "moves cursor to start of next word in contiguous string" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"w")
@@ -351,8 +306,7 @@ struct
          * as usual with "w". *)
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello \n\n\n world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello \n\n\n world"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"w")
@@ -373,8 +327,7 @@ struct
             * as usual with "w". *)
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello_world goodbye_world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello_world goodbye_world"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"w")
@@ -388,8 +341,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello, world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello, world"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"w")
@@ -403,8 +355,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val buffer = LineGap.fromString "!#%^()hello\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "!#%^()hello\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"w")
@@ -417,8 +368,7 @@ struct
     , test "breaks on non-blank char when on blank char" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "0123   \t   \n   \t 789\n"
           val app = AppWith.idx (app, 4)
 
           (* act *)
@@ -433,8 +383,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "!!! hello\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "!!! hello\n"
 
              (* act *)
              val app1 = TestUtils.update (app, CHAR_EVENT #"w")
@@ -448,8 +397,7 @@ struct
     , test "moves cursor to last char when cursor is on last word" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 6)
 
           (* act *)
@@ -466,8 +414,7 @@ struct
     [ test "moves cursor to start of next WORD in contiguous string" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"W")
@@ -480,8 +427,7 @@ struct
     , test "moves cursor past newline when next WORD is after newline" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello \n\n\n world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello \n\n\n world"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"W")
@@ -496,8 +442,7 @@ struct
            (* vi's definition of 'WORD' instead of 'word' *)
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello, world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello, world"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"W")
@@ -512,8 +457,7 @@ struct
            (* vi's definition of 'WORD' instead of 'word' *)
            let
              (* arrange *)
-             val buffer = LineGap.fromString "#!hello!!! world!!!\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "#!hello!!! world!!!\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"W")
@@ -526,8 +470,7 @@ struct
     , test "moves cursor to first non-blank when cursor is on blank" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "0123   \t   \n   \t 789\n"
           val app = AppWith.idx (app, 4)
 
           (* act *)
@@ -541,8 +484,7 @@ struct
     , test "moves cursor to last char when cursor is on last word" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 6)
 
           (* act *)
@@ -563,8 +505,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -579,8 +520,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "#$%!^ world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "#$%!^ world\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -594,8 +534,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 4)
 
              (* act *)
@@ -608,8 +547,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello_world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello_world\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -622,8 +560,7 @@ struct
     , test "breaks on undescore when cursor is on punctuation char" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "#!^*(_#!@*(\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "#!^*(_#!@*(\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -637,8 +574,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello, world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello, world"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -652,8 +588,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val buffer = LineGap.fromString "!#%^()hello\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "!#%^()hello\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -666,8 +601,7 @@ struct
     , test "skips 'space' chars: '\\n', '\\t', ' '" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "0123   \t   \n   \t 789\n"
           val app = AppWith.idx (app, 4)
 
           (* act *)
@@ -684,8 +618,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "!!! hello\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "!!! hello\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -697,8 +630,7 @@ struct
     , test "moves cursor to last char when cursor is on last word" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 7)
 
           (* act *)
@@ -716,8 +648,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hel!!!lo world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hel!!!lo world\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"E")
@@ -731,8 +662,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "#ELL) !@*(ORL$\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "#ELL) !@*(ORL$\n"
              val app = AppWith.idx (app, 4)
 
              (* act *)
@@ -745,8 +675,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello, world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello, world"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"E")
@@ -760,8 +689,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val buffer = LineGap.fromString "!#%^()hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "!#%^()hello world\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"E")
@@ -774,8 +702,7 @@ struct
     , test "skips 'space' chars: '\\n', '\\t', ' '" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "0123   \t   \n   \t 789\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "0123   \t   \n   \t 789\n"
           val app = AppWith.idx (app, 4)
 
           (* act *)
@@ -789,8 +716,7 @@ struct
     , test "moves cursor to last char when cursor is on last word" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world!\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world!\n"
           val app = AppWith.idx (app, 7)
 
           (* act *)
@@ -805,8 +731,7 @@ struct
     [ test "leaves cursor at 0 when cursor is already at 0" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"b")
@@ -817,8 +742,7 @@ struct
     , test "moves cursor previous word when on first character of next word"
         (fn _ =>
            let
-             val buffer = LineGap.fromString "hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 6)
              val chr1 = getChr app
 
@@ -831,8 +755,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 3)
 
              (* act *)
@@ -847,8 +770,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "   hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "   hello world\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -863,8 +785,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "!*#hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "!*#hello world\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -879,8 +800,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "   !@#$%^&*()"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "   !@#$%^&*()"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -895,8 +815,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "abc!@#$%^&*()"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "abc!@#$%^&*()"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -911,8 +830,7 @@ struct
     [ test "leaves cursor at 0 when cursor is already at 0" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"B")
@@ -924,8 +842,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 3)
 
              (* act *)
@@ -940,8 +857,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "   hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "   hello world\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -956,8 +872,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "   hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "   hello world\n"
              val app = AppWith.idx (app, 3)
 
              (* act *)
@@ -972,8 +887,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "!*#hello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "!*#hello world\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -985,8 +899,7 @@ struct
     , test "moves cursor to first char after whitespace when in WORD" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "   !qwerty@#$%^&*()\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "   !qwerty@#$%^&*()\n"
           val app = AppWith.idx (app, 17)
 
           (* act *)
@@ -1001,8 +914,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "abc!@#$%^&*()"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "abc!@#$%^&*()"
              val app = AppWith.idx (app, 11)
 
              (* act *)
@@ -1018,8 +930,7 @@ struct
     [ test "moves cursor to 0 in contiguous string when on first line" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello w7rld\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello w7rld\n"
           val app = AppWith.idx (app, 7)
 
           (* act *)
@@ -1031,8 +942,7 @@ struct
     , test "leaves cursor on 0 when cursor is already on 0" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"0")
@@ -1043,8 +953,7 @@ struct
     , test "leaves cursor at same idx when cursor is on '\\n'" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world\n hello again\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world\n hello again\n"
 
           val app = AppWith.idx (app, 11)
           val {cursorIdx = oldIdx, ...} = app
@@ -1062,8 +971,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world\n#ello again\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world\n#ello again\n"
              val app = AppWith.idx (app, 21)
 
              (* act *)
@@ -1081,8 +989,7 @@ struct
     [ test "moves cursor to char before '\\n' in contiguous string" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello wor9\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello wor9\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"$")
@@ -1096,8 +1003,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello\n world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello\n world\n"
              val app = AppWith.idx (app, 11)
              val oldIdx = #cursorIdx app
 
@@ -1114,8 +1020,7 @@ struct
     , test "does not move cursor when cursor is on a newline" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello\n\nworld\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello\n\nworld\n"
           val app = AppWith.idx (app, 6)
           val oldIdx = #cursorIdx app
 
@@ -1139,8 +1044,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "   3ello world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "   3ello world\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"^")
@@ -1155,8 +1059,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "   3ell7 world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "   3ell7 world\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -1172,8 +1075,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello\n   world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello\n   world\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -1189,8 +1091,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello\n   world\n"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello\n   world\n"
              val app = AppWith.idx (app, 11)
 
              (* act *)
@@ -1202,8 +1103,7 @@ struct
     , test "leaves cursor in same position when on '\\n'" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hel\nlo\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hel\nlo\n"
           val app = AppWith.idx (app, 3)
           val oldIdx = #cursorIdx app
 
@@ -1225,8 +1125,7 @@ struct
         * *)
        let
          (* arrange *)
-         val buffer = LineGap.fromString "01234\n56789\n"
-         val app = TestUtils.init buffer
+         val app = TestUtils.init "01234\n56789\n"
 
          (* act *)
          val app = TestUtils.update (app, CHAR_EVENT #"G")
@@ -1239,8 +1138,7 @@ struct
     [ test "moves to next ) when cursor is on (" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(hello)\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(hello)\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"%")
@@ -1251,8 +1149,7 @@ struct
     , test "moves to preceding ( when cursur is on )" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(hello)\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(hello)\n"
           val app = AppWith.idx (app, 6)
 
           (* act *)
@@ -1265,8 +1162,7 @@ struct
     , test "moves to outermost ) when cursor is on outermost (" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(((hello)))\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(((hello)))\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"%")
@@ -1278,8 +1174,7 @@ struct
     , test "moves to outermost ( when cursor is on outermost )" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(((hello)))\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(((hello)))\n"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1292,8 +1187,7 @@ struct
     , test "moves to middle ) when cursor is on middle (" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(((hello)))\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(((hello)))\n"
           val app = AppWith.idx (app, 1)
 
           (* act *)
@@ -1306,8 +1200,7 @@ struct
     , test "moves to middle ( when cursor is on middle )" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(((hello)))\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(((hello)))\n"
           val app = AppWith.idx (app, 9)
 
           (* act *)
@@ -1320,8 +1213,7 @@ struct
     , test "moves to innermost ) when cursor is on innermost (" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(((hello)))\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(((hello)))\n"
           val app = AppWith.idx (app, 2)
 
           (* act *)
@@ -1334,8 +1226,7 @@ struct
     , test "moves to innermost ( when cursor is on innermost )" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "(((hello)))\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "(((hello)))\n"
           val app = AppWith.idx (app, 8)
 
           (* act *)
@@ -1349,8 +1240,7 @@ struct
     , test "moves to next ] when cursor is on [" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "[hello]\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "[hello]\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"%")
@@ -1361,8 +1251,7 @@ struct
     , test "moves to preceding [ when cursur is on ]" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "[hello]\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "[hello]\n"
           val app = AppWith.idx (app, 6)
 
           (* act *)
@@ -1374,8 +1263,7 @@ struct
     , test "moves to next } when cursor is on {" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "{hello}\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "{hello}\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"%")
@@ -1386,8 +1274,7 @@ struct
     , test "moves to preceding { when cursur is on }" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "{hello}\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "{hello}\n"
           val app = AppWith.idx (app, 6)
 
           (* act *)
@@ -1399,8 +1286,7 @@ struct
     , test "moves to next > when cursor is on <" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "<hello>\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "<hello>\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"%")
@@ -1411,8 +1297,7 @@ struct
     , test "moves to preceding < when cursur is on >" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "<hello>\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "<hello>\n"
           val app = AppWith.idx (app, 6)
 
           (* act *)
@@ -1425,8 +1310,7 @@ struct
     , test "does not move when cursor is on a non-pair-character" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello, world\n"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello, world\n"
           val app = AppWith.idx (app, 5)
           val oldIdx = #cursorIdx app
 
@@ -1462,8 +1346,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
 
              (* act *)
              val app = updateMany (app, "td")
@@ -1474,8 +1357,7 @@ struct
     , test "repeating 't' motion with same char does not move cursor" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
 
           (* act *)
           val app1 = updateMany (app, "td")
@@ -1490,8 +1372,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
 
              (* act *)
              val app1 = updateMany (app, "t;")
@@ -1502,8 +1383,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
 
           (* act *)
           val app1 = TestUtils.update (app, CHAR_EVENT #"t")
@@ -1524,8 +1404,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1537,8 +1416,7 @@ struct
     , test "repeating 'T' motion with same char does not move cursor" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1554,8 +1432,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1567,8 +1444,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1590,8 +1466,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
 
              (* act *)
              val app = updateMany (app, "fw")
@@ -1602,8 +1477,7 @@ struct
     , test "count followed by f<char> moves forwards to count'th match" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
 
           (* act *)
           val app = updateMany (app, "3fl")
@@ -1616,8 +1490,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
 
              (* act *)
              val app = updateMany (app, "9fl")
@@ -1630,8 +1503,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
 
              (* act *)
              val app1 = updateMany (app, "f;")
@@ -1642,8 +1514,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
 
           (* act *)
           val app1 = TestUtils.update (app, CHAR_EVENT #"f")
@@ -1661,8 +1532,7 @@ struct
     [ test "motion 'Fe' moves cursor to first 'e' before cursor" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1675,8 +1545,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1690,8 +1559,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1705,8 +1573,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1718,8 +1585,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1738,8 +1604,7 @@ struct
     [ test "moves cursor to start when cursor is at end" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1751,8 +1616,7 @@ struct
     , test "moves cursor to start when cursor is in middle" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 5)
 
           (* act *)
@@ -1765,8 +1629,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val buffer = LineGap.fromString "hello world"
-             val app = TestUtils.init buffer
+             val app = TestUtils.init "hello world"
 
              (* act *)
              val app = updateMany (app, "gg")
@@ -1777,8 +1640,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val buffer = LineGap.fromString "hello world"
-          val app = TestUtils.init buffer
+          val app = TestUtils.init "hello world"
           val app = AppWith.idx (app, 5)
 
           (* act *)
