@@ -13,19 +13,78 @@ struct
     end
 
   val hMove = describe "move motion 'h'"
-    [test "moves cursor left by one in contiguous string when cursorIdx > 0"
-       (fn _ =>
-          let
-            (* arrange *)
-            val app = TestUtils.init "hello world"
-            val app = AppWith.idx (app, 1)
+    [ test "moves cursor left by one when cursorIdx > 0 and is not on a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello world"
+             val app = AppWith.idx (app, 1)
 
-            (* act *)
-            val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
-          in
-            (* assert *)
-            Expect.isTrue (cursorIdx = 0)
-          end)]
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 0)
+           end)
+    , test "does not move cursor when cursor is already at index 0" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "hello\n\nworld"
+          val app = AppWith.idx (app, 0)
+
+          (* act *)
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
+        in
+          (* assert *)
+          Expect.isTrue (cursorIdx = 0)
+        end)
+    , test
+        "moves cursor to char before a newline\
+        \ when there is just one newline to the left"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\nworld"
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 4)
+           end)
+    , test
+        "moves cursor to first newline when cursor is currently on char\
+        \ after a double newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\n\nworld"
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 5)
+           end)
+    , test
+        "moves cursor to odd-numbered newline when cursor is currently on char\
+        \ after a triple newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\n\n\nworld"
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"h")
+             val () = print (Int.toString (#cursorIdx app))
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app = 6)
+           end)
+    ]
 
   val lMove = describe "move motion 'l'"
     [ test
