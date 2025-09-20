@@ -251,7 +251,7 @@ struct
       case chrCmd of
       (* terminal commands: require no input after *)
         #"h" => NormalDelete.deleteCharsLeft (app, count, time)
-      | #"l" => NormalDelete.deleteByDfa (app, count, Cursor.viL, time)
+      | #"l" => NormalDelete.removeChr (app, count, time)
       (* vi's 'j' and 'k' commands move up or down a column
        * but 'dj' or 'dk' delete whole lines
        * so their implementation differs from
