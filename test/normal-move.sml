@@ -79,7 +79,6 @@ struct
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"h")
-             val () = print (Int.toString (#cursorIdx app))
            in
              (* assert *)
              Expect.isTrue (#cursorIdx app = 6)
@@ -269,7 +268,9 @@ struct
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
           val app = TestUtils.init str
-          val app = AppWith.idx (app, 15)
+
+          val initialCursorIdx = 15
+          val app = AppWith.idx (app, initialCursorIdx)
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
@@ -279,11 +280,11 @@ struct
            * but we are counting String.size str - 2 as the end
            * because, in Vim, saved files always end with \n
            * but the last char, \n, is not visible *)
-          val isAtEnd = cursorIdx = String.size str - 2
+          val isAtEnd = cursorIdx = initialCursorIdx
         in
           Expect.isTrue isAtEnd
         end)
-    , test "leaves cursor at same idx when already at end of buffer" (fn _ =>
+    , test "leaves cursor at same idx when already on last line" (fn _ =>
         let
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
@@ -303,84 +304,95 @@ struct
         in
           Expect.isTrue isAtEnd
         end)
+    , test
+        "goes to next char when cursor is on a newline \
+        \and next char is not a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello\n\nworld\n"
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, 5)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 7)
+           end)
     ]
 
   val kMove = describe "move motion 'k'"
-    [ test "moves cursur up one column in contiguous string when column = 0"
+    [ test "moves cursur up one column when column = 0" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "0__\n4___\n9___\n14_"
+          val app = AppWith.idx (app, 14)
+
+          (* act *)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
+
+          (* assert *)
+          val c1 = getChr app1 = #"9"
+          val c2 = getChr app2 = #"4"
+          val c3 = getChr app3 = #"0"
+        in
+          Expect.isTrue (c1 andalso c2 andalso c3)
+        end)
+    , test "moves cursur up one column when column = 1" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "_w_\n_5__\n_10_\n_15"
+          val app = AppWith.idx (app, 15)
+
+          (* act *)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
+
+          (* assert *)
+          val c1 = getChr app1 = #"1"
+          val c2 = getChr app2 = #"5"
+          val c3 = getChr app3 = #"w"
+        in
+          Expect.isTrue (c1 andalso c2 andalso c3)
+        end)
+    , test "moves cursur up one column when column = 2" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "__2\n__6\n__10\n__15\n"
+          val app = AppWith.idx (app, 15)
+
+          (* act *)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"k")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
+
+          (* assert *)
+          val c1 = getChr app1 = #"1"
+          val c2 = getChr app2 = #"6"
+          val c3 = getChr app3 = #"2"
+        in
+          Expect.isTrue (c1 andalso c2 andalso c3)
+        end)
+    , test "goes to first newline when encountering two consecutive newlines"
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "0__\n4___\n9___\n14_"
-             val app = AppWith.idx (app, 14)
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"k")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
-
-             (* assert *)
-             val c1 = getChr app1 = #"9"
-             val c2 = getChr app2 = #"4"
-             val c3 = getChr app3 = #"0"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
-    , test "moves cursur up one column in contiguous string when column = 1"
-        (fn _ =>
-           let
-             (* arrange *)
-             val app = TestUtils.init "_w_\n_5__\n_10_\n_15"
-             val app = AppWith.idx (app, 15)
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"k")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
-
-             (* assert *)
-             val c1 = getChr app1 = #"1"
-             val c2 = getChr app2 = #"5"
-             val c3 = getChr app3 = #"w"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
-    , test "moves cursur up one column in contiguous string when column = 2"
-        (fn _ =>
-           let
-             (* arrange *)
-             val app = TestUtils.init "__2\n__6\n__10\n__15\n"
-             val app = AppWith.idx (app, 15)
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"k")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"k")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"k")
-
-             (* assert *)
-             val c1 = getChr app1 = #"1"
-             val c2 = getChr app2 = #"6"
-             val c3 = getChr app3 = #"2"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
-    , test
-        "skips '\\n' when cursor is on '\\n',\
-        \prev-char is '\\n' and prev-prev char is not '\\n'"
-        (fn _ =>
-           let
-             (* arrange *)
-             val app = TestUtils.init "hello\n\n world\n"
-             val app = AppWith.idx (app, 6)
+             val str = "hello\n\n world\n"
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, 7)
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
-
-             (* assert *)
-             val isSkipped = cursorIdx = 0
+             val isOnFirstNewline = cursorIdx = 5
            in
-             Expect.isTrue isSkipped
+             (* assert *)
+             Expect.isTrue isOnFirstNewline
            end)
-    , test "leaves cursor at same idx when already at start of buffer" (fn _ =>
+    , test "leaves cursor at same idx when already on first line" (fn _ =>
         let
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
@@ -392,14 +404,46 @@ struct
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
 
           (* assert *)
-          (* String.size str - 1 is a valid char position
-           * but we are counting String.size str - 2 as the end
-           * because, in Vim, saved files always end with \n
-           * but the last char, \n, is not visible *)
           val isAtStart = cursorIdx = 0
         in
           Expect.isTrue isAtStart
         end)
+    , test
+        "goes to last column of previous line when cursor is \
+        \on a column greater than the number of columns in the previous line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str =
+               "hello world\n\
+               \now a quite long line is next\n"
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, String.size str - 2)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 10)
+           end)
+    , test
+        "when on a newline and there is a double-newline \
+        \right before the cursor, goes to the first newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello\n\n\nworld\n"
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 5)
+           end)
     ]
 
   val wMove = describe "move motion 'w'"
