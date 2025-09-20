@@ -87,21 +87,19 @@ struct
     ]
 
   val lMove = describe "move motion 'l'"
-    [ test
-        "moves cursor right by one in contiguous string when cursorIdx < length"
-        (fn _ =>
-           let
-             (* arrange *)
-             val app = TestUtils.init "hello world"
-             val {cursorIdx = oldCursorIdx, ...} = app
+    [ test "moves cursor right by one when cursorIdx < length" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "hello world"
+          val {cursorIdx = oldCursorIdx, ...} = app
 
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
-           in
-             (* assert *)
-             Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
-           end)
-    , test "does not move cursor when cursorIdx = length" (fn _ =>
+          (* act *)
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
+        in
+          (* assert *)
+          Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
+        end)
+    , test "does not move cursor when cursorIdx is at end of line" (fn _ =>
         let
           (* arrange *)
           val app = TestUtils.init "hello world"
@@ -114,7 +112,8 @@ struct
           Expect.isTrue (cursorIdx = 10)
         end)
     , test
-        "moves right by two in contiguous string when char is followed by \\n"
+        "moves cursor to the first character after a newline\ 
+        \ when there is a newlineo on the right followed by a non-newline"
         (fn _ =>
            let
              (* arrange *)
@@ -126,6 +125,21 @@ struct
            in
              (* assert *)
              Expect.isTrue (cursorIdx = 6)
+           end)
+    , test
+        "moves cursor to the first newline\ 
+        \ when there are multiple continuous newlines ahead"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\n\nworld"
+             val app = AppWith.idx (app, 4)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 5)
            end)
     ]
 
