@@ -213,7 +213,7 @@ struct
 
   fun deleteByDfa (app: app_type, count, fMove, time) =
     let
-      val {buffer, cursorIdx, searchString, ...} = app
+      val {buffer, cursorIdx, ...} = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val otherIdx = fMove (buffer, cursorIdx, count)
@@ -221,6 +221,20 @@ struct
       val low = Int.min (cursorIdx, otherIdx)
       val high = Int.max (cursorIdx, otherIdx)
       val length = high - low
+    in
+      deleteAndFinish (app, low, length, buffer, time)
+    end
+
+  fun deleteCharsLeft (app: app_type, count, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val startOfLine = Cursor.vi0 (buffer, cursorIdx)
+      val low = Cursor.viH (buffer, cursorIdx, count)
+      val low = if low < startOfLine then startOfLine else low
+
+      val length = cursorIdx - low
     in
       deleteAndFinish (app, low, length, buffer, time)
     end
