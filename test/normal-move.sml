@@ -144,79 +144,126 @@ struct
     ]
 
   val jMove = describe "move motion 'j'"
-    [ test "moves cursur down one column in contiguous string when column = 0"
+    [ test "moves cursur down one column when column = 0" (fn _ =>
+        let
+          (* arrange *)
+          (* "world" at end of string is intentionally misspelled as "qorld"
+           * since "world" appears twice and it is useful to differentiate them
+           * *)
+          val app = TestUtils.init "hello \nworld \ngoodbye \nqorld \n"
+
+          (* act *)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
+
+          (* assert *)
+          val c1 = getChr app1 = #"w"
+          val c2 = getChr app2 = #"g"
+          val c3 = getChr app3 = #"q"
+        in
+          Expect.isTrue (c1 andalso c2 andalso c3)
+        end)
+    , test "moves cursur down one column when column = 1" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "hello \nworld \nbye \nfriends \n"
+          val app = AppWith.idx (app, 1)
+
+          (* act *)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
+
+          (* assert *)
+          val c1 = getChr app1 = #"o"
+          val c2 = getChr app2 = #"y"
+          val c3 = getChr app3 = #"r"
+        in
+          Expect.isTrue (c1 andalso c2 andalso c3)
+        end)
+    , test "moves cursur down one column when column = 2" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "hello \nworld \nbye \nfriends \n"
+          val app = AppWith.idx (app, 2)
+
+          (* act *)
+          val app1 = TestUtils.update (app, CHAR_EVENT #"j")
+          val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
+          val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
+
+          (* assert *)
+          val c1 = getChr app1 = #"r"
+          val c2 = getChr app2 = #"e"
+          val c3 = getChr app3 = #"i"
+        in
+          Expect.isTrue (c1 andalso c2 andalso c3)
+        end)
+    , test
+        "moves to last char on below column \
+        \when cursor is on a column that is greater than \
+        \the number of columns on the next line"
         (fn _ =>
            let
              (* arrange *)
-             (* "world" at end of string is intentionally misspelled as "qorld"
-              * since "world" appears twice and it is useful to differentiate them
-              * *)
-             val app = TestUtils.init "hello \nworld \ngoodbye \nqorld \n"
+             val str =
+               "hello world!\n\
+               \bye!\n"
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, 7)
 
              (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
+             val app = TestUtils.update (app, CHAR_EVENT #"j")
 
              (* assert *)
-             val c1 = getChr app1 = #"w"
-             val c2 = getChr app2 = #"g"
-             val c3 = getChr app3 = #"q"
+             val c1 = getChr app = #"!"
            in
-             Expect.isTrue (c1 andalso c2 andalso c3)
+             Expect.isTrue c1
            end)
-    , test "moves cursur down one column in contiguous string when column = 1"
+    , test
+        "goes to first newline when there are two consecutive newlines\
+         \ahead of the cursor"
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello \nworld \nbye \nfriends \n"
-             val app = AppWith.idx (app, 1)
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
-
-             (* assert *)
-             val c1 = getChr app1 = #"o"
-             val c2 = getChr app2 = #"y"
-             val c3 = getChr app3 = #"r"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
-    , test "moves cursur down one column in contiguous string when column = 2"
-        (fn _ =>
-           let
-             (* arrange *)
-             val app = TestUtils.init "hello \nworld \nbye \nfriends \n"
-             val app = AppWith.idx (app, 2)
-
-             (* act *)
-             val app1 = TestUtils.update (app, CHAR_EVENT #"j")
-             val app2 = TestUtils.update (app1, CHAR_EVENT #"j")
-             val app3 = TestUtils.update (app2, CHAR_EVENT #"j")
-
-             (* assert *)
-             val c1 = getChr app1 = #"r"
-             val c2 = getChr app2 = #"e"
-             val c3 = getChr app3 = #"i"
-           in
-             Expect.isTrue (c1 andalso c2 andalso c3)
-           end)
-    , test "skips '\\n' when cursor is on non-\\n and is followed by two '\\n's"
-        (fn _ =>
-           let
-             (* arrange *)
-             val app = TestUtils.init "hello\n\n nworld\n"
+             val app = TestUtils.init "hello\n\nworld\n"
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
 
              (* assert *)
-             val isSkipped = cursorIdx = 6
+             val isSkipped = cursorIdx = 5
            in
              Expect.isTrue isSkipped
            end)
+    , test "moves to same column on last line after a count" (fn _ =>
+        let
+          (* arrange *)
+          val str =
+            "let\n\
+            \hello\n\
+            \in\n\
+            \0\n\
+            \end\n"
+
+          val app = TestUtils.init str
+          val app1 = AppWith.idx (app, 0)
+          val app2 = AppWith.idx (app, 1)
+          val app3 = AppWith.idx (app, 2)
+
+          (* act *)
+          val newApp1 = TestUtils.updateMany (app1, "33j")
+          val newApp2 = TestUtils.updateMany (app2, "33j")
+          val newApp3 = TestUtils.updateMany (app3, "33j")
+
+          (* assert *)
+          val c1 = getChr newApp1 = #"e"
+          val c2 = getChr newApp2 = #"n"
+          val c3 = getChr newApp3 = #"d"
+        in
+          Expect.isTrue (c1 andalso c2 andalso c3)
+        end)
     , test "moves to end of buffer when on last line" (fn _ =>
         let
           (* arrange *)
