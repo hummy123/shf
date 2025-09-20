@@ -115,5 +115,32 @@ struct
            end)
     ]
 
-  val tests = [dhDelete]
+  val dlDelete = describe "delete motion 'dl'"
+    [test
+       "deletes last char and moves cursor back by 1 \
+       \when next char is a newline"
+       (fn _ =>
+          let
+            (* arrange *)
+            val originalString = "hello\nworld\n"
+            val originalIdx = 4
+
+            val app = TestUtils.init originalString
+            val app = AppWith.idx (app, originalIdx)
+
+            (* act *)
+            val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dl")
+
+            (* assert *)
+            val expectedString = "hell\nworld\n"
+            val actualString = LineGap.toString buffer
+            val stringIsExpected = expectedString = actualString
+
+            val expectedCursorIdx = originalIdx - 1
+            val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+          in
+            Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+          end)]
+
+  val tests = [dhDelete, dlDelete]
 end
