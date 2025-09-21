@@ -60,7 +60,13 @@ struct
           (* figure out where to place cursor *)
           val buffer = LineGap.goToIdx (lineStart, buffer)
           val lineEndAfterDelete = Cursor.viDlr (buffer, lineStart, 1)
+
           val cursorIdx = Int.min (lineEndAfterDelete, cursorIdx)
+          val cursorIdx =
+            if cursorIdx >= #textLength buffer - 2 then
+              Int.max (0, #textLength buffer - 2)
+            else
+              cursorIdx
         in
           finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
         end
@@ -340,6 +346,32 @@ struct
         finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
     end
 
+  fun finishDeleteLineBack (app, buffer, lineIdx, length, endOfLine, time) =
+    if endOfLine >= #textLength buffer - 2 then
+      (* deleting from last line *)
+      let
+        (* go to first column of previous line *)
+        val buffer = LineGap.goToIdx (lineIdx, buffer)
+        val newCursorIdx = Cursor.viH (buffer, lineIdx, 1)
+        val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+        val newCursorIdx = Cursor.vi0 (buffer, newCursorIdx)
+
+        (* clip endOfLine so we leave a newline at end of file *)
+        val endOfLine = Int.max (0, #textLength buffer - 1)
+
+        val buffer = LineGap.goToIdx (endOfLine, buffer)
+        val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
+        val buffer = LineGap.delete (lineIdx, length, buffer)
+
+        val buffer =
+          if #textLength buffer = 0 then LineGap.append ("\n", buffer)
+          else buffer
+      in
+        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
+      end
+    else
+      deleteAndFinish (app, lineIdx, length, buffer, time)
+
   fun deleteLineBack (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, ...} = app
@@ -355,34 +387,19 @@ struct
       if cursorLineNumber = 0 then
         NormalFinish.clearMode app
       else if newCursorLineNumber = 0 then
-        let
-          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1) + 2
-          val buffer = LineGap.goToIdx (endOfLine, buffer)
-          val endOfLine =
-            if endOfLine >= #textLength buffer - 2 then
-              Int.max (0, #textLength buffer - 2)
-            else
-              endOfLine
-        in
-          deleteAndFinish (app, 1, endOfLine, buffer, time)
+        (* deleting from current line to start of file *)
+        let val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1) + 2
+        in finishDeleteLineBack (app, buffer, 0, endOfLine, endOfLine, time)
         end
       else
         let
           val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1) + 1
-          val endOfLine =
-            if endOfLine >= #textLength buffer - 2 then
-              Int.max (0, #textLength buffer - 2)
-            else
-              endOfLine
-
           val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
 
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
-          val buffer = LineGap.goToIdx (lineIdx, buffer)
-
           val length = endOfLine - lineIdx
         in
-          deleteAndFinish (app, lineIdx, length, buffer, time)
+          finishDeleteLineBack (app, buffer, lineIdx, length, endOfLine, time)
         end
     end
 
