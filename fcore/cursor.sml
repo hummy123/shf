@@ -56,7 +56,7 @@ struct
   val viDlr = ViDlrDfa.next
   val viDlrForDelete = ViDlrDfa.nextForDelete
 
-  val viL = ViHlDfa.l
+  val viL = ViLDfa.next
   val viH = ViHlDfa.h
 
   fun helpGetCursorColumn (distanceFromLine, strList, lineList) =

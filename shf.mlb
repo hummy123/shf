@@ -34,6 +34,7 @@ in
   fcore/cursor-dfa/vi-word-dfa.sml
   fcore/cursor-dfa/vi-caps-word-dfa.sml
   fcore/cursor-dfa/vi-dlr-dfa.sml
+  fcore/cursor-dfa/vi-l-dfa.sml
   fcore/cursor-dfa/vi-hl-dfa.sml
   fcore/rect.sml
   fcore/pipe-cursor.sml

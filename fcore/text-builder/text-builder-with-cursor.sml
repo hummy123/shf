@@ -137,8 +137,6 @@ struct
             acc
           else
             let
-              val posX = #startX env
-              val posY = posY + TC.ySpace
               val acc =
                 if absIdx = cursorIdx then
                   Utils.makeCursor (posX, posY, env) :: acc
@@ -151,8 +149,8 @@ struct
                 , stl
                 , line
                 , ltl
-                , posX
-                , posY
+                , #startX env
+                , posY + TC.ySpace
                 , 0
                 , lineNumber + 1
                 , absIdx + 1
