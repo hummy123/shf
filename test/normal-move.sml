@@ -54,8 +54,8 @@ struct
              Expect.isTrue (cursorIdx = 4)
            end)
     , test
-        "moves cursor to first newline when cursor is currently on char\
-        \ after a double newline"
+        "moves cursor past first newline immediately following \
+        \a non-newline character"
         (fn _ =>
            let
              (* arrange *)
@@ -66,7 +66,22 @@ struct
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
            in
              (* assert *)
-             Expect.isTrue (cursorIdx = 5)
+             Expect.isTrue (cursorIdx = 6)
+           end)
+    , test
+        "moves cursor past newline when we see, to the left, \
+        \ a newline with a chr prior to it"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\nworld"
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"h")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 4)
            end)
     , test
         "moves cursor to odd-numbered newline when cursor is currently on char\
