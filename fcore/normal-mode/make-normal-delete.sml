@@ -340,32 +340,50 @@ struct
         finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
     end
 
-  fun helpDeleteLineBack (app, buffer, low, high, count, time) =
-    if count = 0 then
-      let
-        val low = Int.max (low, 0)
-        val length = high - low
-      in
-        deleteAndFinish (app, low, length, buffer, time)
-      end
-    else
-      let
-        val buffer = LineGap.goToIdx (low, buffer)
-        val low = Cursor.viH (buffer, low, 1)
-        val buffer = LineGap.goToIdx (low, buffer)
-        val low = Cursor.vi0 (buffer, low)
-        val newCount = if low = 0 then 0 else count - 1
-      in
-        helpDeleteLineBack (app, buffer, low, high, newCount, time)
-      end
-
   fun deleteLineBack (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, ...} = app
-      val low = Cursor.vi0 (buffer, cursorIdx)
-      val high = Cursor.viDlr (buffer, cursorIdx, 1) + 1
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val cursorLineNumber =
+        if Cursor.isNextChrEndOfLine (buffer, cursorIdx) then
+          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+        else
+          LineGap.idxToLineNumber (cursorIdx, buffer)
+      val newCursorLineNumber = Int.max (cursorLineNumber - count, 0)
     in
-      helpDeleteLineBack (app, buffer, low, high, count, time)
+      if cursorLineNumber = 0 then
+        NormalFinish.clearMode app
+      else if newCursorLineNumber = 0 then
+        let
+          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1) + 2
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
+          val endOfLine =
+            if endOfLine >= #textLength buffer - 2 then
+              Int.max (0, #textLength buffer - 2)
+            else
+              endOfLine
+        in
+          deleteAndFinish (app, 1, endOfLine, buffer, time)
+        end
+      else
+        let
+          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1) + 1
+          val endOfLine =
+            if endOfLine >= #textLength buffer - 2 then
+              Int.max (0, #textLength buffer - 2)
+            else
+              endOfLine
+
+          val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
+
+          val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
+          val buffer = LineGap.goToIdx (lineIdx, buffer)
+
+          val length = endOfLine - lineIdx
+        in
+          deleteAndFinish (app, lineIdx, length, buffer, time)
+        end
     end
 
   fun deleteToFirstNonSpaceChr (app: app_type, time) =
