@@ -260,9 +260,7 @@ struct
            in
              Expect.isTrue c1
            end)
-    , test
-        "goes to first newline when there are two consecutive newlines\
-         \ahead of the cursor"
+    , test "when next newline is preceded by char, goes to idx after newline"
         (fn _ =>
            let
              (* arrange *)
@@ -270,11 +268,9 @@ struct
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
-
-             (* assert *)
-             val isSkipped = cursorIdx = 5
            in
-             Expect.isTrue isSkipped
+             (* assert *)
+             Expect.isTrue (cursorIdx = 6)
            end)
     , test "moves to same column on last line after a count" (fn _ =>
         let
@@ -344,22 +340,19 @@ struct
         in
           Expect.isTrue isAtEnd
         end)
-    , test
-        "goes to next char when cursor is on a newline \
-        \and next char is not a newline"
-        (fn _ =>
-           let
-             (* arrange *)
-             val str = "hello\n\nworld\n"
-             val app = TestUtils.init str
-             val app = AppWith.idx (app, 5)
+    , test "goes to next idx when cursor is on a newline" (fn _ =>
+        let
+          (* arrange *)
+          val str = "hello\n\nworld\n"
+          val app = TestUtils.init str
+          val app = AppWith.idx (app, 6)
 
-             (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
-           in
-             (* assert *)
-             Expect.isTrue (cursorIdx = 7)
-           end)
+          (* act *)
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
+        in
+          (* assert *)
+          Expect.isTrue (cursorIdx = 7)
+        end)
     ]
 
   val kMove = describe "move motion 'k'"
