@@ -370,7 +370,20 @@ struct
         finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
     else
-      deleteAndFinish (app, lineIdx, length, buffer, time)
+      let
+        val buffer = LineGap.goToIdx (endOfLine, buffer)
+        val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
+        val buffer = LineGap.delete (lineIdx, length, buffer)
+
+        (* make sure the cursorIdx is at the first column
+         * of the previous line, after deleting from buffer *)
+        val buffer = LineGap.goToIdx (lineIdx, buffer)
+        val newCursorIdx = Cursor.viH (buffer, lineIdx, 1)
+        val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+        val newCursorIdx = Cursor.vi0 (buffer, newCursorIdx)
+      in
+        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
+      end
 
   fun deleteLineBack (app: app_type, count, time) =
     let
