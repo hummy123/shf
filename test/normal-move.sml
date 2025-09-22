@@ -83,20 +83,26 @@ struct
              (* assert *)
              Expect.isTrue (cursorIdx = 4)
            end)
-    , test
-        "moves cursor to odd-numbered newline when cursor is currently on char\
-        \ after a triple newline"
+    , test "moves cursor to a newline when newline is not preceded by char"
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello\n\n\nworld"
-             val app = AppWith.idx (app, 7)
+             val app = TestUtils.init "\n\n\nhello\n"
+             val app = AppWith.idx (app, 3)
 
              (* act *)
-             val app = TestUtils.update (app, CHAR_EVENT #"h")
-           in
+             val app1 = TestUtils.update (app, CHAR_EVENT #"h")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"h")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"h")
+             val app4 = TestUtils.update (app3, CHAR_EVENT #"h")
+
              (* assert *)
-             Expect.isTrue (#cursorIdx app = 6)
+             val c1 = #cursorIdx app1 = 2
+             val c2 = #cursorIdx app2 = 1
+             val c3 = #cursorIdx app3 = 0
+             val c4 = #cursorIdx app4 = 0
+           in
+             Expect.isTrue (c1 andalso c2 andalso c3 andalso c4)
            end)
     ]
 
@@ -125,9 +131,7 @@ struct
           (* assert *)
           Expect.isTrue (cursorIdx = 10)
         end)
-    , test
-        "moves cursor to the first character after a newline\ 
-        \ when there is a newlineo on the right followed by a non-newline"
+    , test "moves cursor to char past newline when newline is preceded by char"
         (fn _ =>
            let
              (* arrange *)
@@ -140,9 +144,7 @@ struct
              (* assert *)
              Expect.isTrue (cursorIdx = 6)
            end)
-    , test
-        "moves cursor to the first newline\ 
-        \ when there are multiple continuous newlines ahead"
+    , test "moves cursor to second newline when newline is preceded by char"
         (fn _ =>
            let
              (* arrange *)
@@ -153,7 +155,30 @@ struct
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
            in
              (* assert *)
-             Expect.isTrue (cursorIdx = 5)
+             Expect.isTrue (cursorIdx = 6)
+           end)
+    , test
+        "moves cursor to each newline without skipping when no newline \
+        \is preceded by char"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "\n\n\nhello\n"
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val app1 = TestUtils.update (app, CHAR_EVENT #"l")
+             val app2 = TestUtils.update (app1, CHAR_EVENT #"l")
+             val app3 = TestUtils.update (app2, CHAR_EVENT #"l")
+             val app4 = TestUtils.update (app3, CHAR_EVENT #"l")
+
+             (* assert *)
+             val c1 = #cursorIdx app1 = 1
+             val c2 = #cursorIdx app2 = 2
+             val c3 = #cursorIdx app3 = 3
+             val c4 = #cursorIdx app4 = 4
+           in
+             Expect.isTrue (c1 andalso c2 andalso c3 andalso c4)
            end)
     ]
 
