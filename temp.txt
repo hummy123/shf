@@ -1,3 +1,6 @@
+
+
+
 structure TextBuilder :> TEXT_BUILDER =
 struct
   val xSpace = 13

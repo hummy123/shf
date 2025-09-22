@@ -223,35 +223,61 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val startOfLine = Cursor.vi0 (buffer, cursorIdx)
       val column = cursorIdx - startOfLine
-
-      val cursorLineNumber =
-        if Cursor.isNextChrEndOfLine (buffer, cursorIdx) then
-          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
-        else
-          LineGap.idxToLineNumber (cursorIdx, buffer)
-
-      val newCursorLineNumber = cursorLineNumber + count
-      val newCursorLineNumber =
-        if cursorLineNumber >= #lineLength buffer - 2 then
-          Int.max (0, #lineLength buffer - 1)
-        else
-          newCursorLineNumber
-
-      val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
-      val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
-      val buffer = LineGap.goToIdx (lineIdx, buffer)
-      val lineIdx =
-        if lineIdx >= #textLength buffer - 2 then
-          Int.max (0, #textLength buffer - 2)
-        else
-          lineIdx
-      val lineIdx =
-        if Cursor.isNextChrEndOfLine (buffer, lineIdx) then lineIdx
-        else lineIdx + 1
-      val buffer = LineGap.goToIdx (lineIdx, buffer)
-      val lineIdx = Cursor.vi0 (buffer, lineIdx)
     in
-      finishMoveCursorUpDown (app, newCursorLineNumber, buffer, column, lineIdx)
+      if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
+        let
+          val cursorLineNumber = LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+          val newCursorLineNumber = cursorLineNumber + count
+
+          val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
+          val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
+
+          val lineIdx =
+            if not (Cursor.isPrevChrStartOfLine (buffer, lineIdx)) then
+              lineIdx - 1
+            else
+              lineIdx
+          val buffer = LineGap.goToIdx (lineIdx, buffer)
+          val lineIdx = Cursor.vi0 (buffer, lineIdx)
+
+          val lineIdx =
+            if lineIdx >= #textLength buffer - 2 then
+              Int.max (0, #textLength buffer - 2)
+            else
+              lineIdx
+        in
+          finishMoveCursorUpDown (app, newCursorLineNumber, buffer, 0, lineIdx)
+        end
+      else
+        let
+          val cursorLineNumber = LineGap.idxToLineNumber (cursorIdx, buffer)
+
+          val newCursorLineNumber = cursorLineNumber + count
+          val newCursorLineNumber =
+            if newCursorLineNumber >= #lineLength buffer then
+              Int.max (#lineLength buffer - 1, 0)
+            else
+              newCursorLineNumber
+
+          val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
+          val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
+
+          val buffer = LineGap.goToIdx (lineIdx, buffer)
+          val lineIdx =
+            if not (Cursor.isPrevChrStartOfLine (buffer, lineIdx)) then
+              lineIdx + 1
+            else
+              lineIdx
+
+          val lineIdx =
+            if lineIdx >= #textLength buffer - 2 then
+              Int.max (0, #textLength buffer - 2)
+            else
+              lineIdx
+        in
+          finishMoveCursorUpDown
+            (app, newCursorLineNumber, buffer, column, lineIdx)
+        end
     end
 
   fun moveToLine (app: app_type, reqLine) =
