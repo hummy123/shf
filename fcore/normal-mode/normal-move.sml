@@ -209,13 +209,12 @@ struct
           val cursorLineNumber = LineGap.idxToLineNumber (cursorIdx, buffer)
           val newCursorLineNumber = Int.max (cursorLineNumber - count, 0)
 
-          val column = cursorIdx - startOfLine
-          val column =
-            if newCursorLineNumber = 0 then Int.max (column - 1, 0) else column
-
           val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
           val lineIdx =
             LineGap.lineNumberToIdx (newCursorLineNumber, buffer) + 1
+
+          val column = cursorIdx - startOfLine
+          val column = if newCursorLineNumber = 0 then column - 1 else column
         in
           finishMoveCursorUpDown
             (app, newCursorLineNumber, buffer, column, lineIdx)
