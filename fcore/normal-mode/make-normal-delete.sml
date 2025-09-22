@@ -217,18 +217,37 @@ struct
     in helpDelete (app, buffer, cursorIdx, cursorIdx, count, fMove, time)
     end
 
+  fun finishDeleteByDfa (app, low, high, buffer, time) =
+    let
+      val length = high - low
+      val buffer = LineGap.goToIdx (high, buffer)
+      val initialMsg = Fn.initMsgs (low, length, buffer)
+      val buffer = LineGap.delete (low, length, buffer)
+    in
+      finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
+    end
+
   fun deleteByDfa (app: app_type, count, fMove, time) =
     let
       val {buffer, cursorIdx, ...} = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val otherIdx = fMove (buffer, cursorIdx, count)
-
-      val low = Int.min (cursorIdx, otherIdx)
-      val high = Int.max (cursorIdx, otherIdx)
-      val length = high - low
     in
-      deleteAndFinish (app, low, length, buffer, time)
+      if otherIdx > cursorIdx then
+        let
+          val buffer =
+            if otherIdx > #textLength buffer - 1 then
+              LineGap.append ("\n\n", buffer)
+            else
+              buffer
+        in
+          finishDeleteByDfa (app, cursorIdx, otherIdx, buffer, time)
+        end
+      else if otherIdx < cursorIdx then
+        finishDeleteByDfa (app, otherIdx, cursorIdx, buffer, time)
+      else
+        NormalFinish.clearMode app
     end
 
   fun deleteCharsLeft (app: app_type, count, time) =
