@@ -272,6 +272,7 @@ struct
   fun deleteToEndOfLine (app: app_type, time) =
     let
       val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
     in
       if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
         (* if we are on \n, we don't want to delete or do anything
@@ -280,8 +281,18 @@ struct
       else
         let
           val lineStart = Cursor.vi0 (buffer, cursorIdx)
-          val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1) - 1
+          val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
           val length = high - cursorIdx
+
+          (* we might want to delete to the end of the file.
+           * If so, we will append a double-newline.
+           * The second newline is to comply with Unix-style line endings
+           * and the first newline provides a place for our cursor to rest. *)
+          val buffer =
+            if high > #textLength buffer - 1 then
+              LineGap.append ("\n\n", buffer)
+            else
+              buffer
 
           val buffer = LineGap.goToIdx (high, buffer)
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
