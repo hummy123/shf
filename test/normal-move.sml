@@ -410,7 +410,7 @@ struct
         in
           Expect.isTrue (c1 andalso c2 andalso c3)
         end)
-    , test "goes to first newline when encountering two consecutive newlines"
+    , test "goes to last newline when there are two newlines preceding cursor"
         (fn _ =>
            let
              (* arrange *)
@@ -420,10 +420,9 @@ struct
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
-             val isOnFirstNewline = cursorIdx = 5
            in
              (* assert *)
-             Expect.isTrue isOnFirstNewline
+             Expect.isTrue (cursorIdx = 6)
            end)
     , test "leaves cursor at same idx when already on first line" (fn _ =>
         let
@@ -461,21 +460,21 @@ struct
              Expect.isTrue (cursorIdx = 10)
            end)
     , test
-        "when on a newline and there is a double-newline \
-        \right before the cursor, goes to the first newline"
+        "when the previous newline is preceded by a non-newline, \
+        \jumps past newline"
         (fn _ =>
            let
              (* arrange *)
-             val str = "hello\n\n\nworld\n"
+             val str = "hello\n\nworld\n"
 
              val app = TestUtils.init str
-             val app = AppWith.idx (app, 7)
+             val app = AppWith.idx (app, 6)
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
            in
              (* assert *)
-             Expect.isTrue (cursorIdx = 5)
+             Expect.isTrue (cursorIdx = 0)
            end)
     ]
 
