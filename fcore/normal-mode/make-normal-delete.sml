@@ -341,39 +341,19 @@ struct
       val finishIdx = Cursor.viDlr (buffer, cursorIdx, count) + 2
       val length = finishIdx - startIdx
 
+      val textLengthBeforeDelete = #textLength buffer
+
       val buffer = LineGap.goToIdx (startIdx, buffer)
       val initialMsg = Fn.initMsgs (startIdx, length, buffer)
       val buffer = LineGap.delete (startIdx, length, buffer)
 
-      val textLength = #textLength buffer
+      val buffer =
+        if finishIdx >= textLengthBeforeDelete - 1 then
+          LineGap.append ("\n\n", buffer)
+        else
+          buffer
     in
-      if startIdx >= textLength - 2 andalso textLength > 2 then
-        (* after deletion, we may have deleted the position
-         * that the cursor was previously on.
-         * If so, then we have to move the cursor backwards
-         * to the start of the previous line. *)
-        let
-          val tempIdx = textLength - 2
-          val buffer = LineGap.goToIdx (tempIdx, buffer)
-          val startIdx = Cursor.vi0 (buffer, tempIdx)
-        in
-          if isPrevChrStartOfLine andalso startIdx = #textLength buffer - 2 then
-            (* We also have to handle the edge case where we delete below a
-            * linebreak, such that the linebreak is now at the end of the file.
-            * We have to handle this case because the last file-ending linebreak
-            * is not selectable, and we don't want the user to move the cursor
-            * to the first character of a \n\n pair. *)
-            let
-              val buffer = LineGap.append ("\n", buffer)
-            in
-              finishAfterDeletingBuffer
-                (app, startIdx + 1, buffer, time, initialMsg)
-            end
-          else
-            finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
-        end
-      else
-        finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+      finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
     end
 
   fun finishDeleteLineBack (app, buffer, lineIdx, length, endOfLine, time) =
