@@ -476,6 +476,24 @@ struct
              (* assert *)
              Expect.isTrue (cursorIdx = 0)
            end)
+    , test
+        "when file ends with two newlines, \
+        \and cursor is on second-last newline, \
+        \we should be able to move up by one line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello\nworld\n\n"
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, 11)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 6)
+           end)
     ]
 
   val wMove = describe "move motion 'w'"
