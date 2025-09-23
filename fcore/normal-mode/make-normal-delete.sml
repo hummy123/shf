@@ -227,26 +227,30 @@ struct
       finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
     end
 
-  fun deleteByDfa (app: app_type, count, fMove, time) =
-    let
-      val {buffer, cursorIdx, ...} = app
+  fun deleteByDfa (app as {buffer, ...}: app_type, count, fMove, time) =
+    if #textLength buffer = 1 then
+      NormalFinish.clearMode app
+    else
+      let
+        val {buffer, cursorIdx, ...} = app
 
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val otherIdx = fMove (buffer, cursorIdx, count)
-    in
-      if otherIdx > cursorIdx then
-        (* prevent us from deleting last newline
-         * to help us preserve unix-style line endings *)
-        if otherIdx > #textLength buffer then
-          finishDeleteByDfa
-            (app, cursorIdx, #textLength buffer - 1, buffer, time)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val otherIdx = fMove (buffer, cursorIdx, count)
+      in
+        if otherIdx > cursorIdx then
+          if otherIdx >= #textLength buffer then
+          (* prevent us from deleting last newline
+           * to help us preserve unix-style line endings *)
+            let val high = #textLength buffer - 1
+            in finishDeleteByDfa (app, cursorIdx, high, buffer, time)
+            end
+          else
+            finishDeleteByDfa (app, cursorIdx, otherIdx, buffer, time)
+        else if otherIdx < cursorIdx then
+          finishDeleteByDfa (app, otherIdx, cursorIdx, buffer, time)
         else
-          finishDeleteByDfa (app, cursorIdx, otherIdx, buffer, time)
-      else if otherIdx < cursorIdx then
-        finishDeleteByDfa (app, otherIdx, cursorIdx, buffer, time)
-      else
-        NormalFinish.clearMode app
-    end
+          NormalFinish.clearMode app
+      end
 
   fun deleteCharsLeft (app: app_type, count, time) =
     let
