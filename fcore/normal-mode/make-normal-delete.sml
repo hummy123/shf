@@ -241,8 +241,17 @@ struct
           if otherIdx >= #textLength buffer then
             (* prevent us from deleting last newline
              * to help us preserve unix-style line endings *)
-            let val high = #textLength buffer - 1
-            in finishDeleteByDfa (app, cursorIdx, high, buffer, time)
+            let
+              (* if we're on the first character/column in a line,
+               * we would like to delete the preceding newline too *)
+              val cursorIdx =
+                if Cursor.isPrevChrStartOfLine (buffer, cursorIdx) then
+                  cursorIdx - 1
+                else
+                  cursorIdx
+              val high = #textLength buffer - 1
+            in
+              finishDeleteByDfa (app, cursorIdx, high, buffer, time)
             end
           else
             finishDeleteByDfa (app, cursorIdx, otherIdx, buffer, time)
