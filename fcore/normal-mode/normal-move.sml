@@ -205,6 +205,7 @@ struct
         (* special case: file ends with \n\n,
          * and cursor is on first \n *)
         let
+          val buffer = LineGap.goToIdx (startOfLine, buffer)
           val newCursorLineNumber =
             if Cursor.isPrevChrStartOfLine (buffer, startOfLine) then
               #lineLength buffer - 1 - count
