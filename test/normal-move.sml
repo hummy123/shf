@@ -514,13 +514,6 @@ struct
         end)
     , test "does not break on undescore when cursor is on alphanumeric char"
         (fn _ =>
-           (* This behaviour makes behaviour different from vi,
-            * where "w" when a newline is in between causes cursor 
-            * to go to newline and not next word.
-            * I don't personally like this behaviour from vi 
-            * since one can just press "j" to go to the newline instead
-            * and it is more intuitive for the cursor to go the next word
-            * as usual with "w". *)
            let
              (* arrange *)
              val app = TestUtils.init "hello_world goodbye_world"
@@ -604,6 +597,36 @@ struct
         in
           Expect.isTrue chrIsEnd
         end)
+    , test
+        "moves cursor to newline when cursor is on the last word \
+        \and the file ends with two newlines"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\n\n"
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"w")
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app = 5)
+           end)
+    , test
+        "does not move to or past newline when cursor is on last word \
+        \and text ends with newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\n"
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"w")
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app = 4)
+           end)
     ]
 
   val WMove = describe "move motion 'W'"
