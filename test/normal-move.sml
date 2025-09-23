@@ -1328,23 +1328,55 @@ struct
     ]
 
   val GMove = describe "move motion 'G'"
-    [test "moves cursor to last char in buffer" (fn _ =>
-       (* Note: We assume unix-style line endings:
-        * End of file always has \n at the end.
-        * We don't want cursor to ever reach this last \n
-        * so we say last char is the char before \n
-        * *)
-       let
-         (* arrange *)
-         val str = "01234\n56789\n"
-         val app = TestUtils.init str
+    [ test
+        "moves cursor to second last char in buffer, \
+        \if last char is a newline preced by a non-newline"
+        (fn _ =>
+           (* Note: We assume unix-style line endings:
+            * End of file always has \n at the end. *)
+           let
+             (* arrange *)
+             val str = "01234\n56789\n"
+             val app = TestUtils.init str
 
-         (* act *)
-         val app = TestUtils.update (app, CHAR_EVENT #"G")
-       in
-         (* assert *)
-         Expect.isTrue (#cursorIdx app = String.size str - 1)
-       end)]
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"G")
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app = String.size str - 2)
+           end)
+    , test
+        "moves cursor to last char in buffer, \
+        \if last char is a newline and second-last char is also a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "01234\n5678\n\n"
+             val app = TestUtils.init str
+
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"G")
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app = String.size str - 1)
+           end)
+    , test
+        "moves cursor to last char in buffer, \
+        \if last char is not a newline and second-last char \
+        \is also not a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "01234\n5678\n\n"
+             val app = TestUtils.init str
+
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"G")
+           in
+             (* assert *)
+             Expect.isTrue (#cursorIdx app = String.size str - 1)
+           end)
+    ]
 
   val percentMove = describe "move motion '%'"
     [ test "moves to next ) when cursor is on (" (fn _ =>

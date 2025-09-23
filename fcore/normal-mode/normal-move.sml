@@ -69,6 +69,13 @@ struct
       val bufferLine = bufferLine - 1
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
+      val bufferIdx =
+        if Cursor.isOnNewlineAfterChr (buffer, bufferIdx) then
+          Int.max (0, bufferIdx - 1)
+        else
+          bufferIdx
+
+      val buffer = LineGap.goToIdx (bufferIdx, buffer)
       val visualScrollColumn =
         TextScroll.getScrollColumn
           (buffer, bufferIdx, windowWidth, prevScrollColumn)
@@ -248,10 +255,8 @@ struct
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
 
           val lineIdx =
-            if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then
-              lineIdx
-            else
-              lineIdx - 1
+            if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then lineIdx
+            else lineIdx - 1
           val buffer = LineGap.goToIdx (lineIdx, buffer)
           val lineIdx = Cursor.vi0 (buffer, lineIdx)
 
@@ -274,10 +279,8 @@ struct
           val buffer = LineGap.goToIdx (lineIdx, buffer)
 
           val lineIdx =
-            if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then
-              lineIdx
-            else
-              lineIdx + 1
+            if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then lineIdx
+            else lineIdx + 1
 
           val lineIdx =
             if lineIdx >= #textLength buffer - 1 then
