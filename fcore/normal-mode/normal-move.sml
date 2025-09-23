@@ -200,7 +200,7 @@ struct
 
           val lineIdx = Int.max (0, lineIdx)
         in
-          moveCursorUpWhenOnNewline (app, buffer, newCursorLineNumber)
+          finishMoveCursorUpDown (app, newCursorLineNumber, buffer, 0, lineIdx)
         end
       else
         let
