@@ -737,4 +737,9 @@ struct
           end
       | [] => true
     end
+
+  (* Prerequisite: lineGap is moved to cursorIdx *)
+  fun isOnNewlineAfterChr (buffer, cursorIdx) =
+    cursorIdx > 0 andalso not (isPrevChrStartOfLine (buffer, cursorIdx))
+    andalso isCursorAtStartOfLine (buffer, cursorIdx)
 end

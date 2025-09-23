@@ -63,12 +63,26 @@ struct
       val cursorIdx = Fn.fMove (buffer, cursorIdx, count)
 
       val textLength = #textLength buffer
-      val cursorIdx =
-        if cursorIdx >= textLength - 1 then Int.max (textLength - 1, 0)
-        else cursorIdx
     in
-      NormalFinish.buildTextAndClear
-        (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+      if cursorIdx >= textLength - 1 then
+        let
+          val cursorIdx = Int.max (textLength - 1, 0)
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        in
+          if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then
+            let
+              val cursorIdx = cursorIdx - 1
+            in
+              NormalFinish.buildTextAndClear
+                (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+            end
+          else
+            NormalFinish.buildTextAndClear
+              (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+        end
+      else
+        NormalFinish.buildTextAndClear
+          (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 end
 
