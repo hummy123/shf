@@ -157,8 +157,10 @@ struct
           if counter - 1 = 0 then
             Fn.finish absIdx
           else
-            (* new loop, so reset to start state and proceed *)
-            foldNext (idx + 1, absIdx + 1, str, tl, Fn.startState, counter - 1)
+            (* new loop, so reset start state and proceed *)
+            let val newState = nextState (Fn.startState, chr)
+            in foldNext (idx + 1, absIdx + 1, str, tl, newState, counter - 1)
+            end
         else
           foldNext (idx + 1, absIdx + 1, str, tl, newState, counter)
       end
@@ -190,7 +192,9 @@ struct
           if counter - 1 = 0 then
             Fn.finish absIdx
           else
-            foldPrev (idx - 1, absIdx - 1, str, tl, Fn.startState, counter - 1)
+            let val newState = nextState (Fn.startState, chr)
+            in foldPrev (idx - 1, absIdx - 1, str, tl, newState, counter - 1)
+            end
         else
           foldPrev (idx - 1, absIdx - 1, str, tl, newState, counter)
       end
