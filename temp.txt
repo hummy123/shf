@@ -1,6 +1,2 @@
-let
-hello
-world
-in
-0
-end
+hello world
+time to go

@@ -299,7 +299,7 @@ struct
         in
           Expect.isTrue (c1 andalso c2 andalso c3)
         end)
-    , test "leaves cursor at same idx if on the last line" (fn _ =>
+    , test "leaves cursor at same idx when on the last line" (fn _ =>
         let
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
@@ -310,35 +310,9 @@ struct
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
-
-          (* assert *)
-          (* String.size str - 1 is a valid char position
-           * but we are counting String.size str - 2 as the end
-           * because, in Vim, saved files always end with \n
-           * but the last char, \n, is not visible *)
-          val isAtEnd = cursorIdx = initialCursorIdx
         in
-          Expect.isTrue isAtEnd
-        end)
-    , test "leaves cursor at same idx when already on last line" (fn _ =>
-        let
-          (* arrange *)
-          val str = "hello \nworld \ntime to go\n"
-          val len = String.size str - 2
-          val app = TestUtils.init str
-          val app = AppWith.idx (app, len)
-
-          (* act *)
-          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
-
           (* assert *)
-          (* String.size str - 1 is a valid char position
-           * but we are counting String.size str - 2 as the end
-           * because, in Vim, saved files always end with \n
-           * but the last char, \n, is not visible *)
-          val isAtEnd = cursorIdx = len
-        in
-          Expect.isTrue isAtEnd
+          Expect.isTrue (cursorIdx = initialCursorIdx)
         end)
     , test "goes to next idx when cursor is on a newline" (fn _ =>
         let
