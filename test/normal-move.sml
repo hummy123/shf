@@ -382,7 +382,7 @@ struct
              val app = AppWith.idx (app, initialCursorIdx)
 
              (* act *)
-             val {cursorIdx, ...} = TestUtils.updateMany (app, "2j")
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
 
              (* assert *)
              val expectedIdx = 10
@@ -409,11 +409,11 @@ struct
            in
              Expect.isTrue (cursorIdx = expectedIdx)
            end)
-    , test "goes to last char in file when last char is not a newline" (fn _ =>
+    , test "goes to last line in file when last char is not a newline" (fn _ =>
         let
           (* arrange *)
           val str = "hello\nworld"
-          val initialCursorIdx = 6
+          val initialCursorIdx = 0
 
           val app = TestUtils.init str
           val app = AppWith.idx (app, initialCursorIdx)
@@ -422,7 +422,7 @@ struct
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
 
           (* assert *)
-          val expectedIdx = String.size str - 1
+          val expectedIdx = 6
         in
           Expect.isTrue (cursorIdx = expectedIdx)
         end)
@@ -440,6 +440,27 @@ struct
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
+
+             (* assert *)
+             val expectedIdx = initialCursorIdx
+           in
+             Expect.isTrue (cursorIdx = expectedIdx)
+           end)
+    , test
+        "does not go to last chr in file \
+        \when last chr is a newline preceded by a non-newline \
+        \and a count is provided"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello\nworld\n"
+             val initialCursorIdx = 0
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, initialCursorIdx)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.updateMany (app, "2j")
 
              (* assert *)
              val expectedIdx = initialCursorIdx
