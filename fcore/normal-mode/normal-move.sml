@@ -248,10 +248,10 @@ struct
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
 
           val lineIdx =
-            if not (Cursor.isPrevChrStartOfLine (buffer, lineIdx)) then
-              lineIdx - 1
-            else
+            if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then
               lineIdx
+            else
+              lineIdx - 1
           val buffer = LineGap.goToIdx (lineIdx, buffer)
           val lineIdx = Cursor.vi0 (buffer, lineIdx)
 
@@ -266,27 +266,22 @@ struct
       else
         let
           val cursorLineNumber = LineGap.idxToLineNumber (cursorIdx, buffer)
-
           val newCursorLineNumber = cursorLineNumber + count
-          val newCursorLineNumber =
-            if newCursorLineNumber >= #lineLength buffer then
-              Int.max (#lineLength buffer - 1, 0)
-            else
-              newCursorLineNumber
 
           val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
 
           val buffer = LineGap.goToIdx (lineIdx, buffer)
-          val lineIdx =
-            if not (Cursor.isPrevChrStartOfLine (buffer, lineIdx)) then
-              lineIdx + 1
-            else
-              lineIdx
 
           val lineIdx =
-            if lineIdx >= #textLength buffer - 2 then
-              Int.max (0, #textLength buffer - 2)
+            if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then
+              lineIdx
+            else
+              lineIdx + 1
+
+          val lineIdx =
+            if lineIdx >= #textLength buffer - 1 then
+              Int.max (0, #textLength buffer - 1)
             else
               lineIdx
         in

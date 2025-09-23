@@ -288,9 +288,9 @@ struct
           val app3 = AppWith.idx (app, 2)
 
           (* act *)
-          val newApp1 = TestUtils.updateMany (app1, "33j")
-          val newApp2 = TestUtils.updateMany (app2, "33j")
-          val newApp3 = TestUtils.updateMany (app3, "33j")
+          val newApp1 = TestUtils.updateMany (app1, "4j")
+          val newApp2 = TestUtils.updateMany (app2, "4j")
+          val newApp3 = TestUtils.updateMany (app3, "4j")
 
           (* assert *)
           val c1 = getChr newApp1 = #"e"
@@ -299,13 +299,13 @@ struct
         in
           Expect.isTrue (c1 andalso c2 andalso c3)
         end)
-    , test "moves to end of buffer when on last line" (fn _ =>
+    , test "leaves cursor at same idx if on the last line" (fn _ =>
         let
           (* arrange *)
           val str = "hello \nworld \ntime to go\n"
           val app = TestUtils.init str
 
-          val initialCursorIdx = 15
+          val initialCursorIdx = String.size str - 1
           val app = AppWith.idx (app, initialCursorIdx)
 
           (* act *)
