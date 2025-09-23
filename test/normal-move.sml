@@ -1278,7 +1278,7 @@ struct
 
 
   val zeroMove = describe "move motion '0'"
-    [ test "moves cursor to 0 in contiguous string when on first line" (fn _ =>
+    [ test "moves cursor to 0 when on first line" (fn _ =>
         let
           (* arrange *)
           val app = TestUtils.init "hello w7rld\n"
@@ -1317,8 +1317,7 @@ struct
           Expect.isTrue (oldIdx = newIdx)
         end)
     , test
-        "moves cursor to first char after '\\n' in contiguous string\
-        \when cursor is after first line"
+        "moves cursor to first char after newline when cursor is after first line"
         (fn _ =>
            let
              (* arrange *)
@@ -1334,6 +1333,30 @@ struct
              (* assert *)
              Expect.isTrue (chr = #"#")
            end)
+    , test "leaves cursor at same idx when on last newline" (fn _ =>
+        let
+          (* arrange *)
+          val str =
+            "hello\n\
+            \\n\
+            \\n\
+            \world\n\
+            \\n\
+            \\n"
+
+          val initialCursorIdx = String.size str - 1
+          val app = TestUtils.init str
+          val app = AppWith.idx (app, initialCursorIdx)
+
+          (* act *)
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"0")
+
+          (* assert *)
+          val expectedIdx = initialCursorIdx
+        in
+          (* assert *)
+          Expect.isTrue (cursorIdx = expectedIdx)
+        end)
     ]
 
   val dlrMove = describe "move motion '$'"

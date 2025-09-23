@@ -28,8 +28,8 @@ struct
         val textLength = #textLength buffer
         val newCursorIdx = Fn.fMove (buffer, cursorIdx)
       in
-        if newCursorIdx >= textLength - 2 then
-          let val newCursorIdx = Int.max (textLength - 2, 0)
+        if newCursorIdx >= textLength - 1 then
+          let val newCursorIdx = Int.max (textLength - 1, 0)
           in finish (app, buffer, newCursorIdx)
           end
         else
