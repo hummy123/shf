@@ -119,17 +119,17 @@ struct
           (* assert *)
           Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
         end)
-    , test "does not move cursor when cursorIdx is at end of line" (fn _ =>
+    , test "does not move cursor when cursorIdx is at end of buffer" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
-          val app = AppWith.idx (app, 10)
+          val app = TestUtils.init "hello world\n"
+          val app = AppWith.idx (app, 11)
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
         in
           (* assert *)
-          Expect.isTrue (cursorIdx = 10)
+          Expect.isTrue (cursorIdx = 11)
         end)
     , test "moves cursor to char past newline when newline is preceded by char"
         (fn _ =>
@@ -1362,13 +1362,14 @@ struct
         * *)
        let
          (* arrange *)
-         val app = TestUtils.init "01234\n56789\n"
+         val str = "01234\n56789\n"
+         val app = TestUtils.init str
 
          (* act *)
          val app = TestUtils.update (app, CHAR_EVENT #"G")
        in
          (* assert *)
-         Expect.isTrue (getChr app = #"9")
+         Expect.isTrue (#cursorIdx app = String.size str - 1)
        end)]
 
   val percentMove = describe "move motion '%'"

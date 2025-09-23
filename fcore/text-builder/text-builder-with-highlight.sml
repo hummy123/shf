@@ -237,11 +237,6 @@ struct
           | #"\n" =>
               if lineNumber + 1 > #lastLineNumber env then
                 acc
-              else if isSecondLastChr (pos, str, stl) then
-                if absIdx = cursorIdx then
-                  Utils.makeCursor (#startX env, posY + TC.ySpace, env) :: acc
-                else
-                  acc
               else
                 let
                   val acc =

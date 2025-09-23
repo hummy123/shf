@@ -64,7 +64,7 @@ struct
 
       val textLength = #textLength buffer
       val cursorIdx =
-        if cursorIdx >= textLength - 2 then Int.max (textLength - 2, 0)
+        if cursorIdx >= textLength - 1 then Int.max (textLength - 1, 0)
         else cursorIdx
     in
       NormalFinish.buildTextAndClear

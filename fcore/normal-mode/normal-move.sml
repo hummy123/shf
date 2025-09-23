@@ -65,7 +65,7 @@ struct
       val buffer = LineGap.goToEnd buffer
       val {line = bufferLine, textLength, ...} = buffer
 
-      val bufferIdx = Int.max (0, textLength - 2)
+      val bufferIdx = Int.max (0, textLength - 1)
       val bufferLine = bufferLine - 1
 
       val buffer = LineGap.goToIdx (bufferIdx, buffer)
@@ -124,8 +124,8 @@ struct
       val buffer = LineGap.goToIdx (lineIdx, buffer)
       val endOfLineIdx = Cursor.viDlr (buffer, lineIdx, 1)
       val endOfLineIdx =
-        if endOfLineIdx >= #textLength buffer - 2 then
-          Int.max (0, #textLength buffer - 2)
+        if endOfLineIdx >= #textLength buffer - 1 then
+          Int.max (0, #textLength buffer - 1)
         else
           endOfLineIdx
 
@@ -256,8 +256,8 @@ struct
           val lineIdx = Cursor.vi0 (buffer, lineIdx)
 
           val lineIdx =
-            if lineIdx >= #textLength buffer - 2 then
-              Int.max (0, #textLength buffer - 2)
+            if lineIdx >= #textLength buffer - 1 then
+              Int.max (0, #textLength buffer - 1)
             else
               lineIdx
         in
