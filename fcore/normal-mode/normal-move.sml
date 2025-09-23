@@ -177,23 +177,6 @@ struct
         )
     end
 
-  fun moveCursorUpWhenOnNewline (app, buffer, newCursorLineNumber) =
-    let
-      val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
-      val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
-
-      val lineIdx =
-        if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then lineIdx
-        else lineIdx - 1
-
-      val buffer = LineGap.goToIdx (lineIdx, buffer)
-      val lineIdx = Cursor.vi0 (buffer, lineIdx)
-
-      val lineIdx = Int.max (0, lineIdx)
-    in
-      finishMoveCursorUpDown (app, newCursorLineNumber, buffer, 0, lineIdx)
-    end
-
   fun moveCursorUp (app: app_type, count) =
     let
       val {cursorIdx, buffer, ...} = app
@@ -201,24 +184,21 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val startOfLine = Cursor.vi0 (buffer, cursorIdx)
     in
-      if startOfLine = #textLength buffer - 2 then
-        (* special case: file ends with \n\n,
-         * and cursor is on first \n *)
-        let
-          val buffer = LineGap.goToIdx (startOfLine, buffer)
-          val newCursorLineNumber =
-            if Cursor.isPrevChrStartOfLine (buffer, startOfLine) then
-              #lineLength buffer - 1 - count
-            else
-              #lineLength buffer - count
-          val newCursorLineNumber = Int.max (0, newCursorLineNumber)
-        in
-          moveCursorUpWhenOnNewline (app, buffer, newCursorLineNumber)
-        end
-      else if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
+      if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
         let
           val cursorLineNumber = LineGap.idxToLineNumber (cursorIdx + 1, buffer)
           val newCursorLineNumber = Int.max (0, cursorLineNumber - count)
+          val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
+          val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
+
+          val lineIdx =
+            if Cursor.isPrevChrStartOfLine (buffer, lineIdx) then lineIdx
+            else lineIdx - 1
+
+          val buffer = LineGap.goToIdx (lineIdx, buffer)
+          val lineIdx = Cursor.vi0 (buffer, lineIdx)
+
+          val lineIdx = Int.max (0, lineIdx)
         in
           moveCursorUpWhenOnNewline (app, buffer, newCursorLineNumber)
         end
