@@ -370,22 +370,24 @@ struct
           Expect.isTrue (cursorIdx = 7)
         end)
     , test
-        "does not go to last newline in file \
+        "goes to second-last newline in file \
         \when newline is preceded by a non-newline"
         (fn _ =>
            let
              (* arrange *)
-             val str = "hello\n\nworld\n"
-             val initialCursorIdx = String.size str - 2
+             val str = "hello\nworld\n"
+             val initialCursorIdx = 4
 
              val app = TestUtils.init str
              val app = AppWith.idx (app, initialCursorIdx)
 
              (* act *)
-             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
-           in
+             val {cursorIdx, ...} = TestUtils.updateMany (app, "2j")
+
              (* assert *)
-             Expect.isTrue (cursorIdx = initialCursorIdx)
+             val expectedIdx = 10
+           in
+             Expect.isTrue (cursorIdx = expectedIdx)
            end)
     , test
         "goes to last newline in file \
@@ -404,6 +406,43 @@ struct
 
              (* assert *)
              val expectedIdx = String.size str - 1
+           in
+             Expect.isTrue (cursorIdx = expectedIdx)
+           end)
+    , test "goes to last char in file when last char is not a newline" (fn _ =>
+        let
+          (* arrange *)
+          val str = "hello\nworld"
+          val initialCursorIdx = 6
+
+          val app = TestUtils.init str
+          val app = AppWith.idx (app, initialCursorIdx)
+
+          (* act *)
+          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
+
+          (* assert *)
+          val expectedIdx = String.size str - 1
+        in
+          Expect.isTrue (cursorIdx = expectedIdx)
+        end)
+    , test
+        "leaves cursor at same idx when on last line \
+        \and file ends with a non-newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello\nworld"
+             val initialCursorIdx = 6
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, initialCursorIdx)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
+
+             (* assert *)
+             val expectedIdx = initialCursorIdx
            in
              Expect.isTrue (cursorIdx = expectedIdx)
            end)
