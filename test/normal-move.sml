@@ -17,7 +17,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 1)
 
              (* act *)
@@ -29,7 +29,7 @@ struct
     , test "does not move cursor when cursor is already at index 0" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello\n\nworld"
+          val app = TestUtils.init "hello\n\nworld\n"
           val app = AppWith.idx (app, 0)
 
           (* act *)
@@ -44,7 +44,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello\nworld"
+             val app = TestUtils.init "hello\nworld\n"
              val app = AppWith.idx (app, 6)
 
              (* act *)
@@ -59,7 +59,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello\n\nworld"
+             val app = TestUtils.init "hello\n\nworld\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -74,7 +74,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello\nworld"
+             val app = TestUtils.init "hello\nworld\n"
              val app = AppWith.idx (app, 6)
 
              (* act *)
@@ -110,7 +110,7 @@ struct
     [ test "moves cursor right by one when cursorIdx < length" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val {cursorIdx = oldCursorIdx, ...} = app
 
           (* act *)
@@ -190,7 +190,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello\n\nworld"
+             val app = TestUtils.init "hello\n\nworld\n"
              val app = AppWith.idx (app, 4)
 
              (* act *)
@@ -344,7 +344,7 @@ struct
     , test "leaves cursor at same idx when on the last line" (fn _ =>
         let
           (* arrange *)
-          val str = "hello \nworld \ntime to go\n"
+          val str = "hello \nworld \ntime to go\n\n"
           val app = TestUtils.init str
 
           val initialCursorIdx = String.size str - 1
@@ -369,13 +369,51 @@ struct
           (* assert *)
           Expect.isTrue (cursorIdx = 7)
         end)
+    , test
+        "does not go to last newline in file \
+        \when newline is preceded by a non-newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello\n\nworld\n"
+             val initialCursorIdx = String.size str - 2
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, initialCursorIdx)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = initialCursorIdx)
+           end)
+    , test
+        "goes to last newline in file \
+        \when newline is preceded by another newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello\n\nworld\n\n"
+             val initialCursorIdx = String.size str - 5
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, initialCursorIdx)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"j")
+
+             (* assert *)
+             val expectedIdx = String.size str - 1
+           in
+             Expect.isTrue (cursorIdx = expectedIdx)
+           end)
     ]
 
   val kMove = describe "move motion 'k'"
     [ test "moves cursur up one column when column = 0" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "0__\n4___\n9___\n14_"
+          val app = TestUtils.init "0__\n4___\n9___\n14_\n"
           val app = AppWith.idx (app, 14)
 
           (* act *)
@@ -393,7 +431,7 @@ struct
     , test "moves cursur up one column when column = 1" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "_w_\n_5__\n_10_\n_15"
+          val app = TestUtils.init "_w_\n_5__\n_10_\n_15\n"
           val app = AppWith.idx (app, 15)
 
           (* act *)
@@ -516,7 +554,7 @@ struct
     [ test "moves cursor to start of next word in contiguous string" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"w")
@@ -536,7 +574,7 @@ struct
          * as usual with "w". *)
         let
           (* arrange *)
-          val app = TestUtils.init "hello \n\n\n world"
+          val app = TestUtils.init "hello \n\n\n world\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"w")
@@ -550,7 +588,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello_world goodbye_world"
+             val app = TestUtils.init "hello_world goodbye_world\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"w")
@@ -564,7 +602,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val app = TestUtils.init "hello, world"
+          val app = TestUtils.init "hello, world\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"w")
@@ -667,7 +705,7 @@ struct
     [ test "moves cursor to start of next WORD in contiguous string" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"W")
@@ -680,7 +718,7 @@ struct
     , test "moves cursor past newline when next WORD is after newline" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello \n\n\n world"
+          val app = TestUtils.init "hello \n\n\n world\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"W")
@@ -695,7 +733,7 @@ struct
            (* vi's definition of 'WORD' instead of 'word' *)
            let
              (* arrange *)
-             val app = TestUtils.init "hello, world"
+             val app = TestUtils.init "hello, world\n"
 
              (* act *)
              val app = TestUtils.update (app, CHAR_EVENT #"W")
@@ -827,7 +865,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val app = TestUtils.init "hello, world"
+          val app = TestUtils.init "hello, world\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"e")
@@ -928,7 +966,7 @@ struct
         (* vi's definition of 'word' instead of 'WORD' *)
         let
           (* arrange *)
-          val app = TestUtils.init "hello, world"
+          val app = TestUtils.init "hello, world\n"
 
           (* act *)
           val app = TestUtils.update (app, CHAR_EVENT #"E")
@@ -1053,7 +1091,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "   !@#$%^&*()"
+             val app = TestUtils.init "   !@#$%^&*()\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -1068,7 +1106,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "abc!@#$%^&*()"
+             val app = TestUtils.init "abc!@#$%^&*()\n"
              val app = AppWith.idx (app, 7)
 
              (* act *)
@@ -1167,7 +1205,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "abc!@#$%^&*()"
+             val app = TestUtils.init "abc!@#$%^&*()\n"
              val app = AppWith.idx (app, 11)
 
              (* act *)
@@ -1632,7 +1670,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
 
              (* act *)
              val app = updateMany (app, "td")
@@ -1643,7 +1681,7 @@ struct
     , test "repeating 't' motion with same char does not move cursor" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val app1 = updateMany (app, "td")
@@ -1658,7 +1696,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
 
              (* act *)
              val app1 = updateMany (app, "t;")
@@ -1669,7 +1707,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val app1 = TestUtils.update (app, CHAR_EVENT #"t")
@@ -1690,7 +1728,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1702,7 +1740,7 @@ struct
     , test "repeating 'T' motion with same char does not move cursor" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1718,7 +1756,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1730,7 +1768,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1752,7 +1790,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
 
              (* act *)
              val app = updateMany (app, "fw")
@@ -1763,7 +1801,7 @@ struct
     , test "count followed by f<char> moves forwards to count'th match" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val app = updateMany (app, "3fl")
@@ -1776,7 +1814,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
 
              (* act *)
              val app = updateMany (app, "9fl")
@@ -1789,7 +1827,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
 
              (* act *)
              val app1 = updateMany (app, "f;")
@@ -1800,7 +1838,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
 
           (* act *)
           val app1 = TestUtils.update (app, CHAR_EVENT #"f")
@@ -1818,7 +1856,7 @@ struct
     [ test "motion 'Fe' moves cursor to first 'e' before cursor" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1831,7 +1869,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1845,7 +1883,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1859,7 +1897,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
              val app = AppWith.idx (app, 10)
 
              (* act *)
@@ -1871,7 +1909,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1890,7 +1928,7 @@ struct
     [ test "moves cursor to start when cursor is at end" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 10)
 
           (* act *)
@@ -1902,7 +1940,7 @@ struct
     , test "moves cursor to start when cursor is in middle" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 5)
 
           (* act *)
@@ -1915,7 +1953,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val app = TestUtils.init "hello world"
+             val app = TestUtils.init "hello world\n"
 
              (* act *)
              val app = updateMany (app, "gg")
@@ -1926,7 +1964,7 @@ struct
     , test "is cancellable by pressing escape" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "hello world"
+          val app = TestUtils.init "hello world\n"
           val app = AppWith.idx (app, 5)
 
           (* act *)
