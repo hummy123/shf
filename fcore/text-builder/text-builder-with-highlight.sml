@@ -3,6 +3,11 @@ struct
   structure TC = TextConstants
   structure Utils = TextBuilderUtils
 
+  fun isSecondLastChr (pos, str, tl) =
+    case tl of
+      [] => pos = String.size str - 2
+    | _ => false
+
   fun goToFirstLineAfter
     (stl, ltl, posY, lineNumber, absIdx, cursorIdx, env, acc, searchPos) =
     case (stl, ltl) of
@@ -232,6 +237,11 @@ struct
           | #"\n" =>
               if lineNumber + 1 > #lastLineNumber env then
                 acc
+              else if isSecondLastChr (pos, str, stl) then
+                if absIdx = cursorIdx then
+                  Utils.makeCursor (#startX env, posY + TC.ySpace, env) :: acc
+                else
+                  acc
               else
                 let
                   val acc =
