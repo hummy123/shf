@@ -277,11 +277,16 @@ struct
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
           val buffer = LineGap.goToIdx (lineIdx, buffer)
         in
-          if lineIdx >= #textLength buffer then
+          if lineIdx >= #textLength buffer - 1 then
             (* we reached last line *)
             let
               val lineIdx = Int.max (#textLength buffer - 1, 0)
               val buffer = LineGap.goToIdx (lineIdx, buffer)
+
+              val lineIdx =
+                if Cursor.isOnNewlineAfterChr (buffer, lineIdx) then lineIdx - 1
+                else lineIdx
+
               val startOfLine = Cursor.vi0 (buffer, lineIdx)
             in
               if cursorIdx >= startOfLine then
@@ -291,12 +296,6 @@ struct
               else
                 finishMoveCursorUpDown
                   (app, newCursorLineNumber, buffer, column, startOfLine)
-            end
-          else if lineIdx = #textLength buffer - 1 then
-            (* last line in buffer ends with \n
-             * and we just reached it *)
-            let val () = print "296\n"
-            in raise Fail ""
             end
           else
             let

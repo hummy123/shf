@@ -463,7 +463,7 @@ struct
              val {cursorIdx, ...} = TestUtils.updateMany (app, "2j")
 
              (* assert *)
-             val expectedIdx = initialCursorIdx
+             val expectedIdx = 6
            in
              Expect.isTrue (cursorIdx = expectedIdx)
            end)
