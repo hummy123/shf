@@ -119,18 +119,60 @@ struct
           (* assert *)
           Expect.isTrue (oldCursorIdx = 0 andalso cursorIdx = 1)
         end)
-    , test "does not move cursor when cursorIdx is at end of buffer" (fn _ =>
-        let
-          (* arrange *)
-          val app = TestUtils.init "hello world\n"
-          val app = AppWith.idx (app, 11)
+    , test
+        "does not move cursor when cursorIdx is at end of buffer \
+        \and last char is a newline preceded by a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello world\n\n"
+             val initialCursorIdx = String.size str - 1
 
-          (* act *)
-          val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
-        in
-          (* assert *)
-          Expect.isTrue (cursorIdx = 11)
-        end)
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, initialCursorIdx)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = initialCursorIdx)
+           end)
+    , test
+        "does not move cursor when cursorIdx is at end of buffer \
+        \and last char is a non-newline preceded by a non-newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello world"
+             val initialCursorIdx = String.size str - 1
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, initialCursorIdx)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = initialCursorIdx)
+           end)
+    , test
+        "does not move cursor when cursorIdx is at end of buffer \
+        \and last char is a newline preceded by a non-newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val str = "hello world\n"
+             val initialCursorIdx = String.size str - 2
+
+             val app = TestUtils.init str
+             val app = AppWith.idx (app, initialCursorIdx)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"l")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = initialCursorIdx)
+           end)
     , test "moves cursor to char past newline when newline is preceded by char"
         (fn _ =>
            let
@@ -460,7 +502,7 @@ struct
              val str = "hello\nworld\n\n"
 
              val app = TestUtils.init str
-             val app = AppWith.idx (app, 11)
+             val app = AppWith.idx (app, 12)
 
              (* act *)
              val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"k")
@@ -590,7 +632,7 @@ struct
           Expect.isTrue chrIsEnd
         end)
     , test
-        "moves cursor to newline when cursor is on the last word \
+        "moves cursor to second newline when cursor is on the last word \
         \and the file ends with two newlines"
         (fn _ =>
            let
@@ -602,7 +644,7 @@ struct
              val app = TestUtils.update (app, CHAR_EVENT #"w")
            in
              (* assert *)
-             Expect.isTrue (#cursorIdx app = 5)
+             Expect.isTrue (#cursorIdx app = 6)
            end)
     , test
         "does not move to or past newline when cursor is on last word \
