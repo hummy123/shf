@@ -239,8 +239,8 @@ struct
       in
         if otherIdx > cursorIdx then
           if otherIdx >= #textLength buffer then
-          (* prevent us from deleting last newline
-           * to help us preserve unix-style line endings *)
+            (* prevent us from deleting last newline
+             * to help us preserve unix-style line endings *)
             let val high = #textLength buffer - 1
             in finishDeleteByDfa (app, cursorIdx, high, buffer, time)
             end
