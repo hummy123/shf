@@ -240,5 +240,102 @@ struct
            end)
     ]
 
-  val tests = [dhDelete, dlDelete]
+  val djDelete = describe "delete motion 'dj'"
+    [ test "does not delete when cursor is on last line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val originalIdx = String.size originalString - 3
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dj")
+
+          (* assert *)
+          val expectedString = originalString
+          val actualString = LineGap.toString buffer
+          val stringIsExpected = expectedString = actualString
+
+          val expectedCursorIdx = originalIdx
+          val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+        in
+          Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+        end)
+    , test "does not delete when there is only one line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\n"
+          val originalIdx = 0
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dj")
+
+          (* assert *)
+          val expectedString = originalString
+          val actualString = LineGap.toString buffer
+          val stringIsExpected = expectedString = actualString
+
+          val expectedCursorIdx = originalIdx
+          val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+        in
+          Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+        end)
+    , test
+        "deletes first two lines when there are three lines \
+        \and cursor is on first line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalIdx = 0
+             val originalString = "hello\nworld\nbye world\n"
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dl")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "bye world\n"
+             val stringIsExpected = actualString = expectedString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = cursorIdx = expectedCursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "deletes last two lines when there are three lines \
+        \and cursor is on second line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalIdx = 6
+             val originalString = "hello\nworld\nbye world\n"
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dl")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "bye world\n"
+             val stringIsExpected = actualString = expectedString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = cursorIdx = expectedCursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    ]
+
+  val tests = [dhDelete, dlDelete, djDelete]
 end
