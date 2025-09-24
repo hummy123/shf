@@ -349,7 +349,7 @@ struct
              val app = AppWith.idx (app, originalIdx)
 
              (* act *)
-             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dl")
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dj")
 
              (* assert *)
              val actualString = LineGap.toString buffer
@@ -374,11 +374,11 @@ struct
              val app = AppWith.idx (app, originalIdx)
 
              (* act *)
-             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dl")
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dj")
 
              (* assert *)
              val actualString = LineGap.toString buffer
-             val expectedString = "bye world\n"
+             val expectedString = "hello\n"
              val stringIsExpected = actualString = expectedString
 
              val expectedCursorIdx = 0

@@ -374,12 +374,65 @@ struct
         NormalModeWith.bufferMsgsAndMode (app, buffer, [], NORMAL_MODE "")
       else
         let
-          val () = print "not on last line so have to delete\n"
-          val () = print
-            ("startLine = " ^ Int.toString startLine ^ "; endLine = "
-             ^ Int.toString endLine ^ "\n")
+          val buffer = LineGap.goToIdx (endLineIdx, buffer)
+
+          (* right now, endLineIdx may be on a newline.
+           * If it is, we want to delete that newline too,
+           * and in that case, we increment by 1 to do so. 
+           * However, we don't want to delete the last newline in the file
+           * so we don't increment in that case. 
+           * Edge case: if the startIdx also begins after a newline
+           * then it is okay for us to delete the newline at the end of the file
+           * because there will already be a newline at the end of the file
+           * after the deletion. *)
+          val endsOnNewline = Cursor.isCursorAtStartOfLine (buffer, endLineIdx)
+
+          val buffer = LineGap.goToIdx (startIdx, buffer)
+          val startsAfterNewline =
+            startIdx > 0 andalso Cursor.isPrevChrStartOfLine (buffer, startIdx)
+
+          val endLineIdx =
+            if endsOnNewline then
+              if endLineIdx = #textLength buffer - 1 then
+                if startsAfterNewline then endLineIdx + 1 else endLineIdx
+              else
+                endLineIdx + 1
+            else
+              endLineIdx
+
+          val length = endLineIdx - startIdx
+
+          (* perform the actual deletion *)
+          val buffer = LineGap.goToIdx (endLineIdx, buffer)
+          val initialMsg = Fn.initMsgs (startIdx, length, buffer)
+          val buffer = LineGap.delete (startIdx, length, buffer)
+
+          (* if we deleted end of file, then we have to move the cursorIdx
+           * to the first column of the now-last line *)
+          val newEndIdx = #textLength buffer - 1
         in
-          raise Fail ""
+          if startIdx >= newEndIdx then
+            let
+              val buffer = LineGap.goToIdx (newEndIdx, buffer)
+            in
+              if Cursor.isOnNewlineAfterChr (buffer, newEndIdx) then
+                let
+                  val buffer = LineGap.goToIdx (newEndIdx - 1, buffer)
+                  val newCursorIdx = Cursor.vi0 (buffer, newEndIdx - 1)
+                in
+                  finishAfterDeletingBuffer
+                    (app, newCursorIdx, buffer, time, initialMsg)
+                end
+              else
+                let
+                  val newCursorIdx = Cursor.vi0 (buffer, newEndIdx)
+                in
+                  finishAfterDeletingBuffer
+                    (app, newCursorIdx, buffer, time, initialMsg)
+                end
+            end
+          else
+            finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
         end
     end
 
