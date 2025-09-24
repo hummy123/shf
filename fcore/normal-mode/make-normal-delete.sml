@@ -354,11 +354,31 @@ struct
       val finishIdx = Cursor.viDlr (buffer, cursorIdx, count) + 2
       val length = finishIdx - startIdx
 
+      val textLengthBeforeDelete = #textLength buffer
+
       val buffer = LineGap.goToIdx (startIdx, buffer)
       val initialMsg = Fn.initMsgs (startIdx, length, buffer)
       val buffer = LineGap.delete (startIdx, length, buffer)
     in
-      finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+      if finishIdx >= textLengthBeforeDelete - 1 then
+        (* we deleted to the end of the buffer.
+         * Let's check if there is a newline at the end
+         * and insert one if there isn't. *)
+        let
+          val lastPosAfterDelete = #textLength buffer - 1
+          val buffer = LineGap.goToIdx (lastPosAfterDelete, buffer)
+          val buffer =
+            if lastPosAfterDelete < 0 then
+              LineGap.append ("\n", buffer)
+            else if Cursor.isCursorAtStartOfLine (buffer, lastPosAfterDelete) then
+              buffer
+            else
+              LineGap.append ("\n", buffer)
+        in
+          finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+        end
+      else
+        finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
     end
 
   fun finishDeleteLineBack (app, buffer, lineIdx, length, endOfLine, time) =

@@ -313,6 +313,30 @@ struct
           Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
         end)
     , test
+        "deletes when cursor is on first line and there are at least two lines"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dj")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
         "deletes first two lines when there are three lines \
         \and cursor is on first line"
         (fn _ =>
