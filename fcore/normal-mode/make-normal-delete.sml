@@ -314,13 +314,6 @@ struct
           val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
           val length = high - cursorIdx
 
-          (* we might want to delete to the end of the file.
-           * If so, we will append a newline
-           * to restore Unix-style line endings *)
-          val buffer =
-            if high > #textLength buffer - 1 then LineGap.append ("\n", buffer)
-            else buffer
-
           val buffer = LineGap.goToIdx (high, buffer)
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
           val buffer = LineGap.delete (cursorIdx, length, buffer)
@@ -344,22 +337,13 @@ struct
 
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
       val buffer = LineGap.goToIdx (startIdx, buffer)
-      val isPrevChrStartOfLine = Cursor.isPrevChrStartOfLine (buffer, startIdx)
 
       val finishIdx = Cursor.viDlr (buffer, cursorIdx, count) + 2
       val length = finishIdx - startIdx
 
-      val textLengthBeforeDelete = #textLength buffer
-
       val buffer = LineGap.goToIdx (startIdx, buffer)
       val initialMsg = Fn.initMsgs (startIdx, length, buffer)
       val buffer = LineGap.delete (startIdx, length, buffer)
-
-      val buffer =
-        if finishIdx >= textLengthBeforeDelete - 1 then
-          LineGap.append ("\n", buffer)
-        else
-          buffer
     in
       finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
     end
@@ -380,10 +364,6 @@ struct
         val buffer = LineGap.goToIdx (endOfLine, buffer)
         val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
         val buffer = LineGap.delete (lineIdx, length, buffer)
-
-        val buffer =
-          if #textLength buffer = 0 then LineGap.append ("\n", buffer)
-          else buffer
       in
         finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
