@@ -62,9 +62,12 @@ struct
           val lineEndAfterDelete = Cursor.viDlr (buffer, lineStart, 1)
 
           val cursorIdx = Int.min (lineEndAfterDelete, cursorIdx)
+
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val cursorIdx =
-            if cursorIdx >= #textLength buffer - 2 then
-              Int.max (0, #textLength buffer - 2)
+            if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then
+              if cursorIdx < #textLength buffer - 1 then cursorIdx + 1
+              else cursorIdx - 1
             else
               cursorIdx
         in
