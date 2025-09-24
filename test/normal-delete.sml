@@ -211,7 +211,32 @@ struct
              val expectedCursorIdx = 1
              val cursorIdxIsExpected = cursorIdx = expectedCursorIdx
            in
-             Expect.isTrue (stringIsExpected)
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "moves cursor to last newline after deleting \
+        \all non-newline chars on last line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalIdx = 6
+             val originalString = "hello\nworld\n"
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "33dl")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello\n\n"
+             val stringIsExpected = actualString = expectedString
+
+             val expectedCursorIdx = String.size expectedString - 1
+             val cursorIdxIsExpected = cursorIdx = expectedCursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
            end)
     ]
 
