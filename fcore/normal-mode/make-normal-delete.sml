@@ -51,7 +51,9 @@ struct
            * beyond current line's length,
           *  then clip the length, to ensure we don't delete the newline *)
           val high = cursorIdx + count
-          val high = Int.min (lineEnd - 1, high)
+          val high =
+            if Cursor.isOnNewlineAfterChr (buffer, lineEnd) then lineEnd
+            else Int.min (lineEnd - 1, high)
           val length = high - cursorIdx
 
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
@@ -62,16 +64,24 @@ struct
           val lineEndAfterDelete = Cursor.viDlr (buffer, lineStart, 1)
 
           val cursorIdx = Int.min (lineEndAfterDelete, cursorIdx)
-
-          val buffer = LineGap.goToIdx (cursorIdx, buffer)
-          val cursorIdx =
-            if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then
-              if cursorIdx < #textLength buffer - 1 then cursorIdx + 1
-              else cursorIdx - 1
-            else
-              cursorIdx
         in
-          finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
+          if cursorIdx >= #textLength buffer - 1 then
+            (* special case: when buffer does not end with newline
+             * and we are deleting from the last line *)
+            let
+              val cursorIdx = #textLength buffer - 1
+              val buffer = LineGap.goToIdx (cursorIdx, buffer)
+              val cursorIdx =
+                if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then
+                  cursorIdx - 1
+                else
+                  cursorIdx
+            in
+              finishAfterDeletingBuffer
+                (app, cursorIdx, buffer, time, initialMsg)
+            end
+          else
+            finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
         end
     end
 
