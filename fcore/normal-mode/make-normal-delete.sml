@@ -351,34 +351,36 @@ struct
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
       val buffer = LineGap.goToIdx (startIdx, buffer)
 
-      val finishIdx = Cursor.viDlr (buffer, cursorIdx, count) + 2
-      val length = finishIdx - startIdx
+      val startLine =
+        if cursorIdx = startIdx then
+          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+        else
+          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+      val endLine = startLine + count
 
-      val textLengthBeforeDelete = #textLength buffer
+      val buffer = LineGap.goToLine (endLine, buffer)
+      val endLineIdx = LineGap.lineNumberToIdx (endLine, buffer)
+      val buffer = LineGap.goToIdx (endLineIdx - 1, buffer)
 
-      val buffer = LineGap.goToIdx (startIdx, buffer)
-      val initialMsg = Fn.initMsgs (startIdx, length, buffer)
-      val buffer = LineGap.delete (startIdx, length, buffer)
+      (* get "real" endLine by not considering newline after non-newline *)
+      val endLine =
+        if Cursor.isOnNewlineAfterChr (buffer, endLineIdx - 1) then
+          LineGap.idxToLineNumber (endLineIdx - 1, buffer)
+        else
+          LineGap.idxToLineNumber (endLineIdx, buffer)
     in
-      if finishIdx >= textLengthBeforeDelete - 1 then
-        (* we deleted to the end of the buffer.
-         * Let's check if there is a newline at the end
-         * and insert one if there isn't. *)
-        let
-          val lastPosAfterDelete = #textLength buffer - 1
-          val buffer = LineGap.goToIdx (lastPosAfterDelete, buffer)
-          val buffer =
-            if lastPosAfterDelete < 0 then
-              LineGap.append ("\n", buffer)
-            else if Cursor.isCursorAtStartOfLine (buffer, lastPosAfterDelete) then
-              buffer
-            else
-              LineGap.append ("\n", buffer)
-        in
-          finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
-        end
+      if endLineIdx = #textLength buffer andalso endLine = startLine then
+        (* cursor is already on last line so not deleting *)
+        NormalModeWith.bufferMsgsAndMode (app, buffer, [], NORMAL_MODE "")
       else
-        finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+        let
+          val () = print "not on last line so have to delete\n"
+          val () = print
+            ("startLine = " ^ Int.toString startLine ^ "; endLine = "
+             ^ Int.toString endLine ^ "\n")
+        in
+          raise Fail ""
+        end
     end
 
   fun finishDeleteLineBack (app, buffer, lineIdx, length, endOfLine, time) =

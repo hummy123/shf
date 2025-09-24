@@ -2,6 +2,36 @@ structure NormalModeWith =
 struct
   open AppType
 
+  fun bufferMsgsAndMode (app: app_type, newBuffer, newMsgs, newMode) =
+    let
+      val
+        { mode = _
+        , buffer = _
+        , msgs = _
+        , bufferModifyTime
+        , windowWidth
+        , windowHeight
+        , searchList
+        , visualScrollColumn
+        , searchString
+        , startLine
+        , cursorIdx
+        } = app
+    in
+      { mode = newMode
+      , buffer = newBuffer
+      , msgs = newMsgs
+      , bufferModifyTime = bufferModifyTime
+      , windowWidth = windowWidth
+      , windowHeight = windowHeight
+      , searchList = searchList
+      , visualScrollColumn = visualScrollColumn
+      , searchString = searchString
+      , startLine = startLine
+      , cursorIdx = cursorIdx
+      }
+    end
+
   fun bufferAndSize
     ( app: app_type
     , newBuffer
