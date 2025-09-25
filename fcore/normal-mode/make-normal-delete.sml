@@ -486,14 +486,6 @@ struct
       (* deleting from last line *)
       let
         (* go to first column of previous line *)
-        val buffer = LineGap.goToIdx (lineIdx, buffer)
-        val newCursorIdx = Cursor.viH (buffer, lineIdx, 1)
-        val buffer = LineGap.goToIdx (newCursorIdx, buffer)
-        val newCursorIdx = Cursor.vi0 (buffer, newCursorIdx)
-
-        (* clip endOfLine so we leave a newline at end of file *)
-        val endOfLine = Int.max (0, #textLength buffer - 1)
-
         val buffer = LineGap.goToIdx (endOfLine, buffer)
         val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
         val buffer = LineGap.delete (lineIdx, length, buffer)
@@ -501,6 +493,19 @@ struct
         val buffer =
           if #textLength buffer = 0 then LineGap.append ("\n", buffer)
           else buffer
+
+        (* since we deleted from the last line,
+         * we want to place the cursor at the first column
+         * of the now-last line in the buffer. *)
+        val newCursorIdx = Int.max (#textLength buffer - 1, 0)
+        val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+        val newCursorIdx =
+          if Cursor.isOnNewlineAfterChr (buffer, newCursorIdx) then
+            newCursorIdx - 1
+          else
+            newCursorIdx
+        val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+        val newCursorIdx = Cursor.vi0 (buffer, newCursorIdx)
       in
         finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
