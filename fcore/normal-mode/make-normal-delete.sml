@@ -413,7 +413,18 @@ struct
            * to the first column of the now-last line *)
           val newEndIdx = #textLength buffer - 1
         in
-          if startIdx >= newEndIdx then
+          if newEndIdx < 0 then
+            (* deleted whole file; add newline to the end *)
+            let val buffer = LineGap.append ("\n", buffer)
+            in finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
+            end
+          else if newEndIdx = 0 then
+            (* there is only one char left in the file *)
+            finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
+          else if startIdx >= newEndIdx then
+            (* deleted the last part of the file such that the cursor's idx
+             * now refers to an index that no longer exists.
+             * Have to move cursor to the last line of the file. *)
             let
               val buffer = LineGap.goToIdx (newEndIdx, buffer)
             in

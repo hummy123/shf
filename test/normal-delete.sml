@@ -386,6 +386,56 @@ struct
            in
              Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
            end)
+    , test
+        "leaves a newline at the end when deleting the whole file \
+        \and file ends with a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "33dj")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "leaves a newline at the end when deleting the whole file \
+        \and file does not end with a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "33dj")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
     ]
 
   val tests = [dhDelete, dlDelete, djDelete]
