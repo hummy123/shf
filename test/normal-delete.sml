@@ -612,5 +612,50 @@ struct
            end)
     ]
 
-  val tests = [dhDelete, dlDelete, djDelete, ddDelete]
+  val dkDelete = describe "delete motion 'dk'"
+    [ test "does not delete when cursor is on first line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val originalIdx = 0
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dk")
+
+          (* assert *)
+          val expectedString = originalString
+          val actualString = LineGap.toString buffer
+
+          val expectedIdx = 0
+        in
+          Expect.isTrue
+            (expectedString = actualString andalso expectedIdx = cursorIdx)
+        end)
+    , test "deletes first two lines when cursor is on second line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val originalIdx = 6
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dk")
+
+          (* assert *)
+          val expectedString = "\n"
+          val actualString = LineGap.toString buffer
+
+          val expectedIdx = 0
+        in
+          Expect.isTrue
+            (expectedString = actualString andalso expectedIdx = cursorIdx)
+        end)
+    ]
+
+  val tests = [dhDelete, dlDelete, djDelete, ddDelete, dkDelete]
 end
