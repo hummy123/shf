@@ -540,8 +540,17 @@ struct
         NormalFinish.clearMode app
       else if newCursorLineNumber = 0 then
         (* deleting from current line to start of file *)
-        let val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1) + 2
-        in finishDeleteLineBack (app, buffer, 0, endOfLine, endOfLine, time)
+        let
+          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1)
+
+          (* edge case: if we are on a newline (if endOfLine = cursorIdx)
+           * then we only want to delete 1 character at this line, 
+           * which is the newline the cursor is at.
+           * Otherwise, we want to delete 2 chars by default. *)
+          val endOfLine =
+            if endOfLine = cursorIdx then endOfLine + 1 else endOfLine + 2
+        in
+          finishDeleteLineBack (app, buffer, 0, endOfLine, endOfLine, time)
         end
       else
         let
