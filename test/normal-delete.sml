@@ -439,7 +439,7 @@ struct
     , test "deletes two lines when cursor is on a newline" (fn _ =>
         let
           (* arrange *)
-          val originalString = "\nhello\nworld\ntrello\brillo\n"
+          val originalString = "\nhello\nworld\ntrello\nbrillo\n"
           val originalIdx = 0
 
           val app = TestUtils.init originalString

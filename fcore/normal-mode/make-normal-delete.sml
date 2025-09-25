@@ -391,7 +391,11 @@ struct
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
       val buffer = LineGap.goToIdx (startIdx, buffer)
 
-      val startLine = LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+      val startLine =
+        if Cursor.isCursorAtStartOfLine (buffer, startIdx) then
+          LineGap.idxToLineNumber (startIdx, buffer)
+        else
+          LineGap.idxToLineNumber (startIdx + 1, buffer)
       val endLine = startLine + count
 
       val buffer = LineGap.goToLine (endLine, buffer)
@@ -417,7 +421,11 @@ struct
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
       val buffer = LineGap.goToIdx (startIdx, buffer)
 
-      val startLine = LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+      val startLine =
+        if Cursor.isCursorAtStartOfLine (buffer, startIdx) then
+          LineGap.idxToLineNumber (startIdx, buffer)
+        else
+          LineGap.idxToLineNumber (startIdx + 1, buffer)
       val endLine = startLine + count + 1
 
       val buffer = LineGap.goToLine (endLine, buffer)
