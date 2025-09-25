@@ -33,6 +33,46 @@ struct
       finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
     end
 
+  fun moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx) =
+    let
+      val newEndIdx = #textLength buffer - 1
+    in
+      if newEndIdx < 0 then
+        (* deleted whole file; add newline to the end *)
+        let val buffer = LineGap.append ("\n", buffer)
+        in finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
+        end
+      else if newEndIdx = 0 then
+        (* there is only one char left in the file *)
+        finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
+      else if startIdx >= newEndIdx then
+        (* deleted the last part of the file such that the cursor's idx
+         * now refers to an index that no longer exists.
+         * Have to move cursor to the last line of the file. *)
+        let
+          val buffer = LineGap.goToIdx (newEndIdx, buffer)
+        in
+          if Cursor.isOnNewlineAfterChr (buffer, newEndIdx) then
+            let
+              val buffer = LineGap.goToIdx (newEndIdx - 1, buffer)
+              val newCursorIdx = Cursor.vi0 (buffer, newEndIdx - 1)
+            in
+              finishAfterDeletingBuffer
+                (app, newCursorIdx, buffer, time, initialMsg)
+            end
+          else
+            let
+              val newCursorIdx = Cursor.vi0 (buffer, newEndIdx)
+            in
+              finishAfterDeletingBuffer
+                (app, newCursorIdx, buffer, time, initialMsg)
+            end
+        end
+      else
+        finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+    end
+
+
   (* equivalent of vi's 'x' command **)
   fun removeChr (app: app_type, count, time) =
     let
@@ -370,13 +410,9 @@ struct
           val length = endLineIdx - startIdx
           val initialMsg = Fn.initMsgs (startIdx, length, buffer)
           val buffer = LineGap.delete (startIdx, length, buffer)
-
-          (* just need to reposition the cursor *)
-          val ss = LineGap.toString buffer
-          val ss = String.toCString ss ^ "\n"
-          val () = print ss
         in
-          raise Fail ""
+          (* just need to reposition the cursor *)
+          moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx)
         end
       else
         app
@@ -441,44 +477,8 @@ struct
           val buffer = LineGap.goToIdx (endLineIdx, buffer)
           val initialMsg = Fn.initMsgs (startIdx, length, buffer)
           val buffer = LineGap.delete (startIdx, length, buffer)
-
-          (* if we deleted end of file, then we have to move the cursorIdx
-           * to the first column of the now-last line *)
-          val newEndIdx = #textLength buffer - 1
         in
-          if newEndIdx < 0 then
-            (* deleted whole file; add newline to the end *)
-            let val buffer = LineGap.append ("\n", buffer)
-            in finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
-            end
-          else if newEndIdx = 0 then
-            (* there is only one char left in the file *)
-            finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
-          else if startIdx >= newEndIdx then
-            (* deleted the last part of the file such that the cursor's idx
-             * now refers to an index that no longer exists.
-             * Have to move cursor to the last line of the file. *)
-            let
-              val buffer = LineGap.goToIdx (newEndIdx, buffer)
-            in
-              if Cursor.isOnNewlineAfterChr (buffer, newEndIdx) then
-                let
-                  val buffer = LineGap.goToIdx (newEndIdx - 1, buffer)
-                  val newCursorIdx = Cursor.vi0 (buffer, newEndIdx - 1)
-                in
-                  finishAfterDeletingBuffer
-                    (app, newCursorIdx, buffer, time, initialMsg)
-                end
-              else
-                let
-                  val newCursorIdx = Cursor.vi0 (buffer, newEndIdx)
-                in
-                  finishAfterDeletingBuffer
-                    (app, newCursorIdx, buffer, time, initialMsg)
-                end
-            end
-          else
-            finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+          moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx)
         end
     end
 
