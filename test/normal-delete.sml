@@ -790,10 +790,68 @@ struct
              val actualString = LineGap.toString buffer
 
              val expectedIdx = 6
-             val indexIsExpected = true
            in
              Expect.isTrue
-               (expectedString = actualString andalso indexIsExpected)
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
+           end)
+    , test
+        "deletes last two lines when cursor is on last line \
+        \and last line only has a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString =
+               "hello\n\
+               \world\n\
+               \\n"
+             val originalIdx = String.size originalString - 1
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dk")
+
+             (* assert *)
+             val expectedString = "hello\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedIdx = 0
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
+           end)
+    , test
+        "moves cursor to newline at end of file \
+        \when cursor is two lines below"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString =
+               "hello\n\
+               \world\n\
+               \\n\
+               \world\n\
+               \hello\n"
+             val originalIdx = String.size originalString - 2
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dk")
+
+             (* assert *)
+             val expectedString =
+               "hello\n\
+               \world\n\
+               \\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedIdx = String.size expectedString - 1
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
            end)
     ]
 
