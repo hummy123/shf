@@ -436,6 +436,28 @@ struct
            in
              Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
            end)
+    , test "deletes two lines when cursor is on a newline" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "\nhello\nworld\ntrello\brillo\n"
+          val originalIdx = 0
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dj")
+
+          (* assert *)
+          val expectedString = "world\ntrello\nbrillo\n"
+          val actualString = LineGap.toString buffer
+          val stringIsExpected = expectedString = actualString
+
+          val expectedCursorIdx = 0
+          val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+        in
+          Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+        end)
     ]
 
   val tests = [dhDelete, dlDelete, djDelete]

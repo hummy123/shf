@@ -361,14 +361,17 @@ struct
         else endLineIdx
       val buffer = LineGap.goToIdx (endLineIdx, buffer)
     in
-      if Cursor.isOnNewlineAfterChr (buffer, endLineIdx) then
+      if Cursor.isCursorAtStartOfLine (buffer, endLineIdx) then
         let
-          val endLineIdx = endLineIdx + 1
+          val endLineIdx =
+            if endLineIdx = #textLength buffer - 1 then endLineIdx - 1
+            else endLineIdx + 1
 
           val length = endLineIdx - startIdx
           val initialMsg = Fn.initMsgs (startIdx, length, buffer)
           val buffer = LineGap.delete (startIdx, length, buffer)
 
+          (* just need to reposition the cursor *)
           val ss = LineGap.toString buffer
           val ss = String.toCString ss ^ "\n"
           val () = print ss
