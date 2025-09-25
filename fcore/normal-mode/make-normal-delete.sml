@@ -506,16 +506,16 @@ struct
       end
     else
       let
+        (* make sure the cursorIdx will be at the first column
+         * of current line, after deleting from buffer. *)
+        val buffer = LineGap.goToIdx (lineIdx, buffer)
+        val newCursorIdx =
+          if Cursor.isOnNewlineAfterChr (buffer, lineIdx) then lineIdx + 1
+          else lineIdx
+
         val buffer = LineGap.goToIdx (endOfLine, buffer)
         val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
         val buffer = LineGap.delete (lineIdx, length, buffer)
-
-        (* make sure the cursorIdx is at the first column
-         * of the previous line, after deleting from buffer *)
-        val buffer = LineGap.goToIdx (lineIdx, buffer)
-        val newCursorIdx = Cursor.viH (buffer, lineIdx, 1)
-        val buffer = LineGap.goToIdx (newCursorIdx, buffer)
-        val newCursorIdx = Cursor.vi0 (buffer, newCursorIdx)
 
         val buffer =
           if #textLength buffer = 0 then LineGap.append ("\n", buffer)
@@ -543,7 +543,7 @@ struct
         let
           val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1)
 
-          (* edge case: if we are on a newline (if endOfLine = cursorIdx)
+          (* edge case: if cursor is on a newline (if endOfLine = cursorIdx)
            * then we only want to delete 1 character at this line, 
            * which is the newline the cursor is at.
            * Otherwise, we want to delete 2 chars by default. *)
@@ -554,7 +554,15 @@ struct
         end
       else
         let
-          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1) + 1
+          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1)
+
+          (* edge case: if cursor is on a newline,
+           * then we don't want to delete the newline
+           * as we are already deleting the newline 
+           * at the start of this range *)
+          val endOfLine =
+            if endOfLine = cursorIdx then endOfLine else endOfLine + 1
+
           val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
 
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
