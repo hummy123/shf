@@ -224,9 +224,23 @@ struct
             val strIdx = cursorIdx - bufferIdx
           in
             if strIdx < String.size strHd then
-              (* strIdx is in this string *)
-              Fn.fStart
-                (strIdx, strHd, lnHd, cursorIdx, leftStrings, leftLines, env)
+              (* strIdx is either in this string or in leftStrings *)
+              if strIdx < 0 then
+                case (leftStrings, leftLines) of
+                  (lshd :: lstl, llhd :: lltl) =>
+                    Fn.fStart
+                      ( String.size lshd - 1
+                      , lshd
+                      , llhd
+                      , cursorIdx
+                      , lstl
+                      , lltl
+                      , env
+                      )
+                | (_, _) => 0
+              else
+                Fn.fStart
+                  (strIdx, strHd, lnHd, cursorIdx, leftStrings, leftLines, env)
             else
               (* strIdx must be in the strTl *)
               (case (strTl, lnTl) of
