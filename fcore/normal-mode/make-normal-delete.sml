@@ -547,8 +547,9 @@ struct
            * then we only want to delete 1 character at this line, 
            * which is the newline the cursor is at.
            * Otherwise, we want to delete 2 chars by default. *)
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
           val endOfLine =
-            if endOfLine = cursorIdx then endOfLine + 1 else endOfLine + 2
+            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then endOfLine + 1 else endOfLine + 2
         in
           finishDeleteLineBack (app, buffer, 0, endOfLine, endOfLine, time)
         end
@@ -560,8 +561,9 @@ struct
            * then we don't want to delete the newline
            * as we are already deleting the newline 
            * at the start of this range *)
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
           val endOfLine =
-            if endOfLine = cursorIdx then endOfLine else endOfLine + 1
+            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then endOfLine else endOfLine + 1
 
           val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
 
