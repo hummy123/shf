@@ -460,5 +460,157 @@ struct
         end)
     ]
 
-  val tests = [dhDelete, dlDelete, djDelete]
+  val ddDelete = describe "delete motion 'dd'"
+    [ test
+        "deletes last line when there is more than one line \
+        \and cursor is on last line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = String.size originalString - 3
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dd")
+
+             (* assert *)
+             val expectedString = "hello\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "leaves a newline in the buffer \
+        \when deleting and there is only one line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dd")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "deletes when cursor is on first line and there are at least two lines"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dd")
+
+             (* assert *)
+             val expectedString = "world\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "leaves a newline at the end when deleting the whole file using a count \
+        \and file ends with a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "33dd")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "leaves a newline at the end when deleting the whole file \
+        \and file does not end with a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "33dd")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    , test
+        "deletes just newline when cursor is on a line \
+        \that contains only a single newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "\nhello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {cursorIdx, buffer, ...} = TestUtils.updateMany (app, "dd")
+
+             (* assert *)
+             val expectedString = "hello\nworld\n"
+             val actualString = LineGap.toString buffer
+             val stringIsExpected = expectedString = actualString
+
+             val expectedCursorIdx = 0
+             val cursorIdxIsExpected = expectedCursorIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIdxIsExpected)
+           end)
+    ]
+
+  val tests = [dhDelete, dlDelete, djDelete, ddDelete]
 end
