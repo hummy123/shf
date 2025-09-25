@@ -343,21 +343,51 @@ struct
         end
     end
 
-  fun deleteLine (app: app_type, count, time) = raise Fail "todo: reimplement"
-
-  fun deleteLineDown (app: app_type, count, time) =
+  fun deleteLine (app: app_type, count, time) =
     let
-      val {buffer, cursorIdx, searchString, ...} = app
+      val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
       val buffer = LineGap.goToIdx (startIdx, buffer)
 
-      val startLine =
-        if cursorIdx = startIdx then
-          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
-        else
-          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+      val startLine = LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+      val endLine = startLine + count
+
+      val buffer = LineGap.goToLine (endLine, buffer)
+      val endLineIdx = LineGap.lineNumberToIdx (endLine, buffer)
+      val endLineIdx =
+        if endLineIdx = #textLength buffer then Int.max (endLineIdx - 1, 0)
+        else endLineIdx
+      val buffer = LineGap.goToIdx (endLineIdx, buffer)
+    in
+      if Cursor.isOnNewlineAfterChr (buffer, endLineIdx) then
+        let
+          val endLineIdx = endLineIdx + 1
+
+          val length = endLineIdx - startIdx
+          val initialMsg = Fn.initMsgs (startIdx, length, buffer)
+          val buffer = LineGap.delete (startIdx, length, buffer)
+
+          val ss = LineGap.toString buffer
+          val ss = String.toCString ss ^ "\n"
+          val () = print ss
+        in
+          raise Fail ""
+        end
+      else
+        app
+    end
+
+  fun deleteLineDown (app: app_type, count, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val startIdx = Cursor.vi0 (buffer, cursorIdx)
+      val buffer = LineGap.goToIdx (startIdx, buffer)
+
+      val startLine = LineGap.idxToLineNumber (cursorIdx + 1, buffer)
       val endLine = startLine + count + 1
 
       val buffer = LineGap.goToLine (endLine, buffer)
