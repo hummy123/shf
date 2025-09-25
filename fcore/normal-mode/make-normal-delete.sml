@@ -549,7 +549,10 @@ struct
            * Otherwise, we want to delete 2 chars by default. *)
           val buffer = LineGap.goToIdx (endOfLine, buffer)
           val endOfLine =
-            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then endOfLine + 1 else endOfLine + 2
+            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then
+              endOfLine + 1
+            else
+              endOfLine + 2
         in
           finishDeleteLineBack (app, buffer, 0, endOfLine, endOfLine, time)
         end
@@ -563,7 +566,8 @@ struct
            * at the start of this range *)
           val buffer = LineGap.goToIdx (endOfLine, buffer)
           val endOfLine =
-            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then endOfLine else endOfLine + 1
+            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then endOfLine
+            else endOfLine + 1
 
           val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
 
