@@ -706,6 +706,30 @@ struct
              Expect.isTrue
                (expectedString = actualString andalso expectedIdx = cursorIdx)
            end)
+    , test
+        "deletes newline and preceding line when cursor is second line \
+        \and second line contains only a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\n\nagain\n"
+             val originalIdx = 6
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dk")
+
+             (* assert *)
+             val expectedString = "again\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedIdx = 0
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
+           end)
     ]
 
   val tests = [dhDelete, dlDelete, djDelete, ddDelete, dkDelete]
