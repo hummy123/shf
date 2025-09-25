@@ -559,16 +559,20 @@ struct
       else
         let
           val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1)
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
+          val endsOnNewline = Cursor.isCursorAtStartOfLine (buffer, endOfLine)
 
           (* edge case: if cursor is on a newline,
            * then we don't want to delete the newline
            * as we are already deleting the newline 
            * at the start of this range *)
-          val buffer = LineGap.goToIdx (endOfLine, buffer)
-          val endOfLine =
-            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then endOfLine
-            else endOfLine + 1
+          val endOfLine = if endsOnNewline then endOfLine else endOfLine + 1
 
+          val newCursorLineNumber =
+            if endsOnNewline andalso endOfLine = #textLength buffer - 1 then
+              newCursorLineNumber - 1
+            else
+              newCursorLineNumber
           val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
 
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
