@@ -731,7 +731,8 @@ struct
                (expectedString = actualString andalso expectedIdx = cursorIdx)
            end)
     , test
-        "deletes just newline and line above when cursor is on third line"
+        "deletes just newline and line above when cursor is on third line \
+        \and third line contains only a newline"
         (fn _ =>
            let
              (* arrange *)
