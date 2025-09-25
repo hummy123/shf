@@ -497,6 +497,10 @@ struct
         val buffer = LineGap.goToIdx (endOfLine, buffer)
         val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
         val buffer = LineGap.delete (lineIdx, length, buffer)
+
+        val buffer =
+          if #textLength buffer = 0 then LineGap.append ("\n", buffer)
+          else buffer
       in
         finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
@@ -512,6 +516,10 @@ struct
         val newCursorIdx = Cursor.viH (buffer, lineIdx, 1)
         val buffer = LineGap.goToIdx (newCursorIdx, buffer)
         val newCursorIdx = Cursor.vi0 (buffer, newCursorIdx)
+
+        val buffer =
+          if #textLength buffer = 0 then LineGap.append ("\n", buffer)
+          else buffer
       in
         finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
