@@ -396,26 +396,17 @@ struct
 
       val buffer = LineGap.goToLine (endLine, buffer)
       val endLineIdx = LineGap.lineNumberToIdx (endLine, buffer)
-      val endLineIdx =
-        if endLineIdx = #textLength buffer then Int.max (endLineIdx - 1, 0)
-        else endLineIdx
       val buffer = LineGap.goToIdx (endLineIdx, buffer)
-    in
-      if Cursor.isCursorAtStartOfLine (buffer, endLineIdx) then
-        let
-          val endLineIdx =
-            if endLineIdx = #textLength buffer - 1 then endLineIdx - 1
-            else endLineIdx + 1
+      val endLineIdx =
+        if Cursor.isCursorAtStartOfLine (buffer, endLineIdx) then endLineIdx + 1
+        else endLineIdx
 
-          val length = endLineIdx - startIdx
-          val initialMsg = Fn.initMsgs (startIdx, length, buffer)
-          val buffer = LineGap.delete (startIdx, length, buffer)
-        in
-          (* just need to reposition the cursor *)
-          moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx)
-        end
-      else
-        app
+      val length = endLineIdx - startIdx
+      val initialMsg = Fn.initMsgs (startIdx, length, buffer)
+      val buffer = LineGap.delete (startIdx, length, buffer)
+    in
+      (* just need to reposition the cursor *)
+      moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx)
     end
 
   fun deleteLineDown (app: app_type, count, time) =
