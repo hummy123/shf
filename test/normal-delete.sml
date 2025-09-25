@@ -763,6 +763,38 @@ struct
              Expect.isTrue
                (expectedString = actualString andalso expectedIdx = cursorIdx)
            end)
+    , test
+        "deletes second and third lines when cursor is on \
+        \last non-newline character of third line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\n\nagain\n"
+             val originalString =
+               "hello\n\
+               \world\n\
+               \trello\n\
+               \brillo\n"
+             val originalIdx = 17
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dk")
+
+             (* assert *)
+             val expectedString =
+               "hello\n\
+               \brillo\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedIdx = 6
+             val indexIsExpected = true
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso indexIsExpected)
+           end)
     ]
 
   val tests = [dhDelete, dlDelete, djDelete, ddDelete, dkDelete]
