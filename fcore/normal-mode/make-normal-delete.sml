@@ -343,7 +343,9 @@ struct
         end
     end
 
-  fun deleteLine (app: app_type, count, time) =
+  fun deleteLine (app: app_type, count, time) = raise Fail "todo: reimplement"
+
+  fun deleteLineDown (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, searchString, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -356,7 +358,7 @@ struct
           LineGap.idxToLineNumber (cursorIdx + 1, buffer)
         else
           LineGap.idxToLineNumber (cursorIdx + 1, buffer)
-      val endLine = startLine + count
+      val endLine = startLine + count + 1
 
       val buffer = LineGap.goToLine (endLine, buffer)
       val endLineIdx = LineGap.lineNumberToIdx (endLine, buffer)

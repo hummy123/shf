@@ -256,7 +256,7 @@ struct
        * but 'dj' or 'dk' delete whole lines
        * so their implementation differs from
        * other cursor motions *)
-      | #"j" => NormalDelete.deleteLine (app, count + 1, time)
+      | #"j" => NormalDelete.deleteLineDown (app, count, time)
       | #"k" => NormalDelete.deleteLineBack (app, count, time)
       | #"w" => NormalDelete.deleteByDfa (app, count, Cursor.nextWord, time)
       | #"W" => NormalDelete.deleteByDfa (app, count, Cursor.nextWORD, time)
@@ -352,7 +352,7 @@ struct
        * but 'dj' or 'dk' delete whole lines
        * so their implementation differs from
        * other cursor motions *)
-      | #"j" => NormalYankDelete.deleteLine (app, count + 1, time)
+      | #"j" => NormalYankDelete.deleteLineDown (app, count, time)
       | #"k" => NormalYankDelete.deleteLineBack (app, count, time)
       | #"w" => NormalYankDelete.deleteByDfa (app, count, Cursor.nextWord, time)
       | #"W" => NormalYankDelete.deleteByDfa (app, count, Cursor.nextWORD, time)
