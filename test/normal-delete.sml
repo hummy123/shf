@@ -855,5 +855,31 @@ struct
            end)
     ]
 
-  val tests = [dhDelete, dlDelete, djDelete, ddDelete, dkDelete]
+  val dwDelete = describe "delete motion 'dw'"
+    [test
+       "deletes last char and moves cursor back by one \
+       \when used on last char of last word in buffer"
+       (fn _ =>
+          let
+            (* arrange *)
+            val originalString = "hello world\n"
+            val originalIdx = String.size originalString - 2
+
+            val app = TestUtils.init originalString
+            val app = AppWith.idx (app, originalIdx)
+
+            (* act *)
+            val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+
+            (* assert *)
+            val expectedString = "hello worl\n"
+            val actualString = LineGap.toString buffer
+
+            val expectedIdx = String.size expectedString - 2
+          in
+            Expect.isTrue
+              (expectedString = actualString andalso expectedIdx = cursorIdx)
+          end)]
+
+  val tests = [dhDelete, dlDelete, djDelete, ddDelete, dkDelete, dwDelete]
 end
