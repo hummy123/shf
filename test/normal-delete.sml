@@ -968,6 +968,122 @@ struct
            in
              Expect.isTrue (stringIsExpected andalso cursorIsExpected)
            end)
+    , test
+        "deletes until first punctuation char when on an alpha char \
+        \and there is no space between alpha and punctuation"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello!world!again\n"
+             val app = TestUtils.init originalString
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+
+             (* assert *)
+             val expectedString = "!world!again\n"
+             val expectedCursor = 0
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes until first alpha char when on punctuation \
+        \and there is no space between punctuation and alpha"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "!#%&QWERTY#!\n"
+             val app = TestUtils.init originalString
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+
+             (* assert *)
+             val expectedString = "QWERTY#!\n"
+             val expectedCursor = 0
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes until first alpha char \
+        \when cursor is on space and next char is alpha"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "h ello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 1)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+
+             (* assert *)
+             val expectedString = "hello\n"
+             val actualString = LineGap.toString buffer
+             val expectedCursor = 1
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes until first alpha char \
+        \when cursor is on space, many spaces are ahead, \
+        \and first char after spaces is alpha"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "h             ello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 3)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+
+             (* assert *)
+             val expectedString = "h  ello\n"
+             val actualString = LineGap.toString buffer
+             val expectedCursor = 3
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes until first punctuation char \
+        \when cursor is on space and next non-space char is punctuation"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "!     @#$%\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 2)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+
+             (* assert *)
+             val expectedString = "! @#$%\n"
+             val actualString = LineGap.toString buffer
+             val expectedCursor = 2
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
     ]
 
   val tests = [dhDelete, dlDelete, djDelete, ddDelete, dkDelete, dwDelete]
