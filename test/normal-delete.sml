@@ -856,30 +856,95 @@ struct
     ]
 
   val dwDelete = describe "delete motion 'dw'"
-    [test
-       "deletes last char and moves cursor back by one \
-       \when used on last char of last word in buffer"
-       (fn _ =>
-          let
-            (* arrange *)
-            val originalString = "hello world\n"
-            val originalIdx = String.size originalString - 2
+    [ test
+        "deletes last char and moves cursor back by one \
+        \when used on last char of last word in buffer \
+        \and buffer ends with a newline preceded by a non-newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val originalIdx = String.size originalString - 2
 
-            val app = TestUtils.init originalString
-            val app = AppWith.idx (app, originalIdx)
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
 
-            (* act *)
-            val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
 
-            (* assert *)
-            val expectedString = "hello worl\n"
-            val actualString = LineGap.toString buffer
+             (* assert *)
+             val expectedString = "hello worl\n"
+             val actualString = LineGap.toString buffer
 
-            val expectedIdx = String.size expectedString - 2
-          in
-            Expect.isTrue
-              (expectedString = actualString andalso expectedIdx = cursorIdx)
-          end)]
+             val expectedIdx = String.size expectedString - 2
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
+           end)
+    , test "deletes second word as expected when there are three words" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello world again\n"
+
+          val app = TestUtils.init originalString
+
+          (* all the different positions the cursor can be
+           * on the second word *)
+          val app1 = AppWith.idx (app, 6)
+          val app2 = AppWith.idx (app, 7)
+          val app3 = AppWith.idx (app, 8)
+          val app4 = AppWith.idx (app, 9)
+          val app5 = AppWith.idx (app, 10)
+
+          (* act *)
+          val newApp1 = TestUtils.updateMany (app1, "dw")
+          val newApp2 = TestUtils.updateMany (app2, "dw")
+          val newApp3 = TestUtils.updateMany (app3, "dw")
+          val newApp4 = TestUtils.updateMany (app4, "dw")
+          val newApp5 = TestUtils.updateMany (app5, "dw")
+
+          (* assert *)
+          val expectedString1 = "hello again\n"
+          val expectedString2 = "hello wagain\n"
+          val expectedString3 = "hello woagain\n"
+          val expectedString4 = "hello woragain\n"
+          val expectedString5 = "hello worlagain\n"
+
+          val actualString1 = LineGap.toString (#buffer newApp1)
+          val actualString2 = LineGap.toString (#buffer newApp2)
+          val actualString3 = LineGap.toString (#buffer newApp3)
+          val actualString4 = LineGap.toString (#buffer newApp4)
+          val actualString5 = LineGap.toString (#buffer newApp5)
+
+          val stringsAreExpected =
+            expectedString1 = actualString1
+            andalso expectedString2 = actualString2
+            andalso expectedString3 = actualString3
+            andalso expectedString4 = actualString4
+            andalso expectedString5 = actualString5
+
+          val expectedCursor1 = 6
+          val expectedCursor2 = 7
+          val expectedCursor3 = 8
+          val expectedCursor4 = 9
+          val expectedCursor5 = 10
+
+          val actualCursor1 = #cursorIdx newApp1
+          val actualCursor2 = #cursorIdx newApp2
+          val actualCursor3 = #cursorIdx newApp3
+          val actualCursor4 = #cursorIdx newApp4
+          val actualCursor5 = #cursorIdx newApp5
+
+          val cursorsAreExpected =
+            expectedCursor1 = actualCursor1
+            andalso expectedCursor2 = actualCursor2
+            andalso expectedCursor3 = actualCursor3
+            andalso expectedCursor4 = actualCursor4
+            andalso expectedCursor5 = actualCursor5
+        in
+          Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
+        end)
+    ]
 
   val tests = [dhDelete, dlDelete, djDelete, ddDelete, dkDelete, dwDelete]
 end
