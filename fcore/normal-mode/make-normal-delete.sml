@@ -277,7 +277,32 @@ struct
       val initialMsg = Fn.initMsgs (low, length, buffer)
       val buffer = LineGap.delete (low, length, buffer)
     in
-      finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
+      if low >= #textLength buffer - 1 andalso #textLength buffer > 0 then
+        (* edge case:
+         * when we delete from the cursor's position to the end of a file,
+         * we have to move the cursor to be on the last char
+         * because the original cursor's position is no longer valid. *)
+        let
+          val newCursorIdx = Int.max (#textLength buffer - 1, 0)
+          val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+          val newCursorIdx =
+            if Cursor.isOnNewlineAfterChr (buffer, newCursorIdx) then
+              newCursorIdx - 1
+            else
+              newCursorIdx
+        in
+          finishAfterDeletingBuffer
+            (app, newCursorIdx, buffer, time, initialMsg)
+        end
+      else
+        let
+          val buffer = LineGap.goToIdx (low, buffer)
+          val newCursorIdx =
+            if Cursor.isOnNewlineAfterChr (buffer, low) then low - 1 else low
+        in
+          finishAfterDeletingBuffer
+            (app, newCursorIdx, buffer, time, initialMsg)
+        end
     end
 
   fun deleteByDfa (app as {buffer, ...}: app_type, count, fMove, time) =
