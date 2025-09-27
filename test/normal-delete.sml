@@ -1084,6 +1084,29 @@ struct
            in
              Expect.isTrue (stringIsExpected andalso cursorIsExpected)
            end)
+    , test
+        "deletes last char when on last word \
+        \and there is no newline after current word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello world"
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dw")
+
+             (* assert *)
+             val expectedString = "hello "
+             val actualString = LineGap.toString buffer
+
+             val expectedIdx = 5
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = cursorIdx = expectedIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
     ]
 
   val dWDelete = describe "delete motion 'dW'"

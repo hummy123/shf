@@ -272,10 +272,30 @@ struct
 
   fun finishDeleteByDfa (app, low, high, buffer, time) =
     let
-      val length = high - low
       val buffer = LineGap.goToIdx (high, buffer)
+      val high =
+        (* by default, we have a newline at the end of the buffer.
+         * However, we also support the case where there is no newline
+         * at the end of the buffer.
+         * The first case is supported by default,
+         * but we have to increment the textLength if the buffer
+         * does not end with a newline, to make sure that
+         * we delete the last character. *)
+        if
+          high = #textLength buffer - 1
+          andalso not (Cursor.isCursorAtStartOfLine (buffer, high))
+        then #textLength buffer
+        else high
+
+      val length = high - low
       val initialMsg = Fn.initMsgs (low, length, buffer)
       val buffer = LineGap.delete (low, length, buffer)
+
+      (* if we deleted all text in the buffer, 
+       * then make sure that we append a newline at the end
+       * so that the buffer contains at least one character *)
+      val buffer =
+        if #textLength buffer = 0 then LineGap.append ("\n", buffer) else buffer
     in
       if low >= #textLength buffer - 1 andalso #textLength buffer > 0 then
         (* edge case:
