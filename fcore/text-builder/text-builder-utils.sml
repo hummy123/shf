@@ -66,25 +66,25 @@ struct
         end
     in
       if TC.textLineWidth > width then
-        { charR = 0.67
-        , charG = 0.51
-        , charB = 0.83
+        { charR = 0.01
+        , charG = 0.01
+        , charB = 0.01
 
-        , highlightR = 0.211
-        , highlightG = 0.219
-        , highlightB = 0.25
+        , highlightR = 0.76
+        , highlightG = 0.73
+        , highlightB = 0.71
 
-        , cursorR = 1.0
-        , cursorG = 1.0
-        , cursorB = 1.0
+        , cursorR = 0.65
+        , cursorG = 0.01
+        , cursorB = 0.01
 
         , highlightOnCharR = 0.0
         , highlightOnCharG = 0.0
         , highlightOnCharB = 0.0
 
-        , cursorOnCharR = 0.67
-        , cursorOnCharG = 0.51
-        , cursorOnCharB = 0.83
+        , cursorOnCharR = 1.0
+        , cursorOnCharG = 1.0
+        , cursorOnCharB = 1.0
 
         , charZ = 0.01
         , cursorZ = 0.03
@@ -107,25 +107,25 @@ struct
         let
           val startX = (width - TC.textLineWidth) div 2
         in
-          { charR = 0.67
-          , charG = 0.51
-          , charB = 0.83
+          { charR = 0.01
+          , charG = 0.01
+          , charB = 0.01
 
-          , highlightR = 0.211
-          , highlightG = 0.219
-          , highlightB = 0.25
+          , highlightR = 0.76
+          , highlightG = 0.73
+          , highlightB = 0.71
 
-          , cursorR = 1.0
-          , cursorG = 1.0
-          , cursorB = 1.0
+          , cursorR = 0.65
+          , cursorG = 0.01
+          , cursorB = 0.01
 
           , highlightOnCharR = 0.0
           , highlightOnCharG = 0.0
           , highlightOnCharB = 0.0
 
-          , cursorOnCharR = 0.67
-          , cursorOnCharG = 0.51
-          , cursorOnCharB = 0.83
+          , cursorOnCharR = 1.0
+          , cursorOnCharG = 1.0
+          , cursorOnCharB = 1.0
 
           , charZ = 0.01
           , cursorZ = 0.03
