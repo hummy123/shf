@@ -15,8 +15,6 @@ struct
         updateLoop (pos + 1, str, app)
       end
 
-  fun applyChars (historyString, app) = updateLoop (0, historyString, app)
-
   fun appFromText text = TestUtils.init text
 
   fun loadFromFile (io, acc) =
@@ -38,7 +36,7 @@ struct
         let
           val app = TestUtils.init initialText
           val history = "G12dk"
-          val newApp = applyChars (history, app)
+          val newApp = TestUtils.updateMany (app, history)
         in
           (* just expect that we do not fail or throw an exception *)
           Expect.isTrue true
@@ -48,10 +46,31 @@ struct
           val app = TestUtils.init initialText
           val history =
             "16G18ddjjjjjjjjjdkdkdkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
-          val newApp = applyChars (history, app)
+          val newApp = TestUtils.updateMany (app, history)
         in
           Expect.isTrue true
         end)
+    , test
+        "SearchList.buildRange does not cause exception \
+        \when deleting (1)"
+        (fn _ =>
+           let
+             val app = TestUtils.init "h             ello world\n"
+
+             (* search *)
+             val search = "/ello"
+             val app = TestUtils.updateMany (app, search)
+             val app = TestUtils.update (app, InputMsg.KEY_ENTER)
+
+             (* move and then delete twice *)
+             val app = TestUtils.updateMany (app, "edede")
+
+             val s = LineGap.toString (#buffer app)
+             val s = String.toCString s ^ "\n"
+             val () = print s
+           in
+             Expect.isTrue true
+           end)
     ]
 
   val tests = [charEventTests]
