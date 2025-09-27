@@ -96,9 +96,7 @@ struct
 
   fun backtrackRange
     (pos, hd, absIdx, tl, acc, searchPos, searchString, finish, prevTl) =
-    if searchPos <= 1 then
-      loopRange (pos, hd, absIdx, tl, acc, 0, searchString, finish, prevTl)
-    else if pos < 0 then
+    if pos < 0 then
       case prevTl of
         prevHd :: prevTl =>
           let
@@ -119,6 +117,8 @@ struct
       | [] =>
           (* Should never be called *)
           raise Fail "SearchList.backtrackRange error: line 120\n"
+    else if searchPos <= 1 then
+      loopRange (pos, hd, absIdx, tl, acc, 0, searchString, finish, prevTl)
     else
       backtrackRange
         ( pos - 1

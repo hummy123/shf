@@ -64,10 +64,6 @@ struct
 
              (* move and then delete twice *)
              val app = TestUtils.updateMany (app, "edede")
-
-             val s = LineGap.toString (#buffer app)
-             val s = String.toCString s ^ "\n"
-             val () = print s
            in
              Expect.isTrue true
            end)
