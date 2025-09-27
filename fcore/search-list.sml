@@ -5,11 +5,7 @@ struct
   val empty = Vector.fromList []
 
   fun backtrackFull (pos, hd, absIdx, tl, acc, searchPos, searchString, prevTl) =
-    if searchPos <= 1 then
-      (* we are trying to backtrack to index 1, 
-       * and then continue are search from here *)
-      loopSearch (pos, hd, absIdx, tl, acc, 0, searchString, prevTl)
-    else if pos < 0 then
+    if pos < 0 then
       case prevTl of
         prevHd :: prevTl =>
           let
@@ -29,6 +25,10 @@ struct
       | [] =>
           (* Should never be called *)
           raise Fail "SearchList.backtrackFull error: line 24\n"
+    else if searchPos <= 1 then
+      (* we are trying to backtrack to index 1, 
+       * and then continue are search from here *)
+      loopSearch (pos, hd, absIdx, tl, acc, 0, searchString, prevTl)
     else
       backtrackFull
         (pos - 1, hd, absIdx - 1, tl, acc, searchPos - 1, searchString, prevTl)
