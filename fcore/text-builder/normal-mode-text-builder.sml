@@ -29,8 +29,8 @@ struct
         } = buffer
 
       val env = Utils.initEnv
-        ( 5
-        , 5
+        ( 0
+        , 0
         , windowWidth
         , windowHeight
         , floatWindowWidth

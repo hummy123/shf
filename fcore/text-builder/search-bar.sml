@@ -12,9 +12,9 @@ struct
     else
       let
         val chr = String.sub (str, pos)
-        val r: Real32.real = 0.67
-        val g: Real32.real = 0.51
-        val b: Real32.real = 0.83
+        val r: Real32.real = 0.01
+        val g: Real32.real = 0.01
+        val b: Real32.real = 0.01
         val fPosX = Real32.fromInt posX
         val fPosY = Real32.fromInt posY
         val z: Real32.real = 0.1
