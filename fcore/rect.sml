@@ -14,28 +14,22 @@ struct
      #[
 xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
 yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
-z,
-r, g, b,
-xToNdc (xOffset, 6.000000000000000, scale, halfWidth),
+z, r, g, b,
+xToNdc (xOffset, 7.000000000000000, scale, halfWidth),
 yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
-z,
-r, g, b,
+z, r, g, b,
 xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
 yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
-z,
-r, g, b,
+z, r, g, b,
 xToNdc (xOffset, 0.000000000000000, scale, halfWidth),
 yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
-z,
-r, g, b,
-xToNdc (xOffset, 6.000000000000000, scale, halfWidth),
+z, r, g, b,
+xToNdc (xOffset, 7.000000000000000, scale, halfWidth),
 yToNdc (yOffset, 13.000000000000000, scale, halfHeight),
-z,
-r, g, b,
-xToNdc (xOffset, 6.000000000000000, scale, halfWidth),
+z, r, g, b,
+xToNdc (xOffset, 7.000000000000000, scale, halfWidth),
 yToNdc (yOffset, 0.000000000000000, scale, halfHeight),
-z,
-r, g, b
+z, r, g, b
       ]
     end
 end

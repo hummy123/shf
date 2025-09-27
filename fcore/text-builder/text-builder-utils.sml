@@ -150,7 +150,7 @@ struct
   (* different functions to make vectors of different things we want to draw. *)
   fun makeCursor (posX, posY, env: env_data) =
     Rect.lerp
-      ( Real32.fromInt (posX - 1)
+      ( Real32.fromInt (posX - 2)
       , Real32.fromInt posY
       , #cursorZ env
       , TC.scale
@@ -163,7 +163,7 @@ struct
 
   fun makeHighlight (posX, posY, env: env_data) =
     Rect.lerp
-      ( Real32.fromInt (posX - 1)
+      ( Real32.fromInt (posX - 2)
       , Real32.fromInt posY
       , #highlightZ env
       , TC.scale
