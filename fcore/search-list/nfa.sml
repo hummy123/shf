@@ -1,18 +1,100 @@
 structure Nfa =
 struct
+  datatype state = VALID of int | INVALID | UNTESTED
+
   datatype regex =
-    CHAR_LITERAL of char
-  | CONCAT of regex list
-  | ALTERNATION of regex list
-  | ZERO_OR_ONE of regex
-  | ZERO_OR_MORE of regex
-  | ONE_OR_MORE of regex
-  | GROUP of regex
+    CHAR_LITERAL of char * state
+  | CONCAT of (regex * state) list * state
+  | ALTERNATION of (regex * state) list * state
+  | ZERO_OR_ONE of regex * state
+  | ZERO_OR_MORE of regex * state
+  | ONE_OR_MORE of regex * state
+  | GROUP of regex * state
+
+  datatype alternation_state = ALL_VALID of int | ALL_INVALID | SOME_UNTESTED
 
   val groupLevel = 1
   val postfixLevel = 2
   val concatLevel = 3
   val altLevel = 4
+
+  local
+    fun rebuildConcat (lst, chr, idx) =
+      case lst of
+        [(hd, _)] =>
+          let
+            val (hd: regex, state: state) = rebuild (hd, chr, idx)
+            val result = [(hd, state)]
+            val concat = CONCAT (result, state)
+          in
+            (concat, state)
+          end
+      | (hd, _) :: tl =>
+          let
+            val (hd, state) = rebuild (hd, chr, idx)
+          in
+            case state of
+              UNTESTED =>
+                let val concat = CONCAT ((hd, state) :: tl, UNTESTED)
+                in (concat, UNTESTED)
+                end
+            | INVALID =>
+                let val concat = CONCAT ([], INVALID)
+                in (concat, INVALID)
+                end
+            | VALID _ =>
+                let val concat = CONCAT (tl, UNTESTED)
+                in (concat, UNTESTED)
+                end
+          end
+      | [] =>
+          (* should never occur *)
+          raise Fail
+            "nfa.sml, rebuildConcat 45: \
+            \should never try to rebuild empty concat list"
+
+    and rebuild (nfa, chr, idx) =
+      case nfa of
+        CHAR_LITERAL (lit, UNTESTED) =>
+          if chr = lit then (CHAR_LITERAL (lit, VALID idx), VALID idx)
+          else (CHAR_LITERAL (lit, INVALID), INVALID)
+      | CHAR_LITERAL (lit, state) => (nfa, state)
+
+      | CONCAT (lst, UNTESTED) => rebuildConcat (lst, chr, idx)
+      | CONCAT (_, state) => (nfa, state)
+
+      | _ => raise Fail "nfa.sml 69: not char literal or concat"
+
+    fun loop (pos, str, nfa) =
+      if pos = String.size str then
+        case nfa of
+          CHAR_LITERAL (_, VALID _) => true
+        | CHAR_LITERAL (_, _) => false
+        | CONCAT (_, VALID _) => true
+        | CONCAT (_, _) => false
+        | ALTERNATION (_, VALID _) => true
+        | ALTERNATION (_, _) => false
+        | ZERO_OR_ONE (_, VALID _) => true
+        | ZERO_OR_ONE (_, _) => false
+        | ZERO_OR_MORE (_, VALID _) => true
+        | ZERO_OR_MORE (_, _) => false
+        | ONE_OR_MORE (_, VALID _) => true
+        | ONE_OR_MORE (_, _) => false
+        | GROUP (_, VALID _) => true
+        | GROUP (_, _) => false
+      else
+        let
+          val chr = String.sub (str, pos)
+          val (nfa, state) = rebuild (nfa, chr, pos)
+        in
+          case state of
+            VALID _ => true
+          | INVALID => false
+          | UNTESTED => loop (pos + 1, str, nfa)
+        end
+  in
+    fun exists (str, nfa) = loop (0, str, nfa)
+  end
 
   local
     fun loop (pos, str, openParens, closeParens) =
@@ -44,8 +126,8 @@ struct
               val substr = String.substring
                 (str, pos + 1, groupEndIdx - pos - 1)
               val rhs = climb substr
-              val rhs = GROUP rhs
-              val result = CONCAT [lhs, rhs]
+              val rhs = GROUP (rhs, UNTESTED)
+              val result = CONCAT ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
             in
               helpClimb (groupEndIdx + 1, str, result, groupLevel)
             end
@@ -55,12 +137,14 @@ struct
           else
             let
               val chr = String.sub (str, pos + 1)
-              val chr = CHAR_LITERAL chr
+              val chr = CHAR_LITERAL (chr, UNTESTED)
               val (pos, rhs) = helpClimb (pos + 2, str, chr, altLevel)
               val result =
                 case rhs of
-                  ALTERNATION lst => ALTERNATION (lhs :: lst)
-                | _ => ALTERNATION [lhs, rhs]
+                  ALTERNATION (lst, state) =>
+                    ALTERNATION ((lhs, UNTESTED) :: lst, UNTESTED)
+                | _ =>
+                    ALTERNATION ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
             in
               (pos, result)
             end
@@ -68,21 +152,21 @@ struct
           if level < postfixLevel then
             (pos, lhs)
           else
-            let val lhs = ZERO_OR_ONE lhs
+            let val lhs = ZERO_OR_ONE (lhs, UNTESTED)
             in helpClimb (pos + 1, str, lhs, postfixLevel)
             end
       | #"*" =>
           if level < postfixLevel then
             (pos, lhs)
           else
-            let val lhs = ZERO_OR_MORE lhs
+            let val lhs = ZERO_OR_MORE (lhs, UNTESTED)
             in helpClimb (pos + 1, str, lhs, postfixLevel)
             end
       | #"+" =>
           if level < postfixLevel then
             (pos, lhs)
           else
-            let val lhs = ONE_OR_MORE lhs
+            let val lhs = ONE_OR_MORE (lhs, UNTESTED)
             in helpClimb (pos + 1, str, lhs, postfixLevel)
             end
       | chr =>
@@ -90,12 +174,12 @@ struct
             (pos, lhs)
           else
             let
-              val chr = CHAR_LITERAL chr
+              val chr = CHAR_LITERAL (chr, UNTESTED)
               val (pos, rhs) = helpClimb (pos + 1, str, chr, concatLevel)
               val result =
                 case rhs of
-                  CONCAT lst => CONCAT (lhs :: lst)
-                | _ => CONCAT [lhs, rhs]
+                  CONCAT (lst, _) => CONCAT ((lhs, UNTESTED) :: lst, UNTESTED)
+                | _ => CONCAT ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
             in
               (pos, result)
             end
@@ -111,7 +195,7 @@ struct
   and climb str =
     let
       val chr = String.sub (str, 0)
-      val chr = CHAR_LITERAL chr
+      val chr = CHAR_LITERAL (chr, UNTESTED)
     in
       loop (1, str, chr)
     end
