@@ -1,9 +1,9 @@
 structure Nfa =
 struct
   datatype regex =
-    CONCAT of regex * regex
-  | CHAR_LITERAL of char
-  | ALTERNATION of regex * regex
+    CHAR_LITERAL of char
+  | CONCAT of regex list
+  | ALTERNATION of regex list
   | ZERO_OR_ONE of regex
   | ZERO_OR_MORE of regex
   | ONE_OR_MORE of regex
@@ -45,7 +45,7 @@ struct
                 (str, pos + 1, groupEndIdx - pos - 1)
               val rhs = climb substr
               val rhs = GROUP rhs
-              val result = CONCAT (lhs, rhs)
+              val result = CONCAT [lhs, rhs]
             in
               helpClimb (groupEndIdx + 1, str, result, groupLevel)
             end
@@ -57,7 +57,10 @@ struct
               val chr = String.sub (str, pos + 1)
               val chr = CHAR_LITERAL chr
               val (pos, rhs) = helpClimb (pos + 2, str, chr, altLevel)
-              val result = ALTERNATION (lhs, rhs)
+              val result =
+                case rhs of
+                  ALTERNATION lst => ALTERNATION (lhs :: lst)
+                | _ => ALTERNATION [lhs, rhs]
             in
               (pos, result)
             end
@@ -89,7 +92,10 @@ struct
             let
               val chr = CHAR_LITERAL chr
               val (pos, rhs) = helpClimb (pos + 1, str, chr, concatLevel)
-              val result = CONCAT (lhs, rhs)
+              val result =
+                case rhs of
+                  CONCAT lst => CONCAT (lhs :: lst)
+                | _ => CONCAT [lhs, rhs]
             in
               (pos, result)
             end
