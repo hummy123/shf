@@ -57,84 +57,88 @@ struct
         | [] => UNTESTED
     end
 
-    local
-      fun rebuildConcat (lst, chr, idx) =
-        case lst of
-          [(hd, _)] =>
-            let
-              val (hd: regex, state: state) = rebuild (hd, chr, idx)
-              val result = [(hd, state)]
-              val concat = CONCAT (result, state)
-            in
-              (concat, state)
-            end
-        | (hd, _) :: tl =>
-            let
-              val (hd, state) = rebuild (hd, chr, idx)
-            in
+    fun rebuildConcat (lst, chr, idx) =
+      case lst of
+        [(hd, _)] =>
+          let
+            val (hd: regex, state: state) = rebuild (hd, chr, idx)
+            val result = [(hd, state)]
+            val concat = CONCAT (result, state)
+          in
+            (concat, state)
+          end
+      | (hd, _) :: tl =>
+          let
+            val (hd, state) = rebuild (hd, chr, idx)
+          in
+            case state of
+              UNTESTED =>
+                let val concat = CONCAT ((hd, state) :: tl, UNTESTED)
+                in (concat, UNTESTED)
+                end
+            | INVALID =>
+                let val concat = CONCAT ([], INVALID)
+                in (concat, INVALID)
+                end
+            | VALID _ =>
+                let val concat = CONCAT (tl, UNTESTED)
+                in (concat, UNTESTED)
+                end
+          end
+      | [] =>
+          (* should never occur *)
+          raise Fail
+            "nfa.sml, rebuildConcat 45: \
+            \should never try to rebuild empty concat list"
+
+    and rebuildAlternation (lst, chr, idx, acc) =
+      case lst of
+        [(hd, _)] =>
+          let
+            val (hd, state) = rebuild (hd, chr, idx)
+            val acc =
               case state of
-                UNTESTED =>
-                  let val concat = CONCAT ((hd, state) :: tl, UNTESTED)
-                  in (concat, UNTESTED)
-                  end
-              | INVALID =>
-                  let val concat = CONCAT ([], INVALID)
-                  in (concat, INVALID)
-                  end
-              | VALID _ =>
-                  let val concat = CONCAT (tl, UNTESTED)
-                  in (concat, UNTESTED)
-                  end
-            end
-        | [] =>
-            (* should never occur *)
-            raise Fail
-              "nfa.sml, rebuildConcat 45: \
-              \should never try to rebuild empty concat list"
+                VALID _ => (hd, state) :: acc
+              | UNTESTED => (hd, state) :: acc
+              | INVALID => acc
+            val state = getAlternationState acc
+          in
+            (ALTERNATION (acc, state), state)
+          end
+      | (hd, _) :: tl =>
+          let
+            val (hd, state) = rebuild (hd, chr, idx)
+            val acc =
+              case state of
+                VALID _ => (hd, state) :: acc
+              | UNTESTED => (hd, state) :: acc
+              | INVALID => acc
+          in
+            rebuildAlternation (tl, chr, idx, acc)
+          end
+      | [] => (ALTERNATION ([], INVALID), INVALID)
 
-      and rebuildAlternation (lst, chr, idx, acc) =
-        case lst of
-          [(hd, _)] =>
-            let
-              val (hd, state) = rebuild (hd, chr, idx)
-              val acc =
-                case state of
-                  VALID _ => (hd, state) :: acc
-                | UNTESTED => (hd, state) :: acc
-                | INVALID => acc
-              val state = getAlternationState acc
-            in
-              (ALTERNATION (acc, state), state)
-            end
-        | (hd, _) :: tl =>
-            let
-              val (hd, state) = rebuild (hd, chr, idx)
-              val acc =
-                case state of
-                  VALID _ => (hd, state) :: acc
-                | UNTESTED => (hd, state) :: acc
-                | INVALID => acc
-            in
-              rebuildAlternation (tl, chr, idx, acc)
-            end
-        | [] => (ALTERNATION ([], INVALID), INVALID)
+    and rebuild (nfa, chr, idx) =
+      case nfa of
+        CHAR_LITERAL (lit, UNTESTED) =>
+          if chr = lit then (CHAR_LITERAL (lit, VALID idx), VALID idx)
+          else (CHAR_LITERAL (lit, INVALID), INVALID)
+      | CHAR_LITERAL (lit, state) => (nfa, state)
 
-      and rebuild (nfa, chr, idx) =
-        case nfa of
-          CHAR_LITERAL (lit, UNTESTED) =>
-            if chr = lit then (CHAR_LITERAL (lit, VALID idx), VALID idx)
-            else (CHAR_LITERAL (lit, INVALID), INVALID)
-        | CHAR_LITERAL (lit, state) => (nfa, state)
+      | CONCAT (lst, UNTESTED) => rebuildConcat (lst, chr, idx)
+      | CONCAT (_, state) => (nfa, state)
 
-        | CONCAT (lst, UNTESTED) => rebuildConcat (lst, chr, idx)
-        | CONCAT (_, state) => (nfa, state)
+      | ALTERNATION (lst, UNTESTED) => rebuildAlternation (lst, chr, idx, [])
+      | ALTERNATION (_, state) => (nfa, state)
 
-        | ALTERNATION (lst, UNTESTED) => rebuildAlternation (lst, chr, idx, [])
-        | ALTERNATION (_, state) => (nfa, state)
+      | _ => raise Fail "nfa.sml 69: not char literal or concat or alternation"
 
-        | _ =>
-            raise Fail "nfa.sml 69: not char literal or concat or alternation"
-
+    (* get all matches in string.
+     * Todo: 
+     * - Append {start: int, finish: int} into PersistentVector instead
+     * - Search through gap buffer instead of string
+     * *)
+    local
       fun loop (pos, str, nfa, origNfa, startPos, acc) =
         if pos = String.size str then
           PersistentVector.toVector acc
@@ -157,6 +161,197 @@ struct
     in
       fun getMatches (str, nfa) =
         loop (0, str, nfa, nfa, 0, PersistentVector.empty)
+    end
+
+    local
+      fun backtrackRange
+        (hd, tl, prevStrings, origNfa, acc, absIdx, startIdx, finishIdx) =
+        case prevStrings of
+          prevHd :: prevTl =>
+            let
+              val prevIdx = absIdx - String.size prevHd
+              val tl = hd :: tl
+            in
+              if prevIdx < startIdx then
+                (* keep backtracking *)
+                backtrackRange
+                  ( prevHd
+                  , tl
+                  , prevTl
+                  , origNfa
+                  , acc
+                  , prevIdx
+                  , startIdx
+                  , finishIdx
+                  )
+              else
+                let
+                  val strIdx = startIdx - prevIdx + 1
+                  val absIdx = absIdx + strIdx
+                in
+                  loop
+                    ( strIdx
+                    , prevHd
+                    , tl
+                    , prevTl
+                    , origNfa
+                    , origNfa
+                    , acc
+                    , absIdx
+                    , absIdx
+                    , finishIdx
+                    )
+                end
+            end
+        | [] => raise Fail "nfa.sml 188: should not backtrack to empty list"
+
+      and loop
+        ( strIdx
+        , hd
+        , tl
+        , prevStrings
+        , nfa
+        , origNfa
+        , acc
+        , absIdx
+        , startIdx
+        , finishIdx
+        ) =
+        if strIdx = String.size hd then
+          case tl of
+            newHd :: newTl =>
+              loop
+                ( 0
+                , newHd
+                , newTl
+                , hd :: prevStrings
+                , nfa
+                , origNfa
+                , acc
+                , absIdx
+                , startIdx
+                , finishIdx
+                )
+          | [] => PersistentVector.toVector acc
+        else if absIdx > finishIdx then
+          PersistentVector.toVector acc
+        else
+          let
+            val chr = String.sub (hd, strIdx)
+            val (nfa, state) = rebuild (nfa, chr, absIdx)
+          in
+            case state of
+              UNTESTED =>
+                loop
+                  ( startIdx + 1
+                  , hd
+                  , tl
+                  , prevStrings
+                  , nfa
+                  , origNfa
+                  , acc
+                  , absIdx + 1
+                  , startIdx
+                  , finishIdx
+                  )
+            | VALID _ =>
+                let
+                  val acc = PersistentVector.append (startIdx, acc)
+                in
+                  loop
+                    ( startIdx + 1
+                    , hd
+                    , tl
+                    , prevStrings
+                    , origNfa
+                    , origNfa
+                    , acc
+                    , absIdx + 1
+                    , absIdx + 1
+                    , finishIdx
+                    )
+                end
+            | INVALID =>
+                let
+                  val prevIdx = absIdx - strIdx
+                in
+                  if prevIdx < startIdx then
+                    backtrackRange
+                      ( hd
+                      , tl
+                      , prevStrings
+                      , origNfa
+                      , acc
+                      , prevIdx
+                      , startIdx
+                      , finishIdx
+                      )
+                  else
+                    let
+                      val strIdx = startIdx - prevIdx + 1
+                      val absIdx = absIdx + strIdx
+                    in
+                      loop
+                        ( strIdx
+                        , hd
+                        , tl
+                        , prevStrings
+                        , origNfa
+                        , origNfa
+                        , acc
+                        , absIdx
+                        , absIdx
+                        , finishIdx
+                        )
+                    end
+                end
+          end
+    in
+      (* Prerequisite: move buffer to 'start' parameter before calling *)
+      fun getMatchesInRange (startIdx, finishIdx, buffer: LineGap.t, nfa) =
+        let
+          val {rightStrings, idx = bufferIdx, ...} = buffer
+          val strIdx = startIdx - bufferIdx
+        in
+          case rightStrings of
+            hd :: tl =>
+              if strIdx < String.size hd then
+                (* strIdx is in this string *)
+                loop
+                  ( strIdx
+                  , hd
+                  , tl
+                  , []
+                  , nfa
+                  , nfa
+                  , PersistentVector.empty
+                  , startIdx
+                  , startIdx
+                  , finishIdx
+                  )
+              else
+                (* strIdx is in tl *)
+                (case tl of
+                   stlhd :: stltl =>
+                     let
+                       val strIdx = strIdx - String.size hd
+                     in
+                       loop
+                         ( strIdx
+                         , stlhd
+                         , stltl
+                         , []
+                         , nfa
+                         , nfa
+                         , PersistentVector.empty
+                         , startIdx
+                         , startIdx
+                         , finishIdx
+                         )
+                     end
+                 | [] => Vector.fromList [])
+          | [] => Vector.fromList []
+        end
     end
   end
 
