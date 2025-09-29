@@ -141,7 +141,7 @@ struct
     local
       fun loop (pos, str, nfa, origNfa, startPos, acc) =
         if pos = String.size str then
-          PersistentVector.toVector acc
+          acc
         else
           let
             val chr = String.sub (str, pos)
@@ -149,7 +149,7 @@ struct
           in
             case state of
               VALID finishIdx =>
-                let val acc = PersistentVector.append (pos, acc)
+                let val acc = PersistentVector.append (pos, finishIdx, acc)
                 in loop (finishIdx, str, origNfa, origNfa, finishIdx, acc)
                 end
             | INVALID =>
@@ -232,9 +232,9 @@ struct
                 , startIdx
                 , finishIdx
                 )
-          | [] => PersistentVector.toVector acc
+          | [] => acc
         else if absIdx > finishIdx then
-          PersistentVector.toVector acc
+          acc
         else
           let
             val chr = String.sub (hd, strIdx)
@@ -254,9 +254,9 @@ struct
                   , startIdx
                   , finishIdx
                   )
-            | VALID _ =>
+            | VALID finishIdx =>
                 let
-                  val acc = PersistentVector.append (startIdx, acc)
+                  val acc = PersistentVector.append (startIdx, finishIdx, acc)
                 in
                   loop
                     ( strIdx + 1
@@ -349,8 +349,8 @@ struct
                          , finishIdx
                          )
                      end
-                 | [] => Vector.fromList [])
-          | [] => Vector.fromList []
+                 | [] => PersistentVector.empty)
+          | [] => PersistentVector.empty
         end
     end
   end

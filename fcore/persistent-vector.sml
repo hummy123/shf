@@ -1,82 +1,76 @@
 structure PersistentVector =
 struct
-  (* Clojure-style persistent vector, 
-   * as intermediary data structure 
-   * for building search list *)
+  (* Clojure-style persistent vector, for building search list.
+   * There is an "int table" too, which stores the last index 
+   * at the node with the same index.
+   * We can use the size table for binary search.
+   * *)
   datatype t =
-    BRANCH of t vector
-  | LEAF of int vector
+    BRANCH of t vector * int vector
+  | LEAF of {start: int, finish: int} vector * int vector
 
   val maxSize = 32
 
-  val empty = LEAF #[]
+  val empty = LEAF (#[], #[])
 
   datatype append_result = APPEND of t | UPDATE of t
 
-  fun helpAppend (key, tree) =
+  fun getFinishIdx t =
+    case t of
+      BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
+    | LEAF (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
+
+  fun helpAppend (start, finish, tree) =
     case tree of
-      BRANCH nodes =>
+      BRANCH (nodes, sizes) =>
         let
           val lastNode = Vector.sub (nodes, Vector.length nodes - 1)
         in
-          case helpAppend (key, lastNode) of
+          case helpAppend (start, finish, lastNode) of
             UPDATE newLast =>
               let
-                val newNode = Vector.update
-                  (nodes, Vector.length nodes - 1, newLast)
-                val newNode = BRANCH newNode
+                val lastPos = Vector.length nodes - 1
+                val newNode = Vector.update (nodes, lastPos, newLast)
+                val newSizes = Vector.update (sizes, lastPos, finish)
+                val newNode = BRANCH (newNode, newSizes)
               in
                 UPDATE newNode
               end
           | APPEND newVec =>
               if Vector.length nodes + 1 > maxSize then
-                let val newNode = BRANCH #[newVec]
+                let val newNode = BRANCH (#[newVec], #[finish])
                 in APPEND newNode
                 end
               else
                 let
                   val newNodes = Vector.concat [nodes, #[newVec]]
-                  val newNodes = BRANCH newNodes
+                  val newSizes = Vector.concat [sizes, #[finish]]
+                  val newNodes = BRANCH (newNodes, newSizes)
                 in
                   UPDATE newNodes
                 end
         end
-    | LEAF vec =>
-        if Vector.length vec + 1 > maxSize then
-          let val newNode = LEAF #[key]
+    | LEAF (values, sizes) =>
+        if Vector.length values + 1 > maxSize then
+          let val newNode = LEAF (#[{start = start, finish = finish}], #[finish])
           in APPEND newNode
           end
         else
           let
-            val newNode = Vector.concat [vec, #[key]]
-            val newNode = LEAF newNode
+            val newNode = Vector.concat
+              [values, #[{start = start, finish = finish}]]
+            val newSizes = Vector.concat [sizes, #[finish]]
+            val newNode = LEAF (newNode, newSizes)
           in
             UPDATE newNode
           end
 
-  fun append (key, tree) =
-    case helpAppend (key, tree) of
-      UPDATE t => t
-    | APPEND newNode => BRANCH #[tree, newNode]
-
-  fun branchToList (pos, nodes, acc) =
-    if pos < 0 then
-      acc
-    else
-      let
-        val node = Vector.sub (nodes, pos)
-        val acc = helpToVector (node, acc)
-      in
-        branchToList (pos - 1, nodes, acc)
-      end
-
-  and helpToVector (tree, acc) =
-    case tree of
-      BRANCH nodes => branchToList (Vector.length nodes - 1, nodes, acc)
-    | LEAF vec => vec :: acc
-
-  fun toVector tree =
-    let val lst = helpToVector (tree, [])
-    in Vector.concat lst
+  fun append (start, finish, tree) =
+    let
+      val maxSize = getFinishIdx tree
+    in
+      case helpAppend (start, finish, tree) of
+        UPDATE t => t
+      | APPEND newNode => BRANCH (#[tree, newNode], #[maxSize, finish])
     end
 end

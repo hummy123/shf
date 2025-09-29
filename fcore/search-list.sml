@@ -2,7 +2,7 @@ structure SearchList =
 struct
   type t = int vector
 
-  val empty = Vector.fromList []
+  val empty = PersistentVector.empty
 
   fun backtrackFull (pos, hd, absIdx, tl, acc, searchPos, searchString, prevTl) =
     if pos < 0 then
@@ -47,7 +47,7 @@ struct
             , searchString
             , hd :: prevTl
             )
-      | [] => PersistentVector.toVector acc
+      | [] => acc
     else
       let
         val bufferChr = String.sub (hd, pos)
@@ -58,7 +58,7 @@ struct
             (* we fully matched the search string *)
             let
               val foundIdx = absIdx - String.size searchString + 1
-              val acc = PersistentVector.append (foundIdx, acc)
+              val acc = PersistentVector.append (foundIdx, absIdx, acc)
             in
               loopSearch
                 (pos + 1, hd, absIdx + 1, tl, acc, 0, searchString, prevTl)
@@ -152,9 +152,9 @@ struct
               , prevTl
               )
           end
-      | [] => PersistentVector.toVector acc
+      | [] => acc
     else if absIdx = finish then
-      PersistentVector.toVector acc
+      acc
     else
       let
         val bufferChr = String.sub (hd, pos)
@@ -165,7 +165,7 @@ struct
             (* full match *)
             let
               val foundIdx = absIdx - String.size searchString + 1
-              val acc = PersistentVector.append (foundIdx, acc)
+              val acc = PersistentVector.append (foundIdx, absIdx, acc)
             in
               loopRange
                 ( pos + 1
@@ -242,7 +242,8 @@ struct
     if String.size searchString > 0 then
       case Nfa.parse searchString of
         SOME nfa =>
-        Nfa.getMatchesInRange (#idx buffer, finishIdx, buffer : LineGap.t, nfa)
+          Nfa.getMatchesInRange
+            (#idx buffer, finishIdx, buffer : LineGap.t, nfa)
       | NONE => empty
     else
       empty
