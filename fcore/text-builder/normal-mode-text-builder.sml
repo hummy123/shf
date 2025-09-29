@@ -58,27 +58,39 @@ struct
                   (startLine, curLine, lhd)
               (* get absolute idx of line *)
               val absIdx = curIdx + strPos
-
-              val searchPos = BinSearch.equalOrMore (absIdx, searchList)
-              val searchPos =
-                if searchPos = ~1 then Vector.length searchList else searchPos
             in
-              TextBuilderWithHighlight.build
-                ( strPos
-                , shd
-                , stl
-                , lhd
-                , ltl
-                , startX
-                , startY
-                , 0
-                , startLine
-                , absIdx
-                , cursorPos
-                , env
-                , acc
-                , searchPos
-                )
+              if PersistentVector.isEmpty searchList then
+                TextBuilderWithCursor.build
+                  ( strPos
+                  , shd
+                  , stl
+                  , lhd
+                  , ltl
+                  , startX
+                  , startY
+                  , 0
+                  , startLine
+                  , absIdx
+                  , cursorPos
+                  , env
+                  , acc
+                  )
+              else
+                TextBuilderWithHighlight.build
+                  ( strPos
+                  , shd
+                  , stl
+                  , lhd
+                  , ltl
+                  , startX
+                  , startY
+                  , 0
+                  , startLine
+                  , absIdx
+                  , cursorPos
+                  , env
+                  , acc
+                  )
             end
         | (_, _) => acc
     end
@@ -89,7 +101,7 @@ struct
     , buffer: LineGap.t
     , windowWidth
     , windowHeight
-    , searchList: SearchList.t
+    , searchList
     , visualScrollColumn
     , acc
     ) =
@@ -112,7 +124,7 @@ struct
     , buffer: LineGap.t
     , windowWidth
     , windowHeight
-    , searchList: SearchList.t
+    , searchList
     , visualScrollColumn
     ) =
     startBuild

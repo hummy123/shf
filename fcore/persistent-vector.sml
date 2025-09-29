@@ -13,7 +13,7 @@ struct
 
   fun isEmpty t =
     case t of
-      LEAF (_, sizes) = Vector.length sizes = 0
+      LEAF (_, sizes) => Vector.length sizes = 0
     | _ => false
 
   val empty = LEAF (#[], #[])

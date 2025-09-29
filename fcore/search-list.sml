@@ -1,7 +1,5 @@
 structure SearchList =
 struct
-  type t = int vector
-
   val empty = PersistentVector.empty
 
   fun backtrackFull (pos, hd, absIdx, tl, acc, searchPos, searchString, prevTl) =
@@ -87,12 +85,12 @@ struct
     case rightStrings of
       hd :: tl =>
         loopSearch (0, hd, 0, tl, PersistentVector.empty, 0, searchString, [])
-    | [] => empty
+    | [] => PersistentVector.empty
 
   (* Prerequisite: move buffer/LineGap to start *)
   fun build (buffer, searchString) =
     if String.size searchString > 0 then search (buffer, searchString)
-    else empty
+    else PersistentVector.empty
 
   fun backtrackRange
     (pos, hd, absIdx, tl, acc, searchPos, searchString, finish, prevTl) =
@@ -235,7 +233,7 @@ struct
             , finish
             , []
             )
-      | [] => empty
+      | [] => PersistentVector.empty
     end
 
   fun buildRange (buffer, searchString, finishIdx) =
@@ -244,9 +242,9 @@ struct
         SOME nfa =>
           Nfa.getMatchesInRange
             (#idx buffer, finishIdx, buffer : LineGap.t, nfa)
-      | NONE => empty
+      | NONE => PersistentVector.empty
     else
-      empty
+      PersistentVector.empty
 
   fun loopNextMatch (pos, searchList, count) =
     if count = 0 then
