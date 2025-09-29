@@ -15,6 +15,31 @@ struct
 
   datatype append_result = APPEND of t | UPDATE of t
 
+  fun isInRange (checkIdx, t) =
+    case t of
+      BRANCH (nodes, sizes) =>
+        let
+          val searchIdx = BinSearch.equalOrMore (checkIdx, sizes)
+        in
+          if searchIdx = ~1 then
+            false
+          else
+            isInRange (checkIdx, Vector.sub (nodes, searchIdx))
+        end
+    | LEAF (values, sizes) =>
+        let
+          val searchIdx = BinSearch.equalOrMore (checkIdx, sizes)
+        in
+          if searchIdx = ~1 then
+            false
+          else
+            let
+              val {start, finish} = Vector.sub (values, searchIdx)
+            in
+              checkIdx >= start andalso checkIdx <= finish
+            end
+        end
+
   fun getFinishIdx t =
     case t of
       BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
@@ -66,11 +91,12 @@ struct
           end
 
   fun append (start, finish, tree) =
-    let
-      val maxSize = getFinishIdx tree
-    in
       case helpAppend (start, finish, tree) of
         UPDATE t => t
-      | APPEND newNode => BRANCH (#[tree, newNode], #[maxSize, finish])
-    end
+      | APPEND newNode => 
+          let
+            val maxSize = getFinishIdx tree
+          in
+            BRANCH (#[tree, newNode], #[maxSize, finish])
+          end
 end

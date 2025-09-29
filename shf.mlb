@@ -11,14 +11,14 @@ message-types/draw-msg.sml
 message-types/search-msg.sml
 message-types/mailbox-type.sml
 
+fcore/escape-string.sml
+fcore/bin-search.sml
+
 ann
   "allowVectorExps true"
 in
   fcore/persistent-vector.sml
 end
-
-fcore/escape-string.sml
-fcore/bin-search.sml
 fcore/search-list/nfa.sml
 fcore/search-list.sml
 
