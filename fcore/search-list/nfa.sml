@@ -113,25 +113,11 @@ struct
       | ALTERNATION (lst, UNTESTED) => rebuildAlternation (lst, chr, idx, [])
       | ALTERNATION (_, state) => (nfa, state)
 
-      | _ => raise Fail "nfa.sml 69: not char literal or concat"
+      | _ => raise Fail "nfa.sml 69: not char literal or concat or alternation"
 
-    fun loop (pos, str, nfa) =
+    fun loop (pos, str, nfa, origNfa, startPos) =
       if pos = String.size str then
-        case nfa of
-          CHAR_LITERAL (_, VALID _) => true
-        | CHAR_LITERAL (_, _) => false
-        | CONCAT (_, VALID _) => true
-        | CONCAT (_, _) => false
-        | ALTERNATION (_, VALID _) => true
-        | ALTERNATION (_, _) => false
-        | ZERO_OR_ONE (_, VALID _) => true
-        | ZERO_OR_ONE (_, _) => false
-        | ZERO_OR_MORE (_, VALID _) => true
-        | ZERO_OR_MORE (_, _) => false
-        | ONE_OR_MORE (_, VALID _) => true
-        | ONE_OR_MORE (_, _) => false
-        | GROUP (_, VALID _) => true
-        | GROUP (_, _) => false
+        false
       else
         let
           val chr = String.sub (str, pos)
@@ -139,11 +125,12 @@ struct
         in
           case state of
             VALID _ => true
-          | INVALID => false
-          | UNTESTED => loop (pos + 1, str, nfa)
+          | INVALID => loop (startPos + 1, str, origNfa, origNfa, startPos + 1)
+          | UNTESTED => loop (pos + 1, str, nfa, origNfa, startPos)
         end
   in
-    fun exists (str, nfa) = loop (0, str, nfa)
+    fun hasAnyMatch (str, nfa) =
+      loop (0, str, nfa, nfa, 0)
   end
 
   local
