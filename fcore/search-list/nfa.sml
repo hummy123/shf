@@ -149,13 +149,18 @@ struct
           in
             case state of
               VALID finishIdx =>
-                let val acc = PersistentVector.append (pos, finishIdx, acc)
-                in loop (finishIdx, str, origNfa, origNfa, finishIdx, acc)
+                let
+                  val acc = PersistentVector.append (startPos, finishIdx, acc)
+                in
+                  loop
+                    (finishIdx + 1, str, origNfa, origNfa, finishIdx + 1, acc)
                 end
             | INVALID =>
                 (* backtrack to another position in the string
                  * to see if the NFA matches that portion of the string *)
-                loop (startPos + 1, str, origNfa, origNfa, startPos + 1, acc)
+                let val pos = startPos + 1
+                in loop (pos, str, origNfa, origNfa, pos, acc)
+                end
             | UNTESTED => loop (pos + 1, str, nfa, origNfa, startPos, acc)
           end
     in
