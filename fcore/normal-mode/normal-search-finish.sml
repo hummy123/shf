@@ -67,7 +67,6 @@ struct
         , floatWindowWidth
         , floatWindowHeight
         , tempSearchList
-        , searchString
         , visualScrollColumn
         , initialTextAcc
         )
@@ -138,7 +137,6 @@ struct
         , floatWindowWidth
         , floatWindowHeight
         , tempSearchList
-        , searchString
         , visualScrollColumn
         , initialTextAcc
         )

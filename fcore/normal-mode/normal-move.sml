@@ -9,7 +9,6 @@ struct
         , windowWidth
         , windowHeight
         , searchList
-        , searchString
         , bufferModifyTime
         , visualScrollColumn
         , ...
@@ -26,7 +25,6 @@ struct
         , windowWidth
         , windowHeight
         , searchList
-        , searchString
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
@@ -55,7 +53,6 @@ struct
         , windowWidth
         , windowHeight
         , searchList
-        , searchString
         , bufferModifyTime
         , visualScrollColumn = prevScrollColumn
         , startLine = prevLineNumber
@@ -92,7 +89,6 @@ struct
         , windowWidth
         , windowHeight
         , searchList
-        , searchString
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
@@ -123,7 +119,6 @@ struct
         , visualScrollColumn = prevScrollColumn
         , startLine = prevLineNumber
         , searchList
-        , searchString
         , bufferModifyTime
         , ...
         } = app
@@ -162,7 +157,6 @@ struct
         , windowWidth
         , windowHeight
         , searchList
-        , searchString
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
@@ -235,7 +229,6 @@ struct
         , buffer
         , startLine = prevLineNumber
         , searchList
-        , searchString
         , bufferModifyTime
         , visualScrollColumn = prevScrollColumn
         , ...
@@ -330,7 +323,6 @@ struct
             , buffer
             , startLine = prevLineNumber
             , searchList
-            , searchString
             , bufferModifyTime
             , visualScrollColumn = prevScrollColumn
             , ...
@@ -368,7 +360,6 @@ struct
             , windowWidth
             , windowHeight
             , searchList
-            , searchString
             , visualScrollColumn
             )
           val drawMsg = Vector.concat drawMsg
@@ -400,7 +391,6 @@ struct
         , windowHeight
         , startLine = prevLineNumber
         , searchList
-        , searchString
         , bufferModifyTime
         , visualScrollColumn = prevScrollColumn
         , ...
@@ -430,7 +420,6 @@ struct
           , windowWidth
           , windowHeight
           , searchList
-          , searchString
           , visualScrollColumn
           )
         val drawMsg = Vector.concat drawMsg

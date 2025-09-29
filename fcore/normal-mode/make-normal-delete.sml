@@ -732,7 +732,6 @@ struct
         , windowWidth
         , windowHeight
         , searchList
-        , searchString
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
