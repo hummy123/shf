@@ -172,7 +172,7 @@ struct
               val prevIdx = absIdx - String.size prevHd
               val tl = hd :: tl
             in
-              if prevIdx < startIdx then
+              if startIdx < prevIdx then
                 (* keep backtracking *)
                 backtrackRange
                   ( prevHd
@@ -243,7 +243,7 @@ struct
             case state of
               UNTESTED =>
                 loop
-                  ( startIdx + 1
+                  ( strIdx + 1
                   , hd
                   , tl
                   , prevStrings
@@ -259,7 +259,7 @@ struct
                   val acc = PersistentVector.append (startIdx, acc)
                 in
                   loop
-                    ( startIdx + 1
+                    ( strIdx + 1
                     , hd
                     , tl
                     , prevStrings
@@ -275,7 +275,7 @@ struct
                 let
                   val prevIdx = absIdx - strIdx
                 in
-                  if prevIdx < startIdx then
+                  if startIdx < prevIdx then
                     backtrackRange
                       ( hd
                       , tl
@@ -289,7 +289,7 @@ struct
                   else
                     let
                       val strIdx = startIdx - prevIdx + 1
-                      val absIdx = absIdx + strIdx
+                      val absIdx = prevIdx + strIdx
                     in
                       loop
                         ( strIdx
@@ -474,4 +474,5 @@ struct
 
   val parse = ParseNfa.parse
   val getMatches = NfaMatch.getMatches
+  val getMatchesInRange = NfaMatch.getMatchesInRange
 end

@@ -238,9 +238,14 @@ struct
       | [] => empty
     end
 
-  fun buildRange (buffer, searchString, finish) =
+  fun buildRange (buffer, searchString, finishIdx) =
     if String.size searchString > 0 then
-      searchRange (buffer, searchString, finish)
+      let
+        val nfa = Nfa.parse searchString
+        val startIdx = #idx buffer
+      in
+        Nfa.getMatchesInRange (startIdx, finishIdx, buffer : LineGap.t, nfa)
+      end
     else
       empty
 
