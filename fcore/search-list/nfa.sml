@@ -264,7 +264,7 @@ struct
                   val acc = PersistentVector.append (startIdx, foundIdx, acc)
                 in
                   loop
-                    ( foundIdx + 1
+                    ( strIdx + 1
                     , hd
                     , tl
                     , prevStrings
@@ -305,7 +305,7 @@ struct
                         , origNfa
                         , acc
                         , absIdx
-                        , absIdx
+                        , startIdx + 1
                         , finishIdx
                         )
                     end
