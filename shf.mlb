@@ -19,6 +19,7 @@ end
 
 fcore/escape-string.sml
 fcore/bin-search.sml
+fcore/search-list/nfa.sml
 fcore/search-list.sml
 
 fcore/app-type.sml

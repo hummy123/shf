@@ -135,25 +135,28 @@ struct
         | _ =>
             raise Fail "nfa.sml 69: not char literal or concat or alternation"
 
-      fun loop (pos, str, nfa, origNfa, startPos) =
+      fun loop (pos, str, nfa, origNfa, startPos, acc) =
         if pos = String.size str then
-          false
+          PersistentVector.toVector acc
         else
           let
             val chr = String.sub (str, pos)
             val (nfa, state) = rebuild (nfa, chr, pos)
           in
             case state of
-              VALID _ => true
+              VALID finishIdx =>
+                let val acc = PersistentVector.append (pos, acc)
+                in loop (finishIdx, str, origNfa, origNfa, finishIdx, acc)
+                end
             | INVALID =>
                 (* backtrack to another position in the string
                  * to see if the NFA matches that portion of the string *)
-                loop (startPos + 1, str, origNfa, origNfa, startPos + 1)
-            | UNTESTED => loop (pos + 1, str, nfa, origNfa, startPos)
+                loop (startPos + 1, str, origNfa, origNfa, startPos + 1, acc)
+            | UNTESTED => loop (pos + 1, str, nfa, origNfa, startPos, acc)
           end
     in
-      fun hasAnyMatch (str, nfa) =
-        loop (0, str, nfa, nfa, 0)
+      fun getMatches (str, nfa) =
+        loop (0, str, nfa, nfa, 0, PersistentVector.empty)
     end
   end
 
@@ -275,5 +278,5 @@ struct
   end
 
   val parse = ParseNfa.parse
-  val hasAnyMatch = NfaMatch.hasAnyMatch
+  val getMatches = NfaMatch.getMatches
 end
