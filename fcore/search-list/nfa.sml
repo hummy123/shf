@@ -11,8 +11,6 @@ struct
   | ONE_OR_MORE of regex * state
   | GROUP of regex * state
 
-  datatype alternation_state = ALL_VALID of int | ALL_INVALID | SOME_UNTESTED
-
   val groupLevel = 1
   val postfixLevel = 2
   val concatLevel = 3
@@ -53,6 +51,33 @@ struct
             "nfa.sml, rebuildConcat 45: \
             \should never try to rebuild empty concat list"
 
+    and rebuildAlternation (lst, chr, idx, acc) =
+      case lst of
+        [(hd, _)] =>
+          let
+            val (hd, state) = rebuild (hd, chr, idx)
+            val acc =
+              case state of
+                VALID _ => (hd, state) :: acc
+              | UNTESTED => (hd, state) :: acc
+              | INVALID => acc
+          (* todo: check if all are valid, and get max valid pos *)
+          in
+            (ALTERNATION (acc, UNTESTED), UNTESTED)
+          end
+      | (hd, _) :: tl =>
+          let
+            val (hd, state) = rebuild (hd, chr, idx)
+            val acc =
+              case state of
+                VALID _ => (hd, state) :: acc
+              | UNTESTED => (hd, state) :: acc
+              | INVALID => acc
+          in
+            rebuildAlternation (tl, chr, idx, acc)
+          end
+      | [] => (ALTERNATION ([], INVALID), INVALID)
+
     and rebuild (nfa, chr, idx) =
       case nfa of
         CHAR_LITERAL (lit, UNTESTED) =>
@@ -62,6 +87,9 @@ struct
 
       | CONCAT (lst, UNTESTED) => rebuildConcat (lst, chr, idx)
       | CONCAT (_, state) => (nfa, state)
+
+      | ALTERNATION (lst, UNTESTED) => rebuildAlternation (lst, chr, idx)
+      | ALTERNATION (_, state) => (nfa, state)
 
       | _ => raise Fail "nfa.sml 69: not char literal or concat"
 
