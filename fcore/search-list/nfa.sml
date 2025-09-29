@@ -17,6 +17,28 @@ struct
   val altLevel = 4
 
   local
+    fun loop (tl, maxValid) =
+      case tl of
+        (_, VALID curValid) :: tl => loop (tl, Int.max (maxValid, curValid))
+      | (_, UNTESTED) :: _ => UNTESTED
+      | (_, INVALID) :: _ =>
+          raise Fail
+            "nfa.sml 24: \
+            \should not have INVALID state in acc"
+      | [] => VALID maxValid
+  in
+    fun getAlternationState acc =
+      case acc of
+        (_, VALID maxValid) :: tl => loop (tl, maxValid)
+      | (_, UNTESTED) :: _ => UNTESTED
+      | (_, INVALID) :: _ =>
+          raise Fail
+            "nfa.sml 26: \
+            \should not have INVALID state in acc"
+      | [] => UNTESTED
+  end
+
+  local
     fun rebuildConcat (lst, chr, idx) =
       case lst of
         [(hd, _)] =>
@@ -61,9 +83,9 @@ struct
                 VALID _ => (hd, state) :: acc
               | UNTESTED => (hd, state) :: acc
               | INVALID => acc
-          (* todo: check if all are valid, and get max valid pos *)
+            val state = getAlternationState acc
           in
-            (ALTERNATION (acc, UNTESTED), UNTESTED)
+            (ALTERNATION (acc, state), state)
           end
       | (hd, _) :: tl =>
           let
@@ -88,7 +110,7 @@ struct
       | CONCAT (lst, UNTESTED) => rebuildConcat (lst, chr, idx)
       | CONCAT (_, state) => (nfa, state)
 
-      | ALTERNATION (lst, UNTESTED) => rebuildAlternation (lst, chr, idx)
+      | ALTERNATION (lst, UNTESTED) => rebuildAlternation (lst, chr, idx, [])
       | ALTERNATION (_, state) => (nfa, state)
 
       | _ => raise Fail "nfa.sml 69: not char literal or concat"
