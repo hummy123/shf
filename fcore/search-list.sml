@@ -240,12 +240,10 @@ struct
 
   fun buildRange (buffer, searchString, finishIdx) =
     if String.size searchString > 0 then
-      let
-        val nfa = Nfa.parse searchString
-        val startIdx = #idx buffer
-      in
-        Nfa.getMatchesInRange (startIdx, finishIdx, buffer : LineGap.t, nfa)
-      end
+      case Nfa.parse searchString of
+        SOME nfa =>
+        Nfa.getMatchesInRange (#idx buffer, finishIdx, buffer : LineGap.t, nfa)
+      | NONE => empty
     else
       empty
 

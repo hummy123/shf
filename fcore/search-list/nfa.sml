@@ -357,9 +357,7 @@ struct
 
   structure ParseNfa =
   struct
-    (* parsing through precedence climbing algorithm.
-     * Todo: return a a `regex option`, and use bounds-checking
-     * to ensure we don't raise an exception. *)
+    (* parsing through precedence climbing algorithm. *)
 
     val groupLevel = 1
     val postfixLevel = 2
@@ -369,107 +367,130 @@ struct
     local
       fun loop (pos, str, openParens, closeParens) =
         if pos = String.size str then
-          pos
+          NONE
         else
           case String.sub (str, pos) of
             #"(" => loop (pos + 1, str, openParens + 1, closeParens)
           | #")" =>
-              if closeParens + 1 = openParens then pos
+              if closeParens + 1 = openParens then SOME pos
               else loop (pos + 1, str, openParens, closeParens + 1)
           | _ => loop (pos + 1, str, openParens, closeParens)
     in
       fun getRightParenIdx (pos, str) = loop (pos, str, 1, 0)
     end
 
-    fun climb (pos, str, lhs, level) =
+    fun climb (pos, str, lhs, level) : (int * regex) option =
       if pos = String.size str then
-        (pos, lhs)
+        SOME (pos, lhs)
       else
         case String.sub (str, pos) of
-          #")" => (pos + 1, lhs)
+          #")" => SOME (pos + 1, lhs)
         | #"(" =>
             if level < groupLevel then
-              (pos, lhs)
+              SOME (pos, lhs)
             else
-              let
-                val groupEndIdx = getRightParenIdx (pos + 1, str)
-                val substr = String.substring
-                  (str, pos + 1, groupEndIdx - pos - 1)
-                val rhs = parse substr
-                val rhs = GROUP (rhs, UNTESTED)
-                val result = CONCAT
-                  ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
-              in
-                climb (groupEndIdx + 1, str, result, groupLevel)
-              end
+              (case getRightParenIdx (pos + 1, str) of
+                 SOME groupEndIdx =>
+                   let
+                     val substr = String.substring
+                       (str, pos + 1, groupEndIdx - pos - 1)
+                   in
+                     (case parse substr of
+                        SOME rhs =>
+                          let
+                            val rhs = GROUP (rhs, UNTESTED)
+                            val result = CONCAT
+                              ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
+                          in
+                            climb (groupEndIdx + 1, str, result, groupLevel)
+                          end
+                      | NONE => NONE)
+                   end
+               | NONE => NONE)
         | #"|" =>
             if level < altLevel then
-              (pos, lhs)
-            else
+              SOME (pos, lhs)
+            else if pos + 1 < String.size str then
               let
                 val chr = String.sub (str, pos + 1)
                 val chr = CHAR_LITERAL (chr, UNTESTED)
-                val (pos, rhs) = climb (pos + 2, str, chr, altLevel)
-                val result =
-                  case rhs of
-                    ALTERNATION (lst, state) =>
-                      ALTERNATION ((lhs, UNTESTED) :: lst, UNTESTED)
-                  | _ =>
-                      ALTERNATION ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
               in
-                (pos, result)
+                case climb (pos + 2, str, chr, altLevel) of
+                  SOME (pos, rhs) =>
+                    let
+                      val result =
+                        case rhs of
+                          ALTERNATION (lst, state) =>
+                            ALTERNATION ((lhs, UNTESTED) :: lst, UNTESTED)
+                        | _ =>
+                            ALTERNATION
+                              ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
+                    in
+                      SOME (pos, result)
+                    end
+                | NONE => NONE
               end
+            else
+              NONE
         | #"?" =>
             if level < postfixLevel then
-              (pos, lhs)
+              SOME (pos, lhs)
             else
               let val lhs = ZERO_OR_ONE (lhs, UNTESTED)
               in climb (pos + 1, str, lhs, postfixLevel)
               end
         | #"*" =>
             if level < postfixLevel then
-              (pos, lhs)
+              SOME (pos, lhs)
             else
               let val lhs = ZERO_OR_MORE (lhs, UNTESTED)
               in climb (pos + 1, str, lhs, postfixLevel)
               end
         | #"+" =>
             if level < postfixLevel then
-              (pos, lhs)
+              SOME (pos, lhs)
             else
               let val lhs = ONE_OR_MORE (lhs, UNTESTED)
               in climb (pos + 1, str, lhs, postfixLevel)
               end
         | chr =>
             if level < concatLevel then
-              (pos, lhs)
+              SOME (pos, lhs)
             else
-              let
-                val chr = CHAR_LITERAL (chr, UNTESTED)
-                val (pos, rhs) = climb (pos + 1, str, chr, concatLevel)
-                val result =
-                  case rhs of
-                    CONCAT (lst, _) => CONCAT ((lhs, UNTESTED) :: lst, UNTESTED)
-                  | _ => CONCAT ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
-              in
-                (pos, result)
-              end
+              case
+                climb (pos + 1, str, CHAR_LITERAL (chr, UNTESTED), concatLevel)
+              of
+                SOME (pos, rhs) =>
+                  let
+                    val result =
+                      case rhs of
+                        CONCAT (lst, _) =>
+                          CONCAT ((lhs, UNTESTED) :: lst, UNTESTED)
+                      | _ =>
+                          CONCAT ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
+                  in
+                    SOME (pos, result)
+                  end
+              | NONE => NONE
 
     and loop (pos, str, ast) =
       if pos = String.size str then
-        ast
+        SOME ast
       else
-        let val (pos, ast) = climb (pos, str, ast, altLevel)
-        in loop (pos, str, ast)
-        end
+        case climb (pos, str, ast, altLevel) of
+          SOME (pos, ast) => loop (pos, str, ast)
+        | NONE => NONE
 
     and parse str =
-      let
-        val chr = String.sub (str, 0)
-        val chr = CHAR_LITERAL (chr, UNTESTED)
-      in
-        loop (1, str, chr)
-      end
+      if String.size str > 0 then
+        let
+          val chr = String.sub (str, 0)
+          val chr = CHAR_LITERAL (chr, UNTESTED)
+        in
+          loop (1, str, chr)
+        end
+      else
+        NONE
   end
 
   val parse = ParseNfa.parse
