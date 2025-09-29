@@ -4,7 +4,7 @@ struct
     NORMAL_MODE of string
   | NORMAL_SEARCH_MODE of
       { searchString: string
-      , tempSearchList: int vector
+      , tempSearchList: PersistentVector.t
       , searchCursorIdx: int
       , searchScrollColumn: int
       }
@@ -13,7 +13,7 @@ struct
     { mode: mode
     , buffer: LineGap.t
     , bufferModifyTime: Time.time
-    , searchList: SearchList.t
+    , searchList: PersistentVector.t
     , searchString: string
     , windowWidth: int
     , windowHeight: int

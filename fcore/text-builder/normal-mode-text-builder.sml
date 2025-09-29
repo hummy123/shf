@@ -14,7 +14,6 @@ struct
     , floatWindowWidth
     , floatWindowHeight
     , searchList
-    , searchString
     , visualScrollColumn
     , acc
     ) =
@@ -36,7 +35,6 @@ struct
         , floatWindowWidth
         , floatWindowHeight
         , searchList
-        , String.size searchString
         , visualScrollColumn
         , startLine
         )
@@ -92,7 +90,6 @@ struct
     , windowWidth
     , windowHeight
     , searchList: SearchList.t
-    , searchString
     , visualScrollColumn
     , acc
     ) =
@@ -105,7 +102,6 @@ struct
       , Real32.fromInt windowWidth
       , Real32.fromInt windowHeight
       , searchList
-      , searchString
       , visualScrollColumn
       , []
       )
@@ -117,7 +113,6 @@ struct
     , windowWidth
     , windowHeight
     , searchList: SearchList.t
-    , searchString
     , visualScrollColumn
     ) =
     startBuild
@@ -129,7 +124,6 @@ struct
       , Real32.fromInt windowWidth
       , Real32.fromInt windowHeight
       , searchList
-      , searchString
       , visualScrollColumn
       , []
       )

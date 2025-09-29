@@ -39,8 +39,7 @@ struct
     , fw: Real32.real
     , fh: Real32.real
 
-    , searchList: int vector
-    , searchLen: int
+    , searchList: PersistentVector.t
     }
 
   fun initEnv
@@ -51,7 +50,6 @@ struct
     , floatWindowWidth
     , floatWindowHeight
     , searchList
-    , searchLen
     , visualScrollColumn
     , startLine
     ) : env_data =
@@ -101,7 +99,6 @@ struct
         , fh = floatWindowHeight
 
         , searchList = searchList
-        , searchLen = searchLen
         }
       else
         let
@@ -142,7 +139,6 @@ struct
           , fh = floatWindowHeight
 
           , searchList = searchList
-          , searchLen = searchLen
           }
         end
     end
@@ -215,22 +211,6 @@ struct
       , #highlightOnCharG env
       , #highlightOnCharB env
       )
-
-  fun isInSearchRange
-    (absIdx, searchPos, {searchList, searchLen, ...}: env_data) =
-    let val searchIdx = Vector.sub (searchList, searchPos)
-    in absIdx >= searchIdx andalso absIdx < searchIdx + searchLen
-    end
-
-  fun isAfterSearchRange
-    (absIdx, searchPos, {searchList, searchLen, ...}: env_data) =
-    let val searchIdx = Vector.sub (searchList, searchPos)
-    in absIdx >= searchIdx + searchLen
-    end
-
-  fun advanceSearchPos (absIdx, searchPos, env) =
-    if isAfterSearchRange (absIdx, searchPos, env) then searchPos + 1
-    else searchPos
 
   (* gets line start idx, relative to right hd *)
   fun getRelativeLineStartFromRightHead (startLine, curLine, rLnHd) =

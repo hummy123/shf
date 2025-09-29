@@ -11,6 +11,11 @@ struct
 
   val maxSize = 32
 
+  fun isEmpty t =
+    case t of
+      LEAF (_, sizes) = Vector.length sizes = 0
+    | _ => false
+
   val empty = LEAF (#[], #[])
 
   datatype append_result = APPEND of t | UPDATE of t
