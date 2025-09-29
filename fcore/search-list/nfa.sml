@@ -169,194 +169,43 @@ struct
     end
 
     local
-      fun backtrackRange
-        (hd, tl, prevStrings, origNfa, acc, absIdx, startIdx, finishIdx) =
-        case prevStrings of
-          prevHd :: prevTl =>
-            let
-              val prevIdx = absIdx - String.size prevHd
-              val tl = hd :: tl
-            in
-              if startIdx < prevIdx then
-                (* keep backtracking *)
-                backtrackRange
-                  ( prevHd
-                  , tl
-                  , prevTl
-                  , origNfa
-                  , acc
-                  , prevIdx
-                  , startIdx
-                  , finishIdx
-                  )
-              else
-                let
-                  val strIdx = startIdx - prevIdx + 1
-                  val absIdx = absIdx + strIdx
-                in
-                  loop
-                    ( strIdx
-                    , prevHd
-                    , tl
-                    , prevTl
-                    , origNfa
-                    , origNfa
-                    , acc
-                    , absIdx
-                    , absIdx
-                    , finishIdx
-                    )
-                end
-            end
-        | [] => raise Fail "nfa.sml 188: should not backtrack to empty list"
-
-      and loop
-        ( strIdx
-        , hd
-        , tl
-        , prevStrings
-        , nfa
-        , origNfa
-        , acc
-        , absIdx
-        , startIdx
-        , finishIdx
-        ) =
-        if strIdx = String.size hd then
-          case tl of
-            newHd :: newTl =>
-              loop
-                ( 0
-                , newHd
-                , newTl
-                , hd :: prevStrings
-                , nfa
-                , origNfa
-                , acc
-                , absIdx
-                , startIdx
-                , finishIdx
-                )
-          | [] => acc
-        else if absIdx > finishIdx then
+      fun loop (pos, buffer, nfa, origNfa, startPos, acc, lastIdx) =
+        if pos = #textLength buffer then
+          acc
+        else if pos > lastIdx then
           acc
         else
           let
-            val chr = String.sub (hd, strIdx)
-            val (nfa, state) = rebuild (nfa, chr, absIdx)
+            val chr = LineGap.substring (pos, 1, buffer)
+            val chr = String.sub (chr, 0)
+            val (nfa, state) = rebuild (nfa, chr, pos)
           in
             case state of
-              UNTESTED =>
-                loop
-                  ( strIdx + 1
-                  , hd
-                  , tl
-                  , prevStrings
-                  , nfa
-                  , origNfa
-                  , acc
-                  , absIdx + 1
-                  , startIdx
-                  , finishIdx
-                  )
-            | VALID foundIdx =>
+              VALID finishIdx =>
                 let
-                  val acc = PersistentVector.append (startIdx, foundIdx, acc)
+                  val acc = PersistentVector.append (startPos, finishIdx, acc)
                 in
                   loop
-                    ( strIdx + 1
-                    , hd
-                    , tl
-                    , prevStrings
+                    ( finishIdx + 1
+                    , buffer
                     , origNfa
                     , origNfa
+                    , finishIdx + 1
                     , acc
-                    , foundIdx + 1
-                    , foundIdx + 1
-                    , finishIdx
+                    , lastIdx
                     )
                 end
             | INVALID =>
-                let
-                  val prevIdx = absIdx - strIdx
-                in
-                  if startIdx < prevIdx then
-                    backtrackRange
-                      ( hd
-                      , tl
-                      , prevStrings
-                      , origNfa
-                      , acc
-                      , prevIdx
-                      , startIdx
-                      , finishIdx
-                      )
-                  else
-                    let
-                      val strIdx = startIdx - prevIdx + 1
-                      val absIdx = prevIdx + strIdx
-                    in
-                      loop
-                        ( strIdx
-                        , hd
-                        , tl
-                        , prevStrings
-                        , origNfa
-                        , origNfa
-                        , acc
-                        , absIdx
-                        , startIdx + 1
-                        , finishIdx
-                        )
-                    end
+                let val pos = startPos + 1
+                in loop (pos, buffer, origNfa, origNfa, pos, acc, lastIdx)
                 end
+            | UNTESTED =>
+                loop (pos + 1, buffer, nfa, origNfa, startPos, acc, lastIdx)
           end
     in
       (* Prerequisite: move buffer to 'start' parameter before calling *)
       fun getMatchesInRange (startIdx, finishIdx, buffer: LineGap.t, nfa) =
-        let
-          val {rightStrings, idx = bufferIdx, ...} = buffer
-          val strIdx = startIdx - bufferIdx
-        in
-          case rightStrings of
-            hd :: tl =>
-              if strIdx < String.size hd then
-                (* strIdx is in this string *)
-                loop
-                  ( strIdx
-                  , hd
-                  , tl
-                  , []
-                  , nfa
-                  , nfa
-                  , PersistentVector.empty
-                  , startIdx
-                  , startIdx
-                  , finishIdx
-                  )
-              else
-                (* strIdx is in tl *)
-                (case tl of
-                   stlhd :: stltl =>
-                     let
-                       val strIdx = strIdx - String.size hd
-                     in
-                       loop
-                         ( strIdx
-                         , stlhd
-                         , stltl
-                         , []
-                         , nfa
-                         , nfa
-                         , PersistentVector.empty
-                         , startIdx
-                         , startIdx
-                         , finishIdx
-                         )
-                     end
-                 | [] => PersistentVector.empty)
-          | [] => PersistentVector.empty
-        end
+        loop (startIdx, buffer, nfa, nfa, 0, PersistentVector.empty, finishIdx)
     end
   end
 
