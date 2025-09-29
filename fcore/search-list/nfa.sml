@@ -259,20 +259,20 @@ struct
                   , startIdx
                   , finishIdx
                   )
-            | VALID finishIdx =>
+            | VALID foundIdx =>
                 let
-                  val acc = PersistentVector.append (startIdx, finishIdx, acc)
+                  val acc = PersistentVector.append (startIdx, foundIdx, acc)
                 in
                   loop
-                    ( strIdx + 1
+                    ( foundIdx + 1
                     , hd
                     , tl
                     , prevStrings
                     , origNfa
                     , origNfa
                     , acc
-                    , absIdx + 1
-                    , absIdx + 1
+                    , foundIdx + 1
+                    , foundIdx + 1
                     , finishIdx
                     )
                 end
