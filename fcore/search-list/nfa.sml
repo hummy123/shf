@@ -147,6 +147,8 @@ struct
       | ALTERNATION (lst, UNTESTED) => rebuildAlternation (lst, chr, idx, [])
       | ALTERNATION (_, state) => (nfa, state)
 
+      | WILDCARD _ => let val nfa = WILDCARD (VALID idx) in (nfa, VALID idx) end
+
       | _ => raise Fail "nfa.sml 69: not char literal or concat or alternation"
 
     (* get all matches in string.
