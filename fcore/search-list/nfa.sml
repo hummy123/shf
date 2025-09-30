@@ -230,6 +230,9 @@ struct
   struct
     (* parsing through precedence climbing algorithm. *)
 
+    datatype action =
+      TRY_NEXT_NODE_WITHOUT_CONSUMING_CHR
+
     val groupLevel = 1
     val postfixLevel = 2
     val concatLevel = 3
@@ -353,6 +356,9 @@ struct
 
     and parse str =
       if String.size str > 0 then
+        (* todo: we currently assume that the first char is always a CHAR_LITERAL
+        * but we should actually check what character the chr is
+        * before deciding it represents one variant or another *)
         let
           val chr = String.sub (str, 0)
           val chr = CHAR_LITERAL (chr, UNTESTED)
