@@ -4,12 +4,22 @@ struct
 
   datatype regex =
     CHAR_LITERAL of char * state
-  | CONCAT of (regex * state) list * state
-  | ALTERNATION of (regex * state) list * state
+  | CONCAT of regex list * state
+  | ALTERNATION of regex list * state
   | ZERO_OR_ONE of regex * state
   | ZERO_OR_MORE of regex * state
   | ONE_OR_MORE of regex * state
   | GROUP of regex * state
+
+  fun getState regex =
+    case regex of
+      CHAR_LITERAL (_, state) => state
+    | CONCAT (_, state) => state
+    | ALTERNATION (_, state) => state
+    | ZERO_OR_ONE (_, state) => state
+    | ZERO_OR_MORE (_, state) => state
+    | ONE_OR_MORE (_, state) => state
+    | GROUP (_, state) => state
 
   structure NfaMatch =
   struct
@@ -38,42 +48,46 @@ struct
     local
       fun loop (tl, maxValid) =
         case tl of
-          (_, VALID curValid) :: tl => loop (tl, Int.max (maxValid, curValid))
-        | (_, UNTESTED) :: _ => UNTESTED
-        | (_, INVALID) :: _ =>
-            raise Fail
-              "nfa.sml 24: \
-              \should not have INVALID state in acc"
+          hd :: tl =>
+            (case getState hd of
+               VALID curValid => loop (tl, Int.max (curValid, maxValid))
+             | UNTESTED => UNTESTED
+             | INVALID =>
+                 raise Fail
+                   "nfa.sml 24: \
+                   \should not have INVALID state in acc")
         | [] => VALID maxValid
     in
       fun getAlternationState acc =
         case acc of
-          (_, VALID maxValid) :: tl => loop (tl, maxValid)
-        | (_, UNTESTED) :: _ => UNTESTED
-        | (_, INVALID) :: _ =>
-            raise Fail
-              "nfa.sml 26: \
-              \should not have INVALID state in acc"
+          hd :: tl =>
+            (case getState hd of
+               VALID maxValid => loop (tl, maxValid)
+             | UNTESTED => UNTESTED
+             | INVALID =>
+                 raise Fail
+                   "nfa.sml 65: \
+                   \should not have INVALID state in acc")
         | [] => UNTESTED
     end
 
     fun rebuildConcat (lst, chr, idx) =
       case lst of
-        [(hd, _)] =>
+        [hd] =>
           let
             val (hd: regex, state: state) = rebuild (hd, chr, idx)
-            val result = [(hd, state)]
+            val result = [hd]
             val concat = CONCAT (result, state)
           in
             (concat, state)
           end
-      | (hd, _) :: tl =>
+      | hd :: tl =>
           let
             val (hd, state) = rebuild (hd, chr, idx)
           in
             case state of
               UNTESTED =>
-                let val concat = CONCAT ((hd, state) :: tl, UNTESTED)
+                let val concat = CONCAT (hd :: tl, UNTESTED)
                 in (concat, UNTESTED)
                 end
             | INVALID =>
@@ -93,25 +107,25 @@ struct
 
     and rebuildAlternation (lst, chr, idx, acc) =
       case lst of
-        [(hd, _)] =>
+        [hd] =>
           let
             val (hd, state) = rebuild (hd, chr, idx)
             val acc =
               case state of
-                VALID _ => (hd, state) :: acc
-              | UNTESTED => (hd, state) :: acc
+                VALID _ => hd :: acc
+              | UNTESTED => hd :: acc
               | INVALID => acc
             val state = getAlternationState acc
           in
             (ALTERNATION (acc, state), state)
           end
-      | (hd, _) :: tl =>
+      | hd :: tl =>
           let
             val (hd, state) = rebuild (hd, chr, idx)
             val acc =
               case state of
-                VALID _ => (hd, state) :: acc
-              | UNTESTED => (hd, state) :: acc
+                VALID _ => hd :: acc
+              | UNTESTED => hd :: acc
               | INVALID => acc
           in
             rebuildAlternation (tl, chr, idx, acc)
@@ -252,8 +266,7 @@ struct
                         SOME rhs =>
                           let
                             val rhs = GROUP (rhs, UNTESTED)
-                            val result = CONCAT
-                              ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
+                            val result = CONCAT ([lhs, rhs], UNTESTED)
                           in
                             climb (groupEndIdx + 1, str, result, groupLevel)
                           end
@@ -274,10 +287,8 @@ struct
                       val result =
                         case rhs of
                           ALTERNATION (lst, state) =>
-                            ALTERNATION ((lhs, UNTESTED) :: lst, UNTESTED)
-                        | _ =>
-                            ALTERNATION
-                              ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
+                            ALTERNATION (lhs :: lst, UNTESTED)
+                        | _ => ALTERNATION ([lhs, rhs], UNTESTED)
                     in
                       SOME (pos, result)
                     end
@@ -317,10 +328,8 @@ struct
                   let
                     val result =
                       case rhs of
-                        CONCAT (lst, _) =>
-                          CONCAT ((lhs, UNTESTED) :: lst, UNTESTED)
-                      | _ =>
-                          CONCAT ([(lhs, UNTESTED), (rhs, UNTESTED)], UNTESTED)
+                        CONCAT (lst, _) => CONCAT (lhs :: lst, UNTESTED)
+                      | _ => CONCAT ([lhs, rhs], UNTESTED)
                   in
                     SOME (pos, result)
                   end
