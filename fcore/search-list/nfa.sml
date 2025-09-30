@@ -10,6 +10,7 @@ struct
   | ZERO_OR_MORE of regex * state
   | ONE_OR_MORE of regex * state
   | GROUP of regex * state
+  | WILDCARD of state
 
   fun getState regex =
     case regex of
@@ -20,6 +21,7 @@ struct
     | ZERO_OR_MORE (_, state) => state
     | ONE_OR_MORE (_, state) => state
     | GROUP (_, state) => state
+    | WILDCARD state => state
 
   structure NfaMatch =
   struct
@@ -321,19 +323,23 @@ struct
             if level < concatLevel then
               SOME (pos, lhs)
             else
-              case
-                climb (pos + 1, str, CHAR_LITERAL (chr, UNTESTED), concatLevel)
-              of
-                SOME (pos, rhs) =>
-                  let
-                    val result =
-                      case rhs of
-                        CONCAT (lst, _) => CONCAT (lhs :: lst, UNTESTED)
-                      | _ => CONCAT ([lhs, rhs], UNTESTED)
-                  in
-                    SOME (pos, result)
-                  end
-              | NONE => NONE
+              let
+                val currentState =
+                  if chr = #"." then WILDCARD UNTESTED
+                  else CHAR_LITERAL (chr, UNTESTED)
+              in
+                case climb (pos + 1, str, currentState, concatLevel) of
+                  SOME (pos, rhs) =>
+                    let
+                      val result =
+                        case rhs of
+                          CONCAT (lst, _) => CONCAT (lhs :: lst, UNTESTED)
+                        | _ => CONCAT ([lhs, rhs], UNTESTED)
+                    in
+                      SOME (pos, result)
+                    end
+                | NONE => NONE
+              end
 
     and loop (pos, str, ast) =
       if pos = String.size str then
