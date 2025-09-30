@@ -171,11 +171,12 @@ struct
     local
       fun loop (pos, buffer, nfa, origNfa, startPos, acc, lastIdx) =
         if pos = #textLength buffer then
-          acc
+          (buffer, acc)
         else if pos > lastIdx then
-          acc
+          (buffer, acc)
         else
           let
+            val buffer = LineGap.goToIdx (pos, buffer)
             val chr = LineGap.sub (pos, buffer)
             val (nfa, state) = rebuild (nfa, chr, pos)
           in
@@ -202,7 +203,6 @@ struct
                 loop (pos + 1, buffer, nfa, origNfa, startPos, acc, lastIdx)
           end
     in
-      (* Prerequisite: move buffer to 'start' parameter before calling *)
       fun getMatchesInRange (startIdx, finishIdx, buffer: LineGap.t, nfa) =
         loop (startIdx, buffer, nfa, nfa, 0, PersistentVector.empty, finishIdx)
     end

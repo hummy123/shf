@@ -242,9 +242,9 @@ struct
         SOME nfa =>
           Nfa.getMatchesInRange
             (#idx buffer, finishIdx, buffer : LineGap.t, nfa)
-      | NONE => PersistentVector.empty
+      | NONE => (buffer, PersistentVector.empty)
     else
-      PersistentVector.empty
+      (buffer, PersistentVector.empty)
 
   fun nextMatch (cursorIdx, searchList, count) = raise Fail "todo: reimplement"
 

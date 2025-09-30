@@ -29,7 +29,8 @@ struct
       val searchCursorIdx = searchCursorIdx + 1
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
-      val tempSearchList = buildTempSearchList (searchString, buffer, cursorIdx)
+      val (buffer, tempSearchList) =
+        buildTempSearchList (searchString, buffer, cursorIdx)
     in
       NormalSearchFinish.onSearchChanged
         ( app
@@ -120,7 +121,7 @@ struct
 
         val {cursorIdx, buffer, ...} = app
         val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
-        val tempSearchList =
+        val (buffer, tempSearchList) =
           buildTempSearchList (searchString, buffer, cursorIdx)
       in
         NormalSearchFinish.onSearchChanged
