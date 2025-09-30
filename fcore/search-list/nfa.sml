@@ -176,8 +176,7 @@ struct
           acc
         else
           let
-            val chr = LineGap.substring (pos, 1, buffer)
-            val chr = String.sub (chr, 0)
+            val chr = LineGap.sub (pos, buffer)
             val (nfa, state) = rebuild (nfa, chr, pos)
           in
             case state of
