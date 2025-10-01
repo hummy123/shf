@@ -113,7 +113,7 @@ struct
             else
               case computeAtom (pos, str, stateNum) of
                 SOME (nextPos, curAtom, stateNum) =>
-                  (case climb (nextPos, str, curAtom, concatLevel, stateNum + 1) of
+                  (case climb (nextPos, str, curAtom, concatLevel, stateNum) of
                      SOME (pos, rhs, stateNum) =>
                        let val result = CONCAT (lhs, rhs)
                        in SOME (pos, result, stateNum)
