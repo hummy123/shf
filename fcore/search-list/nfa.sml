@@ -17,10 +17,9 @@ struct
     datatype action =
       TRY_NEXT_NODE_WITHOUT_CONSUMING_CHR
 
-    val groupLevel = 1
-    val postfixLevel = 2
-    val concatLevel = 3
-    val altLevel = 4
+    val postfixLevel = 1
+    val concatLevel = 2
+    val altLevel = 3
 
     local
       fun loop (pos, str, openParens, closeParens) =
@@ -37,40 +36,40 @@ struct
       fun getRightParenIdx (pos, str) = loop (pos, str, 1, 0)
     end
 
-    fun climb (pos, str, lhs, level, stateNum) : (int * regex * int) option =
+    fun computeAtom (pos, str, stateNum) =
+      if pos = String.size str then
+        NONE
+      else
+        case String.sub (str, pos) of
+          #"(" =>
+            (case getRightParenIdx (pos + 1, str) of
+               SOME groupEndIdx =>
+                 let
+                   val substr = String.substring
+                     (str, pos + 1, groupEndIdx - pos - 1)
+                 in
+                   case parse (substr, stateNum) of
+                     SOME (rhs, stateNum) =>
+                       SOME (groupEndIdx + 1, rhs, stateNum)
+                   | NONE => NONE
+                 end
+             | NONE => NONE)
+        | #")" => NONE
+        | #"?" => NONE
+        | #"*" => NONE
+        | #"+" => NONE
+        | #"." => SOME (pos + 1, WILDCARD (stateNum + 1), stateNum + 1)
+        | chr =>
+            let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
+            in SOME (pos + 1, chr, stateNum + 1)
+            end
+
+    and climb (pos, str, lhs, level, stateNum) : (int * regex * int) option =
       if pos = String.size str then
         SOME (pos, lhs, stateNum)
       else
         case String.sub (str, pos) of
-          #")" => SOME (pos + 1, lhs, stateNum)
-        | #"(" =>
-            if level < groupLevel then
-              SOME (pos, lhs, stateNum)
-            else
-              (case getRightParenIdx (pos + 1, str) of
-                 SOME groupEndIdx =>
-                   let
-                     val substr = String.substring
-                       (str, pos + 1, groupEndIdx - pos - 1)
-                   in
-                     (case parse (substr, stateNum) of
-                        SOME (rhs, stateNum) =>
-                          let
-                            val rhs = GROUP rhs
-                            val result = CONCAT (lhs, rhs)
-                          in
-                            climb
-                              ( groupEndIdx + 1
-                              , str
-                              , result
-                              , groupLevel
-                              , stateNum
-                              )
-                          end
-                      | NONE => NONE)
-                   end
-               | NONE => NONE)
-        | #"|" =>
+          #"|" =>
             if level < altLevel then
               SOME (pos, lhs, stateNum)
             else if pos + 1 < String.size str then
@@ -112,20 +111,15 @@ struct
             if level < concatLevel then
               SOME (pos, lhs, stateNum)
             else
-              let
-                val currentState =
-                  if chr = #"." then WILDCARD (stateNum + 1)
-                  else CHAR_LITERAL {char = chr, position = stateNum + 1}
-              in
-                case
-                  climb (pos + 1, str, currentState, concatLevel, stateNum + 1)
-                of
-                  SOME (pos, rhs, stateNum) =>
-                    let val result = CONCAT (lhs, rhs)
-                    in SOME (pos, result, stateNum)
-                    end
-                | NONE => NONE
-              end
+              case computeAtom (pos, str, stateNum) of
+                SOME (nextPos, curAtom, stateNum) =>
+                  (case climb (nextPos, str, curAtom, concatLevel, stateNum + 1) of
+                     SOME (pos, rhs, stateNum) =>
+                       let val result = CONCAT (lhs, rhs)
+                       in SOME (pos, result, stateNum)
+                       end
+                   | NONE => NONE)
+              | NONE => NONE
 
     and loop (pos, str, ast, stateNum) =
       if pos = String.size str then
@@ -140,12 +134,9 @@ struct
         (* todo: we currently assume that the first char is always a CHAR_LITERAL
         * but we should actually check what character the chr is
         * before deciding it represents one variant or another *)
-        let
-          val chr = String.sub (str, 0)
-          val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
-        in
-          loop (1, str, chr, stateNum + 1)
-        end
+        case computeAtom (0, str, stateNum) of
+          SOME (nextPos, lhs, stateNum) => loop (nextPos, str, lhs, stateNum)
+        | NONE => NONE
       else
         NONE
   end
