@@ -187,7 +187,7 @@ struct
             in lastpos (r2, acc)
             end
           else
-            lastpos (r1, acc)
+            lastpos (r2, acc)
       | ALTERNATION (r1, r2) =>
           let val acc = lastpos (r1, acc)
           in lastpos (r2, acc)
@@ -203,4 +203,7 @@ struct
     case ParseNfa.parse (str, 0) of
       SOME (ast, _) => SOME ast
     | NONE => NONE
+
+  fun firstpos regex = ToDfa.firstpos (regex, [])
+  fun lastpos regex = ToDfa.lastpos (regex, [])
 end
