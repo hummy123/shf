@@ -2,8 +2,8 @@ structure Nfa =
 struct
   datatype regex =
     CHAR_LITERAL of {char: char, position: int}
-  | CONCAT of regex list
-  | ALTERNATION of regex list
+  | CONCAT of regex * regex
+  | ALTERNATION of regex * regex
   | ZERO_OR_ONE of regex
   | ZERO_OR_MORE of regex
   | ONE_OR_MORE of regex
@@ -57,7 +57,7 @@ struct
                         SOME (rhs, stateNum) =>
                           let
                             val rhs = GROUP rhs
-                            val result = CONCAT [lhs, rhs]
+                            val result = CONCAT (lhs, rhs)
                           in
                             climb
                               ( groupEndIdx + 1
@@ -81,10 +81,7 @@ struct
                 case climb (pos + 2, str, chr, altLevel, stateNum + 1) of
                   SOME (pos, rhs, stateNum) =>
                     let
-                      val result =
-                        case rhs of
-                          ALTERNATION lst => ALTERNATION (lhs :: lst)
-                        | _ => ALTERNATION [lhs, rhs]
+                      val result = ALTERNATION (lhs, rhs)
                     in
                       SOME (pos, result, stateNum)
                     end
@@ -127,10 +124,7 @@ struct
                 of
                   SOME (pos, rhs, stateNum) =>
                     let
-                      val result =
-                        case rhs of
-                          CONCAT lst => CONCAT (lhs :: lst)
-                        | _ => CONCAT [lhs, rhs]
+                      val result = CONCAT (lhs, rhs)
                     in
                       SOME (pos, result, stateNum)
                     end
@@ -167,34 +161,16 @@ struct
         CHAR_LITERAL _        => false
       | WILDCARD              => false
 
-      | CONCAT []             => true
-      | CONCAT concatList     => isConcatNullable concatList
+      | CONCAT (r1, r2)       => isNullable r1 andalso isNullable r2
 
       | ALTERNATION []        => true
-      | ALTERNATION altList   => isAlternationNullable (altList, true)
+      | ALTERNATION altList   => isNullable r1 orelse  isNullable r2
 
       | ZERO_OR_ONE _         => true
       | ZERO_OR_MORE _        => true
 
       | ONE_OR_MORE regex     => isNullable regex
       | GROUP regex           => isNullable regex
-
-    (* if just one node is nullable, then concat node is nullable too *)
-    and isConcatNullable lst =
-      case lst of
-        hd :: tl  => isNullable hd orelse isAlternationNullable (tl, false)
-      | []        => false
-
-    (* if all nodes are nullable, then alt node is also nullable *)
-    and isAlternationNullable (lst, areAllNullableSoFar) =
-      case lst of
-        hd :: tl =>
-          let
-            val isCurrentNullable = isNullable hd andalso areAllNullableSoFar
-          in
-            isAlternationNullable (tl, isCurrentNullable)
-          end
-      | [] => areAllNullableSoFar
   end
 
   fun parse str =
