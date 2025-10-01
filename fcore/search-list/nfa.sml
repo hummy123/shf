@@ -131,9 +131,6 @@ struct
 
     and parse (str, stateNum) =
       if String.size str > 0 then
-        (* todo: we currently assume that the first char is always a CHAR_LITERAL
-        * but we should actually check what character the chr is
-        * before deciding it represents one variant or another *)
         case computeAtom (0, str, stateNum) of
           SOME (nextPos, lhs, stateNum) => loop (nextPos, str, lhs, stateNum)
         | NONE => NONE
