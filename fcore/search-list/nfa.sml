@@ -197,6 +197,14 @@ struct
       | ZERO_OR_MORE regex => lastpos (regex, acc)
       | ONE_OR_MORE regex => lastpos (regex, acc)
       | GROUP regex => lastpos (regex, acc)
+
+    fun followpos tree =
+      case tree of
+        CONCAT (_, r2) => firstpos (r2, [])
+      | ZERO_OR_MORE r => firstpos (r, [])
+      | ZERO_OR_ONE r => firstpos (r, [])
+      | ONE_OR_MORE r => firstpos (r, [])
+      | _ => []
   end
 
   fun parse str =
