@@ -160,8 +160,45 @@ struct
         NONE
   end
 
+  structure ToDfa =
+  struct
+    fun isNullable tree =
+      case tree of
+        CHAR_LITERAL _        => false
+      | WILDCARD              => false
+
+      | CONCAT []             => true
+      | CONCAT concatList     => isConcatNullable concatList
+
+      | ALTERNATION []        => true
+      | ALTERNATION altList   => isAlternationNullable (altList, true)
+
+      | ZERO_OR_ONE _         => true
+      | ZERO_OR_MORE _        => true
+
+      | ONE_OR_MORE regex     => isNullable regex
+      | GROUP regex           => isNullable regex
+
+    (* if just one node is nullable, then concat node is nullable too *)
+    and isConcatNullable lst =
+      case lst of
+        hd :: tl  => isNullable hd orelse isAlternationNullable (tl, false)
+      | []        => false
+
+    (* if all nodes are nullable, then alt node is also nullable *)
+    and isAlternationNullable (lst, areAllNullableSoFar) =
+      case lst of
+        hd :: tl =>
+          let
+            val isCurrentNullable = isNullable hd andalso areAllNullableSoFar
+          in
+            isAlternationNullable (tl, isCurrentNullable)
+          end
+      | [] => areAllNullableSoFar
+  end
+
   fun parse str =
     case ParseNfa.parse (str, 0) of
       SOME (ast, _) => SOME ast
-    | NONE => NONE
+    | NONE          => NONE
 end
