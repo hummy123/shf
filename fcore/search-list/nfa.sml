@@ -80,10 +80,8 @@ struct
               in
                 case climb (pos + 2, str, chr, altLevel, stateNum + 1) of
                   SOME (pos, rhs, stateNum) =>
-                    let
-                      val result = ALTERNATION (lhs, rhs)
-                    in
-                      SOME (pos, result, stateNum)
+                    let val result = ALTERNATION (lhs, rhs)
+                    in SOME (pos, result, stateNum)
                     end
                 | NONE => NONE
               end
@@ -123,10 +121,8 @@ struct
                   climb (pos + 1, str, currentState, concatLevel, stateNum + 1)
                 of
                   SOME (pos, rhs, stateNum) =>
-                    let
-                      val result = CONCAT (lhs, rhs)
-                    in
-                      SOME (pos, result, stateNum)
+                    let val result = CONCAT (lhs, rhs)
+                    in SOME (pos, result, stateNum)
                     end
                 | NONE => NONE
               end
@@ -158,23 +154,65 @@ struct
   struct
     fun isNullable tree =
       case tree of
-        CHAR_LITERAL _        => false
-      | WILDCARD              => false
+        CHAR_LITERAL _ => false
+      | WILDCARD _ => false
 
-      | CONCAT (r1, r2)       => isNullable r1 andalso isNullable r2
+      | CONCAT (r1, r2) => isNullable r1 andalso isNullable r2
+      | ALTERNATION (r1, r2) => isNullable r1 orelse isNullable r2
 
-      | ALTERNATION []        => true
-      | ALTERNATION altList   => isNullable r1 orelse  isNullable r2
+      | ZERO_OR_ONE _ => true
+      | ZERO_OR_MORE _ => true
 
-      | ZERO_OR_ONE _         => true
-      | ZERO_OR_MORE _        => true
+      | ONE_OR_MORE regex => isNullable regex
+      | GROUP regex => isNullable regex
 
-      | ONE_OR_MORE regex     => isNullable regex
-      | GROUP regex           => isNullable regex
+    fun firstpos (tree, acc) =
+      case tree of
+        CHAR_LITERAL {position, ...} => position :: acc
+      | WILDCARD i => i :: acc
+
+      | CONCAT (r1, r2) =>
+          if isNullable r1 then
+            let val acc = firstpos (r1, acc)
+            in firstpos (r2, acc)
+            end
+          else
+            firstpos (r1, acc)
+      | ALTERNATION (r1, r2) =>
+          let val acc = firstpos (r1, acc)
+          in firstpos (r2, acc)
+          end
+
+      | ZERO_OR_ONE regex => firstpos (regex, acc)
+      | ZERO_OR_MORE regex => firstpos (regex, acc)
+      | ONE_OR_MORE regex => firstpos (regex, acc)
+      | GROUP regex => firstpos (regex, acc)
+
+    fun lastpos (tree, acc) =
+      case tree of
+        CHAR_LITERAL {position, ...} => position :: acc
+      | WILDCARD i => i :: acc
+
+      | CONCAT (r1, r2) =>
+          if isNullable r2 then
+            let val acc = lastpos (r1, acc)
+            in lastpos (r2, acc)
+            end
+          else
+            lastpos (r1, acc)
+      | ALTERNATION (r1, r2) =>
+          let val acc = lastpos (r1, acc)
+          in lastpos (r2, acc)
+          end
+
+      | ZERO_OR_ONE regex => lastpos (regex, acc)
+      | ZERO_OR_MORE regex => lastpos (regex, acc)
+      | ONE_OR_MORE regex => lastpos (regex, acc)
+      | GROUP regex => lastpos (regex, acc)
   end
 
   fun parse str =
     case ParseNfa.parse (str, 0) of
       SOME (ast, _) => SOME ast
-    | NONE          => NONE
+    | NONE => NONE
 end
