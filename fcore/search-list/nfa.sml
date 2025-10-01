@@ -1,14 +1,14 @@
 structure Nfa =
 struct
   datatype regex =
-    CHAR_LITERAL of char
+    CHAR_LITERAL of {char: char, position: int}
   | CONCAT of regex list
   | ALTERNATION of regex list
   | ZERO_OR_ONE of regex
   | ZERO_OR_MORE of regex
   | ONE_OR_MORE of regex
   | GROUP of regex
-  | WILDCARD
+  | WILDCARD of int
 
   structure ParseNfa =
   struct
@@ -37,15 +37,15 @@ struct
       fun getRightParenIdx (pos, str) = loop (pos, str, 1, 0)
     end
 
-    fun climb (pos, str, lhs, level) : (int * regex) option =
+    fun climb (pos, str, lhs, level, stateNum) : (int * regex * int) option =
       if pos = String.size str then
-        SOME (pos, lhs)
+        SOME (pos, lhs, stateNum)
       else
         case String.sub (str, pos) of
-          #")" => SOME (pos + 1, lhs)
+          #")" => SOME (pos + 1, lhs, stateNum)
         | #"(" =>
             if level < groupLevel then
-              SOME (pos, lhs)
+              SOME (pos, lhs, stateNum)
             else
               (case getRightParenIdx (pos + 1, str) of
                  SOME groupEndIdx =>
@@ -53,34 +53,40 @@ struct
                      val substr = String.substring
                        (str, pos + 1, groupEndIdx - pos - 1)
                    in
-                     (case parse substr of
-                        SOME rhs =>
+                     (case parse (substr, stateNum) of
+                        SOME (rhs, stateNum) =>
                           let
                             val rhs = GROUP rhs
                             val result = CONCAT [lhs, rhs]
                           in
-                            climb (groupEndIdx + 1, str, result, groupLevel)
+                            climb
+                              ( groupEndIdx + 1
+                              , str
+                              , result
+                              , groupLevel
+                              , stateNum
+                              )
                           end
                       | NONE => NONE)
                    end
                | NONE => NONE)
         | #"|" =>
             if level < altLevel then
-              SOME (pos, lhs)
+              SOME (pos, lhs, stateNum)
             else if pos + 1 < String.size str then
               let
                 val chr = String.sub (str, pos + 1)
-                val chr = CHAR_LITERAL chr
+                val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
               in
-                case climb (pos + 2, str, chr, altLevel) of
-                  SOME (pos, rhs) =>
+                case climb (pos + 2, str, chr, altLevel, stateNum + 1) of
+                  SOME (pos, rhs, stateNum) =>
                     let
                       val result =
                         case rhs of
                           ALTERNATION lst => ALTERNATION (lhs :: lst)
                         | _ => ALTERNATION [lhs, rhs]
                     in
-                      SOME (pos, result)
+                      SOME (pos, result, stateNum)
                     end
                 | NONE => NONE
               end
@@ -88,68 +94,74 @@ struct
               NONE
         | #"?" =>
             if level < postfixLevel then
-              SOME (pos, lhs)
+              SOME (pos, lhs, stateNum)
             else
               let val lhs = ZERO_OR_ONE lhs
-              in climb (pos + 1, str, lhs, postfixLevel)
+              in climb (pos + 1, str, lhs, postfixLevel, stateNum)
               end
         | #"*" =>
             if level < postfixLevel then
-              SOME (pos, lhs)
+              SOME (pos, lhs, stateNum)
             else
               let val lhs = ZERO_OR_MORE lhs
-              in climb (pos + 1, str, lhs, postfixLevel)
+              in climb (pos + 1, str, lhs, postfixLevel, stateNum)
               end
         | #"+" =>
             if level < postfixLevel then
-              SOME (pos, lhs)
+              SOME (pos, lhs, stateNum)
             else
               let val lhs = ONE_OR_MORE lhs
-              in climb (pos + 1, str, lhs, postfixLevel)
+              in climb (pos + 1, str, lhs, postfixLevel, stateNum)
               end
         | chr =>
             if level < concatLevel then
-              SOME (pos, lhs)
+              SOME (pos, lhs, stateNum)
             else
               let
                 val currentState =
-                  if chr = #"." then WILDCARD else CHAR_LITERAL chr
+                  if chr = #"." then WILDCARD (stateNum + 1)
+                  else CHAR_LITERAL {char = chr, position = stateNum + 1}
               in
-                case climb (pos + 1, str, currentState, concatLevel) of
-                  SOME (pos, rhs) =>
+                case
+                  climb (pos + 1, str, currentState, concatLevel, stateNum + 1)
+                of
+                  SOME (pos, rhs, stateNum) =>
                     let
                       val result =
                         case rhs of
                           CONCAT lst => CONCAT (lhs :: lst)
                         | _ => CONCAT [lhs, rhs]
                     in
-                      SOME (pos, result)
+                      SOME (pos, result, stateNum)
                     end
                 | NONE => NONE
               end
 
-    and loop (pos, str, ast) =
+    and loop (pos, str, ast, stateNum) =
       if pos = String.size str then
-        SOME ast
+        SOME (ast, stateNum)
       else
-        case climb (pos, str, ast, altLevel) of
-          SOME (pos, ast) => loop (pos, str, ast)
+        case climb (pos, str, ast, altLevel, stateNum) of
+          SOME (pos, ast, stateNum) => loop (pos, str, ast, stateNum)
         | NONE => NONE
 
-    and parse str =
+    and parse (str, stateNum) =
       if String.size str > 0 then
         (* todo: we currently assume that the first char is always a CHAR_LITERAL
         * but we should actually check what character the chr is
         * before deciding it represents one variant or another *)
         let
           val chr = String.sub (str, 0)
-          val chr = CHAR_LITERAL chr
+          val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
         in
-          loop (1, str, chr)
+          loop (1, str, chr, stateNum + 1)
         end
       else
         NONE
   end
 
-  val parse = ParseNfa.parse
+  fun parse str =
+    case ParseNfa.parse (str, 0) of
+      SOME (ast, _) => SOME ast
+    | NONE => NONE
 end
