@@ -12,46 +12,73 @@ struct
 
   structure Set =
   struct
-    datatype set = BRANCH of set * int * bool * set | LEAF
+    datatype 'a set = BRANCH of 'a set * int * 'a * 'a set | LEAF
 
-    fun insertIfNew (newKey, tree) =
+    fun insertOrReplace (newKey, newVal, tree) =
       case tree of
-        BRANCH (l, curKey, isMarked, r) =>
+        BRANCH (l, curKey, curVal, r) =>
           if newKey > curKey then
-            let val r = insertIfNew (newKey, r)
-            in BRANCH (l, curKey, isMarked, r)
+            let val r = insertOrReplace (newKey, newVal, r)
+            in BRANCH (l, curKey, curVal, r)
             end
           else if newKey < curKey then
-            let val l = insertIfNew (newKey, l)
-            in BRANCH (l, curKey, isMarked, r)
+            let val l = insertOrReplace (newKey, newVal, l)
+            in BRANCH (l, curKey, curVal, r)
             end
           else
-            tree
-      | LEAF => BRANCH (LEAF, newKey, false, LEAF)
+            BRANCH (l, newKey, newVal, r)
+      | LEAF => BRANCH (LEAF, newKey, newVal, LEAF)
 
-    fun setMarked (findKey, tree) =
+    fun getOrDefault (findKey, tree, default) =
       case tree of
-        BRANCH (l, curKey, isMarked, r) =>
-          if findKey > curKey then
-            let val r = setMarked (findKey, r)
-            in BRANCH (l, curKey, isMarked, r)
-            end
-          else if findKey < curKey then
-            let val l = setMarked (findKey, l)
-            in BRANCH (l, curKey, isMarked, r)
-            end
-          else
-            BRANCH (l, curKey, true, r)
-      | LEAF => (* this case should not occur *) LEAF
+        BRANCH (l, curKey, curVal, r) =>
+          if findKey > curKey then getOrDefault (findKey, r, default)
+          else if findKey < curKey then getOrDefault (findKey, l, default)
+          else curVal
+      | LEAF => default
+
+    fun helpToList (tree, acc) =
+      case tree of
+        BRANCH (l, curKey, curVal, r) =>
+          let
+            val acc = helpToList (r, acc)
+            val acc = (curKey, curVal) :: acc
+          in
+            helpToList (l, acc)
+          end
+      | LEAF => acc
+
+    fun toList tree = helpToList (tree, [])
+
+    fun helpKeysToList (tree, acc) =
+      case tree of
+        BRANCH (l, curKey, _, r) =>
+          let
+            val acc = helpKeysToList (r, acc)
+            val acc = curKey :: acc
+          in
+            helpKeysToList (l, acc)
+          end
+      | LEAF => acc
+
+    fun keysToList tree = helpKeysToList (tree, [])
+
+    fun map (f, tree) =
+      case tree of
+        BRANCH (l, key, value, r) =>
+          let
+            val r = map (f, r)
+            val l = map (f, l)
+            val value = f value
+          in
+            BRANCH (l, key, value, r)
+          end
+      | LEAF => LEAF
   end
 
   structure ParseNfa =
   struct
     (* parsing through precedence climbing algorithm. *)
-
-    datatype action =
-      TRY_NEXT_NODE_WITHOUT_CONSUMING_CHR
-
     val postfixLevel = 1
     val concatLevel = 2
     val altLevel = 3
@@ -228,8 +255,9 @@ struct
     fun firstposWithChar (tree, acc) =
       case tree of
         CHAR_LITERAL {position, char} =>
-          {position = position, char = Char.ord char} :: acc
-      | WILDCARD position => {position = position, char = ~1} :: acc
+          {position = position, char = Char.ord char, marked = false} :: acc
+      | WILDCARD position =>
+          {position = position, char = ~1, marked = false} :: acc
 
       | CONCAT {l, r, ...} =>
           if isNullable l then
@@ -269,35 +297,105 @@ struct
       | ONE_OR_MORE regex => lastpos (regex, acc)
       | GROUP regex => lastpos (regex, acc)
 
-    fun followpos tree =
-      case tree of
-        CONCAT {r, ...} => firstpos (r, [])
-      | ZERO_OR_MORE r => firstpos (r, [])
-      | ZERO_OR_ONE r => firstpos (r, [])
-      | ONE_OR_MORE r => firstpos (r, [])
-      | _ => []
+    fun followpos (char, regex, acc) =
+      case regex of
+        CONCAT {r, ...} => firstpos (r, acc)
+      | ZERO_OR_MORE r => firstpos (r, acc)
+      | ZERO_OR_ONE r => firstpos (r, acc)
+      | ONE_OR_MORE r => firstpos (r, acc)
+      | _ => acc
+
+    fun insertIntsFromList (lst, acc) : unit Set.set =
+      case lst of
+        hd :: tl =>
+          let val acc = Set.insertOrReplace (hd, (), acc)
+          in insertIntsFromList (tl, acc)
+          end
+      | [] => acc
 
     (* for help finding followpos of a particular node.
      * Get list of concat and loop nodes to pos.
      * Direct ancestor is at front of list, and furthest ancestor
-     * is at end of list. *)
-    fun getConcatAndLoopsToPos (tree, pos, acc) =
+     * is at end of list. 
+     * We are filtering until first concat because the concat node
+     * represents the first transition, from which the pos can exit
+     * its current state.
+     * *)
+    fun filterUntilFirstConcat (lst: regex list, acc: unit Set.set, char: int) :
+      unit Set.set =
+      case lst of
+        hd :: tl =>
+          (case hd of
+             CONCAT _ =>
+               let val fp: int list = followpos (char, hd, [])
+               in insertIntsFromList (fp, acc)
+               end
+           | ZERO_OR_ONE _ =>
+               let
+                 val fp = followpos (char, hd, [])
+                 val acc = insertIntsFromList (fp, acc)
+               in
+                 filterUntilFirstConcat (tl, acc, char)
+               end
+           | ZERO_OR_MORE _ =>
+               let
+                 val fp = followpos (char, hd, [])
+                 val acc = insertIntsFromList (fp, acc)
+               in
+                 filterUntilFirstConcat (tl, acc, char)
+               end
+           | ONE_OR_MORE _ =>
+               let
+                 val fp = followpos (char, hd, [])
+                 val acc = insertIntsFromList (fp, acc)
+               in
+                 filterUntilFirstConcat (tl, acc, char)
+               end
+           | _ =>
+               raise Fail
+                 "nfa.sml 310: should only have loops and concats \
+                 \in list to filter")
+      | [] => acc
+
+    fun getConcatAndLoopsToPos (tree: regex, pos: int, acc: regex list, char) =
       case tree of
         CONCAT {l, r, leftMaxState, rightMaxState} =>
           if pos <= leftMaxState then
-            getConcatAndLoopsToPos (l, pos, tree :: acc)
+            getConcatAndLoopsToPos (l, pos, tree :: acc, char)
           else
-            getConcatAndLoopsToPos (r, pos, tree :: acc)
-      | ZERO_OR_ONE r => getConcatAndLoopsToPos (r, pos, tree :: acc)
-      | ZERO_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc)
-      | ONE_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc)
+            getConcatAndLoopsToPos (r, pos, tree :: acc, char)
+      | ZERO_OR_ONE r => getConcatAndLoopsToPos (r, pos, tree :: acc, char)
+      | ZERO_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc, char)
+      | ONE_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc, char)
 
       | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
-          if pos <= leftMaxState then getConcatAndLoopsToPos (l, pos, acc)
-          else getConcatAndLoopsToPos (r, pos, acc)
+          if pos <= leftMaxState then getConcatAndLoopsToPos (l, pos, acc, char)
+          else getConcatAndLoopsToPos (r, pos, acc, char)
       | CHAR_LITERAL _ => acc
       | WILDCARD _ => acc
-      | GROUP r => getConcatAndLoopsToPos (r, pos, acc)
+      | GROUP r => getConcatAndLoopsToPos (r, pos, acc, char)
+
+    fun getFollowPos tree =
+      let
+        val first = firstposWithChar (tree, [])
+        val nodes =
+          List.map
+            (fn {char, position, marked = _} =>
+               let val node = getConcatAndLoopsToPos (tree, position, [], char)
+               in {node = node, char = char}
+               end) first
+        val follows =
+          List.foldl
+            (fn ({node, char}, set) =>
+               let
+                 val subset = Set.getOrDefault (char, set, Set.LEAF)
+                 val subset = filterUntilFirstConcat (node, subset, char)
+               in
+                 Set.insertOrReplace (char, subset, set)
+               end) Set.LEAF nodes
+      in
+        follows
+      end
   end
 
   fun parse str =
@@ -305,7 +403,10 @@ struct
       SOME (ast, _) => SOME ast
     | NONE => NONE
 
-  fun firstpos regex = ToDfa.firstpos (regex, [])
+  fun firstposWithChar regex = ToDfa.firstposWithChar (regex, [])
 
   fun lastpos regex = ToDfa.lastpos (regex, [])
+  val test = ToDfa.getFollowPos
 end
+
+val SOME nfa = Nfa.parse "(a|b)*abb"
