@@ -225,6 +225,28 @@ struct
       | ONE_OR_MORE regex => firstpos (regex, acc)
       | GROUP regex => firstpos (regex, acc)
 
+    fun firstposWithChar (tree, acc) =
+      case tree of
+        CHAR_LITERAL {position, char} =>
+          {position = position, char = Char.ord char} :: acc
+      | WILDCARD position => {position = position, char = ~1} :: acc
+
+      | CONCAT {l, r, ...} =>
+          if isNullable l then
+            let val acc = firstposWithChar (l, acc)
+            in firstposWithChar (r, acc)
+            end
+          else
+            firstposWithChar (l, acc)
+      | ALTERNATION {l, r, ...} =>
+          let val acc = firstposWithChar (l, acc)
+          in firstposWithChar (r, acc)
+          end
+      | ZERO_OR_ONE regex => firstposWithChar (regex, acc)
+      | ZERO_OR_MORE regex => firstposWithChar (regex, acc)
+      | ONE_OR_MORE regex => firstposWithChar (regex, acc)
+      | GROUP regex => firstposWithChar (regex, acc)
+
     fun lastpos (tree, acc) =
       case tree of
         CHAR_LITERAL {position, ...} => position :: acc
@@ -254,6 +276,28 @@ struct
       | ZERO_OR_ONE r => firstpos (r, [])
       | ONE_OR_MORE r => firstpos (r, [])
       | _ => []
+
+    (* for help finding followpos of a particular node.
+     * Get list of concat and loop nodes to pos.
+     * Direct ancestor is at front of list, and furthest ancestor
+     * is at end of list. *)
+    fun getConcatAndLoopsToPos (tree, pos, acc) =
+      case tree of
+        CONCAT {l, r, leftMaxState, rightMaxState} =>
+          if pos <= leftMaxState then
+            getConcatAndLoopsToPos (l, pos, tree :: acc)
+          else
+            getConcatAndLoopsToPos (r, pos, tree :: acc)
+      | ZERO_OR_ONE r => getConcatAndLoopsToPos (r, pos, tree :: acc)
+      | ZERO_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc)
+      | ONE_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc)
+
+      | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
+          if pos <= leftMaxState then getConcatAndLoopsToPos (l, pos, acc)
+          else getConcatAndLoopsToPos (r, pos, acc)
+      | CHAR_LITERAL _ => acc
+      | WILDCARD _ => acc
+      | GROUP r => getConcatAndLoopsToPos (r, pos, acc)
   end
 
   fun parse str =
