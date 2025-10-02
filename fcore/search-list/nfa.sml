@@ -2,13 +2,48 @@ structure Nfa =
 struct
   datatype regex =
     CHAR_LITERAL of {char: char, position: int}
-  | CONCAT of regex * regex
-  | ALTERNATION of regex * regex
+  | CONCAT of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
+  | ALTERNATION of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
   | ZERO_OR_ONE of regex
   | ZERO_OR_MORE of regex
   | ONE_OR_MORE of regex
   | GROUP of regex
   | WILDCARD of int
+
+  structure Set =
+  struct
+    datatype set = BRANCH of set * int * bool * set | LEAF
+
+    fun insertIfNew (newKey, tree) =
+      case tree of
+        BRANCH (l, curKey, isMarked, r) =>
+          if newKey > curKey then
+            let val r = insertIfNew (newKey, r)
+            in BRANCH (l, curKey, isMarked, r)
+            end
+          else if newKey < curKey then
+            let val l = insertIfNew (newKey, l)
+            in BRANCH (l, curKey, isMarked, r)
+            end
+          else
+            tree
+      | LEAF => BRANCH (LEAF, newKey, false, LEAF)
+
+    fun setMarked (findKey, tree) =
+      case tree of
+        BRANCH (l, curKey, isMarked, r) =>
+          if findKey > curKey then
+            let val r = setMarked (findKey, r)
+            in BRANCH (l, curKey, isMarked, r)
+            end
+          else if findKey < curKey then
+            let val l = setMarked (findKey, l)
+            in BRANCH (l, curKey, isMarked, r)
+            end
+          else
+            BRANCH (l, curKey, true, r)
+      | LEAF => (* this case should not occur *) LEAF
+  end
 
   structure ParseNfa =
   struct
@@ -78,9 +113,16 @@ struct
                 val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
               in
                 case climb (pos + 2, str, chr, altLevel, stateNum + 1) of
-                  SOME (pos, rhs, stateNum) =>
-                    let val result = ALTERNATION (lhs, rhs)
-                    in SOME (pos, result, stateNum)
+                  SOME (pos, rhs, rightStateNum) =>
+                    let
+                      val result = ALTERNATION
+                        { l = lhs
+                        , r = rhs
+                        , leftMaxState = stateNum
+                        , rightMaxState = rightStateNum
+                        }
+                    in
+                      SOME (pos, result, rightStateNum)
                     end
                 | NONE => NONE
               end
@@ -112,11 +154,18 @@ struct
               SOME (pos, lhs, stateNum)
             else
               case computeAtom (pos, str, stateNum) of
-                SOME (nextPos, curAtom, stateNum) =>
-                  (case climb (nextPos, str, curAtom, concatLevel, stateNum) of
-                     SOME (pos, rhs, stateNum) =>
-                       let val result = CONCAT (lhs, rhs)
-                       in SOME (pos, result, stateNum)
+                SOME (nextPos, curAtom, atomStateNum) =>
+                  (case climb (nextPos, str, curAtom, concatLevel, atomStateNum) of
+                     SOME (pos, rhs, rightStateNum) =>
+                       let
+                         val result = CONCAT
+                           { l = lhs
+                           , r = rhs
+                           , leftMaxState = stateNum
+                           , rightMaxState = rightStateNum
+                           }
+                       in
+                         SOME (pos, result, rightStateNum)
                        end
                    | NONE => NONE)
               | NONE => NONE
@@ -145,8 +194,8 @@ struct
         CHAR_LITERAL _ => false
       | WILDCARD _ => false
 
-      | CONCAT (r1, r2) => isNullable r1 andalso isNullable r2
-      | ALTERNATION (r1, r2) => isNullable r1 orelse isNullable r2
+      | CONCAT {l, r, ...} => isNullable l andalso isNullable r
+      | ALTERNATION {l, r, ...} => isNullable l orelse isNullable r
 
       | ZERO_OR_ONE _ => true
       | ZERO_OR_MORE _ => true
@@ -159,16 +208,16 @@ struct
         CHAR_LITERAL {position, ...} => position :: acc
       | WILDCARD i => i :: acc
 
-      | CONCAT (r1, r2) =>
-          if isNullable r1 then
-            let val acc = firstpos (r1, acc)
-            in firstpos (r2, acc)
+      | CONCAT {l, r, ...} =>
+          if isNullable l then
+            let val acc = firstpos (l, acc)
+            in firstpos (r, acc)
             end
           else
-            firstpos (r1, acc)
-      | ALTERNATION (r1, r2) =>
-          let val acc = firstpos (r1, acc)
-          in firstpos (r2, acc)
+            firstpos (l, acc)
+      | ALTERNATION {l, r, ...} =>
+          let val acc = firstpos (l, acc)
+          in firstpos (r, acc)
           end
 
       | ZERO_OR_ONE regex => firstpos (regex, acc)
@@ -181,16 +230,16 @@ struct
         CHAR_LITERAL {position, ...} => position :: acc
       | WILDCARD i => i :: acc
 
-      | CONCAT (r1, r2) =>
-          if isNullable r2 then
-            let val acc = lastpos (r1, acc)
-            in lastpos (r2, acc)
+      | CONCAT {l, r, ...} =>
+          if isNullable r then
+            let val acc = lastpos (l, acc)
+            in lastpos (r, acc)
             end
           else
-            lastpos (r2, acc)
-      | ALTERNATION (r1, r2) =>
-          let val acc = lastpos (r1, acc)
-          in lastpos (r2, acc)
+            lastpos (l, acc)
+      | ALTERNATION {l, r, ...} =>
+          let val acc = lastpos (l, acc)
+          in lastpos (r, acc)
           end
 
       | ZERO_OR_ONE regex => lastpos (regex, acc)
@@ -200,7 +249,7 @@ struct
 
     fun followpos tree =
       case tree of
-        CONCAT (_, r2) => firstpos (r2, [])
+        CONCAT {r, ...} => firstpos (r, [])
       | ZERO_OR_MORE r => firstpos (r, [])
       | ZERO_OR_ONE r => firstpos (r, [])
       | ONE_OR_MORE r => firstpos (r, [])
@@ -213,5 +262,6 @@ struct
     | NONE => NONE
 
   fun firstpos regex = ToDfa.firstpos (regex, [])
+
   fun lastpos regex = ToDfa.lastpos (regex, [])
 end
