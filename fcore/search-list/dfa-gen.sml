@@ -1,4 +1,4 @@
-structure Nfa =
+structure DfaGen =
 struct
   datatype regex =
     CHAR_LITERAL of {char: char, position: int}
@@ -100,7 +100,7 @@ struct
     fun toCharsAndPositionsList tree = helpToCharsAndPositionsList (tree, [])
   end
 
-  structure ParseNfa =
+  structure ParseDfa =
   struct
     (* parsing through precedence climbing algorithm. *)
     val postfixLevel = 1
@@ -375,7 +375,7 @@ struct
                end
            | _ =>
                raise Fail
-                 "nfa.sml 310: should only have loops and concats \
+                 "dfa-gen.sml 310: should only have loops and concats \
                  \in list to filter")
       | [] => acc
 
@@ -487,15 +487,10 @@ struct
       end
   end
 
-  fun parse str =
-    case ParseNfa.parse (str, 0) of
-      SOME (ast, _) => SOME ast
-    | NONE => NONE
-
-  fun firstposWithChar regex = ToDfa.firstposWithChar (regex, [])
-
-  fun lastpos regex = ToDfa.lastpos (regex, [])
-  val test = ToDfa.convert
+  fun fromString str =
+    case ParseDfa.parse (str, 0) of
+      SOME (ast, _) => ToDfa.convert ast
+    | NONE => Vector.fromList []
 end
 
-val SOME nfa = Nfa.parse "(a|b)*abb\^@"
+val dfa = DfaGen.fromString "(a|b)*abb#"
