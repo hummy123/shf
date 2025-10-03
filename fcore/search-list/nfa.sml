@@ -397,39 +397,41 @@ struct
       | WILDCARD _ => acc
       | GROUP r => getConcatAndLoopsToPos (r, pos, acc, char)
 
-    fun statesInList (lst, newStates) =
-      case lst of
-        {marked = _, transitions} :: tl =>
-          newStates = transitions orelse statesInList (tl, newStates)
-      | [] => false
+    fun ifStatesInVec (pos, dstates, newStates) =
+      if pos = Vector.length dstates then
+        false
+      else
+        let
+          val {transitions, marked = _} = Vector.sub (dstates, pos)
+        in
+          transitions = newStates
+          orelse ifStatesInVec (pos + 1, dstates, newStates)
+        end
 
-    fun getUnmarkedTransitionsIfExists lst =
-      case lst of
-        {marked, transitions} :: tl =>
-          if marked then getUnmarkedTransitionsIfExists tl else SOME transitions
-      | [] => NONE
-
-    fun addListToAcc (lst, acc) =
-      case lst of
-        hd :: tl => addListToAcc (tl, hd :: acc)
-      | [] => acc
-
-    fun markTransition (lst, transitionToMark, acc) =
-      case lst of
-        (hd as {marked, transitions}) :: tl =>
-          if transitions = transitionToMark then
-            let val acc = {marked = true, transitions = transitionToMark} :: acc
-            in addListToAcc (tl, acc)
-            end
+    fun getUnmarkedTransitionsIfExists (pos, dstates) =
+      if pos = Vector.length dstates then
+        NONE
+      else
+        let
+          val record = Vector.sub (dstates, pos)
+        in
+          if #marked record then
+            getUnmarkedTransitionsIfExists (pos + 1, dstates)
           else
-            markTransition (tl, transitionToMark, hd :: acc)
-      | [] => {marked = true, transitions = transitionToMark} :: acc
+            SOME (pos, #transitions record)
+        end
 
     fun convertLoop (regex, dstates) =
-      case getUnmarkedTransitionsIfExists dstates of
-        SOME unamarkedTransition =>
+      case getUnmarkedTransitionsIfExists (0, dstates) of
+        SOME (unmarkedIdx, unamarkedTransition) =>
           let
-            val dstates = markTransition (dstates, unamarkedTransition, [])
+            (* mark transition *)
+            val dstates =
+              let
+                val newMark = {marked = true, transitions = unamarkedTransition}
+              in
+                Vector.update (dstates, unmarkedIdx, newMark)
+              end
 
             (* get follow transitions *)
             val nodes =
@@ -458,8 +460,15 @@ struct
                   let
                     val subtreeStates = Set.toCharsAndPositionsList subtree
                   in
-                    if statesInList (acc, subtreeStates) then acc
-                    else {marked = false, transitions = subtreeStates} :: acc
+                    if ifStatesInVec (0, dstates, subtreeStates) then
+                      acc
+                    else
+                      let
+                        val record =
+                          {marked = false, transitions = subtreeStates}
+                      in
+                        Vector.concat [acc, Vector.fromList [record]]
+                      end
                   end
               , follows
               , dstates
@@ -472,7 +481,7 @@ struct
     fun convert regex =
       let
         val first = List.rev (firstposWithChar (regex, []))
-        val dstates = [{transitions = first, marked = false}]
+        val dstates = Vector.fromList [{transitions = first, marked = false}]
       in
         convertLoop (regex, dstates)
       end
@@ -489,4 +498,4 @@ struct
   val test = ToDfa.convert
 end
 
-val SOME nfa = Nfa.parse "(a|b)*abb"
+val SOME nfa = Nfa.parse "(a|b)*abb\^@"
