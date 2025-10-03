@@ -74,6 +74,30 @@ struct
             BRANCH (l, key, value, r)
           end
       | LEAF => LEAF
+
+    fun foldl (f, tree, acc) =
+      case tree of
+        BRANCH (l, k, v, r) =>
+          let
+            val acc = foldl (f, l, acc)
+            val acc = f (v, acc)
+          in
+            foldl (f, r, acc)
+          end
+      | LEAF => acc
+
+    fun helpToCharsAndPositionsList (tree, acc) =
+      case tree of
+        BRANCH (l, k, v, r) =>
+          let
+            val acc = helpToCharsAndPositionsList (r, acc)
+            val acc = {char = v, position = k} :: acc
+          in
+            helpToCharsAndPositionsList (l, acc)
+          end
+      | LEAF => acc
+
+    fun toCharsAndPositionsList tree = helpToCharsAndPositionsList (tree, [])
   end
 
   structure ParseNfa =
@@ -255,9 +279,8 @@ struct
     fun firstposWithChar (tree, acc) =
       case tree of
         CHAR_LITERAL {position, char} =>
-          {position = position, char = Char.ord char, marked = false} :: acc
-      | WILDCARD position =>
-          {position = position, char = ~1, marked = false} :: acc
+          {position = position, char = Char.ord char} :: acc
+      | WILDCARD position => {position = position, char = ~1} :: acc
 
       | CONCAT {l, r, ...} =>
           if isNullable l then
@@ -299,16 +322,16 @@ struct
 
     fun followpos (char, regex, acc) =
       case regex of
-        CONCAT {r, ...} => firstpos (r, acc)
-      | ZERO_OR_MORE r => firstpos (r, acc)
-      | ZERO_OR_ONE r => firstpos (r, acc)
-      | ONE_OR_MORE r => firstpos (r, acc)
+        CONCAT {r, ...} => firstposWithChar (r, acc)
+      | ZERO_OR_MORE r => firstposWithChar (r, acc)
+      | ZERO_OR_ONE r => firstposWithChar (r, acc)
+      | ONE_OR_MORE r => firstposWithChar (r, acc)
       | _ => acc
 
-    fun insertIntsFromList (lst, acc) : unit Set.set =
+    fun insertIntsFromList (lst, acc) =
       case lst of
-        hd :: tl =>
-          let val acc = Set.insertOrReplace (hd, (), acc)
+        {position, char} :: tl =>
+          let val acc = Set.insertOrReplace (position, char, acc)
           in insertIntsFromList (tl, acc)
           end
       | [] => acc
@@ -321,13 +344,12 @@ struct
      * represents the first transition, from which the pos can exit
      * its current state.
      * *)
-    fun filterUntilFirstConcat (lst: regex list, acc: unit Set.set, char: int) :
-      unit Set.set =
+    fun filterUntilFirstConcat (lst: regex list, acc, char: int) =
       case lst of
         hd :: tl =>
           (case hd of
              CONCAT _ =>
-               let val fp: int list = followpos (char, hd, [])
+               let val fp = followpos (char, hd, [])
                in insertIntsFromList (fp, acc)
                end
            | ZERO_OR_ONE _ =>
@@ -375,26 +397,84 @@ struct
       | WILDCARD _ => acc
       | GROUP r => getConcatAndLoopsToPos (r, pos, acc, char)
 
-    fun getFollowPos tree =
+    fun statesInList (lst, newStates) =
+      case lst of
+        {marked = _, transitions} :: tl =>
+          newStates = transitions orelse statesInList (tl, newStates)
+      | [] => false
+
+    fun getUnmarkedTransitionsIfExists lst =
+      case lst of
+        {marked, transitions} :: tl =>
+          if marked then getUnmarkedTransitionsIfExists tl else SOME transitions
+      | [] => NONE
+
+    fun addListToAcc (lst, acc) =
+      case lst of
+        hd :: tl => addListToAcc (tl, hd :: acc)
+      | [] => acc
+
+    fun markTransition (lst, transitionToMark, acc) =
+      case lst of
+        (hd as {marked, transitions}) :: tl =>
+          if transitions = transitionToMark then
+            let val acc = {marked = true, transitions = transitionToMark} :: acc
+            in addListToAcc (tl, acc)
+            end
+          else
+            markTransition (tl, transitionToMark, hd :: acc)
+      | [] => {marked = true, transitions = transitionToMark} :: acc
+
+    fun convertLoop (regex, dstates) =
+      case getUnmarkedTransitionsIfExists dstates of
+        SOME unamarkedTransition =>
+          let
+            val dstates = markTransition (dstates, unamarkedTransition, [])
+
+            (* get follow transitions *)
+            val nodes =
+              List.map
+                (fn {char, position} =>
+                   let
+                     val node =
+                       getConcatAndLoopsToPos (regex, position, [], char)
+                   in
+                     {node = node, char = char}
+                   end) unamarkedTransition
+
+            val follows =
+              List.foldl
+                (fn ({node, char}, set) =>
+                   let
+                     val subset = Set.getOrDefault (char, set, Set.LEAF)
+                     val subset = filterUntilFirstConcat (node, subset, char)
+                   in
+                     Set.insertOrReplace (char, subset, set)
+                   end) Set.LEAF nodes
+
+            (* add any new transitions we find *)
+            val newdstates = Set.foldl
+              ( fn (subtree, acc) =>
+                  let
+                    val subtreeStates = Set.toCharsAndPositionsList subtree
+                  in
+                    if statesInList (acc, subtreeStates) then acc
+                    else {marked = false, transitions = subtreeStates} :: acc
+                  end
+              , follows
+              , dstates
+              )
+          in
+            convertLoop (regex, newdstates)
+          end
+      | NONE => dstates
+
+    fun convert regex =
       let
-        val first = firstposWithChar (tree, [])
-        val nodes =
-          List.map
-            (fn {char, position, marked = _} =>
-               let val node = getConcatAndLoopsToPos (tree, position, [], char)
-               in {node = node, char = char}
-               end) first
-        val follows =
-          List.foldl
-            (fn ({node, char}, set) =>
-               let
-                 val subset = Set.getOrDefault (char, set, Set.LEAF)
-                 val subset = filterUntilFirstConcat (node, subset, char)
-               in
-                 Set.insertOrReplace (char, subset, set)
-               end) Set.LEAF nodes
+        val first = List.rev (firstposWithChar (regex, []))
+        val dstates = [{transitions = first, marked = false}]
       in
-        follows
+        convertLoop (regex, dstates)
       end
   end
 
@@ -406,7 +486,7 @@ struct
   fun firstposWithChar regex = ToDfa.firstposWithChar (regex, [])
 
   fun lastpos regex = ToDfa.lastpos (regex, [])
-  val test = ToDfa.getFollowPos
+  val test = ToDfa.convert
 end
 
 val SOME nfa = Nfa.parse "(a|b)*abb"
