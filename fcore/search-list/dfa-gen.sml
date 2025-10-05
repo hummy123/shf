@@ -322,10 +322,10 @@ struct
 
     fun followpos (char, regex, acc) =
       case regex of
-        CONCAT {r, ...} => firstposWithChar (r, acc)
-      | ZERO_OR_MORE r => firstposWithChar (r, acc)
-      | ZERO_OR_ONE r => firstposWithChar (r, acc)
-      | ONE_OR_MORE r => firstposWithChar (r, acc)
+        CONCAT {r, ...} => firstpos (r, acc)
+      | ZERO_OR_MORE r => firstpos (r, acc)
+      | ZERO_OR_ONE r => firstpos (r, acc)
+      | ONE_OR_MORE r => firstpos (r, acc)
       | _ => acc
 
     fun insertIntsFromList (lst, acc) =
@@ -396,6 +396,71 @@ struct
       | CHAR_LITERAL _ => acc
       | WILDCARD _ => acc
       | GROUP r => getConcatAndLoopsToPos (r, pos, acc, char)
+
+    (* Does two things:
+     * 1. Descends to the leaf matching 'pos'.
+     * 2. If the character at 'pos' matches the current character, 
+     *    calls followpos at the appropriate nodes. 
+     * In the end, we get a list of positions to follow. *)
+    fun getFollowsIfPosMatchesChar (regex: regex, pos, curChr) =
+      case regex of
+        CHAR_LITERAL {char, position = _} =>
+          if char = curChr then
+            {sawConcat = false, follows = [], charIsMatch = true}
+          else
+            {sawConcat = false, follows = [], charIsMatch = false}
+      | WILDCARD _ => {sawConcat = false, follows = [], charIsMatch = true}
+      | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
+          let val nodeToFollow = if pos <= leftMaxState then l else r
+          in getFollowsIfPosMatchesChar (nodeToFollow, pos, curChr)
+          end
+      | GROUP regex => getFollowsIfPosMatchesChar (regex, pos, curChr)
+
+      | CONCAT {l, r, leftMaxState, ...} =>
+          let
+            val nodeToFollow = if pos <= leftMaxState then l else r
+            val result = getFollowsIfPosMatchesChar (nodeToFollow, pos, curChr)
+            val {sawConcat, follows, charIsMatch} = result
+          in
+            if charIsMatch then
+              if sawConcat then
+                (* saw concat, so we got follow pos already *)
+                result
+              else
+                (* get followpos *)
+                let val fp = followpos (curChr, regex, follows)
+                in {sawConcat = true, follows = fp, charIsMatch = true}
+                end
+            else
+              (* char does not match, so don't get followpos *)
+              result
+          end
+      | _ =>
+          let
+            fun followLoop child =
+              let
+                val result = getFollowsIfPosMatchesChar (child, pos, curChr)
+                val {sawConcat, follows, charIsMatch} = result
+              in
+                if charIsMatch then
+                  if sawConcat then
+                    result
+                  else
+                    let val fp = followpos (curChr, regex, follows)
+                    in {sawConcat = false, follows = fp, charIsMatch = true}
+                    end
+                else
+                  result
+              end
+          in
+            case regex of
+              ZERO_OR_ONE child => followLoop child
+            | ZERO_OR_MORE child => followLoop child
+            | ONE_OR_MORE child => followLoop child
+            | _ =>
+                raise Fail
+                  "dfa-gen.sml 466: should have matched non-loop before"
+          end
 
     fun ifStatesInVec (pos, dstates, newStates) =
       if pos = Vector.length dstates then
