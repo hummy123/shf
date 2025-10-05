@@ -328,81 +328,12 @@ struct
       | ONE_OR_MORE r => firstpos (r, acc)
       | _ => acc
 
-    fun insertIntsFromList (lst, acc) =
-      case lst of
-        {position, char} :: tl =>
-          let val acc = Set.insertOrReplace (position, char, acc)
-          in insertIntsFromList (tl, acc)
-          end
-      | [] => acc
-
-    (* for help finding followpos of a particular node.
-     * Get list of concat and loop nodes to pos.
-     * Direct ancestor is at front of list, and furthest ancestor
-     * is at end of list. 
-     * We are filtering until first concat because the concat node
-     * represents the first transition, from which the pos can exit
-     * its current state.
-     * *)
-    fun filterUntilFirstConcat (lst: regex list, acc, char: int) =
-      case lst of
-        hd :: tl =>
-          (case hd of
-             CONCAT _ =>
-               let val fp = followpos (char, hd, [])
-               in insertIntsFromList (fp, acc)
-               end
-           | ZERO_OR_ONE _ =>
-               let
-                 val fp = followpos (char, hd, [])
-                 val acc = insertIntsFromList (fp, acc)
-               in
-                 filterUntilFirstConcat (tl, acc, char)
-               end
-           | ZERO_OR_MORE _ =>
-               let
-                 val fp = followpos (char, hd, [])
-                 val acc = insertIntsFromList (fp, acc)
-               in
-                 filterUntilFirstConcat (tl, acc, char)
-               end
-           | ONE_OR_MORE _ =>
-               let
-                 val fp = followpos (char, hd, [])
-                 val acc = insertIntsFromList (fp, acc)
-               in
-                 filterUntilFirstConcat (tl, acc, char)
-               end
-           | _ =>
-               raise Fail
-                 "dfa-gen.sml 310: should only have loops and concats \
-                 \in list to filter")
-      | [] => acc
-
-    fun getConcatAndLoopsToPos (tree: regex, pos: int, acc: regex list, char) =
-      case tree of
-        CONCAT {l, r, leftMaxState, rightMaxState} =>
-          if pos <= leftMaxState then
-            getConcatAndLoopsToPos (l, pos, tree :: acc, char)
-          else
-            getConcatAndLoopsToPos (r, pos, tree :: acc, char)
-      | ZERO_OR_ONE r => getConcatAndLoopsToPos (r, pos, tree :: acc, char)
-      | ZERO_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc, char)
-      | ONE_OR_MORE r => getConcatAndLoopsToPos (r, pos, tree :: acc, char)
-
-      | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
-          if pos <= leftMaxState then getConcatAndLoopsToPos (l, pos, acc, char)
-          else getConcatAndLoopsToPos (r, pos, acc, char)
-      | CHAR_LITERAL _ => acc
-      | WILDCARD _ => acc
-      | GROUP r => getConcatAndLoopsToPos (r, pos, acc, char)
-
     (* Does two things:
      * 1. Descends to the leaf matching 'pos'.
      * 2. If the character at 'pos' matches the current character, 
      *    calls followpos at the appropriate nodes. 
      * In the end, we get a list of positions to follow. *)
-    fun getFollowsIfPosMatchesChar (regex: regex, pos, curChr) =
+    fun getFollowsForPositionAndChar (regex: regex, pos, curChr) =
       case regex of
         CHAR_LITERAL {char, position = _} =>
           if char = curChr then
@@ -412,14 +343,15 @@ struct
       | WILDCARD _ => {sawConcat = false, follows = [], charIsMatch = true}
       | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
           let val nodeToFollow = if pos <= leftMaxState then l else r
-          in getFollowsIfPosMatchesChar (nodeToFollow, pos, curChr)
+          in getFollowsForPositionAndChar (nodeToFollow, pos, curChr)
           end
-      | GROUP regex => getFollowsIfPosMatchesChar (regex, pos, curChr)
+      | GROUP regex => getFollowsForPositionAndChar (regex, pos, curChr)
 
       | CONCAT {l, r, leftMaxState, ...} =>
           let
             val nodeToFollow = if pos <= leftMaxState then l else r
-            val result = getFollowsIfPosMatchesChar (nodeToFollow, pos, curChr)
+            val result =
+              getFollowsForPositionAndChar (nodeToFollow, pos, curChr)
             val {sawConcat, follows, charIsMatch} = result
           in
             if charIsMatch then
@@ -435,32 +367,28 @@ struct
               (* char does not match, so don't get followpos *)
               result
           end
-      | _ =>
-          let
-            fun followLoop child =
-              let
-                val result = getFollowsIfPosMatchesChar (child, pos, curChr)
-                val {sawConcat, follows, charIsMatch} = result
-              in
-                if charIsMatch then
-                  if sawConcat then
-                    result
-                  else
-                    let val fp = followpos (curChr, regex, follows)
-                    in {sawConcat = false, follows = fp, charIsMatch = true}
-                    end
-                else
-                  result
-              end
-          in
-            case regex of
-              ZERO_OR_ONE child => followLoop child
-            | ZERO_OR_MORE child => followLoop child
-            | ONE_OR_MORE child => followLoop child
-            | _ =>
-                raise Fail
-                  "dfa-gen.sml 466: should have matched non-loop before"
-          end
+      | ZERO_OR_ONE child =>
+          getFollowsForPositionAndCharLoop (pos, regex, child, curChr)
+      | ZERO_OR_MORE child =>
+          getFollowsForPositionAndCharLoop (pos, regex, child, curChr)
+      | ONE_OR_MORE child =>
+          getFollowsForPositionAndCharLoop (pos, regex, child, curChr)
+
+    and getFollowsForPositionAndCharLoop (pos, regex, child, curChr) =
+      let
+        val result = getFollowsForPositionAndChar (child, pos, curChr)
+        val {sawConcat, follows, charIsMatch} = result
+      in
+        if charIsMatch then
+          if sawConcat then
+            result
+          else
+            let val fp = followpos (curChr, regex, follows)
+            in {sawConcat = false, follows = fp, charIsMatch = true}
+            end
+        else
+          result
+      end
 
     fun ifStatesInVec (pos, dstates, newStates) =
       if pos = Vector.length dstates then
@@ -499,25 +427,8 @@ struct
               end
 
             (* get follow transitions *)
-            val nodes =
-              List.map
-                (fn {char, position} =>
-                   let
-                     val node =
-                       getConcatAndLoopsToPos (regex, position, [], char)
-                   in
-                     {node = node, char = char}
-                   end) unamarkedTransition
-
-            val follows =
-              List.foldl
-                (fn ({node, char}, set) =>
-                   let
-                     val subset = Set.getOrDefault (char, set, Set.LEAF)
-                     val subset = filterUntilFirstConcat (node, subset, char)
-                   in
-                     Set.insertOrReplace (char, subset, set)
-                   end) Set.LEAF nodes
+            val nodes = raise Fail "todo"
+            val follows = raise Fail "todo"
 
             (* add any new transitions we find *)
             val newdstates = Set.foldl
