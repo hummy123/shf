@@ -301,7 +301,7 @@ struct
     fun getFollowsForPositionAndChar (regex: regex, pos, curChr) =
       case regex of
         CHAR_LITERAL {char, position = _} =>
-          if char = curChr then
+          if Char.ord char = curChr then
             {sawConcat = false, follows = [], charIsMatch = true}
           else
             {sawConcat = false, follows = [], charIsMatch = false}
@@ -363,7 +363,7 @@ struct
             val followSet =
               List.foldl
                 (fn (fp, followSet) => Set.insertOrReplace (fp, (), followSet))
-                fpList
+                followSet (#follows fpList)
           in
             getFollowPositionsFromList (tl, regex, char, followSet)
           end
@@ -371,10 +371,12 @@ struct
 
     fun appendIfNew (pos, dstates, newStates) =
       if pos = Vector.length dstates then
-        Vector.concat [dstates, Vector.fromList [newStates]]
+        let val record = {transitions = newStates, marked = false}
+        in Vector.concat [dstates, Vector.fromList [record]]
+        end
       else
         let
-          val {transitions, marked = _} = Vector.sub (dstates, pos)
+          val {transitions: int list, marked = _} = Vector.sub (dstates, pos)
         in
           if transitions = newStates then dstates
           else appendIfNew (pos + 1, dstates, newStates)
@@ -451,17 +453,7 @@ struct
             val follows = raise Fail "todo"
 
             (* add any new transitions we find *)
-            val newdstates = Set.foldl
-              ( fn (subtree, dstates) =>
-                  let
-                    val subtreeStates = Set.keysToList subtree
-                    val dstates = appendIfNew (0, dstates, subtreeStates)
-                  in
-                    dstates
-                  end
-              , follows
-              , dstates
-              )
+            val newdstates = raise Fail "todo"
           in
             convertLoop (regex, newdstates)
           end
