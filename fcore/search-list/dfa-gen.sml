@@ -393,17 +393,45 @@ struct
             SOME (pos, #transitions record)
         end
 
-    fun convertChar (char, regex, dstates, dtran, curStates) =
+    type dtran = {states: int list, transitions: int list Set.set}
+
+    fun convertChar
+      (char, regex, dstates, dtran: dtran vector, curStates, curStatesIdx) =
       if char < 0 then
-        (dstates, Vector.fromList dtran)
+        (dstates, dtran)
       else
         let
           (* get union of all follow positions *)
           val u = getFollowPositionsFromList (curStates, regex, char, Set.LEAF)
+
           (* add follow positions to dstates if they are not already inside *)
           val dstates = appendIfNew (0, dstates, u)
+
+          (* update dtran to include transitions for char.
+           * Todo: The code below updates the same vector each time.
+           * It would be more efficient if we accumulate the set,
+           * and then later append/update it once the loop is done. *)
+          val dtran =
+            if curStatesIdx >= Vector.length dtran then
+              (* corresponding idx doesn't exist in dtran
+               * so we append to dtran instead *)
+              let
+                val transitions = Set.insertOrReplace (char, u, Set.LEAF)
+                val record = {states = curStates, transitions = transitions}
+              in
+                Vector.concat [dtran, Vector.fromList [record]]
+              end
+            else
+              (* corresponding state idx does exist in dtran, so we update it *)
+              let
+                val {states, transitions} = Vector.sub (dtran, curStatesIdx)
+                val transitions = Set.insertOrReplace (char, u, transitions)
+                val record = {states = states, transitions = transitions}
+              in
+                Vector.update (dtran, curStatesIdx, record)
+              end
         in
-          raise Fail "todo"
+          convertChar (char - 1, regex, dstates, dtran, curStates, curStatesIdx)
         end
 
     fun convertLoop (regex, dstates) =
