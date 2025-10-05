@@ -85,19 +85,6 @@ struct
             foldl (f, r, acc)
           end
       | LEAF => acc
-
-    fun helpToCharsAndPositionsList (tree, acc) =
-      case tree of
-        BRANCH (l, k, v, r) =>
-          let
-            val acc = helpToCharsAndPositionsList (r, acc)
-            val acc = {char = v, position = k} :: acc
-          in
-            helpToCharsAndPositionsList (l, acc)
-          end
-      | LEAF => acc
-
-    fun toCharsAndPositionsList tree = helpToCharsAndPositionsList (tree, [])
   end
 
   structure ParseDfa =
@@ -276,28 +263,6 @@ struct
       | ONE_OR_MORE regex => firstpos (regex, acc)
       | GROUP regex => firstpos (regex, acc)
 
-    fun firstposWithChar (tree, acc) =
-      case tree of
-        CHAR_LITERAL {position, char} =>
-          {position = position, char = Char.ord char} :: acc
-      | WILDCARD position => {position = position, char = ~1} :: acc
-
-      | CONCAT {l, r, ...} =>
-          if isNullable l then
-            let val acc = firstposWithChar (l, acc)
-            in firstposWithChar (r, acc)
-            end
-          else
-            firstposWithChar (l, acc)
-      | ALTERNATION {l, r, ...} =>
-          let val acc = firstposWithChar (l, acc)
-          in firstposWithChar (r, acc)
-          end
-      | ZERO_OR_ONE regex => firstposWithChar (regex, acc)
-      | ZERO_OR_MORE regex => firstposWithChar (regex, acc)
-      | ONE_OR_MORE regex => firstposWithChar (regex, acc)
-      | GROUP regex => firstposWithChar (regex, acc)
-
     fun lastpos (tree, acc) =
       case tree of
         CHAR_LITERAL {position, ...} => position :: acc
@@ -390,15 +355,29 @@ struct
           result
       end
 
-    fun ifStatesInVec (pos, dstates, newStates) =
+    fun getFollowPositionsFromList (lst: int list, regex, char, followSet) =
+      case lst of
+        hd :: tl =>
+          let
+            val fpList = getFollowsForPositionAndChar (regex, hd, char)
+            val followSet =
+              List.foldl
+                (fn (fp, followSet) => Set.insertOrReplace (fp, (), followSet))
+                fpList
+          in
+            getFollowPositionsFromList (tl, regex, char, followSet)
+          end
+      | [] => Set.keysToList followSet
+
+    fun appendIfNew (pos, dstates, newStates) =
       if pos = Vector.length dstates then
-        false
+        Vector.concat [dstates, Vector.fromList [newStates]]
       else
         let
           val {transitions, marked = _} = Vector.sub (dstates, pos)
         in
-          transitions = newStates
-          orelse ifStatesInVec (pos + 1, dstates, newStates)
+          if transitions = newStates then dstates
+          else appendIfNew (pos + 1, dstates, newStates)
         end
 
     fun getUnmarkedTransitionsIfExists (pos, dstates) =
@@ -412,6 +391,19 @@ struct
             getUnmarkedTransitionsIfExists (pos + 1, dstates)
           else
             SOME (pos, #transitions record)
+        end
+
+    fun convertChar (char, regex, dstates, dtran, curStates) =
+      if char < 0 then
+        (dstates, Vector.fromList dtran)
+      else
+        let
+          (* get union of all follow positions *)
+          val u = getFollowPositionsFromList (curStates, regex, char, Set.LEAF)
+          (* add follow positions to dstates if they are not already inside *)
+          val dstates = appendIfNew (0, dstates, u)
+        in
+          raise Fail "todo"
         end
 
     fun convertLoop (regex, dstates) =
@@ -432,19 +424,12 @@ struct
 
             (* add any new transitions we find *)
             val newdstates = Set.foldl
-              ( fn (subtree, acc) =>
+              ( fn (subtree, dstates) =>
                   let
-                    val subtreeStates = Set.toCharsAndPositionsList subtree
+                    val subtreeStates = Set.keysToList subtree
+                    val dstates = appendIfNew (0, dstates, subtreeStates)
                   in
-                    if ifStatesInVec (0, dstates, subtreeStates) then
-                      acc
-                    else
-                      let
-                        val record =
-                          {marked = false, transitions = subtreeStates}
-                      in
-                        Vector.concat [acc, Vector.fromList [record]]
-                      end
+                    dstates
                   end
               , follows
               , dstates
@@ -456,7 +441,7 @@ struct
 
     fun convert regex =
       let
-        val first = List.rev (firstposWithChar (regex, []))
+        val first = List.rev (firstpos (regex, []))
         val dstates = Vector.fromList [{transitions = first, marked = false}]
       in
         convertLoop (regex, dstates)
