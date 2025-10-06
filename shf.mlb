@@ -6,7 +6,6 @@ lib/brolib-sml/src/gap_set.sml
 lib/cozette-sml/fonts-with-z-index/cozette-ascii.mlb
 
 (* FUNCTIONAL CORE *)
-fcore/escape-string.sml
 fcore/bin-search.sml
 
 ann

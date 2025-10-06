@@ -5,9 +5,7 @@ struct
   open MailboxType
 
   fun buildTempSearchList (searchString, buffer, cursorIdx) =
-    let val unescapedString = EscapeString.unescape searchString
-    in SearchList.buildRange (buffer, unescapedString, cursorIdx + 1111)
-    end
+    SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
 
   fun addChr
     (app: app_type, searchString, searchCursorIdx, searchScrollColumn, chr) =
@@ -66,7 +64,6 @@ struct
         } = app
 
       val buffer = LineGap.goToStart buffer
-      val searchString = EscapeString.unescape searchString
       val initialMsg = [SEARCH (buffer, searchString, time)]
 
       (* move LineGap to first line displayed on screen *)

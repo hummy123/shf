@@ -109,6 +109,30 @@ struct
       fun getRightParenIdx (pos, str) = loop (pos, str, 1, 0)
     end
 
+    (* assumes previous char is a backslash *)
+    fun isValidEscapeSequence chr =
+      case chr of
+      (* regex metacharacters *)
+        #"(" => true
+      | #")" => true
+      | #"[" => true
+      | #"]" => true
+      | #"+" => true
+      | #"*" => true
+      | #"|" => true
+      | #"?" => true
+      (* standard escape sequences *)
+      | #"\a" => true
+      | #"\b" => true
+      | #"\t" => true
+      | #"\n" => true
+      | #"\v" => true
+      | #"\f" => true
+      | #"\r" => true
+      | #"\\" => true
+      | #"\"" => true
+      | _ => false
+
     fun computeAtom (pos, str, stateNum) =
       if pos = String.size str then
         NONE
@@ -132,6 +156,24 @@ struct
         | #"*" => NONE
         | #"+" => NONE
         | #"." => SOME (pos + 1, WILDCARD (stateNum + 1), stateNum + 1)
+        | #"\\" =>
+            (* escape sequences *)
+            if pos + 1 = String.size str then
+              NONE
+            else
+              let
+                val chr = String.sub (str, pos + 1)
+              in
+                if isValidEscapeSequence chr then
+                  let
+                    val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
+                  in
+                    SOME (pos + 2, chr, stateNum + 1)
+                  end
+                else
+                  NONE
+              end
+        (* todo: [character classes] *)
         | chr =>
             let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
             in SOME (pos + 1, chr, stateNum + 1)
