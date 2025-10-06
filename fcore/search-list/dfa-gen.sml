@@ -313,25 +313,25 @@ struct
       | GROUP regex => getFollowsForPositionAndChar (regex, pos, curChr)
 
       | CONCAT {l, r, leftMaxState, ...} =>
-          let
-            val nodeToFollow = if pos <= leftMaxState then l else r
-            val result =
-              getFollowsForPositionAndChar (nodeToFollow, pos, curChr)
-            val {sawConcat, follows, charIsMatch} = result
-          in
-            if charIsMatch then
-              if sawConcat then
-                (* saw concat, so we got follow pos already *)
-                result
+          if pos <= leftMaxState then
+            let
+              val result = getFollowsForPositionAndChar (l, pos, curChr)
+              val {sawConcat, follows, charIsMatch} = result
+            in
+              if charIsMatch then
+                if sawConcat then
+                  (* we already saw a concat and got followpos *)
+                  result
+                else
+                  let val fp = followpos (curChr, regex, follows)
+                  in {sawConcat = true, follows = fp, charIsMatch = true}
+                  end
               else
-                (* get followpos *)
-                let val fp = followpos (curChr, regex, follows)
-                in {sawConcat = true, follows = fp, charIsMatch = true}
-                end
-            else
-              (* char does not match, so don't get followpos *)
-              result
-          end
+                (* char is not match, so don't get follow pos *)
+                result
+            end
+          else
+            getFollowsForPositionAndChar (r, pos, curChr)
       | ZERO_OR_ONE child =>
           getFollowsForPositionAndCharLoop (pos, regex, child, curChr)
       | ZERO_OR_MORE child =>
@@ -360,10 +360,15 @@ struct
         hd :: tl =>
           let
             val fpList = getFollowsForPositionAndChar (regex, hd, char)
+            val {sawConcat, follows, charIsMatch} = fpList
+            val follows =
+              if charIsMatch andalso not sawConcat then 0 :: follows
+              else follows
+
             val followSet =
               List.foldl
                 (fn (fp, followSet) => Set.insertOrReplace (fp, (), followSet))
-                followSet (#follows fpList)
+                followSet follows
           in
             getFollowPositionsFromList (tl, regex, char, followSet)
           end
@@ -501,8 +506,19 @@ struct
   end
 
   fun fromString str =
-    case ParseDfa.parse (str ^ "\^@", 0) of
-      SOME (ast, _) => ToDfa.convert ast
+    case ParseDfa.parse (str, 0) of
+      SOME (ast, numStates) =>
+        let
+          val endMarker = CHAR_LITERAL {char = #"\^@", position = numStates + 1}
+          val ast = CONCAT
+            { l = ast
+            , leftMaxState = numStates
+            , r = endMarker
+            , rightMaxState = numStates + 1
+            }
+        in
+          ToDfa.convert ast
+        end
     | NONE => Vector.fromList []
 
   type dfa = int vector vector
