@@ -93,4 +93,28 @@ struct
     fun exists (findNum, vec) =
       helpExists (findNum, vec, 0, Vector.length vec - 1)
   end
+
+  local
+    fun helpEqualOrMinus1 (findNum, vec, low, high) =
+      let
+        val mid = low + ((high - low) div 2)
+      in
+        if high >= low then
+          let
+            val midVal = Vector.sub (vec, mid)
+          in
+            if midVal = findNum then
+              mid
+            else if midVal < findNum then
+              helpEqualOrMinus1 (findNum, vec, mid + 1, high)
+            else
+              helpEqualOrMinus1 (findNum, vec, low, mid - 1)
+          end
+        else
+          ~1
+      end
+  in
+    fun equalOrMinus1 (findNum, vec) =
+      helpEqualOrMinus1 (findNum, vec, 0, Vector.length vec - 1)
+  end
 end

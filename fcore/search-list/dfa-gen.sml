@@ -405,38 +405,51 @@ struct
         let
           (* get union of all follow positions *)
           val u = getFollowPositionsFromList (curStates, regex, char, Set.LEAF)
-
-          (* add follow positions to dstates if they are not already inside *)
-          val dstates = appendIfNew (0, dstates, u)
-
-          (* update dtran to include transitions for char.
-           * Todo: The code below updates the same vector each time.
-           * It would be more efficient if we accumulate the set,
-           * and then later append/update it once the loop is done. *)
-          val dtran =
-            if curStatesIdx >= Vector.length dtran then
-              (* corresponding idx doesn't exist in dtran
-               * so we append to dtran instead *)
-              let
-                val transitions = Set.insertOrReplace (char, u, Set.LEAF)
-                val record = {states = curStates, transitions = transitions}
-              in
-                Vector.concat [dtran, Vector.fromList [record]]
-              end
-            else
-              (* corresponding state idx does exist in dtran, so we update it *)
-              let
-                val {states, transitions} = Vector.sub (dtran, curStatesIdx)
-                val transitions = Set.insertOrReplace (char, u, transitions)
-                val record = {states = states, transitions = transitions}
-              in
-                Vector.update (dtran, curStatesIdx, record)
-              end
         in
-          convertChar (char - 1, regex, dstates, dtran, curStates, curStatesIdx)
+          case u of
+            [] =>
+              (* no follow positions from here, so don't add to dstates *)
+              convertChar
+                (char - 1, regex, dstates, dtran, curStates, curStatesIdx)
+          | _ =>
+              let
+                (* add follow positions to dstates if they are not already inside
+                 * and if follow is not empty *)
+                val dstates = appendIfNew (0, dstates, u)
+
+                (* update dtran to include transitions for char.
+                 * Todo: The code below updates the same vector each time.
+                 * It would be more efficient if we accumulate the set,
+                 * and then later append/update it once the loop is done. *)
+                val dtran =
+                  if curStatesIdx >= Vector.length dtran then
+                    (* corresponding idx doesn't exist in dtran
+                     * so we append to dtran instead *)
+                    let
+                      val transitions = Set.insertOrReplace (char, u, Set.LEAF)
+                      val record =
+                        {states = curStates, transitions = transitions}
+                    in
+                      Vector.concat [dtran, Vector.fromList [record]]
+                    end
+                  else
+                    (* corresponding state idx does exist in dtran, so we update it *)
+                    let
+                      val {states, transitions} =
+                        Vector.sub (dtran, curStatesIdx)
+                      val transitions =
+                        Set.insertOrReplace (char, u, transitions)
+                      val record = {states = states, transitions = transitions}
+                    in
+                      Vector.update (dtran, curStatesIdx, record)
+                    end
+              in
+                convertChar
+                  (char - 1, regex, dstates, dtran, curStates, curStatesIdx)
+              end
         end
 
-    fun convertLoop (regex, dstates) =
+    fun convertLoop (regex, dstates, dtran) =
       case getUnmarkedTransitionsIfExists (0, dstates) of
         SOME (unmarkedIdx, unamarkedTransition) =>
           let
@@ -448,30 +461,26 @@ struct
                 Vector.update (dstates, unmarkedIdx, newMark)
               end
 
-            (* get follow transitions *)
-            val nodes = raise Fail "todo"
-            val follows = raise Fail "todo"
-
-            (* add any new transitions we find *)
-            val newdstates = raise Fail "todo"
+            val (dstates, dtran) = convertChar
+              (255, regex, dstates, dtran, unamarkedTransition, unmarkedIdx)
           in
-            convertLoop (regex, newdstates)
+            convertLoop (regex, dstates, dtran)
           end
-      | NONE => dstates
+      | NONE => (dstates, dtran)
 
     fun convert regex =
       let
         val first = List.rev (firstpos (regex, []))
         val dstates = Vector.fromList [{transitions = first, marked = false}]
       in
-        convertLoop (regex, dstates)
+        convertLoop (regex, dstates, Vector.fromList [])
       end
   end
 
   fun fromString str =
     case ParseDfa.parse (str, 0) of
       SOME (ast, _) => ToDfa.convert ast
-    | NONE => Vector.fromList []
+    | NONE => (Vector.fromList [], Vector.fromList [])
 end
 
-val dfa = DfaGen.fromString "(a|b)*abb#"
+val (ds, dt) = DfaGen.fromString "(a|b)*abb#"
