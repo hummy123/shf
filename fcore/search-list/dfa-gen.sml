@@ -10,103 +10,6 @@ struct
   | GROUP of regex
   | WILDCARD of int
 
-  fun incrementStates regex =
-    case regex of
-      CHAR_LITERAL {position, char} =>
-        let val i = position + 1
-        in (CHAR_LITERAL {position = i, char = char}, i)
-        end
-    | WILDCARD i => let val i = i + 1 in (WILDCARD i, i) end
-    | CONCAT {l, r, ...} =>
-        let
-          val (l, leftMaxState) = incrementStates l
-          val (r, rightMaxState) = incrementStates r
-          val concat = CONCAT
-            { l = l
-            , leftMaxState = leftMaxState
-            , r = r
-            , rightMaxState = rightMaxState
-            }
-        in
-          (concat, rightMaxState)
-        end
-    | ALTERNATION {l, r, ...} =>
-        let
-          val (l, leftMaxState) = incrementStates l
-          val (r, rightMaxState) = incrementStates r
-          val concat = ALTERNATION
-            { l = l
-            , leftMaxState = leftMaxState
-            , r = r
-            , rightMaxState = rightMaxState
-            }
-        in
-          (concat, rightMaxState)
-        end
-    | ZERO_OR_MORE child =>
-        let val (child, maxStates) = incrementStates child
-        in (ZERO_OR_MORE child, maxStates)
-        end
-    | _ => raise Fail "should not call increment on ? or +"
-
-  fun expandRegex regex =
-    case regex of
-      CHAR_LITERAL {position, ...} => (regex, position)
-    | WILDCARD i => (regex, i)
-    | CONCAT {l, r, leftMaxState, rightMaxState} =>
-        let
-          val (l, leftMaxState) = expandRegex l
-          val (r, rightMaxState) = expandRegex r
-          val node = CONCAT
-            { l = l
-            , r = r
-            , leftMaxState = leftMaxState
-            , rightMaxState = rightMaxState
-            }
-        in
-          (node, rightMaxState)
-        end
-    | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
-        let
-          val (l, leftMaxState) = expandRegex l
-          val (r, rightMaxState) = expandRegex r
-          val node = ALTERNATION
-            { l = l
-            , r = r
-            , leftMaxState = leftMaxState
-            , rightMaxState = rightMaxState
-            }
-        in
-          (node, rightMaxState)
-        end
-    | GROUP regex =>
-        let val (regex, maxState) = expandRegex regex
-        in (GROUP regex, maxState)
-        end
-    | ZERO_OR_MORE regex =>
-        let val (regex, maxState) = expandRegex regex
-        in (ZERO_OR_MORE regex, maxState)
-        end
-
-    (* + symbol.
-     * We can expand this by constructing a concat, 
-     * putting the child in the concat's left,
-     * and an option Kleene star version of child on the right *)
-    | ONE_OR_MORE regex =>
-        let
-          val (l, leftMaxState) = expandRegex regex
-          val (r, rightMaxState) = incrementStates l
-          val r = ZERO_OR_MORE r
-          val node = CONCAT
-            { l = l
-            , leftMaxState = leftMaxState
-            , r = r
-            , rightMaxState = rightMaxState
-            }
-        in
-          (node, rightMaxState)
-        end
-
   structure Set =
   struct
     datatype 'a set = BRANCH of 'a set * int * 'a * 'a set | LEAF
@@ -334,8 +237,8 @@ struct
 
       | ZERO_OR_ONE _ => true
       | ZERO_OR_MORE _ => true
-
       | ONE_OR_MORE regex => isNullable regex
+
       | GROUP regex => isNullable regex
 
     fun firstpos (tree, acc) =
@@ -386,7 +289,6 @@ struct
       case regex of
         CONCAT {r, ...} => firstpos (r, acc)
       | ZERO_OR_MORE r => firstpos (r, acc)
-      | ZERO_OR_ONE r => firstpos (r, acc)
       | ONE_OR_MORE r => firstpos (r, acc)
       | _ => acc
 
@@ -447,10 +349,20 @@ struct
             else
               result
           end
-      | ZERO_OR_ONE _ =>
-          raise Fail "dfa-gen.sml 451: should expand so we don't have ?"
+      | ZERO_OR_ONE child => getFollowsForPositionAndChar (child, pos, curChr)
       | ONE_OR_MORE child =>
-          raise Fail "dfa-gen.sml 451: should expand so we don't have +"
+          let
+            val result = getFollowsForPositionAndChar (child, pos, curChr)
+            val {sawConcat, follows, charIsMatch} = result
+          in
+            if charIsMatch then
+              { sawConcat = false
+              , follows = firstpos (child, follows)
+              , charIsMatch = true
+              }
+            else
+              result
+          end
 
     fun getFollowPositionsFromList (lst: int list, regex, char, followSet) =
       case lst of
@@ -606,7 +518,6 @@ struct
     case ParseDfa.parse (str, 0) of
       SOME (ast, numStates) =>
         let
-          val (ast, numStates) = expandRegex ast
           val endMarker = CHAR_LITERAL {char = #"\^@", position = numStates + 1}
           val ast = CONCAT
             { l = ast
