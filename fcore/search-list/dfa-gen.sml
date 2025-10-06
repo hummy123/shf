@@ -274,7 +274,7 @@ struct
             in lastpos (r, acc)
             end
           else
-            lastpos (l, acc)
+            lastpos (r, acc)
       | ALTERNATION {l, r, ...} =>
           let val acc = lastpos (l, acc)
           in lastpos (r, acc)
