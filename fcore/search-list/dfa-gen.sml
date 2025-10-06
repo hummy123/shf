@@ -403,6 +403,8 @@ struct
      * that this char transitions to *)
     type dtran = int Set.set
 
+    fun makeEmptyVec _ = ~1
+
     fun convertChar
       ( char
       , regex
@@ -483,7 +485,11 @@ struct
           in
             convertLoop (regex, dstates, dtran)
           end
-      | NONE => (dstates, dtran)
+      | NONE =>
+          Vector.map
+            (fn set =>
+               Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
+            dtran
 
     fun convert regex =
       let
@@ -497,7 +503,17 @@ struct
   fun fromString str =
     case ParseDfa.parse (str, 0) of
       SOME (ast, _) => ToDfa.convert ast
-    | NONE => (Vector.fromList [], Vector.fromList [])
-end
+    | NONE => Vector.fromList []
 
-val (ds, dt) = DfaGen.fromString "(a|b)*abb#"
+  type dfa = int vector vector
+
+  fun nextState (dfa: dfa, curState, chr) =
+    let val curTable = Vector.sub (dfa, curState)
+    in Vector.sub (curTable, Char.ord chr)
+    end
+
+  fun isFinal (dfa: dfa, curState) =
+    let val curTable = Vector.sub (dfa, curState)
+    in Vector.sub (curTable, 0) <> ~1
+    end
+end
