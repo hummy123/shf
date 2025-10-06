@@ -337,9 +337,20 @@ struct
             end
           else
             getFollowsForPositionAndChar (r, pos, curChr)
-      | ZERO_OR_ONE child =>
-          getFollowsForPositionAndCharLoop (pos, regex, child, curChr)
       | ZERO_OR_MORE child =>
+          let
+            val result = getFollowsForPositionAndChar (child, pos, curChr)
+            val {sawConcat, follows, charIsMatch} = result
+          in
+            if charIsMatch then
+              { sawConcat = false
+              , follows = firstpos (child, follows)
+              , charIsMatch = true
+              }
+            else
+              result
+          end
+      | ZERO_OR_ONE child =>
           getFollowsForPositionAndCharLoop (pos, regex, child, curChr)
       | ONE_OR_MORE child =>
           getFollowsForPositionAndCharLoop (pos, regex, child, curChr)
