@@ -15,7 +15,7 @@ in
   fcore/persistent-vector.sml
 end
 fcore/search-list/dfa-gen.sml
-fcore/search-list.sml
+fcore/search-list/search-list.sml
 
 message-types/input-msg.sml
 message-types/draw-msg.sml

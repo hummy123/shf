@@ -501,7 +501,7 @@ struct
   end
 
   fun fromString str =
-    case ParseDfa.parse (str, 0) of
+    case ParseDfa.parse (str ^ "\^@", 0) of
       SOME (ast, _) => ToDfa.convert ast
     | NONE => Vector.fromList []
 
@@ -513,7 +513,11 @@ struct
     end
 
   fun isFinal (dfa: dfa, curState) =
+    curState <> ~1
+    andalso
     let val curTable = Vector.sub (dfa, curState)
     in Vector.sub (curTable, 0) <> ~1
     end
+
+  fun isDead curState = curState = ~1
 end
