@@ -305,7 +305,12 @@ struct
             {sawConcat = false, follows = [], charIsMatch = true}
           else
             {sawConcat = false, follows = [], charIsMatch = false}
-      | WILDCARD _ => {sawConcat = false, follows = [], charIsMatch = true}
+      | WILDCARD _ =>
+          (* we are treating a char that has ASCII code 0
+           * as an end marker which will not appear anywhere else.
+           * So we don't want to match it, but the wildcard can match
+           * any other character that has a different ASCII code. *)
+          {sawConcat = false, follows = [], charIsMatch = curChr <> 0}
       | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
           let val nodeToFollow = if pos <= leftMaxState then l else r
           in getFollowsForPositionAndChar (nodeToFollow, pos, curChr)
