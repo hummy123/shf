@@ -136,17 +136,12 @@ struct
             let
               val searchList =
                 PersistentVector.append (startPos, prevFinalPos, searchList)
+
+              (* we start 1 idx after the final position we found *)
+              val newStart = prevFinalPos + 1
             in
               rangeLoop
-                ( dfa
-                , bufferPos + 1
-                , buffer
-                , finishIdx
-                , searchList
-                , 0
-                , bufferPos + 1
-                , ~1
-                )
+                (dfa, newStart, buffer, finishIdx, searchList, 0, newStart, ~1)
             end
         else
           (* continue searching for match *)
