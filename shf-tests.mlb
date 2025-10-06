@@ -6,20 +6,20 @@ lib/brolib-sml/src/gap_set.sml
 lib/cozette-sml/fonts-with-z-index/cozette-ascii.mlb
 
 (* FUNCTIONAL CORE *)
-message-types/input-msg.sml
-message-types/draw-msg.sml
-message-types/search-msg.sml
-message-types/mailbox-type.sml
+fcore/bin-search.sml
 
 ann
   "allowVectorExps true"
 in
   fcore/persistent-vector.sml
 end
+fcore/search-list/dfa-gen.sml
+fcore/search-list/search-list.sml
 
-fcore/escape-string.sml
-fcore/bin-search.sml
-fcore/search-list.sml
+message-types/input-msg.sml
+message-types/draw-msg.sml
+message-types/search-msg.sml
+message-types/mailbox-type.sml
 
 fcore/app-type.sml
 fcore/normal-mode/normal-mode-with.sml
