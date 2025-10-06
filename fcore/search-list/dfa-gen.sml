@@ -371,14 +371,17 @@ struct
 
     fun appendIfNew (pos, dstates, newStates) =
       if pos = Vector.length dstates then
-        let val record = {transitions = newStates, marked = false}
-        in Vector.concat [dstates, Vector.fromList [record]]
+        let
+          val record = {transitions = newStates, marked = false}
+          val dstates = Vector.concat [dstates, Vector.fromList [record]]
+        in
+          (pos, dstates)
         end
       else
         let
           val {transitions: int list, marked = _} = Vector.sub (dstates, pos)
         in
-          if transitions = newStates then dstates
+          if transitions = newStates then (pos, dstates)
           else appendIfNew (pos + 1, dstates, newStates)
         end
 
@@ -395,11 +398,20 @@ struct
             SOME (pos, #transitions record)
         end
 
-    type dtran = int list Set.set
+    (* the int key in dtran refers to the char code
+     * while the int value refers to the idx from dstates
+     * that this char transitions to *)
+    type dtran = int Set.set
 
     fun convertChar
-      (char, regex, dstates, dtran: dtran vector, curStates, curStatesIdx,
-      setForCurStates) =
+      ( char
+      , regex
+      , dstates
+      , dtran: dtran vector
+      , curStates
+      , curStatesIdx
+      , setForCurStates
+      ) =
       if char < 0 then
         let
           (* append setForCurStates which was accumulated in this function
@@ -417,18 +429,33 @@ struct
             [] =>
               (* no follow positions from here, so don't add to dstates *)
               convertChar
-                (char - 1, regex, dstates, dtran, curStates, curStatesIdx, setForCurStates)
+                ( char - 1
+                , regex
+                , dstates
+                , dtran
+                , curStates
+                , curStatesIdx
+                , setForCurStates
+                )
           | _ =>
               let
                 (* add follow positions to dstates if they are not already inside
                  * and if follow is not empty *)
-                val dstates = appendIfNew (0, dstates, u)
+                val (newStateIdx, dstates) = appendIfNew (0, dstates, u)
 
                 (* update dtran to include transitions for char. *)
-                val setForCurStates = Set.insertOrReplace (char, u, setForCurStates)
+                val setForCurStates =
+                  Set.insertOrReplace (char, newStateIdx, setForCurStates)
               in
                 convertChar
-                  (char - 1, regex, dstates, dtran, curStates, curStatesIdx, setForCurStates)
+                  ( char - 1
+                  , regex
+                  , dstates
+                  , dtran
+                  , curStates
+                  , curStatesIdx
+                  , setForCurStates
+                  )
               end
         end
 
@@ -445,8 +472,14 @@ struct
               end
 
             val (dstates, dtran) = convertChar
-              (255, regex, dstates, dtran, unamarkedTransition, unmarkedIdx,
-              Set.LEAF)
+              ( 255
+              , regex
+              , dstates
+              , dtran
+              , unamarkedTransition
+              , unmarkedIdx
+              , Set.LEAF
+              )
           in
             convertLoop (regex, dstates, dtran)
           end
