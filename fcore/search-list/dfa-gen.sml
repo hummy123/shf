@@ -395,7 +395,7 @@ struct
             SOME (pos, #transitions record)
         end
 
-    type dtran = {states: int list, transitions: int list Set.set}
+    type dtran = int list Set.set
 
     fun convertChar
       (char, regex, dstates, dtran: dtran vector, curStates, curStatesIdx) =
@@ -427,21 +427,17 @@ struct
                      * so we append to dtran instead *)
                     let
                       val transitions = Set.insertOrReplace (char, u, Set.LEAF)
-                      val record =
-                        {states = curStates, transitions = transitions}
                     in
-                      Vector.concat [dtran, Vector.fromList [record]]
+                      Vector.concat [dtran, Vector.fromList [transitions]]
                     end
                   else
                     (* corresponding state idx does exist in dtran, so we update it *)
                     let
-                      val {states, transitions} =
-                        Vector.sub (dtran, curStatesIdx)
+                      val transitions = Vector.sub (dtran, curStatesIdx)
                       val transitions =
                         Set.insertOrReplace (char, u, transitions)
-                      val record = {states = states, transitions = transitions}
                     in
-                      Vector.update (dtran, curStatesIdx, record)
+                      Vector.update (dtran, curStatesIdx, transitions)
                     end
               in
                 convertChar
