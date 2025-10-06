@@ -113,25 +113,25 @@ struct
     fun isValidEscapeSequence chr =
       case chr of
       (* regex metacharacters *)
-        #"(" => true
-      | #")" => true
-      | #"[" => true
-      | #"]" => true
-      | #"+" => true
-      | #"*" => true
-      | #"|" => true
-      | #"?" => true
+        #"(" => (true, chr)
+      | #")" => (true, chr)
+      | #"[" => (true, chr)
+      | #"]" => (true, chr)
+      | #"+" => (true, chr)
+      | #"*" => (true, chr)
+      | #"|" => (true, chr)
+      | #"?" => (true, chr)
       (* standard escape sequences *)
-      | #"\a" => true
-      | #"\b" => true
-      | #"\t" => true
-      | #"\n" => true
-      | #"\v" => true
-      | #"\f" => true
-      | #"\r" => true
-      | #"\\" => true
-      | #"\"" => true
-      | _ => false
+      | #"a" => (true, #"\a")
+      | #"b" => (true, #"\b")
+      | #"t" => (true, #"\t")
+      | #"n" => (true, #"\n")
+      | #"v" => (true, #"\v")
+      | #"f" => (true, #"\f")
+      | #"r" => (true, #"\r")
+      | #"\\" => (true, chr)
+      | #"\"" => (true, chr)
+      | _ => (false, chr)
 
     fun computeAtom (pos, str, stateNum) =
       if pos = String.size str then
@@ -151,11 +151,6 @@ struct
                    | NONE => NONE
                  end
              | NONE => NONE)
-        | #")" => NONE
-        | #"?" => NONE
-        | #"*" => NONE
-        | #"+" => NONE
-        | #"." => SOME (pos + 1, WILDCARD (stateNum + 1), stateNum + 1)
         | #"\\" =>
             (* escape sequences *)
             if pos + 1 = String.size str then
@@ -163,8 +158,9 @@ struct
             else
               let
                 val chr = String.sub (str, pos + 1)
+                val (isValid, chr) = isValidEscapeSequence chr
               in
-                if isValidEscapeSequence chr then
+                if isValid then
                   let
                     val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
                   in
@@ -173,6 +169,11 @@ struct
                 else
                   NONE
               end
+        | #"." => SOME (pos + 1, WILDCARD (stateNum + 1), stateNum + 1)
+        | #")" => NONE
+        | #"?" => NONE
+        | #"*" => NONE
+        | #"+" => NONE
         (* todo: [character classes] *)
         | chr =>
             let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
