@@ -2,6 +2,7 @@ signature DFA_GEN_PARAMS =
 sig
   val endMarker: char
   val charIsEqual: char * char -> bool
+  val charIsNotEqual: char * char -> bool
 end
 
 signature DFA_GEN =
@@ -548,31 +549,22 @@ struct
     fun getFollowsForPositionAndChar (regex: parse_tree, pos, curChr) =
       case regex of
         CHAR_LITERAL {char, position = _} =>
-          let
-            val charIsMatch =
-              Fn.charIsEqual (char, curChr)
-              andalso not (Fn.charIsEqual (curChr, Fn.endMarker))
-          in
-            {sawConcat = false, follows = [], charIsMatch = charIsMatch}
-          end
-      | WILDCARD _ =>
-          let val charIsMatch = not (Fn.charIsEqual (curChr, Fn.endMarker))
+          let val charIsMatch = Fn.charIsEqual (char, curChr)
           in {sawConcat = false, follows = [], charIsMatch = charIsMatch}
           end
+      | WILDCARD _ =>
+          let val isNotEndmarker = Fn.charIsNotEqual (curChr, Fn.endMarker)
+          in {sawConcat = false, follows = [], charIsMatch = isNotEndmarker}
+          end
       | IS_ANY_CHARACTER {chars, ...} =>
-          let
-            val chrExists = chrExistsInVec (0, chars, curChr)
-            val chrExists =
-              chrExists andalso not (Fn.charIsEqual (curChr, Fn.endMarker))
-          in
-            {sawConcat = false, follows = [], charIsMatch = chrExists}
+          let val chrExists = chrExistsInVec (0, chars, curChr)
+          in {sawConcat = false, follows = [], charIsMatch = chrExists}
           end
       | NOT_ANY_CHARACTER {chars, ...} =>
           let
             val charIsValid = chrExistsInVec (0, chars, curChr)
             val charIsValid =
-              charIsValid andalso Fn.charIsEqual (curChr, Fn.endMarker)
-            val charIsValid = not charIsValid
+              not charIsValid andalso Fn.charIsNotEqual (curChr, Fn.endMarker)
           in
             {sawConcat = false, follows = [], charIsMatch = charIsValid}
           end
@@ -810,8 +802,11 @@ struct
   fun isFinal (dfa: dfa, curState: dfa_state) =
     curState <> ~1
     andalso
-    let val curTable = Vector.sub (dfa, curState)
-    in Vector.sub (curTable, 0) <> ~1
+    let
+      val curTable = Vector.sub (dfa, curState)
+      val endMarkerCode = Char.ord Fn.endMarker
+    in
+      Vector.sub (curTable, endMarkerCode) <> ~1
     end
 
   fun isDead (curState: dfa_state) = curState = ~1
@@ -821,12 +816,14 @@ structure CaseInsensitiveDfa =
   MakeDfaGen
     (struct
        val endMarker = #"\^@"
-       fun charIsEqual (a: char, b: char) = a = b
+       fun charIsEqual (a: char, b: char) = Char.toLower a = Char.toLower b
+       fun charIsNotEqual (a: char, b: char) = a <> b
      end)
 
 structure CaseSensitiveDfa =
   MakeDfaGen
     (struct
        val endMarker = #"\^@"
-       fun charIsEqual (a: char, b: char) = Char.toLower a = Char.toLower b
+       fun charIsEqual (a: char, b: char) = a = b
+       fun charIsNotEqual (a: char, b: char) = a <> b
      end)

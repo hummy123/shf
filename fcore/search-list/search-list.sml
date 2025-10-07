@@ -92,6 +92,8 @@ struct
     if String.size searchString > 0 then search (buffer, searchString)
     else PersistentVector.empty
 
+  structure DfaGen = CaseInsensitiveDfa
+
   fun rangeLoop
     ( dfa
     , bufferPos
