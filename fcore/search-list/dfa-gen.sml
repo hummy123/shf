@@ -125,6 +125,7 @@ struct
       | #"*" => (true, chr)
       | #"|" => (true, chr)
       | #"?" => (true, chr)
+      | #"." => (true, chr)
       (* standard escape sequences *)
       | #"a" => (true, #"\a")
       | #"b" => (true, #"\b")
@@ -136,6 +137,50 @@ struct
       | #"\\" => (true, chr)
       | #"\"" => (true, chr)
       | _ => (false, chr)
+
+    fun getCharsInBrackets (pos, str, acc) =
+      if pos = String.size str then
+        NONE
+      else
+        case String.sub (str, pos) of
+          #"\\" =>
+            (* escape sequences *)
+            if pos + 1 = String.size str then
+              NONE
+            else
+              let
+                val chr = String.sub (str, pos + 1)
+                val (isValid, chr) = isValidEscapeSequence chr
+              in
+                if isValid then getCharsInBrackets (pos + 2, str, chr :: acc)
+                else NONE
+              end
+        | #"]" =>
+            let val chars = Vector.fromList acc
+            in SOME (pos + 1, chars)
+            end
+        | chr => getCharsInBrackets (pos + 1, str, chr :: acc)
+
+    fun parseCharacterClass (pos, str, stateNum) =
+      case getCharsInBrackets (pos, str, []) of
+        SOME (pos, chars) =>
+          let
+            val node = IS_ANY_CHARACTER {chars = chars, position = stateNum + 1}
+          in
+            SOME (pos, node, stateNum + 1)
+          end
+      | NONE => NONE
+
+    fun parseNegateCharacterClass (pos, str, stateNum) =
+      case getCharsInBrackets (pos, str, []) of
+        SOME (pos, chars) =>
+          let
+            val node =
+              NOT_ANY_CHARACTER {chars = chars, position = stateNum + 1}
+          in
+            SOME (pos, node, stateNum + 1)
+          end
+      | NONE => NONE
 
     fun computeAtom (pos, str, stateNum) =
       if pos = String.size str then
@@ -178,7 +223,13 @@ struct
         | #"?" => NONE
         | #"*" => NONE
         | #"+" => NONE
-        (* todo: [character classes] *)
+        | #"[" =>
+            if pos + 1 = String.size str then
+              NONE
+            else if String.sub (str, pos + 1) = #"^" then
+              parseNegateCharacterClass (pos + 2, str, stateNum)
+            else
+              parseCharacterClass (pos + 1, str, stateNum)
         | chr =>
             let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
             in SOME (pos + 1, chr, stateNum + 1)
