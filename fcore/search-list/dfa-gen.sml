@@ -339,7 +339,9 @@ struct
                 val chr = String.sub (str, pos + 1)
                 val (isValid, chr) = isValidEscapeSequence chr
               in
-                if isValid then
+                if Fn.charIsEqual (chr, Fn.endMarker) then
+                  NONE
+                else if isValid then
                   let
                     val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
                   in
@@ -361,9 +363,12 @@ struct
             else
               parseCharacterClass (pos + 1, str, stateNum)
         | chr =>
-            let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
-            in SOME (pos + 1, chr, stateNum + 1)
-            end
+            if Fn.charIsEqual (chr, Fn.endMarker) then
+              NONE
+            else
+              let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
+              in SOME (pos + 1, chr, stateNum + 1)
+              end
 
     and climb (pos, str, lhs, level, stateNum) : (int * parse_tree * int) option =
       if pos = String.size str then
