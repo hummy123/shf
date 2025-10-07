@@ -343,7 +343,7 @@ struct
     fun getFollowsForPositionAndChar (regex: regex, pos, curChr) =
       case regex of
         CHAR_LITERAL {char, position = _} =>
-          if Char.ord char = curChr then
+          if char = curChr then
             {sawConcat = false, follows = [], charIsMatch = true}
           else
             {sawConcat = false, follows = [], charIsMatch = false}
@@ -352,7 +352,7 @@ struct
            * as an end marker which will not appear anywhere else.
            * So we don't want to match it, but the wildcard can match
            * any other character that has a different ASCII code. *)
-          {sawConcat = false, follows = [], charIsMatch = curChr <> 0}
+          {sawConcat = false, follows = [], charIsMatch = curChr <> #"\^@"}
       | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
           let val nodeToFollow = if pos <= leftMaxState then l else r
           in getFollowsForPositionAndChar (nodeToFollow, pos, curChr)
@@ -482,7 +482,9 @@ struct
       else
         let
           (* get union of all follow positions *)
-          val u = getFollowPositionsFromList (curStates, regex, char, Set.LEAF)
+          val u =
+            getFollowPositionsFromList
+              (curStates, regex, Char.chr char, Set.LEAF)
         in
           case u of
             [] =>
