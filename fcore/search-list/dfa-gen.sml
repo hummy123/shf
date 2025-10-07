@@ -126,6 +126,7 @@ struct
       | #"|" => (true, chr)
       | #"?" => (true, chr)
       | #"." => (true, chr)
+      | #"-" => (true, chr)
       (* standard escape sequences *)
       | #"a" => (true, #"\a")
       | #"b" => (true, #"\b")
@@ -137,6 +138,17 @@ struct
       | #"\\" => (true, chr)
       | #"\"" => (true, chr)
       | _ => (false, chr)
+
+    fun getCharsBetween (lowChr, highChr, acc) =
+      if lowChr = highChr then
+        highChr :: acc
+      else
+        let
+          val acc = lowChr :: acc
+          val lowChr = Char.succ lowChr
+        in
+          getCharsBetween (lowChr, highChr, acc)
+        end
 
     fun getCharsInBrackets (pos, str, acc) =
       if pos = String.size str then
@@ -159,7 +171,23 @@ struct
             let val chars = Vector.fromList acc
             in SOME (pos + 1, chars)
             end
-        | chr => getCharsInBrackets (pos + 1, str, chr :: acc)
+        | #"-" => NONE
+        | chr =>
+            if
+              pos + 1 < String.size str andalso String.sub (str, pos + 1) = #"-"
+              andalso pos + 2 < String.size str
+            then
+              (* handle character ranges like a-z *)
+              let
+                val chr2 = String.sub (str, pos + 2)
+                val lowChr = if chr < chr2 then chr else chr2
+                val highChr = if chr > chr2 then chr else chr2
+                val acc = getCharsBetween (lowChr, highChr, acc)
+              in
+                getCharsInBrackets (pos + 3, str, acc)
+              end
+            else
+              getCharsInBrackets (pos + 1, str, chr :: acc)
 
     fun parseCharacterClass (pos, str, stateNum) =
       case getCharsInBrackets (pos, str, []) of
