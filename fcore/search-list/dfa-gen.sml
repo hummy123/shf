@@ -2,13 +2,14 @@ structure DfaGen =
 struct
   datatype regex =
     CHAR_LITERAL of {char: char, position: int}
+  | WILDCARD of int
+  | IS_ANY_CHARACTER of {chars: char vector, position: int}
   | CONCAT of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
   | ALTERNATION of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
   | ZERO_OR_ONE of regex
   | ZERO_OR_MORE of regex
   | ONE_OR_MORE of regex
   | GROUP of regex
-  | WILDCARD of int
 
   structure Set =
   struct
@@ -274,6 +275,7 @@ struct
       case tree of
         CHAR_LITERAL _ => false
       | WILDCARD _ => false
+      | IS_ANY_CHARACTER _ => false
 
       | CONCAT {l, r, ...} => isNullable l andalso isNullable r
       | ALTERNATION {l, r, ...} => isNullable l orelse isNullable r
@@ -287,6 +289,7 @@ struct
     fun firstpos (tree, acc) =
       case tree of
         CHAR_LITERAL {position, ...} => position :: acc
+      | IS_ANY_CHARACTER {position, ...} => position :: acc
       | WILDCARD i => i :: acc
 
       | CONCAT {l, r, ...} =>
@@ -309,6 +312,7 @@ struct
     fun lastpos (tree, acc) =
       case tree of
         CHAR_LITERAL {position, ...} => position :: acc
+      | IS_ANY_CHARACTER {position, ...} => position :: acc
       | WILDCARD i => i :: acc
 
       | CONCAT {l, r, ...} =>
@@ -335,6 +339,13 @@ struct
       | ONE_OR_MORE r => firstpos (r, acc)
       | _ => acc
 
+    fun chrExistsInVec (idx, vec, curChr) =
+      if idx = Vector.length vec then
+        false
+      else
+        Vector.sub (vec, idx) = curChr
+        orelse chrExistsInVec (idx + 1, vec, curChr)
+
     (* Does two things:
      * 1. Descends to the leaf matching 'pos'.
      * 2. If the character at 'pos' matches the current character, 
@@ -353,6 +364,10 @@ struct
            * So we don't want to match it, but the wildcard can match
            * any other character that has a different ASCII code. *)
           {sawConcat = false, follows = [], charIsMatch = curChr <> #"\^@"}
+      | IS_ANY_CHARACTER {chars, ...} =>
+          let val chrExists = chrExistsInVec (0, chars, curChr)
+          in {sawConcat = false, follows = [], charIsMatch = chrExists}
+          end
       | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
           let val nodeToFollow = if pos <= leftMaxState then l else r
           in getFollowsForPositionAndChar (nodeToFollow, pos, curChr)
