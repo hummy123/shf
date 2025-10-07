@@ -4,12 +4,15 @@ struct
     CHAR_LITERAL of {char: char, position: int}
   | WILDCARD of int
   | IS_ANY_CHARACTER of {chars: char vector, position: int}
+  | NOT_ANY_CHARACTER of {chars: char vector, position: int}
   | CONCAT of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
   | ALTERNATION of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
   | ZERO_OR_ONE of regex
   | ZERO_OR_MORE of regex
   | ONE_OR_MORE of regex
   | GROUP of regex
+
+  val endMarker = #"\^@"
 
   structure Set =
   struct
@@ -276,6 +279,7 @@ struct
         CHAR_LITERAL _ => false
       | WILDCARD _ => false
       | IS_ANY_CHARACTER _ => false
+      | NOT_ANY_CHARACTER _ => false
 
       | CONCAT {l, r, ...} => isNullable l andalso isNullable r
       | ALTERNATION {l, r, ...} => isNullable l orelse isNullable r
@@ -290,6 +294,7 @@ struct
       case tree of
         CHAR_LITERAL {position, ...} => position :: acc
       | IS_ANY_CHARACTER {position, ...} => position :: acc
+      | NOT_ANY_CHARACTER {position, ...} => position :: acc
       | WILDCARD i => i :: acc
 
       | CONCAT {l, r, ...} =>
@@ -313,6 +318,7 @@ struct
       case tree of
         CHAR_LITERAL {position, ...} => position :: acc
       | IS_ANY_CHARACTER {position, ...} => position :: acc
+      | NOT_ANY_CHARACTER {position, ...} => position :: acc
       | WILDCARD i => i :: acc
 
       | CONCAT {l, r, ...} =>
@@ -363,10 +369,17 @@ struct
            * as an end marker which will not appear anywhere else.
            * So we don't want to match it, but the wildcard can match
            * any other character that has a different ASCII code. *)
-          {sawConcat = false, follows = [], charIsMatch = curChr <> #"\^@"}
+          {sawConcat = false, follows = [], charIsMatch = curChr <> endMarker}
       | IS_ANY_CHARACTER {chars, ...} =>
           let val chrExists = chrExistsInVec (0, chars, curChr)
           in {sawConcat = false, follows = [], charIsMatch = chrExists}
+          end
+      | NOT_ANY_CHARACTER {chars, ...} =>
+          let
+            val charIsValid = chrExistsInVec (0, chars, curChr)
+            val charIsValid = not charIsValid andalso curChr <> endMarker
+          in
+            {sawConcat = false, follows = [], charIsMatch = charIsValid}
           end
       | ALTERNATION {l, r, leftMaxState, rightMaxState} =>
           let val nodeToFollow = if pos <= leftMaxState then l else r
@@ -578,7 +591,8 @@ struct
     case ParseDfa.parse (str, 0) of
       SOME (ast, numStates) =>
         let
-          val endMarker = CHAR_LITERAL {char = #"\^@", position = numStates + 1}
+          val endMarker =
+            CHAR_LITERAL {char = endMarker, position = numStates + 1}
           val ast = CONCAT
             { l = ast
             , leftMaxState = numStates
