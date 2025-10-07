@@ -634,8 +634,10 @@ struct
             val fpList = getFollowsForPositionAndChar (regex, hd, char)
             val {sawConcat, follows, charIsMatch} = fpList
             val follows =
-              if charIsMatch andalso not sawConcat then 0 :: follows
-              else follows
+              if charIsMatch andalso not sawConcat then
+                (Char.ord Fn.endMarker) :: follows
+              else
+                follows
 
             val followSet =
               List.foldl
