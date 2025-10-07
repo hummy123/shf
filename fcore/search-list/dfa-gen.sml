@@ -1,18 +1,36 @@
-structure DfaGen =
+signature DFA_GEN_PARAMS =
+sig
+  val endMarker: char
+  val charIsEqual: char * char -> bool
+end
+
+signature DFA_GEN =
+sig
+  type dfa = int vector vector
+  type dfa_state = int
+
+  val fromString: string -> dfa
+
+  val nextState: dfa * dfa_state * char -> dfa_state
+  val isFinal: dfa * dfa_state -> bool
+  val isDead: dfa_state -> bool
+end
+
+functor MakeDfaGen(Fn: DFA_GEN_PARAMS): DFA_GEN =
 struct
-  datatype regex =
+  datatype parse_tree =
     CHAR_LITERAL of {char: char, position: int}
   | WILDCARD of int
   | IS_ANY_CHARACTER of {chars: char vector, position: int}
   | NOT_ANY_CHARACTER of {chars: char vector, position: int}
-  | CONCAT of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
-  | ALTERNATION of {l: regex, r: regex, leftMaxState: int, rightMaxState: int}
-  | ZERO_OR_ONE of regex
-  | ZERO_OR_MORE of regex
-  | ONE_OR_MORE of regex
-  | GROUP of regex
-
-  val endMarker = #"\^@"
+  | CONCAT of
+      {l: parse_tree, r: parse_tree, leftMaxState: int, rightMaxState: int}
+  | ALTERNATION of
+      {l: parse_tree, r: parse_tree, leftMaxState: int, rightMaxState: int}
+  | ZERO_OR_ONE of parse_tree
+  | ZERO_OR_MORE of parse_tree
+  | ONE_OR_MORE of parse_tree
+  | GROUP of parse_tree
 
   structure Set =
   struct
@@ -346,7 +364,7 @@ struct
             in SOME (pos + 1, chr, stateNum + 1)
             end
 
-    and climb (pos, str, lhs, level, stateNum) : (int * regex * int) option =
+    and climb (pos, str, lhs, level, stateNum) : (int * parse_tree * int) option =
       if pos = String.size str then
         SOME (pos, lhs, stateNum)
       else
@@ -511,35 +529,50 @@ struct
       if idx = Vector.length vec then
         false
       else
-        Vector.sub (vec, idx) = curChr
-        orelse chrExistsInVec (idx + 1, vec, curChr)
+        let
+          val idxChr = Vector.sub (vec, idx)
+        in
+          Fn.charIsEqual (idxChr, curChr)
+          orelse chrExistsInVec (idx + 1, vec, curChr)
+        end
 
     (* Does two things:
      * 1. Descends to the leaf matching 'pos'.
      * 2. If the character at 'pos' matches the current character, 
      *    calls followpos at the appropriate nodes. 
-     * In the end, we get a list of positions to follow. *)
-    fun getFollowsForPositionAndChar (regex: regex, pos, curChr) =
+     * In the end, we get a list of positions to follow. 
+     * Note: The character #"\^@" is an endmarker
+     * indicating that this is the final state.
+     * We say that there is no match, 
+     * even if the curChr is the endmarker. *)
+    fun getFollowsForPositionAndChar (regex: parse_tree, pos, curChr) =
       case regex of
         CHAR_LITERAL {char, position = _} =>
-          if char = curChr then
-            {sawConcat = false, follows = [], charIsMatch = true}
-          else
-            {sawConcat = false, follows = [], charIsMatch = false}
+          let
+            val charIsMatch =
+              Fn.charIsEqual (char, curChr)
+              andalso not (Fn.charIsEqual (curChr, Fn.endMarker))
+          in
+            {sawConcat = false, follows = [], charIsMatch = charIsMatch}
+          end
       | WILDCARD _ =>
-          (* we are treating a char that has ASCII code 0
-           * as an end marker which will not appear anywhere else.
-           * So we don't want to match it, but the wildcard can match
-           * any other character that has a different ASCII code. *)
-          {sawConcat = false, follows = [], charIsMatch = curChr <> endMarker}
+          let val charIsMatch = not (Fn.charIsEqual (curChr, Fn.endMarker))
+          in {sawConcat = false, follows = [], charIsMatch = charIsMatch}
+          end
       | IS_ANY_CHARACTER {chars, ...} =>
-          let val chrExists = chrExistsInVec (0, chars, curChr)
-          in {sawConcat = false, follows = [], charIsMatch = chrExists}
+          let
+            val chrExists = chrExistsInVec (0, chars, curChr)
+            val chrExists =
+              chrExists andalso not (Fn.charIsEqual (curChr, Fn.endMarker))
+          in
+            {sawConcat = false, follows = [], charIsMatch = chrExists}
           end
       | NOT_ANY_CHARACTER {chars, ...} =>
           let
             val charIsValid = chrExistsInVec (0, chars, curChr)
-            val charIsValid = not charIsValid andalso curChr <> endMarker
+            val charIsValid =
+              charIsValid andalso Fn.charIsEqual (curChr, Fn.endMarker)
+            val charIsValid = not charIsValid
           in
             {sawConcat = false, follows = [], charIsMatch = charIsValid}
           end
@@ -754,7 +787,7 @@ struct
       SOME (ast, numStates) =>
         let
           val endMarker =
-            CHAR_LITERAL {char = endMarker, position = numStates + 1}
+            CHAR_LITERAL {char = Fn.endMarker, position = numStates + 1}
           val ast = CONCAT
             { l = ast
             , leftMaxState = numStates
@@ -767,18 +800,33 @@ struct
     | NONE => Vector.fromList []
 
   type dfa = int vector vector
+  type dfa_state = int
 
-  fun nextState (dfa: dfa, curState, chr) =
+  fun nextState (dfa: dfa, curState: dfa_state, chr) =
     let val curTable = Vector.sub (dfa, curState)
     in Vector.sub (curTable, Char.ord chr)
     end
 
-  fun isFinal (dfa: dfa, curState) =
+  fun isFinal (dfa: dfa, curState: dfa_state) =
     curState <> ~1
     andalso
     let val curTable = Vector.sub (dfa, curState)
     in Vector.sub (curTable, 0) <> ~1
     end
 
-  fun isDead curState = curState = ~1
+  fun isDead (curState: dfa_state) = curState = ~1
 end
+
+structure CaseInsensitiveDfa =
+  MakeDfaGen
+    (struct
+       val endMarker = #"\^@"
+       fun charIsEqual (a: char, b: char) = a = b
+     end)
+
+structure CaseSensitiveDfa =
+  MakeDfaGen
+    (struct
+       val endMarker = #"\^@"
+       fun charIsEqual (a: char, b: char) = Char.toLower a = Char.toLower b
+     end)
