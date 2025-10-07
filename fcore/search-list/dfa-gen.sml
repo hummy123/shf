@@ -164,8 +164,58 @@ struct
                 val chr = String.sub (str, pos + 1)
                 val (isValid, chr) = isValidEscapeSequence chr
               in
-                if isValid then getCharsInBrackets (pos + 2, str, chr :: acc)
-                else NONE
+                if isValid then
+                  (* Edge case: 
+                   * We have to check if there is a char range like a-z,
+                   * and if there is,
+                   * we have to check if the second char in the range
+                   * is another escaped-character *)
+                  if
+                    pos + 2 < String.size str
+                    andalso String.sub (str, pos + 2) = #"-"
+                    andalso pos + 3 < String.size str
+                  then
+                    (* we do have a character range, 
+                     * which may possibly be escaped *)
+                    case String.sub (str, pos + 3) of
+                      #"(" => NONE
+                    | #")" => NONE
+                    | #"[" => NONE
+                    | #"]" => NONE
+                    | #"+" => NONE
+                    | #"*" => NONE
+                    | #"|" => NONE
+                    | #"?" => NONE
+                    | #"." => NONE
+                    | #"-" => NONE
+                    | #"\\" =>
+                        if pos + 4 < String.size str then
+                          let
+                            val chr2 = String.sub (str, pos + 4)
+                            val (isValid, chr2) = isValidEscapeSequence chr2
+                            val acc =
+                              if chr < chr2 then
+                                getCharsBetween (chr, chr2, acc)
+                              else
+                                getCharsBetween (chr2, chr, acc)
+                          in
+                            getCharsInBrackets (pos + 5, str, acc)
+                          end
+                        else
+                          NONE
+                    | chr2 =>
+                        let
+                          val acc =
+                            if chr < chr2 then getCharsBetween (chr, chr2, acc)
+                            else getCharsBetween (chr2, chr, acc)
+                        in
+                          getCharsInBrackets (pos + 4, str, acc)
+                        end
+                  else
+                    (* no character range we have to check *)
+                    getCharsInBrackets (pos + 2, str, chr :: acc)
+                else
+                  NONE
               end
         | #"]" =>
             let val chars = Vector.fromList acc
