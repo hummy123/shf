@@ -105,6 +105,7 @@ struct
           BRANCH (#[tree, newNode], #[maxSize, finish])
         end
 
+
   fun getStart tree =
     case tree of
       LEAF (values, _) => Vector.sub (values, 0)
@@ -181,57 +182,78 @@ struct
 
   fun getLast tree =
     case tree of
-      LEAF (values, _) => 
-        Vector.sub (values, Vector.length values - 1)
-    | BRANCH (nodes, _) =>
-        getLast (Vector.sub (nodes, Vector.length nodes - 1))
+      LEAF (values, _) => Vector.sub (values, Vector.length values - 1)
+    | BRANCH (nodes, _) => getLast (Vector.sub (nodes, Vector.length nodes - 1))
 
+  (* slightly tricky.
+  * The `sizes` vector contains the last/finish position of the item
+  * at the corresponding index in the `nodes` or `values` vector
+  * However, what we when searching for the previous match
+  * is different: we want the node that has a start prior
+  * to the cursorIdx.
+  * This information cannot be retrieved with 100% accuracy 
+  * using the `sizes` vector.
+  * To get what we want, we recurse downwards using the `sizes` vector.
+  * If we found the node we want, we return it. 
+  * Otherwise, we return a state meaning "no node at this position"
+  * and we use the call stack to descend down the node at the previous index.
+  * There might not be a previous index because the current index is 0.
+  * In this case, either the call stack will handle it,
+  * or the caller to `helpPrevMatch` will. *)
   fun helpPrevMatch (cursorIdx, tree) =
     case tree of
       LEAF (values, sizes) =>
         let
           val idx = BinSearch.equalOrMore (cursorIdx, sizes)
         in
-          if idx < 0 then {start = ~1, finish = ~1}
-          else if idx = 0 then Vector.sub (values, 0)
+          if idx < 0 then
+            {start = ~1, finish = ~1}
+          else if idx = 0 then
+            let
+              val result = Vector.sub (values, 0)
+            in
+              if #start result < cursorIdx then result
+              else {start = ~1, finish = ~1}
+            end
           else
             let
               val current = Vector.sub (values, idx)
-              val prev = Vector.sub (values, idx - 1)
             in
-              if cursorIdx > #start current then
-                current
-              else
-                prev
+              if cursorIdx > #start current then current
+              else Vector.sub (values, idx - 1)
             end
         end
     | BRANCH (nodes, sizes) =>
         let
           val idx = BinSearch.equalOrMore (cursorIdx, sizes)
         in
-          if idx < 0 then {start = ~1, finish = ~1}
-          else 
+          if idx < 0 then
+            {start = ~1, finish = ~1}
+          else if idx = 0 then
+            helpPrevMatch (cursorIdx, Vector.sub (nodes, idx))
+          else
             let
               val node = Vector.sub (nodes, idx)
               val result = helpPrevMatch (cursorIdx, node)
             in
-              result
+              if #start result = ~1 then getLast (Vector.sub (nodes, idx - 1))
+              else result
             end
         end
 
-  fun loopPrevMatch (prevStart, tree, count) =
+  fun loopPrevMatch (prevStart, prevFinish, tree, count) =
     if count = 0 then
       prevStart
     else
       let
-        val {start, finish} = helpPrevMatch (prevStart - 1, tree)
+        val {start, finish} = helpPrevMatch (prevFinish - 1, tree)
       in
         if start = ~1 then
           let val {start, finish} = getLast tree
-          in loopPrevMatch (start, tree, count - 1)
+          in loopPrevMatch (start, finish, tree, count - 1)
           end
         else
-          loopPrevMatch (start, tree, count - 1)
+          loopPrevMatch (start, finish, tree, count - 1)
       end
 
   fun prevMatch (cursorIdx, tree, count) =
@@ -243,11 +265,11 @@ struct
       in
         if start = ~1 then
           let val {start, finish} = getLast tree
-          in loopPrevMatch (start, tree, count - 1)
+          in loopPrevMatch (start, finish, tree, count - 1)
           end
         else if cursorIdx >= start andalso cursorIdx <= finish then
-          loopPrevMatch (start, tree, count)
+          loopPrevMatch (start, finish, tree, count)
         else
-          loopPrevMatch (start, tree, count - 1)
+          loopPrevMatch (start, finish, tree, count - 1)
       end
 end
