@@ -178,4 +178,11 @@ struct
         else
           loopNextMatch (start, finish, tree, count - 1)
       end
+
+  fun getLast tree =
+    case tree of
+      LEAF (values, _) => 
+        Vector.sub (values, Vector.length values - 1)
+    | BRANCH (nodes, _) =>
+        getLast (Vector.sub (nodes, Vector.length nodes - 1))
 end

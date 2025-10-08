@@ -766,7 +766,8 @@ struct
   fun deleteToNextMatch (app: app_type, count, time) =
     let
       val {cursorIdx, searchList, ...} = app
-      val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
+      val newCursorIdx =
+        PersistentVector.nextMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 orelse newCursorIdx <= cursorIdx then
         NormalFinish.clearMode app

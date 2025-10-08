@@ -122,7 +122,5 @@ struct
     else
       (buffer, PersistentVector.empty)
 
-  fun nextMatch (cursorIdx, searchList, count) = raise Fail "todo: reimplement"
-
   fun prevMatch (cursorIdx, searchList, count) = raise Fail "todo: reimplement"
 end

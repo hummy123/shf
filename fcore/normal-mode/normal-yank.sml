@@ -168,7 +168,7 @@ struct
   fun yankToNextMatch (app: app_type, count) =
     let
       val {cursorIdx, searchList, buffer, ...} = app
-      val high = SearchList.nextMatch (cursorIdx, searchList, count)
+      val high = PersistentVector.nextMatch (cursorIdx, searchList, count)
     in
       if high = ~1 orelse high <= cursorIdx then
         NormalFinish.clearMode app
