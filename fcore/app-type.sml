@@ -24,6 +24,7 @@ struct
     , cursorIdx: int
     (* column to start drawing text at for horizontal scrolling. *)
     , visualScrollColumn: int
+    , dfa: int vector vector
     (* msgs to send after an update.
      * The list of messages is reset on each invocation of AppUpdate.update. *)
     , msgs: MailboxType.t list
@@ -40,6 +41,7 @@ struct
     , startLine = 0
     , cursorIdx = 0
     , visualScrollColumn = 0
+    , dfa = Vector.fromList []
     , msgs = []
     }
 end

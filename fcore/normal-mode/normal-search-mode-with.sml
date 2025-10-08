@@ -9,6 +9,7 @@ struct
     , newSearchList
     , newStartLine
     , newMode
+    , newDfa
     , newMsgs
     ) =
     let
@@ -19,6 +20,7 @@ struct
         , searchList = _
         , startLine = _
         , msgs = _
+        , dfa = _
         , bufferModifyTime
         , windowWidth
         , windowHeight
@@ -31,6 +33,7 @@ struct
       , searchString = newSearchString
       , searchList = newSearchList
       , startLine = newStartLine
+      , dfa = newDfa
       , bufferModifyTime = bufferModifyTime
       , msgs = newMsgs
       , windowWidth = windowWidth
@@ -55,6 +58,7 @@ struct
         , windowHeight
         , cursorIdx
         , visualScrollColumn
+        , dfa
         } = app
     in
       { mode = newMode
@@ -68,6 +72,7 @@ struct
       , windowHeight = windowHeight
       , cursorIdx = cursorIdx
       , visualScrollColumn = visualScrollColumn
+      , dfa = dfa
       }
     end
 
@@ -85,6 +90,7 @@ struct
         , windowHeight
         , cursorIdx
         , visualScrollColumn
+        , dfa
         } = app
     in
       { mode = mode
@@ -98,6 +104,7 @@ struct
       , windowHeight = windowHeight
       , cursorIdx = cursorIdx
       , visualScrollColumn = visualScrollColumn
+      , dfa = dfa
       }
     end
 
@@ -122,6 +129,7 @@ struct
         , bufferModifyTime
         , cursorIdx
         , visualScrollColumn
+        , dfa
         } = app
     in
       { mode = newMode
@@ -135,6 +143,7 @@ struct
       , bufferModifyTime = bufferModifyTime
       , cursorIdx = cursorIdx
       , visualScrollColumn = visualScrollColumn
+      , dfa = dfa
       }
     end
 end

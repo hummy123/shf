@@ -93,9 +93,11 @@ struct
       val msgs = DRAW drawMsg :: initialMsg
 
       val mode = NORMAL_MODE ""
+
+      val dfa = raise Fail "todo"
     in
       NormalSearchModeWith.returnToNormalMode
-        (app, buffer, searchString, tempSearchList, startLine, mode, msgs)
+        (app, buffer, searchString, tempSearchList, startLine, mode, dfa, msgs)
     end
 
   fun backspace

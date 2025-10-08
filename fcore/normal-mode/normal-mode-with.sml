@@ -16,6 +16,7 @@ struct
         , searchString
         , startLine
         , cursorIdx
+        , dfa
         } = app
     in
       { mode = newMode
@@ -29,6 +30,7 @@ struct
       , searchString = searchString
       , startLine = startLine
       , cursorIdx = cursorIdx
+      , dfa = dfa
       }
     end
 
@@ -55,6 +57,7 @@ struct
         , searchString
         , startLine
         , cursorIdx
+        , dfa
         } = app
     in
       { mode = mode
@@ -68,6 +71,7 @@ struct
       , searchString = searchString
       , startLine = startLine
       , cursorIdx = cursorIdx
+      , dfa = dfa
       }
     end
 
@@ -95,6 +99,7 @@ struct
         , searchString
         , windowWidth
         , windowHeight
+        , dfa
         } = app
     in
       { mode = newMode
@@ -108,6 +113,7 @@ struct
       , searchString = searchString
       , windowWidth = windowWidth
       , windowHeight = windowHeight
+      , dfa = dfa
       }
     end
 
@@ -125,6 +131,7 @@ struct
         , windowHeight
         , startLine
         , visualScrollColumn
+        , dfa
         } = app
     in
       { mode = newMode
@@ -138,6 +145,7 @@ struct
       , windowHeight = windowHeight
       , startLine = startLine
       , visualScrollColumn = visualScrollColumn
+      , dfa = dfa
       }
     end
 
@@ -155,6 +163,7 @@ struct
         , windowHeight
         , startLine
         , visualScrollColumn
+        , dfa
         } = app
     in
       { mode = newMode
@@ -168,9 +177,9 @@ struct
       , windowHeight = windowHeight
       , startLine = startLine
       , visualScrollColumn = visualScrollColumn
+      , dfa = dfa
       }
     end
-
 
   fun searchList
     ( app: app_type
@@ -192,6 +201,7 @@ struct
         , windowHeight
         , startLine
         , visualScrollColumn
+        , dfa
         } = app
     in
       { searchList = newSearchList
@@ -205,6 +215,7 @@ struct
       , windowHeight = windowHeight
       , startLine = startLine
       , visualScrollColumn = visualScrollColumn
+      , dfa = dfa
       }
     end
 end
