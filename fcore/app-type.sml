@@ -7,6 +7,7 @@ struct
       , tempSearchList: PersistentVector.t
       , searchCursorIdx: int
       , searchScrollColumn: int
+      , caseSensitive: bool
       }
 
   type app_type =

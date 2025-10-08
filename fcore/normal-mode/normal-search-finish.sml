@@ -9,6 +9,7 @@ struct
     , tempSearchList
     , searchCursorIdx
     , searchScrollColumn
+    , caseSensitive
     , buffer
     ) =
     let
@@ -31,6 +32,7 @@ struct
         , tempSearchList = tempSearchList
         , searchCursorIdx = searchCursorIdx
         , searchScrollColumn = searchScrollColumn
+        , caseSensitive = caseSensitive
         }
 
       val floatWindowWidth = Real32.fromInt windowWidth
@@ -86,6 +88,7 @@ struct
     , searchCursorIdx
     , tempSearchList
     , searchScrollColumn
+    , caseSensitive
     ) =
     let
       val
@@ -104,6 +107,7 @@ struct
         , tempSearchList = tempSearchList
         , searchCursorIdx = searchCursorIdx
         , searchScrollColumn = searchScrollColumn
+        , caseSensitive = caseSensitive
         }
 
       val searchStringPosY = newWindowHeight - TextConstants.ySpace - 5

@@ -8,7 +8,13 @@ struct
     SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
 
   fun addChr
-    (app: app_type, searchString, searchCursorIdx, searchScrollColumn, chr) =
+    ( app: app_type
+    , searchString
+    , searchCursorIdx
+    , searchScrollColumn
+    , caseSensitive
+    , chr
+    ) =
     let
       val {cursorIdx, buffer, ...} = app
 
@@ -36,6 +42,7 @@ struct
         , tempSearchList
         , searchCursorIdx
         , searchScrollColumn
+        , caseSensitive
         , buffer
         )
     end
@@ -97,6 +104,7 @@ struct
     , tempSearchList
     , searchScrollColumn
     , searchCursorIdx
+    , caseSensitive
     ) =
     if searchCursorIdx = 0 then
       app
@@ -127,12 +135,19 @@ struct
           , tempSearchList
           , searchCursorIdx
           , searchScrollColumn
+          , caseSensitive
           , buffer
           )
       end
 
   fun moveLeft
-    (app, searchString, tempSearchList, searchCursorIdx, searchScrollColumn) =
+    ( app
+    , searchString
+    , tempSearchList
+    , searchCursorIdx
+    , searchScrollColumn
+    , caseSensitive
+    ) =
     if searchCursorIdx = 0 then
       app
     else
@@ -145,12 +160,19 @@ struct
           , tempSearchList
           , searchCursorIdx
           , searchScrollColumn
+          , caseSensitive
           , #buffer app
           )
       end
 
   fun moveRight
-    (app, searchString, tempSearchList, searchCursorIdx, searchScrollColumn) =
+    ( app
+    , searchString
+    , tempSearchList
+    , searchCursorIdx
+    , searchScrollColumn
+    , caseSensitive
+    ) =
     if searchCursorIdx = String.size searchString then
       app
     else
@@ -164,19 +186,32 @@ struct
           , tempSearchList
           , searchCursorIdx
           , searchScrollColumn
+          , caseSensitive
           , #buffer app
           )
       end
 
   fun update
     ( app
-    , {searchString, tempSearchList, searchCursorIdx, searchScrollColumn}
+    , { searchString
+      , tempSearchList
+      , searchCursorIdx
+      , searchScrollColumn
+      , caseSensitive
+      }
     , msg
     , time
     ) =
     case msg of
       CHAR_EVENT chr =>
-        addChr (app, searchString, searchCursorIdx, searchScrollColumn, chr)
+        addChr
+          ( app
+          , searchString
+          , searchCursorIdx
+          , searchScrollColumn
+          , caseSensitive
+          , chr
+          )
     | KEY_BACKSPACE =>
         backspace
           ( app
@@ -184,6 +219,7 @@ struct
           , tempSearchList
           , searchScrollColumn
           , searchCursorIdx
+          , caseSensitive
           )
     | KEY_ESC => exitToNormalMode app
     | KEY_ENTER => saveSearch (app, searchString, tempSearchList, time)
@@ -194,6 +230,7 @@ struct
           , tempSearchList
           , searchCursorIdx
           , searchScrollColumn
+          , caseSensitive
           )
     | ARROW_RIGHT =>
         moveRight
@@ -202,6 +239,7 @@ struct
           , tempSearchList
           , searchCursorIdx
           , searchScrollColumn
+          , caseSensitive
           )
     | WITH_SEARCH_LIST (searchList, time) =>
         NormalFinish.withSearchList (app, searchList, time)
@@ -214,6 +252,7 @@ struct
           , searchCursorIdx
           , tempSearchList
           , searchScrollColumn
+          , caseSensitive
           )
 
     (* In Vim's search mode, the up and down arrows can be used 
