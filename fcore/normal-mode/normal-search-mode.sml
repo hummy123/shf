@@ -77,8 +77,12 @@ struct
         , ...
         } = app
 
+      val dfa =
+        if caseSensitive then CaseSensitiveDfa.fromString searchString
+        else CaseInsensitiveDfa.fromString searchString
+
       val buffer = LineGap.goToStart buffer
-      val initialMsg = [SEARCH (buffer, searchString, time)]
+      val initialMsg = [SEARCH (buffer, dfa, time)]
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -100,10 +104,6 @@ struct
       val msgs = DRAW drawMsg :: initialMsg
 
       val mode = NORMAL_MODE ""
-
-      val dfa =
-        if caseSensitive then CaseSensitiveDfa.fromString searchString
-        else CaseInsensitiveDfa.fromString searchString
     in
       NormalSearchModeWith.returnToNormalMode
         (app, buffer, tempSearchList, startLine, mode, dfa, msgs)

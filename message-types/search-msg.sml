@@ -1,1 +1,2 @@
-structure SearchMsg = struct type t = LineGap.t * string * Time.time end
+structure SearchMsg =
+struct type t = LineGap.t * int vector vector * Time.time end
