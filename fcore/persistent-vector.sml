@@ -193,12 +193,7 @@ struct
           val idx = BinSearch.equalOrMore (cursorIdx, sizes)
         in
           if idx < 0 then {start = ~1, finish = ~1}
-          else if idx = 0 then 
-            let
-              val current = Vector.sub (values, 0)
-            in
-              current
-            end
+          else if idx = 0 then Vector.sub (values, 0)
           else
             let
               val current = Vector.sub (values, idx)
@@ -215,7 +210,13 @@ struct
           val idx = BinSearch.equalOrMore (cursorIdx, sizes)
         in
           if idx < 0 then {start = ~1, finish = ~1}
-          else helpPrevMatch (cursorIdx, Vector.sub (nodes, idx))
+          else 
+            let
+              val node = Vector.sub (nodes, idx)
+              val result = helpPrevMatch (cursorIdx, node)
+            in
+              result
+            end
         end
 
   fun loopPrevMatch (prevStart, tree, count) =
