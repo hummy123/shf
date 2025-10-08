@@ -188,7 +188,7 @@ struct
   fun yankToPrevMatch (app: app_type, count) =
     let
       val {cursorIdx, searchList, buffer, ...} = app
-      val low = SearchList.prevMatch (cursorIdx, searchList, count)
+      val low = PersistentVector.prevMatch (cursorIdx, searchList, count)
     in
       if low = ~1 orelse low >= cursorIdx then
         NormalFinish.clearMode app

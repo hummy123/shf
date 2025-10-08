@@ -121,6 +121,4 @@ struct
         )
     else
       (buffer, PersistentVector.empty)
-
-  fun prevMatch (cursorIdx, searchList, count) = raise Fail "todo: reimplement"
 end

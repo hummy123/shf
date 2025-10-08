@@ -778,7 +778,8 @@ struct
   fun deleteToPrevMatch (app: app_type, count, time) =
     let
       val {cursorIdx, searchList, ...} = app
-      val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
+      val newCursorIdx =
+        PersistentVector.prevMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 orelse newCursorIdx >= cursorIdx then
         NormalFinish.clearMode app

@@ -494,7 +494,8 @@ struct
         , visualScrollColumn
         , ...
         } = app
-      val newCursorIdx = PersistentVector.nextMatch (cursorIdx, searchList, count)
+      val newCursorIdx =
+        PersistentVector.nextMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
@@ -506,7 +507,8 @@ struct
   fun moveToPrevMatch (app: app_type, count) =
     let
       val {cursorIdx, searchList, buffer, bufferModifyTime, ...} = app
-      val newCursorIdx = SearchList.prevMatch (cursorIdx, searchList, count)
+      val newCursorIdx =
+        PersistentVector.prevMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
