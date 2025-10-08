@@ -59,11 +59,12 @@ struct
     , floatWindowHeight
     , searchCursorIdx
     , searchScrollColumn
+    , caseSensitive
     ) =
     let
-      val r: Real32.real = 0.67
-      val g: Real32.real = 0.51
-      val b: Real32.real = 0.83
+      val r: Real32.real = 0.1
+      val g: Real32.real = 0.1
+      val b: Real32.real = 0.1
       val z: Real32.real = 0.1
 
       val width = endX - startX
@@ -101,17 +102,31 @@ struct
           val xpos = Int.min (endX, xpos)
           val x = Real32.fromInt xpos
         in
-          PipeCursor.lerp
-            ( x
-            , fPosY
-            , 0.01
-            , TextConstants.scale
-            , floatWindowWidth
-            , floatWindowHeight
-            , r
-            , g
-            , b
-            )
+          if caseSensitive then
+            CozetteAscii.make
+              ( #"?"
+              , x
+              , fPosY
+              , 0.01
+              , TC.scale
+              , floatWindowWidth
+              , floatWindowWidth
+              , r
+              , g
+              , b
+              )
+          else
+            PipeCursor.lerp
+              ( x
+              , fPosY
+              , 0.01
+              , TC.scale
+              , floatWindowWidth
+              , floatWindowHeight
+              , r
+              , g
+              , b
+              )
         end
 
       val posX = startX + TC.xSpace

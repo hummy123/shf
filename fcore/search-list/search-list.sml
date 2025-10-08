@@ -159,25 +159,18 @@ struct
             )
       end
 
-  fun buildRange (buffer, searchString, finishIdx) =
-    if String.size searchString > 0 then
-      let
-        val dfa = DfaGen.fromString searchString
-      in
-        if Vector.length dfa = 0 then
-          (buffer, PersistentVector.empty)
-        else
-          rangeLoop
-            ( dfa
-            , #idx buffer
-            , buffer
-            , finishIdx
-            , PersistentVector.empty
-            , 0
-            , #idx buffer
-            , ~1
-            )
-      end
+  fun buildRange (buffer, searchString, finishIdx, dfa) =
+    if String.size searchString > 0 andalso Vector.length dfa > 0 then
+      rangeLoop
+        ( dfa
+        , #idx buffer
+        , buffer
+        , finishIdx
+        , PersistentVector.empty
+        , 0
+        , #idx buffer
+        , ~1
+        )
     else
       (buffer, PersistentVector.empty)
 

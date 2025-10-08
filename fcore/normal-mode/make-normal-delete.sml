@@ -18,7 +18,7 @@ struct
 
       val buffer = LineGap.goToIdx (low - 1111, buffer)
       val (buffer, searchList) =
-        SearchList.buildRange (buffer, searchString, low + 1111)
+        SearchList.buildRange (buffer, searchString, low + 1111, #dfa app)
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
@@ -241,7 +241,8 @@ struct
 
         val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
         val (buffer, searchList) =
-          SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
+          SearchList.buildRange
+            (buffer, searchString, cursorIdx + 1111, #dfa app)
 
         (* If we have deleted from the buffer so that cursorIdx
         * is no longer a valid idx,
@@ -705,7 +706,7 @@ struct
 
   fun deleteToStart (app: app_type, time) : AppType.app_type =
     let
-      val {cursorIdx, buffer, windowWidth, windowHeight, searchString, ...} =
+      val {cursorIdx, buffer, windowWidth, windowHeight, searchString, dfa, ...} =
         app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
@@ -719,7 +720,7 @@ struct
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
       val (buffer, searchList) =
-        SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
+        SearchList.buildRange (buffer, searchString, cursorIdx + 1111, dfa)
 
       val cursorIdx = 0
       val startLine = 0
@@ -756,7 +757,7 @@ struct
 
   fun helpDeleteToMatch (app: app_type, low, high, time) =
     let
-      val {buffer, searchString, ...} = app
+      val {buffer, searchString, dfa, ...} = app
       val buffer = LineGap.goToIdx (high, buffer)
       val length = high - low
       val initialMsg = Fn.initMsgs (low, length, buffer)
@@ -767,7 +768,7 @@ struct
 
       val buffer = LineGap.goToIdx (low - 1111, buffer)
       val (buffer, searchList) =
-        SearchList.buildRange (buffer, searchString, low + 1111)
+        SearchList.buildRange (buffer, searchString, low + 1111, dfa)
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
@@ -804,7 +805,7 @@ struct
 
   fun deleteInsideWord (app: app_type, time) =
     let
-      val {buffer, cursorIdx, searchString, ...} = app
+      val {buffer, cursorIdx, searchString, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val low = Cursor.prevWordStrict (buffer, cursorIdx, 1)
@@ -826,7 +827,7 @@ struct
 
           val buffer = LineGap.goToIdx (low - 1111, buffer)
           val (buffer, searchList) =
-            SearchList.buildRange (buffer, searchString, low + 1111)
+            SearchList.buildRange (buffer, searchString, low + 1111, dfa)
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
@@ -839,7 +840,7 @@ struct
 
   fun deleteInsideWORD (app: app_type, time) =
     let
-      val {buffer, cursorIdx, searchString, ...} = app
+      val {buffer, cursorIdx, searchString, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val low = Cursor.prevWORDStrict (buffer, cursorIdx, 1)
@@ -858,7 +859,7 @@ struct
 
           val buffer = LineGap.goToIdx (low - 1111, buffer)
           val (buffer, searchList) =
-            SearchList.buildRange (buffer, searchString, low + 1111)
+            SearchList.buildRange (buffer, searchString, low + 1111, dfa)
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
@@ -874,7 +875,7 @@ struct
       NormalFinish.clearMode app
     else
       let
-        val {cursorIdx, buffer, searchString, ...} = app
+        val {cursorIdx, buffer, searchString, dfa, ...} = app
         val low = origLow + 1
         val length = high - low
 
@@ -887,7 +888,7 @@ struct
 
         val buffer = LineGap.goToIdx (low - 1111, buffer)
         val (buffer, searchList) =
-          SearchList.buildRange (buffer, searchString, low + 1111)
+          SearchList.buildRange (buffer, searchString, low + 1111, dfa)
 
         val buffer = LineGap.goToIdx (origLow, buffer)
       in
@@ -970,7 +971,7 @@ struct
 
   fun deletePair (app: app_type, time) =
     let
-      val {cursorIdx, buffer, ...} = app
+      val {cursorIdx, buffer, dfa, ...} = app
       val otherIdx = Cursor.matchPair (buffer, cursorIdx)
     in
       if otherIdx = cursorIdx then
@@ -1001,7 +1002,7 @@ struct
 
           val buffer = LineGap.goToIdx (low - 1111, buffer)
           val (buffer, searchList) =
-            SearchList.buildRange (buffer, searchString, low + 1111)
+            SearchList.buildRange (buffer, searchString, low + 1111, dfa)
 
           val buffer = LineGap.goToIdx (low, buffer)
         in

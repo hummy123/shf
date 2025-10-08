@@ -4,8 +4,14 @@ struct
   open InputMsg
   open MailboxType
 
-  fun buildTempSearchList (searchString, buffer, cursorIdx) =
-    SearchList.buildRange (buffer, searchString, cursorIdx + 1111)
+  fun buildTempSearchList (searchString, buffer, cursorIdx, caseSensitive) =
+    let
+      val dfa =
+        if caseSensitive then CaseSensitiveDfa.fromString searchString
+        else CaseInsensitiveDfa.fromString searchString
+    in
+      SearchList.buildRange (buffer, searchString, cursorIdx + 1111, dfa)
+    end
 
   fun addChr
     ( app: app_type
@@ -34,7 +40,7 @@ struct
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
       val (buffer, tempSearchList) =
-        buildTempSearchList (searchString, buffer, cursorIdx)
+        buildTempSearchList (searchString, buffer, cursorIdx, caseSensitive)
     in
       NormalSearchFinish.onSearchChanged
         ( app
@@ -58,7 +64,8 @@ struct
     end
 
   (* save search string and tempSearchList and return to normal mode *)
-  fun saveSearch (app: app_type, searchString, tempSearchList, time) =
+  fun saveSearch
+    (app: app_type, searchString, tempSearchList, caseSensitive, time) =
     let
       val
         { buffer
@@ -94,7 +101,9 @@ struct
 
       val mode = NORMAL_MODE ""
 
-      val dfa = raise Fail "todo"
+      val dfa =
+        if caseSensitive then CaseSensitiveDfa.fromString searchString
+        else CaseInsensitiveDfa.fromString searchString
     in
       NormalSearchModeWith.returnToNormalMode
         (app, buffer, searchString, tempSearchList, startLine, mode, dfa, msgs)
@@ -129,7 +138,7 @@ struct
         val {cursorIdx, buffer, ...} = app
         val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
         val (buffer, tempSearchList) =
-          buildTempSearchList (searchString, buffer, cursorIdx)
+          buildTempSearchList (searchString, buffer, cursorIdx, caseSensitive)
       in
         NormalSearchFinish.onSearchChanged
           ( app
@@ -224,7 +233,8 @@ struct
           , caseSensitive
           )
     | KEY_ESC => exitToNormalMode app
-    | KEY_ENTER => saveSearch (app, searchString, tempSearchList, time)
+    | KEY_ENTER =>
+        saveSearch (app, searchString, tempSearchList, caseSensitive, time)
     | ARROW_LEFT =>
         moveLeft
           ( app

@@ -49,6 +49,7 @@ struct
         , floatWindowHeight
         , searchCursorIdx
         , searchScrollColumn
+        , caseSensitive
         )
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -121,6 +122,7 @@ struct
         , floatWindowHeight
         , searchCursorIdx
         , searchScrollColumn
+        , caseSensitive
         )
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
