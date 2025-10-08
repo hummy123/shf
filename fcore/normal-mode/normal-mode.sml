@@ -5,9 +5,9 @@ struct
   open AppType
   open InputMsg
 
-  fun switchToNormalSearchMode (app: app_type) =
+  fun switchToNormalSearchMode (app: app_type, caseSensitive) =
     NormalSearchFinish.onSearchChanged
-      (app, "", PersistentVector.empty, 0, 0, false, #buffer app)
+      (app, "", PersistentVector.empty, 0, 0, caseSensitive, #buffer app)
 
   fun getNumLength (pos, str) =
     if pos = String.size str then
@@ -196,7 +196,8 @@ struct
     | #"%" => NormalMove.moveToMatchingPair app
     | #"x" => NormalDelete.removeChr (app, count, time)
     | #"J" => NormalDelete.removeLineBreaks (app, count, time)
-    | #"/" => switchToNormalSearchMode app
+    | #"/" => switchToNormalSearchMode (app, false)
+    | #"?" => switchToNormalSearchMode (app, true)
     | #">" => indnetLine (app, count, time)
     | #"<" => dedentLine (app, count, time)
     (* multi-char commands which can be appended *)

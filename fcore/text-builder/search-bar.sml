@@ -82,8 +82,8 @@ struct
       val fPosX = Real32.fromInt startX
       val fPosY = Real32.fromInt startY
 
-      val slash = CozetteAscii.make
-        ( #"/"
+      val searchSymbol = CozetteAscii.make
+        ( if caseSensitive then #"?" else #"/"
         , fPosX
         , fPosY
         , z
@@ -102,31 +102,17 @@ struct
           val xpos = Int.min (endX, xpos)
           val x = Real32.fromInt xpos
         in
-          if caseSensitive then
-            CozetteAscii.make
-              ( #"?"
-              , x
-              , fPosY
-              , 0.01
-              , TC.scale
-              , floatWindowWidth
-              , floatWindowWidth
-              , r
-              , g
-              , b
-              )
-          else
-            PipeCursor.lerp
-              ( x
-              , fPosY
-              , 0.01
-              , TC.scale
-              , floatWindowWidth
-              , floatWindowHeight
-              , r
-              , g
-              , b
-              )
+          PipeCursor.lerp
+            ( x
+            , fPosY
+            , 0.01
+            , TC.scale
+            , floatWindowWidth
+            , floatWindowHeight
+            , r
+            , g
+            , b
+            )
         end
 
       val posX = startX + TC.xSpace
@@ -137,7 +123,7 @@ struct
         , posX
         , startY
         , endX
-        , [cursor, slash]
+        , [cursor, searchSymbol]
         , floatWindowWidth
         , floatWindowHeight
         )
