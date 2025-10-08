@@ -6,7 +6,7 @@ struct
     let
       val iterator = LineGap.moveIteratorToIdx (idx, iterator)
     in
-      if LineGap.isIteratorAtEnd iterator then
+      if idx = #textLength iterator then
         if prevFinalPos < 0 then acc
         else PersistentVector.append (startPos, prevFinalPos, acc)
       else
