@@ -15,7 +15,6 @@ struct
       val
         { windowWidth
         , windowHeight
-        , searchString
         , visualScrollColumn = prevScrollColumn
         , startLine = prevLineNumber
         , ...
@@ -69,9 +68,10 @@ struct
     in
       if searchTime >= #bufferModifyTime app then
         let
-          val {buffer, searchString, cursorIdx, bufferModifyTime, ...} = app
-          val app = NormalModeWith.searchList
-            (app, searchList, buffer, searchString, bufferModifyTime)
+          val {buffer, cursorIdx, bufferModifyTime, ...} = app
+          val app =
+            NormalModeWith.searchList
+              (app, searchList, buffer, bufferModifyTime)
         in
           buildTextAndClear
             (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
@@ -89,7 +89,6 @@ struct
         , startLine
         , cursorIdx
         , searchList
-        , searchString
         , bufferModifyTime
         , visualScrollColumn = prevScrollColumn
         , ...
@@ -136,7 +135,6 @@ struct
         , startLine = prevLineNumber
         , cursorIdx
         , searchList
-        , searchString
         , bufferModifyTime
         , visualScrollColumn
         , ...

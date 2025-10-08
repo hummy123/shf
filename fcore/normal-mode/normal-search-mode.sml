@@ -10,7 +10,7 @@ struct
         if caseSensitive then CaseSensitiveDfa.fromString searchString
         else CaseInsensitiveDfa.fromString searchString
     in
-      SearchList.buildRange (buffer, searchString, cursorIdx + 1111, dfa)
+      SearchList.buildRange (buffer, cursorIdx + 1111, dfa)
     end
 
   fun addChr
@@ -106,7 +106,7 @@ struct
         else CaseInsensitiveDfa.fromString searchString
     in
       NormalSearchModeWith.returnToNormalMode
-        (app, buffer, searchString, tempSearchList, startLine, mode, dfa, msgs)
+        (app, buffer, tempSearchList, startLine, mode, dfa, msgs)
     end
 
   fun backspace

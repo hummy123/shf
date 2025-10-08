@@ -159,8 +159,8 @@ struct
             )
       end
 
-  fun buildRange (buffer, searchString, finishIdx, dfa) =
-    if String.size searchString > 0 andalso Vector.length dfa > 0 then
+  fun buildRange (buffer, finishIdx, dfa) =
+    if Vector.length dfa > 0 then
       rangeLoop
         ( dfa
         , #idx buffer

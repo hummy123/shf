@@ -259,7 +259,7 @@ struct
 
   fun yankInsideWord (app: app_type) =
     let
-      val {buffer, cursorIdx, searchString, ...} = app
+      val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val low = Cursor.prevWordStrict (buffer, cursorIdx, 1)
       val high = Cursor.endOfWordStrict (buffer, cursorIdx, 1)
@@ -278,7 +278,7 @@ struct
 
   fun yankInsideWORD (app: app_type) =
     let
-      val {buffer, cursorIdx, searchString, ...} = app
+      val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val low = Cursor.prevWORDStrict (buffer, cursorIdx, 1)
       val high = Cursor.endOfWORDStrict (buffer, cursorIdx, 1)

@@ -5,7 +5,6 @@ struct
   fun returnToNormalMode
     ( app: app_type
     , newBuffer
-    , newSearchString
     , newSearchList
     , newStartLine
     , newMode
@@ -16,7 +15,6 @@ struct
       val
         { mode = _
         , buffer = _
-        , searchString = _
         , searchList = _
         , startLine = _
         , msgs = _
@@ -30,7 +28,6 @@ struct
     in
       { mode = newMode
       , buffer = newBuffer
-      , searchString = newSearchString
       , searchList = newSearchList
       , startLine = newStartLine
       , dfa = newDfa
@@ -49,7 +46,6 @@ struct
       val
         { mode = _
         , buffer = _
-        , searchString
         , searchList
         , startLine = _
         , msgs = _
@@ -65,7 +61,6 @@ struct
       , buffer = newBuffer
       , startLine = newStartLine
       , msgs = newMsgs
-      , searchString = searchString
       , searchList = searchList
       , bufferModifyTime = bufferModifyTime
       , windowWidth = windowWidth
@@ -81,7 +76,6 @@ struct
       val
         { mode
         , buffer
-        , searchString
         , searchList = _
         , startLine
         , msgs
@@ -98,7 +92,6 @@ struct
       , buffer = buffer
       , startLine = startLine
       , msgs = msgs
-      , searchString = searchString
       , bufferModifyTime = bufferModifyTime
       , windowWidth = windowWidth
       , windowHeight = windowHeight
@@ -123,7 +116,6 @@ struct
         , windowHeight = _
         , msgs = _
         , buffer = _
-        , searchString
         , searchList
         , startLine
         , bufferModifyTime
@@ -139,7 +131,6 @@ struct
       , msgs = newMsgs
       , searchList = searchList
       , startLine = startLine
-      , searchString = searchString
       , bufferModifyTime = bufferModifyTime
       , cursorIdx = cursorIdx
       , visualScrollColumn = visualScrollColumn

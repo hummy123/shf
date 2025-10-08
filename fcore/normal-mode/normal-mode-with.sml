@@ -13,7 +13,6 @@ struct
         , windowHeight
         , searchList
         , visualScrollColumn
-        , searchString
         , startLine
         , cursorIdx
         , dfa
@@ -27,7 +26,6 @@ struct
       , windowHeight = windowHeight
       , searchList = searchList
       , visualScrollColumn = visualScrollColumn
-      , searchString = searchString
       , startLine = startLine
       , cursorIdx = cursorIdx
       , dfa = dfa
@@ -54,7 +52,6 @@ struct
         , searchList = _
         , visualScrollColumn = _
         , msgs = _
-        , searchString
         , startLine
         , cursorIdx
         , dfa
@@ -68,7 +65,6 @@ struct
       , searchList = newSearchList
       , visualScrollColumn = newVisualScrollColumn
       , msgs = newMsgs
-      , searchString = searchString
       , startLine = startLine
       , cursorIdx = cursorIdx
       , dfa = dfa
@@ -96,7 +92,6 @@ struct
         , searchList = _
         , visualScrollColumn = _
         , msgs = _
-        , searchString
         , windowWidth
         , windowHeight
         , dfa
@@ -110,7 +105,6 @@ struct
       , searchList = newSearchList
       , visualScrollColumn = newVisualScrollColumn
       , msgs = newMsgs
-      , searchString = searchString
       , windowWidth = windowWidth
       , windowHeight = windowHeight
       , dfa = dfa
@@ -125,7 +119,6 @@ struct
         , buffer
         , bufferModifyTime
         , searchList
-        , searchString
         , cursorIdx
         , windowWidth
         , windowHeight
@@ -139,7 +132,6 @@ struct
       , buffer = buffer
       , bufferModifyTime = bufferModifyTime
       , searchList = searchList
-      , searchString = searchString
       , cursorIdx = cursorIdx
       , windowWidth = windowWidth
       , windowHeight = windowHeight
@@ -157,7 +149,6 @@ struct
         , buffer = _
         , bufferModifyTime
         , searchList
-        , searchString
         , cursorIdx
         , windowWidth
         , windowHeight
@@ -171,7 +162,6 @@ struct
       , buffer = newBuffer
       , bufferModifyTime = bufferModifyTime
       , searchList = searchList
-      , searchString = searchString
       , cursorIdx = cursorIdx
       , windowWidth = windowWidth
       , windowHeight = windowHeight
@@ -181,19 +171,12 @@ struct
       }
     end
 
-  fun searchList
-    ( app: app_type
-    , newSearchList
-    , newBuffer
-    , newSearchString
-    , newBufferModifyTime
-    ) =
+  fun searchList (app: app_type, newSearchList, newBuffer, newBufferModifyTime) =
     let
       val
         { searchList = _
         , buffer = _
         , bufferModifyTime
-        , searchString = _
         , msgs
         , mode
         , cursorIdx
@@ -207,7 +190,6 @@ struct
       { searchList = newSearchList
       , buffer = newBuffer
       , bufferModifyTime = newBufferModifyTime
-      , searchString = newSearchString
       , msgs = msgs
       , mode = mode
       , cursorIdx = cursorIdx

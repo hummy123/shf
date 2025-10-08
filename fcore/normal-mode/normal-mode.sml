@@ -31,9 +31,9 @@ struct
         let
           open MailboxType
 
-          val {cursorIdx = origCursorIdx, searchString, ...} = app
+          val {cursorIdx = origCursorIdx, ...} = app
           val buffer = LineGap.goToStart buffer
-          val initialMsg = [SEARCH (buffer, searchString, time)]
+          val initialMsg = [SEARCH (buffer, raise Fail "searchString", time)]
         in
           NormalDelete.finishAfterDeletingBuffer
             (app, origCursorIdx, buffer, time, initialMsg)
@@ -94,7 +94,7 @@ struct
       let
         open MailboxType
 
-        val {cursorIdx, buffer, searchString, ...} = app
+        val {cursorIdx, buffer, ...} = app
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
         val lineStart = Cursor.vi0 (buffer, cursorIdx)
@@ -127,7 +127,7 @@ struct
             loop (nextLine, buffer, count - 1)
 
         val buffer = LineGap.goToStart buffer
-        val initialMsg = [SEARCH (buffer, searchString, time)]
+        val initialMsg = [SEARCH (buffer, raise Fail "searchString", time)]
       in
         NormalDelete.finishAfterDeletingBuffer
           (app, newCursorIdx, buffer, time, initialMsg)

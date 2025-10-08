@@ -15,7 +15,6 @@ struct
     , buffer: LineGap.t
     , bufferModifyTime: Time.time
     , searchList: PersistentVector.t
-    , searchString: string
     , windowWidth: int
     , windowHeight: int
     (* line to start drawing from *)
@@ -35,7 +34,6 @@ struct
     , buffer = buffer
     , bufferModifyTime = time
     , searchList = SearchList.empty
-    , searchString = ""
     , windowWidth = windowWidth
     , windowHeight = windowHeight
     , startLine = 0
