@@ -494,7 +494,7 @@ struct
         , visualScrollColumn
         , ...
         } = app
-      val newCursorIdx = SearchList.nextMatch (cursorIdx, searchList, count)
+      val newCursorIdx = PersistentVector.nextMatch (cursorIdx, searchList, count)
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app

@@ -96,12 +96,86 @@ struct
           end
 
   fun append (start, finish, tree) =
-      case helpAppend (start, finish, tree) of
-        UPDATE t => t
-      | APPEND newNode => 
+    case helpAppend (start, finish, tree) of
+      UPDATE t => t
+    | APPEND newNode => 
+        let
+          val maxSize = getFinishIdx tree
+        in
+          BRANCH (#[tree, newNode], #[maxSize, finish])
+        end
+
+  fun getStart tree =
+    case tree of
+      LEAF (values, _) => Vector.sub (values, 0)
+    | BRANCH (nodes, _) => getStart (Vector.sub (nodes, 0))
+
+  fun helpNextMatch (cusorIdx, tree) =
+    case tree of
+      LEAF (values, sizes) =>
+        let
+          val idx = BinSearch.equalOrMore (cusorIdx, sizes)
+        in
+          if idx = ~1 then {start = ~1, finish = ~1}
+          else Vector.sub (values, idx)
+        end
+    | BRANCH (nodes, sizes) =>
+        let
+          val idx = BinSearch.equalOrMore (cusorIdx, sizes)
+        in
+          if idx = ~1 then {start = ~1, finish = ~1}
+          else helpNextMatch (cusorIdx, Vector.sub (nodes, idx))
+        end
+
+  fun startNextMatch (cusorIdx, tree) =
+    case tree of
+      LEAF (values, sizes) =>
+        if Vector.length sizes = 0 then
+          {start = ~1, finish = ~1}
+        else
           let
-            val maxSize = getFinishIdx tree
+            val idx = BinSearch.equalOrMore (cusorIdx, sizes)
+            val idx = if idx = ~1 then 0 else idx
           in
-            BRANCH (#[tree, newNode], #[maxSize, finish])
+            Vector.sub (values, idx)
           end
+    | BRANCH (nodes, sizes) =>
+        let
+          val idx = BinSearch.equalOrMore (cusorIdx, sizes)
+        in
+          if idx = ~1 then {start = ~1, finish = ~1}
+          else helpNextMatch (cusorIdx, Vector.sub (nodes, idx))
+        end
+
+  fun loopNextMatch (prevStart, prevFinish, tree, count) =
+    if count = 0 then
+      prevStart
+    else
+      let
+        val {start, finish} = startNextMatch (prevFinish + 1, tree)
+      in
+        if start = ~1 then
+          let val {start, finish} = getStart tree
+          in loopNextMatch (start, finish, tree, count - 1)
+          end
+        else
+          loopNextMatch (start, finish, tree, count - 1)
+      end
+
+  fun nextMatch (cusorIdx, tree, count) =
+    if isEmpty tree then
+      ~1
+    else
+      let
+        val {start, finish} = startNextMatch (cusorIdx, tree)
+      in
+        if start = ~1 then
+          let val {start, finish} = getStart tree
+          in loopNextMatch (start, finish, tree, count - 1)
+          end
+        else if cusorIdx >= start andalso cusorIdx <= finish then
+          loopNextMatch (start, finish, tree, count)
+        else
+          loopNextMatch (start, finish, tree, count - 1)
+      end
 end
