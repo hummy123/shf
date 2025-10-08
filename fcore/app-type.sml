@@ -33,7 +33,7 @@ struct
     { mode = NORMAL_MODE ""
     , buffer = buffer
     , bufferModifyTime = time
-    , searchList = SearchList.empty
+    , searchList = PersistentVector.empty
     , windowWidth = windowWidth
     , windowHeight = windowHeight
     , startLine = 0
