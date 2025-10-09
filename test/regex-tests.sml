@@ -205,11 +205,38 @@ struct
         doesNotRecogniseUnescaped ("-", "hello - world"))
     ]
 
+  (* tests based on regex tutorial by FreeCodeCamp *)
+  val freeCodeCampTests = describe "regex freeCodeCamp tests"
+    [test "The dog chased the cat" (fn _ =>
+       let
+         (* arrange *)
+         val sentence = "The dog chased the cat"
+         val regexString = "the"
+         val caseSensitiveDfa = CsDfa.fromString regexString
+         val caseInsensitiveDfa = CiDfa.fromString regexString
+
+         (* act *)
+         val caseSensitiveMatches =
+           CsDfa.matchString (caseSensitiveDfa, sentence)
+         val caseInsensitiveMatches =
+           CiDfa.matchString (caseInsensitiveDfa, sentence)
+
+         (* assert *)
+         val expectedCaseSensitive = [(15, 17)]
+         val expectedCaseInsensitive = [(0, 2), (15, 17)]
+         val expected =
+           caseSensitiveMatches = expectedCaseSensitive
+           andalso caseInsensitiveMatches = expectedCaseInsensitive
+       in
+         Expect.isTrue (expected)
+       end)]
+
   val tests =
     [ caseInsensitiveTests
     , caseSensitiveTests
     , endMarkerTests
     , escapeSequenceTests
     , metacharacterEscapeTest
+    , freeCodeCampTests
     ]
 end
