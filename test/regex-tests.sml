@@ -102,5 +102,22 @@ struct
         end)
     ]
 
-  val tests = [caseInsensitiveTests, caseSensitiveTests]
+  val endMarkerTests = describe "regex endMarker"
+    [test "returns an empty DFA when regexString contains endMarker" (fn _ =>
+       let
+         (* arrange *)
+         (* the end marker is #"\^@" *)
+         val regexString = "hello \^@ world"
+
+         (* act *)
+         val dfa = CsDfa.fromString regexString
+
+         (* assert *)
+         val actualLength = Vector.length dfa
+         val expectedLength = 0
+       in
+         Expect.isTrue (actualLength = expectedLength)
+       end)]
+
+  val tests = [caseInsensitiveTests, caseSensitiveTests, endMarkerTests]
 end
