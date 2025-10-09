@@ -243,7 +243,7 @@ struct
           (* assert *)
           val expectedMatches = [(10, 14)]
         in
-          Expect.isTrue (expected = matches)
+          Expect.isTrue (expectedMatches = matches)
         end)
     , test "James has a pet cat." (fn _ =>
         let
@@ -258,7 +258,7 @@ struct
           (* assert *)
           val expectedMatches = [(16, 18)]
         in
-          Expect.isTrue (expected = matches)
+          Expect.isTrue (expectedMatches = matches)
         end)
     , test "Ignore Case While Matching" (fn _ =>
         let
@@ -273,7 +273,52 @@ struct
           (* assert *)
           val expectedMatches = [(0, 11)]
         in
-          Expect.isTrue (expected = matches)
+          Expect.isTrue (expectedMatches = matches)
+        end)
+    , test "Extract the word 'coding' from this string" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Extract the word 'coding' from this string"
+          val regexString = "coding"
+          val dfa = CsDfa.fromString regexString
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(18, 23)]
+        in
+          Expect.isTrue (expectedMatches = matches)
+        end)
+    , test "Repeat, Repeat, Repeat" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Repeat, Repeat, Repeat"
+          val regexString = "Repeat"
+          val dfa = CsDfa.fromString regexString
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(0, 5), (8, 13), (16, 21)]
+        in
+          Expect.isTrue (expectedMatches = matches)
+        end)
+    , test "Twinkle, twinkle, little start" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Twinkle, twinkle, little start"
+          val regexString = "twinkle"
+          val dfa = CiDfa.fromString regexString
+
+          (* act *)
+          val matches = CiDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(0, 6), (9, 15)]
+        in
+          Expect.isTrue (expectedMatches = matches)
         end)
     ]
 
