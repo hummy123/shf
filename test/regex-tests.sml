@@ -207,29 +207,75 @@ struct
 
   (* tests based on regex tutorial by FreeCodeCamp *)
   val freeCodeCampTests = describe "regex freeCodeCamp tests"
-    [test "The dog chased the cat" (fn _ =>
-       let
-         (* arrange *)
-         val sentence = "The dog chased the cat"
-         val regexString = "the"
-         val caseSensitiveDfa = CsDfa.fromString regexString
-         val caseInsensitiveDfa = CiDfa.fromString regexString
+    [ test "The dog chased the cat" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "The dog chased the cat"
+          val regexString = "the"
+          val caseSensitiveDfa = CsDfa.fromString regexString
+          val caseInsensitiveDfa = CiDfa.fromString regexString
 
-         (* act *)
-         val caseSensitiveMatches =
-           CsDfa.matchString (caseSensitiveDfa, sentence)
-         val caseInsensitiveMatches =
-           CiDfa.matchString (caseInsensitiveDfa, sentence)
+          (* act *)
+          val caseSensitiveMatches =
+            CsDfa.matchString (caseSensitiveDfa, sentence)
+          val caseInsensitiveMatches =
+            CiDfa.matchString (caseInsensitiveDfa, sentence)
 
-         (* assert *)
-         val expectedCaseSensitive = [(15, 17)]
-         val expectedCaseInsensitive = [(0, 2), (15, 17)]
-         val expected =
-           caseSensitiveMatches = expectedCaseSensitive
-           andalso caseInsensitiveMatches = expectedCaseInsensitive
-       in
-         Expect.isTrue (expected)
-       end)]
+          (* assert *)
+          val expectedCaseSensitive = [(15, 17)]
+          val expectedCaseInsensitive = [(0, 2), (15, 17)]
+          val expected =
+            caseSensitiveMatches = expectedCaseSensitive
+            andalso caseInsensitiveMatches = expectedCaseInsensitive
+        in
+          Expect.isTrue (expected)
+        end)
+    , test "Somewhere Waldo is hiding in this text." (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Somewhere Waldo is hiding in this text."
+          val regexString = "Waldo"
+          val dfa = CsDfa.fromString regexString
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(10, 14)]
+        in
+          Expect.isTrue (expected = matches)
+        end)
+    , test "James has a pet cat." (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "James has a pet cat."
+          val regexString = "dog|cat|bird|fish"
+          val dfa = CsDfa.fromString regexString
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(16, 18)]
+        in
+          Expect.isTrue (expected = matches)
+        end)
+    , test "Ignore Case While Matching" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "freeCodeCamp"
+          val regexString = "freecodecamp"
+          val dfa = CiDfa.fromString regexString
+
+          (* act *)
+          val matches = CiDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(0, 11)]
+        in
+          Expect.isTrue (expected = matches)
+        end)
+    ]
 
   val tests =
     [ caseInsensitiveTests
