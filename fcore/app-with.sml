@@ -10,7 +10,7 @@ struct
         , buffer
         , bufferModifyTime
         , searchList
-        , searchString
+        , dfa
         , mode
         , windowWidth
         , windowHeight
@@ -23,7 +23,7 @@ struct
       , buffer = buffer
       , bufferModifyTime = bufferModifyTime
       , searchList = searchList
-      , searchString = searchString
+      , dfa = dfa
       , mode = mode
       , windowWidth = windowWidth
       , windowHeight = windowHeight

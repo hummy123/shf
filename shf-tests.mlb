@@ -67,6 +67,7 @@ $(SML_LIB)/basis/mlton.mlb
 shell/exception-logger.sml
 test/Railroad/src/railroad.mlb
 
+test/regex-tests.sml
 test/test-utils.sml
 test/normal-move.sml
 test/normal-delete.sml

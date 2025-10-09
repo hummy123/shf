@@ -15,6 +15,8 @@ sig
   val nextState: dfa * dfa_state * char -> dfa_state
   val isFinal: dfa * dfa_state -> bool
   val isDead: dfa_state -> bool
+
+  val matchString: dfa * string -> (int * int) list
 end
 
 functor MakeDfaGen(Fn: DFA_GEN_PARAMS): DFA_GEN =
@@ -817,6 +819,41 @@ struct
     end
 
   fun isDead (curState: dfa_state) = curState = ~1
+
+  fun helpMatchString (strPos, str, dfa, curState, startPos, prevFinalPos, acc) =
+    if strPos = String.size str then
+      let
+        val acc =
+          if prevFinalPos = ~1 then acc else (startPos, prevFinalPos) :: acc
+      in
+        List.rev acc
+      end
+    else
+      let
+        val chr = String.sub (str, strPos)
+        val newState = nextState (dfa, curState, chr)
+        val prevFinalPos =
+          if isFinal (dfa, newState) then strPos else prevFinalPos
+      in
+        if isDead newState then
+          if prevFinalPos = ~1 then
+            (* restart from startPos *)
+            helpMatchString (startPos + 1, str, dfa, 0, startPos + 1, ~1, acc)
+          else
+            let
+              val acc = (startPos, prevFinalPos) :: acc
+            in
+              helpMatchString
+                (prevFinalPos + 1, str, dfa, 0, prevFinalPos + 1, ~1, acc)
+            end
+        else
+          helpMatchString
+            (strPos + 1, str, dfa, newState, startPos, prevFinalPos, acc)
+      end
+
+  fun matchString (dfa, string) =
+    if Vector.length dfa = 0 then []
+    else helpMatchString (0, string, dfa, 0, 0, ~1, [])
 end
 
 structure CaseInsensitiveDfa =
