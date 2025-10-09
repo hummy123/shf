@@ -320,6 +320,137 @@ struct
         in
           Expect.isTrue (expectedMatches = matches)
         end)
+    , test "hu. regex" (fn _ =>
+        let
+          (* arrange *)
+          val regexString = "hu."
+          val dfa = CsDfa.fromString regexString
+
+          val humStr = "To mock a humming bird"
+          val hugStr = "Bear hug"
+
+          (* act *)
+          val humMatches = CiDfa.matchString (dfa, humStr)
+          val hugMatches = CiDfa.matchString (dfa, hugStr)
+
+          (* assert *)
+          val expectedHumMatches = [(10, 12)]
+          val expectedHugMatches = [(5, 7)]
+          val isExpected =
+            humMatches = expectedHumMatches
+            andalso hugMatches = expectedHugMatches
+        in
+          Expect.isTrue isExpected
+        end)
+    , test "Let's have fun with regular expressions!" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Let's have fun with regular expressions!"
+          val regexString = ".un"
+          val dfa = CsDfa.fromString regexString
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(11, 13)]
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    , test "Beware of bugs in the above code" (fn _ =>
+        let
+          (* arrange *)
+          val sentence =
+            "Beware of bugs in the above code;\
+            \I have only proved it correct, not tried it."
+          val regexString = "[aeiou]"
+          val dfa = CiDfa.fromString regexString
+
+          (* act *)
+          val matches = CiDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches =
+            [ (1, 1)
+            , (3, 3)
+            , (5, 5)
+            , (7, 7)
+            , (11, 11)
+            , (15, 15)
+            , (20, 20)
+            , (22, 22)
+            , (24, 24)
+            , (26, 26)
+            , (29, 29)
+            , (31, 31)
+            , (33, 33)
+            , (36, 36)
+            , (38, 38)
+            , (40, 40)
+            , (47, 47)
+            , (49, 49)
+            , (52, 52)
+            , (56, 56)
+            , (59, 59)
+            , (65, 65)
+            , (70, 70)
+            , (71, 71)
+            , (74, 74)
+            ]
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    , test "The quick brown fox jumps over the lazy dog." (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "The quick brown fox jumps over the lazy dog."
+          val regexString = "[a-zA-Z]"
+          val dfa = CiDfa.fromString regexString
+
+          (* act *)
+          val matches = CiDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches =
+            [ (0, 0)
+            , (1, 1)
+            , (2, 2)
+            , (4, 4)
+            , (5, 5)
+            , (6, 6)
+            , (7, 7)
+            , (8, 8)
+            , (10, 10)
+            , (11, 11)
+            , (12, 12)
+            , (13, 13)
+            , (14, 14)
+            , (16, 16)
+            , (17, 17)
+            , (18, 18)
+            , (20, 20)
+            , (21, 21)
+            , (22, 22)
+            , (23, 23)
+            , (24, 24)
+            , (26, 26)
+            , (27, 27)
+            , (28, 28)
+            , (29, 29)
+            , (31, 31)
+            , (32, 32)
+            , (33, 33)
+            , (35, 35)
+            , (36, 36)
+            , (37, 37)
+            , (38, 38)
+            , (40, 40)
+            , (41, 41)
+            , (42, 42)
+            ]
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
     ]
 
   val tests =
