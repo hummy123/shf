@@ -119,5 +119,43 @@ struct
          Expect.isTrue (actualLength = expectedLength)
        end)]
 
-  val tests = [caseInsensitiveTests, caseSensitiveTests, endMarkerTests]
+  fun recogniseEscapeSequence (regexString, inputString) =
+    let
+      (* arrange *)
+      val dfa = CiDfa.fromString regexString
+
+      (* act *)
+      val matches = CiDfa.matchString (dfa, inputString)
+
+      (* assert *)
+      val expectedMatches = [(6, 6)]
+    in
+      Expect.isTrue (matches = expectedMatches)
+    end
+
+  val escapeSequenceTests = describe "regex escape sequences"
+    [ test "recognises alert" (fn _ =>
+        recogniseEscapeSequence ("\\a", "hello \a world"))
+    , test "recognises backspace" (fn _ =>
+        recogniseEscapeSequence ("\\b", "hello \b world"))
+    , test "recognises tab" (fn _ =>
+        recogniseEscapeSequence ("\\t", "hello \t world"))
+    , test "recognises newline" (fn _ =>
+        recogniseEscapeSequence ("\\n", "hello \n world"))
+    , test "recognises vertical tab" (fn _ =>
+        recogniseEscapeSequence ("\\v", "hello \v world"))
+    , test "recognises form feed" (fn _ =>
+        recogniseEscapeSequence ("\\f", "hello \f world"))
+    , test "recognises carriage return" (fn _ =>
+        recogniseEscapeSequence ("\\r", "hello \r world"))
+    , test "recognises backslash" (fn _ =>
+        recogniseEscapeSequence ("\\\\", "hello \\ world"))
+    ]
+
+  val tests =
+    [ caseInsensitiveTests
+    , caseSensitiveTests
+    , endMarkerTests
+    , escapeSequenceTests
+    ]
 end

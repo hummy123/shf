@@ -157,7 +157,6 @@ struct
       | #"f" => (true, #"\f")
       | #"r" => (true, #"\r")
       | #"\\" => (true, chr)
-      | #"\"" => (true, chr)
       | _ => (false, chr)
 
     fun getCharsBetween (lowChr, highChr, acc) =
