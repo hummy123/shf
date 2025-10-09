@@ -174,7 +174,7 @@ struct
     , test "recognises [" (fn _ =>
         recogniseEscapeSequence ("\\[", "hello [ world"))
     , test "recognises ]" (fn _ =>
-        recogniseEscapeSequence ("\\[", "hello ] world"))
+        recogniseEscapeSequence ("\\]", "hello ] world"))
     , test "recognises +" (fn _ =>
         recogniseEscapeSequence ("\\+", "hello + world"))
     , test "recognises |" (fn _ =>
@@ -201,8 +201,6 @@ struct
         doesNotRecogniseUnescaped ("|", "hello | world"))
     , test "does not recognise ?" (fn _ =>
         doesNotRecogniseUnescaped ("?", "hello ? world"))
-    , test "does not recognise ." (fn _ =>
-        doesNotRecogniseUnescaped (".", "hello . world"))
     , test "does not recognise -" (fn _ =>
         doesNotRecogniseUnescaped ("-", "hello - world"))
     ]

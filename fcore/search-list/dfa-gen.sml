@@ -241,7 +241,6 @@ struct
             let val chars = Vector.fromList acc
             in SOME (pos + 1, chars)
             end
-        | #"-" => NONE
         | chr =>
             if
               pos + 1 < String.size str andalso String.sub (str, pos + 1) = #"-"
@@ -352,10 +351,6 @@ struct
                   NONE
               end
         | #"." => SOME (pos + 1, WILDCARD (stateNum + 1), stateNum + 1)
-        | #")" => NONE
-        | #"?" => NONE
-        | #"*" => NONE
-        | #"+" => NONE
         | #"[" =>
             if pos + 1 = String.size str then
               NONE
@@ -363,6 +358,13 @@ struct
               parseNegateCharacterClass (pos + 2, str, stateNum)
             else
               parseCharacterClass (pos + 1, str, stateNum)
+        | #")" => NONE
+        | #"]" => NONE
+        | #"+" => NONE
+        | #"*" => NONE
+        | #"|" => NONE
+        | #"?" => NONE
+        | #"-" => NONE
         | chr =>
             if Fn.charIsEqual (chr, Fn.endMarker) then
               NONE
