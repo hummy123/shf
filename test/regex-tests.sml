@@ -39,5 +39,68 @@ struct
         end)
     ]
 
-  val tests = [caseInsensitiveTests]
+  val caseSensitiveTests = describe "case sensitive regex"
+    [ test "does not recognise word 'hello' in string 'Hello world'" (fn _ =>
+        let
+          (* arrange *)
+          val regexString = "hello"
+          val dfa = CsDfa.fromString regexString
+          val inputString = "Hello world"
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, inputString)
+
+          (* assert *)
+          val expectedMatches = []
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    , test "recognises word 'Hello' in string 'Hello world'" (fn _ =>
+        let
+          (* arrange *)
+          val regexString = "Hello"
+          val dfa = CsDfa.fromString regexString
+          val inputString = "Hello world"
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, inputString)
+
+          (* assert *)
+          val expectedMatches = [(0, 4)]
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    , test "does not recognise word 'world' in string 'HELLO WORLD'" (fn _ =>
+        let
+          (* arrange *)
+          val regexString = "world"
+          val dfa = CsDfa.fromString regexString
+          val inputString = "HELLO WORLD"
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, inputString)
+
+          (* assert *)
+          val expectedMatches = []
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    , test "recognises word 'WORLD' in string 'HELLO WORLD'" (fn _ =>
+        let
+          (* arrange *)
+          val regexString = "WORLD"
+          val dfa = CsDfa.fromString regexString
+          val inputString = "HELLO WORLD"
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, inputString)
+
+          (* assert *)
+          val expectedMatches = [(6, 10)]
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    ]
+
+  val tests = [caseInsensitiveTests, caseSensitiveTests]
 end
