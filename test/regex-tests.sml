@@ -451,6 +451,106 @@ struct
         in
           Expect.isTrue (matches = expectedMatches)
         end)
+    , test "Blueberry 3.141592653s are delicious." (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Blueberry 3.141592653s are delicious."
+          val regexString = "[2-6h-s]"
+          val dfa = CiDfa.fromString regexString
+
+          (* act *)
+          val matches = CiDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches =
+            [ (1, 1)
+            , (6, 6)
+            , (7, 7)
+            , (10, 10)
+            , (13, 13)
+            , (15, 15)
+            , (17, 17)
+            , (18, 18)
+            , (19, 19)
+            , (20, 20)
+            , (21, 21)
+            , (24, 24)
+            , (29, 29)
+            , (30, 30)
+            , (32, 32)
+            , (33, 33)
+            , (35, 35)
+            ]
+        in
+          Expect.isTrue (expectedMatches = matches)
+        end)
+    , test "3 blind mice." (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "3 blind mice."
+          val regexString = "[^0-9aeiou]"
+          val dfa = CiDfa.fromString regexString
+
+          (* act *)
+          val matches = CiDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches =
+            [ (1, 1)
+            , (2, 2)
+            , (3, 3)
+            , (5, 5)
+            , (6, 6)
+            , (7, 7)
+            , (8, 8)
+            , (10, 10)
+            , (12, 12)
+            ]
+        in
+          Expect.isTrue (expectedMatches = matches)
+        end)
+    , test "Mississipi" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Mississipi"
+          val regexString = "s+"
+          val dfa = CiDfa.fromString regexString
+
+          (* act *)
+          val matches = CiDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(2, 3), (5, 6)]
+        in
+          Expect.isTrue (expectedMatches = matches)
+        end)
+    , test "goooal" (fn _ =>
+        let
+          (* arrange *)
+          val soccerSentence = "goooal"
+          val gPhrase = "gut feeling"
+          val oPhrase = "over the moon"
+
+          val goRegex = "go*"
+          val dfa = CsDfa.fromString goRegex
+
+          (* act *)
+          val soccerMatches = CsDfa.matchString (dfa, soccerSentence)
+          val gPhraseMatches = CsDfa.matchString (dfa, gPhrase)
+          val oPhraseMatches = CsDfa.matchString (dfa, oPhrase)
+
+          (* assert *)
+          val expectedSoccerMatches = [(0, 3)]
+          val expectedGPhraseMatches = [(0, 0)]
+          val expectedOPhraseMatches = []
+
+          val isExpected =
+            soccerMatches = expectedSoccerMatches
+            andalso gPhraseMatches = expectedGPhraseMatches
+            andalso oPhraseMatches = expectedOPhraseMatches
+        in
+          Expect.isTrue isExpected
+        end)
     ]
 
   val tests =
