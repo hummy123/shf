@@ -133,6 +133,20 @@ struct
       Expect.isTrue (matches = expectedMatches)
     end
 
+  fun doesNotRecogniseUnescaped (regexString, inputString) =
+    let
+      (* arrange *)
+      val dfa = CiDfa.fromString regexString
+
+      (* act *)
+      val matches = CiDfa.matchString (dfa, inputString)
+
+      (* assert *)
+      val expectedMatches = []
+    in
+      Expect.isTrue (matches = expectedMatches)
+    end
+
   val escapeSequenceTests = describe "regex escape sequences"
     [ test "recognises alert" (fn _ =>
         recogniseEscapeSequence ("\\a", "hello \a world"))
@@ -152,10 +166,52 @@ struct
         recogniseEscapeSequence ("\\\\", "hello \\ world"))
     ]
 
+  val metacharacterEscapeTest = describe "regex metacharacter escape sequences"
+    [ test "recognises (" (fn _ =>
+        recogniseEscapeSequence ("\\(", "hello ( world"))
+    , test "recognises )" (fn _ =>
+        recogniseEscapeSequence ("\\)", "hello ) world"))
+    , test "recognises [" (fn _ =>
+        recogniseEscapeSequence ("\\[", "hello [ world"))
+    , test "recognises ]" (fn _ =>
+        recogniseEscapeSequence ("\\[", "hello ] world"))
+    , test "recognises +" (fn _ =>
+        recogniseEscapeSequence ("\\+", "hello + world"))
+    , test "recognises |" (fn _ =>
+        recogniseEscapeSequence ("\\|", "hello | world"))
+    , test "recognises ?" (fn _ =>
+        recogniseEscapeSequence ("\\?", "hello ? world"))
+    , test "recognises ." (fn _ =>
+        recogniseEscapeSequence ("\\.", "hello . world"))
+    , test "recognises -" (fn _ =>
+        recogniseEscapeSequence ("\\-", "hello - world"))
+
+    (* checking that unescaped metacharacter is not recognised *)
+    , test "does not recognise (" (fn _ =>
+        doesNotRecogniseUnescaped ("(", "hello ( world"))
+    , test "does not recognise )" (fn _ =>
+        doesNotRecogniseUnescaped (")", "hello ) world"))
+    , test "does not recognise [" (fn _ =>
+        doesNotRecogniseUnescaped ("[", "hello [ world"))
+    , test "does not recognise ]" (fn _ =>
+        doesNotRecogniseUnescaped ("[", "hello ] world"))
+    , test "does not recognise +" (fn _ =>
+        doesNotRecogniseUnescaped ("+", "hello + world"))
+    , test "does not recognise |" (fn _ =>
+        doesNotRecogniseUnescaped ("|", "hello | world"))
+    , test "does not recognise ?" (fn _ =>
+        doesNotRecogniseUnescaped ("?", "hello ? world"))
+    , test "does not recognise ." (fn _ =>
+        doesNotRecogniseUnescaped (".", "hello . world"))
+    , test "does not recognise -" (fn _ =>
+        doesNotRecogniseUnescaped ("-", "hello - world"))
+    ]
+
   val tests =
     [ caseInsensitiveTests
     , caseSensitiveTests
     , endMarkerTests
     , escapeSequenceTests
+    , metacharacterEscapeTest
     ]
 end
