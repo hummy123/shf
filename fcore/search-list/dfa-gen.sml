@@ -814,7 +814,114 @@ struct
                Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
             dtran
 
-    fun convert regex =
+    fun addFollowsToPos (tree, pos, addList) =
+      case tree of
+        CHAR_LITERAL {char, position, follows} =>
+          let
+            val set = Set.addFromList (Set.LEAF, follows)
+            val set = Set.addFromList (set, addList)
+            val newList = Set.keysToList set
+          in
+            CHAR_LITERAL {char = char, position = position, follows = newList}
+          end
+      | WILDCARD {position, follows} =>
+          let
+            val set = Set.addFromList (Set.LEAF, follows)
+            val set = Set.addFromList (set, addList)
+            val newList = Set.keysToList set
+          in
+            WILDCARD {position = position, follows = newList}
+          end
+      | IS_ANY_CHARACTER {chars, position, follows} =>
+          let
+            val set = Set.addFromList (Set.LEAF, follows)
+            val set = Set.addFromList (set, addList)
+            val newList = Set.keysToList set
+          in
+            IS_ANY_CHARACTER
+              {chars = chars, position = position, follows = newList}
+          end
+      | NOT_ANY_CHARACTER {chars, position, follows} =>
+          let
+            val set = Set.addFromList (Set.LEAF, follows)
+            val set = Set.addFromList (set, addList)
+            val newList = Set.keysToList set
+          in
+            NOT_ANY_CHARACTER
+              {chars = chars, position = position, follows = newList}
+          end
+      | CONCAT {l, r, leftMaxState, rightMaxState, firstpos, lastpos} =>
+          if pos > leftMaxState then
+            let
+              val r = addFollowsToPos (r, pos, addList)
+            in
+              CONCAT
+                { l = l
+                , r = r
+                , leftMaxState = leftMaxState
+                , rightMaxState = rightMaxState
+                , firstpos = firstpos
+                , lastpos = lastpos
+                }
+            end
+          else
+            let
+              val l = addFollowsToPos (l, pos, addList)
+            in
+              CONCAT
+                { l = l
+                , r = r
+                , leftMaxState = leftMaxState
+                , rightMaxState = rightMaxState
+                , firstpos = firstpos
+                , lastpos = lastpos
+                }
+            end
+      | ALTERNATION {l, r, leftMaxState, rightMaxState, firstpos, lastpos} =>
+          if pos > leftMaxState then
+            let
+              val r = addFollowsToPos (r, pos, addList)
+            in
+              ALTERNATION
+                { l = l
+                , r = r
+                , leftMaxState = leftMaxState
+                , rightMaxState = rightMaxState
+                , firstpos = firstpos
+                , lastpos = lastpos
+                }
+            end
+          else
+            let
+              val l = addFollowsToPos (l, pos, addList)
+            in
+              ALTERNATION
+                { l = l
+                , r = r
+                , leftMaxState = leftMaxState
+                , rightMaxState = rightMaxState
+                , firstpos = firstpos
+                , lastpos = lastpos
+                }
+            end
+      | ZERO_OR_ONE child =>
+          let val child = addFollowsToPos (child, pos, addList)
+          in ZERO_OR_ONE child
+          end
+      | ZERO_OR_MORE child =>
+          let val child = addFollowsToPos (child, pos, addList)
+          in ZERO_OR_MORE child
+          end
+      | ONE_OR_MORE child =>
+          let val child = addFollowsToPos (child, pos, addList)
+          in ONE_OR_MORE child
+          end
+      | GROUP child =>
+          let val child = addFollowsToPos (child, pos, addList)
+          in GROUP child
+          end
+
+    fun convert (regex, numStates) =
       let
         val first = List.rev (firstpos (regex, []))
         val dstates = Vector.fromList [{transitions = first, marked = false}]
@@ -840,7 +947,7 @@ struct
             , lastpos = []
             }
         in
-          ToDfa.convert ast
+          ToDfa.convert (ast, numStates + 1)
         end
     | NONE => Vector.fromList []
 
