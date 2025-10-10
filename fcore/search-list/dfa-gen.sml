@@ -814,112 +814,49 @@ struct
                Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
             dtran
 
-    fun addFollowsToPos (tree, pos, addList) =
+    fun addKeysToFollowSet (lst, addSet, followSet) =
+      case lst of
+        hd :: tl =>
+          let
+            val currentFollows = Set.getOrDefault (hd, followSet, [])
+            val updatedFollows = Set.addFromList (currentFollows, addSet)
+            val updatedFollows = Set.keysToList updatedFollows
+            val followSet = Set.insertOrReplace (hd, updatedFollows, followSet)
+          in
+            addKeysToFollowSet (tl, addSet, followSet)
+          end
+      | [] => followSet
+
+    fun addToFollowSet (tree, followSet) =
       case tree of
-        CHAR_LITERAL {char, position, follows} =>
+        WILDCARD _ => followSet
+      | CHAR_LITERAL _ => followSet
+      | IS_ANY_CHARACTER _ => followSet
+      | NOT_ANY_CHARACTER _ => followSet
+      | CONCAT {l, r, ...} =>
           let
-            val set = Set.addFromList (Set.LEAF, follows)
-            val set = Set.addFromList (set, addList)
-            val newList = Set.keysToList set
+            val followSet = addToFollowSet (l, followSet)
+            val followSet = addToFollowSet (r, followSet)
+
+            val lp = lastpos (l, [])
+            val fp = firstpos (r, [])
+            val fp = Set.addFromList (fp, Set.LEAF)
           in
-            CHAR_LITERAL {char = char, position = position, follows = newList}
+            addKeysToFollowSet (lp, fp, followSet)
           end
-      | WILDCARD {position, follows} =>
-          let
-            val set = Set.addFromList (Set.LEAF, follows)
-            val set = Set.addFromList (set, addList)
-            val newList = Set.keysToList set
-          in
-            WILDCARD {position = position, follows = newList}
-          end
-      | IS_ANY_CHARACTER {chars, position, follows} =>
-          let
-            val set = Set.addFromList (Set.LEAF, follows)
-            val set = Set.addFromList (set, addList)
-            val newList = Set.keysToList set
-          in
-            IS_ANY_CHARACTER
-              {chars = chars, position = position, follows = newList}
-          end
-      | NOT_ANY_CHARACTER {chars, position, follows} =>
-          let
-            val set = Set.addFromList (Set.LEAF, follows)
-            val set = Set.addFromList (set, addList)
-            val newList = Set.keysToList set
-          in
-            NOT_ANY_CHARACTER
-              {chars = chars, position = position, follows = newList}
-          end
-      | CONCAT {l, r, leftMaxState, rightMaxState, firstpos, lastpos} =>
-          if pos > leftMaxState then
-            let
-              val r = addFollowsToPos (r, pos, addList)
-            in
-              CONCAT
-                { l = l
-                , r = r
-                , leftMaxState = leftMaxState
-                , rightMaxState = rightMaxState
-                , firstpos = firstpos
-                , lastpos = lastpos
-                }
-            end
-          else
-            let
-              val l = addFollowsToPos (l, pos, addList)
-            in
-              CONCAT
-                { l = l
-                , r = r
-                , leftMaxState = leftMaxState
-                , rightMaxState = rightMaxState
-                , firstpos = firstpos
-                , lastpos = lastpos
-                }
-            end
-      | ALTERNATION {l, r, leftMaxState, rightMaxState, firstpos, lastpos} =>
-          if pos > leftMaxState then
-            let
-              val r = addFollowsToPos (r, pos, addList)
-            in
-              ALTERNATION
-                { l = l
-                , r = r
-                , leftMaxState = leftMaxState
-                , rightMaxState = rightMaxState
-                , firstpos = firstpos
-                , lastpos = lastpos
-                }
-            end
-          else
-            let
-              val l = addFollowsToPos (l, pos, addList)
-            in
-              ALTERNATION
-                { l = l
-                , r = r
-                , leftMaxState = leftMaxState
-                , rightMaxState = rightMaxState
-                , firstpos = firstpos
-                , lastpos = lastpos
-                }
-            end
-      | ZERO_OR_ONE child =>
-          let val child = addFollowsToPos (child, pos, addList)
-          in ZERO_OR_ONE child
+      | ALTERNATION {l, r, ...} =>
+          let val followSet = addToFollowSet (l, followSet)
+          in addToFollowSet (r, followSet)
           end
       | ZERO_OR_MORE child =>
-          let val child = addFollowsToPos (child, pos, addList)
-          in ZERO_OR_MORE child
+          let
+            val lp = lastpos (child, [])
+            val fp = firstpos (child, [])
+            val fp = Set.addToFollowSet (fp, Set.LEAF)
+          in
+            addToFollowSet (lp, fp, followSet)
           end
-      | ONE_OR_MORE child =>
-          let val child = addFollowsToPos (child, pos, addList)
-          in ONE_OR_MORE child
-          end
-      | GROUP child =>
-          let val child = addFollowsToPos (child, pos, addList)
-          in GROUP child
-          end
+      | _ => raise Fail "dfa-gen.sml 816: unimplemented"
 
     fun convert (regex, numStates) =
       let
