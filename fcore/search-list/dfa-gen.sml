@@ -112,8 +112,8 @@ struct
     fun addFromList (lst, tree) =
       case lst of
         [] => tree
-      | (k, v) :: tl =>
-          let val tree = insertOrReplace (k, v, tree)
+      | k :: tl =>
+          let val tree = insertOrReplace (k, (), tree)
           in addFromList (tl, tree)
           end
 
@@ -820,7 +820,7 @@ struct
           let
             val currentFollows = Set.getOrDefault (hd, followSet, [])
             val updatedFollows = Set.addFromList (currentFollows, addSet)
-            val updatedFollows = Set.keysToList updatedFollows
+            val updatedFollows: int list = Set.keysToList updatedFollows
             val followSet = Set.insertOrReplace (hd, updatedFollows, followSet)
           in
             addKeysToFollowSet (tl, addSet, followSet)
@@ -852,14 +852,24 @@ struct
           let
             val lp = lastpos (child, [])
             val fp = firstpos (child, [])
-            val fp = Set.addToFollowSet (fp, Set.LEAF)
+            val fp = Set.addFromList (fp, Set.LEAF)
           in
-            addToFollowSet (lp, fp, followSet)
+            addKeysToFollowSet (lp, fp, followSet)
           end
-      | _ => raise Fail "dfa-gen.sml 816: unimplemented"
+      | ONE_OR_MORE child =>
+          let
+            val lp = lastpos (child, [])
+            val fp = firstpos (child, [])
+            val fp = Set.addFromList (fp, Set.LEAF)
+          in
+            addKeysToFollowSet (lp, fp, followSet)
+          end
+      | ZERO_OR_ONE child => addToFollowSet (child, followSet)
+      | GROUP child => addToFollowSet (child, followSet)
 
     fun convert (regex, numStates) =
       let
+        val fs = addToFollowSet (regex, Set.LEAF)
         val first = List.rev (firstpos (regex, []))
         val dstates = Vector.fromList [{transitions = first, marked = false}]
       in
