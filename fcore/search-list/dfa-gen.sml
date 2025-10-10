@@ -94,6 +94,11 @@ struct
   struct
     datatype 'a set = BRANCH of 'a set * int * 'a * 'a set | LEAF
 
+    fun isEmpty set =
+      case set of
+        BRANCH _ => false
+      | LEAF => true
+
     fun insertOrReplace (newKey, newVal, tree) =
       case tree of
         BRANCH (l, curKey, curVal, r) =>
@@ -690,130 +695,6 @@ struct
           end
       | [] => Set.keysToList followSet
 
-    fun appendIfNew (pos, dstates, newStates) =
-      if pos = Vector.length dstates then
-        let
-          val record = {transitions = newStates, marked = false}
-          val dstates = Vector.concat [dstates, Vector.fromList [record]]
-        in
-          (pos, dstates)
-        end
-      else
-        let
-          val {transitions: int list, marked = _} = Vector.sub (dstates, pos)
-        in
-          if transitions = newStates then (pos, dstates)
-          else appendIfNew (pos + 1, dstates, newStates)
-        end
-
-    fun getUnmarkedTransitionsIfExists (pos, dstates) =
-      if pos = Vector.length dstates then
-        NONE
-      else
-        let
-          val record = Vector.sub (dstates, pos)
-        in
-          if #marked record then
-            getUnmarkedTransitionsIfExists (pos + 1, dstates)
-          else
-            SOME (pos, #transitions record)
-        end
-
-    (* the int key in dtran refers to the char code
-     * while the int value refers to the idx from dstates
-     * that this char transitions to *)
-    type dtran = int Set.set
-
-    fun makeEmptyVec _ = ~1
-
-    fun convertChar
-      ( char
-      , regex
-      , dstates
-      , dtran: dtran vector
-      , curStates
-      , curStatesIdx
-      , setForCurStates
-      ) =
-      if char < 0 then
-        let
-          (* append setForCurStates which was accumulated in this function
-           * to the end of dtran. *)
-          val dtran = Vector.concat [dtran, Vector.fromList [setForCurStates]]
-        in
-          (dstates, dtran)
-        end
-      else
-        let
-          (* get union of all follow positions *)
-          val u =
-            getFollowPositionsFromList
-              (curStates, regex, Char.chr char, Set.LEAF)
-        in
-          case u of
-            [] =>
-              (* no follow positions from here, so don't add to dstates *)
-              convertChar
-                ( char - 1
-                , regex
-                , dstates
-                , dtran
-                , curStates
-                , curStatesIdx
-                , setForCurStates
-                )
-          | _ =>
-              let
-                (* add follow positions to dstates if they are not already inside
-                 * and if follow is not empty *)
-                val (newStateIdx, dstates) = appendIfNew (0, dstates, u)
-
-                (* update dtran to include transitions for char. *)
-                val setForCurStates =
-                  Set.insertOrReplace (char, newStateIdx, setForCurStates)
-              in
-                convertChar
-                  ( char - 1
-                  , regex
-                  , dstates
-                  , dtran
-                  , curStates
-                  , curStatesIdx
-                  , setForCurStates
-                  )
-              end
-        end
-
-    fun convertLoop (regex, dstates, dtran) =
-      case getUnmarkedTransitionsIfExists (0, dstates) of
-        SOME (unmarkedIdx, unamarkedTransition) =>
-          let
-            (* mark transition *)
-            val dstates =
-              let
-                val newMark = {marked = true, transitions = unamarkedTransition}
-              in
-                Vector.update (dstates, unmarkedIdx, newMark)
-              end
-
-            val (dstates, dtran) = convertChar
-              ( 255
-              , regex
-              , dstates
-              , dtran
-              , unamarkedTransition
-              , unmarkedIdx
-              , Set.LEAF
-              )
-          in
-            convertLoop (regex, dstates, dtran)
-          end
-      | NONE =>
-          Vector.map
-            (fn set =>
-               Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
-            dtran
-
     fun addKeysToFollowSet (lst, addSet, followSet) =
       case lst of
         hd :: tl =>
@@ -867,13 +748,203 @@ struct
       | ZERO_OR_ONE child => addToFollowSet (child, followSet)
       | GROUP child => addToFollowSet (child, followSet)
 
-    fun convert (regex, numStates) =
+
+    fun appendIfNew (pos, dstates, newStates) =
+      if pos = Vector.length dstates then
+        let
+          val record = {transitions = newStates, marked = false}
+          val dstates = Vector.concat [dstates, Vector.fromList [record]]
+        in
+          (pos, dstates)
+        end
+      else
+        let
+          val {transitions: int list, marked = _} = Vector.sub (dstates, pos)
+        in
+          if transitions = newStates then (pos, dstates)
+          else appendIfNew (pos + 1, dstates, newStates)
+        end
+
+    fun getUnmarkedTransitionsIfExists (pos, dstates) =
+      if pos = Vector.length dstates then
+        NONE
+      else
+        let
+          val record = Vector.sub (dstates, pos)
+        in
+          if #marked record then
+            getUnmarkedTransitionsIfExists (pos + 1, dstates)
+          else
+            SOME (pos, #transitions record)
+        end
+
+    (* the int key in dtran refers to the char code
+     * while the int value refers to the idx from dstates
+     * that this char transitions to *)
+    type dtran = int Set.set
+
+    fun isCharMatch (regex, pos, curChr) =
+      case regex of
+        CHAR_LITERAL {char, ...} => Fn.charIsEqual (char, curChr)
+      | WILDCARD _ => Fn.charIsNotEqual (curChr, Fn.endMarker)
+      | IS_ANY_CHARACTER {chars, ...} => chrExistsInVec (0, chars, curChr)
+      | NOT_ANY_CHARACTER {chars, ...} =>
+          let val charIsValid = chrExistsInVec (0, chars, curChr)
+          in not charIsValid andalso Fn.charIsNotEqual (curChr, Fn.endMarker)
+          end
+      | ALTERNATION {l, r, leftMaxState, ...} =>
+          if pos > leftMaxState then isCharMatch (r, pos, curChr)
+          else isCharMatch (l, pos, curChr)
+      | CONCAT {l, r, leftMaxState, ...} =>
+          if pos > leftMaxState then isCharMatch (r, pos, curChr)
+          else isCharMatch (l, pos, curChr)
+      | ZERO_OR_ONE child => isCharMatch (child, pos, curChr)
+      | ZERO_OR_MORE child => isCharMatch (child, pos, curChr)
+      | ONE_OR_MORE child => isCharMatch (child, pos, curChr)
+      | GROUP child => isCharMatch (child, pos, curChr)
+
+    fun positionsThatCorrespondToChar (char, curStates, followsForChar, regex) =
+      case curStates of
+        [] => Set.keysToList followsForChar
+      | pos :: tl =>
+          let
+            val followsForChar =
+              if isCharMatch (regex, pos, Char.chr char) then
+                Set.insertOrReplace (pos, (), followsForChar)
+              else
+                followsForChar
+          in
+            positionsThatCorrespondToChar (char, tl, followsForChar, regex)
+          end
+
+    fun convertChar
+      ( char
+      , regex
+      , dstates
+      , dtran: dtran vector
+      , curStates
+      , curStatesIdx
+      , setForCurStates
+      , followSet
+      , followPositionsForAllChars
+      ) =
+      if char < 0 then
+        let
+          (* append setForCurStates which was accumulated in this function
+           * to the end of dtran. *)
+          val dtran = Vector.concat [dtran, Vector.fromList [setForCurStates]]
+        in
+          (dstates, dtran)
+        end
+      else
+        let
+          (* get union of all follow positions that match char *)
+          val followsForCurrentChr =
+            positionsThatCorrespondToChar
+              (char, followPositionsForAllChars, Set.LEAF, regex)
+        in
+          case followsForCurrentChr of
+            [] =>
+              (* no follow positions from here, so don't add to dstates *)
+              convertChar
+                ( char - 1
+                , regex
+                , dstates
+                , dtran
+                , curStates
+                , curStatesIdx
+                , setForCurStates
+                , followSet
+                , followPositionsForAllChars
+                )
+          | _ =>
+              let
+                (* add follow positions to dstates if they are not already inside
+                 * and if follow is not empty *)
+                val (newStateIdx, dstates) =
+                  appendIfNew (0, dstates, followsForCurrentChr)
+
+                (* update dtran to include transitions for char. *)
+                val setForCurStates =
+                  Set.insertOrReplace (char, newStateIdx, setForCurStates)
+              in
+                convertChar
+                  ( char - 1
+                  , regex
+                  , dstates
+                  , dtran
+                  , curStates
+                  , curStatesIdx
+                  , setForCurStates
+                  , followSet
+                  , followPositionsForAllChars
+                  )
+              end
+        end
+
+    fun getFollowsForUnmarked (unmarked, followsForUnmarked, followSet) =
+      case unmarked of
+        [] => List.concat followsForUnmarked
+      | hd :: tl =>
+          let
+            val followForHd = Set.getOrDefault (hd, followSet, [])
+          in
+            case followForHd of
+              [] => getFollowsForUnmarked (tl, followsForUnmarked, followSet)
+            | _ =>
+                let val followsForUnmarked = followForHd :: followsForUnmarked
+                in getFollowsForUnmarked (tl, followsForUnmarked, followSet)
+                end
+          end
+
+    fun convertLoop (regex, dstates, dtran, followSet) =
+      case getUnmarkedTransitionsIfExists (0, dstates) of
+        SOME (unmarkedIdx, unamarkedTransition) =>
+          let
+            (* mark transition *)
+            val dstates =
+              let
+                val newMark = {marked = true, transitions = unamarkedTransition}
+              in
+                Vector.update (dstates, unmarkedIdx, newMark)
+              end
+
+            (* get follow positions for all chars *)
+            val followPositionsForAllChars =
+              getFollowsForUnmarked (unamarkedTransition, [], followSet)
+
+            val (dstates, dtran) = convertChar
+              ( 255
+              , regex
+              , dstates
+              , dtran
+              , unamarkedTransition
+              , unmarkedIdx
+              , Set.LEAF
+              , followSet
+              , followPositionsForAllChars
+              )
+          in
+            convertLoop (regex, dstates, dtran, followSet)
+          end
+      | NONE =>
+          Vector.map
+            (fn set =>
+               Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
+            dtran
+
+    fun convert regex =
       let
-        val fs = addToFollowSet (regex, Set.LEAF)
-        val first = List.rev (firstpos (regex, []))
+        val followSet = addToFollowSet (regex, Set.LEAF)
+
+        (* get firstpos, sorted *)
+        val first = firstpos (regex, [])
+        val first = Set.addFromList (first, Set.LEAF)
+        val first = Set.keysToList first
+
         val dstates = Vector.fromList [{transitions = first, marked = false}]
       in
-        convertLoop (regex, dstates, Vector.fromList [])
+        convertLoop (regex, dstates, Vector.fromList [], followSet)
       end
   end
 
@@ -894,7 +965,7 @@ struct
             , lastpos = []
             }
         in
-          ToDfa.convert (ast, numStates + 1)
+          ToDfa.convert ast
         end
     | NONE => Vector.fromList []
 
