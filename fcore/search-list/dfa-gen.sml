@@ -22,10 +22,10 @@ end
 functor MakeDfaGen(Fn: DFA_GEN_PARAMS): DFA_GEN =
 struct
   datatype parse_tree =
-    CHAR_LITERAL of {char: char, position: int}
-  | WILDCARD of int
-  | IS_ANY_CHARACTER of {chars: char vector, position: int}
-  | NOT_ANY_CHARACTER of {chars: char vector, position: int}
+    CHAR_LITERAL of {char: char, position: int, follows: int list}
+  | WILDCARD of {position: int, follows: int list}
+  | IS_ANY_CHARACTER of {chars: char vector, position: int, follows: int list}
+  | NOT_ANY_CHARACTER of {chars: char vector, position: int, follows: int list}
   | CONCAT of
       { l: parse_tree
       , r: parse_tree
@@ -66,7 +66,7 @@ struct
   fun firstpos (tree, acc) =
     case tree of
       CHAR_LITERAL {position, ...} => position :: acc
-    | WILDCARD i => i :: acc
+    | WILDCARD {position, ...} => position :: acc
     | IS_ANY_CHARACTER {position, ...} => position :: acc
     | NOT_ANY_CHARACTER {position, ...} => position :: acc
     | CONCAT {firstpos = fp, ...} => fp @ acc
@@ -79,7 +79,7 @@ struct
   fun lastpos (tree, acc) =
     case tree of
       CHAR_LITERAL {position, ...} => position :: acc
-    | WILDCARD i => i :: acc
+    | WILDCARD {position, ...} => position :: acc
     | IS_ANY_CHARACTER {position, ...} => position :: acc
     | NOT_ANY_CHARACTER {position, ...} => position :: acc
     | CONCAT {lastpos = lp, ...} => lp @ acc
@@ -113,10 +113,8 @@ struct
       case lst of
         [] => tree
       | (k, v) :: tl =>
-          let
-            val tree = insertOrReplace (k, v, tree)
-          in
-            addFromList (tl, tree)
+          let val tree = insertOrReplace (k, v, tree)
+          in addFromList (tl, tree)
           end
 
     fun getOrDefault (findKey, tree, default) =
@@ -360,7 +358,9 @@ struct
       case getCharsInBrackets (pos, str, []) of
         SOME (pos, chars) =>
           let
-            val node = IS_ANY_CHARACTER {chars = chars, position = stateNum + 1}
+            val node =
+              IS_ANY_CHARACTER
+                {chars = chars, position = stateNum + 1, follows = []}
           in
             SOME (pos, node, stateNum + 1)
           end
@@ -371,7 +371,8 @@ struct
         SOME (pos, chars) =>
           let
             val node =
-              NOT_ANY_CHARACTER {chars = chars, position = stateNum + 1}
+              NOT_ANY_CHARACTER
+                {chars = chars, position = stateNum + 1, follows = []}
           in
             SOME (pos, node, stateNum + 1)
           end
@@ -408,14 +409,19 @@ struct
                   NONE
                 else if isValid then
                   let
-                    val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
+                    val chr =
+                      CHAR_LITERAL
+                        {char = chr, position = stateNum + 1, follows = []}
                   in
                     SOME (pos + 2, chr, stateNum + 1)
                   end
                 else
                   NONE
               end
-        | #"." => SOME (pos + 1, WILDCARD (stateNum + 1), stateNum + 1)
+        | #"." =>
+            let val w = WILDCARD {position = stateNum + 1, follows = []}
+            in SOME (pos + 1, w, stateNum + 1)
+            end
         | #"[" =>
             if pos + 1 = String.size str then
               NONE
@@ -434,8 +440,12 @@ struct
             if Fn.charIsEqual (chr, Fn.endMarker) then
               NONE
             else
-              let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
-              in SOME (pos + 1, chr, stateNum + 1)
+              let
+                val chr =
+                  CHAR_LITERAL
+                    {char = chr, position = stateNum + 1, follows = []}
+              in
+                SOME (pos + 1, chr, stateNum + 1)
               end
 
     and climb (pos, str, lhs, level, stateNum) : (int * parse_tree * int) option =
@@ -449,7 +459,9 @@ struct
             else if pos + 1 < String.size str then
               let
                 val chr = String.sub (str, pos + 1)
-                val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
+                val chr =
+                  CHAR_LITERAL
+                    {char = chr, position = stateNum + 1, follows = []}
               in
                 case climb (pos + 2, str, chr, altLevel, stateNum + 1) of
                   SOME (pos, rhs, rightStateNum) =>
@@ -583,7 +595,7 @@ struct
      * even if the curChr is the endmarker. *)
     fun getFollowsForPositionAndChar (regex: parse_tree, pos, curChr) =
       case regex of
-        CHAR_LITERAL {char, position = _} =>
+        CHAR_LITERAL {char, ...} =>
           let val charIsMatch = Fn.charIsEqual (char, curChr)
           in {sawConcat = false, follows = [], charIsMatch = charIsMatch}
           end
@@ -817,7 +829,8 @@ struct
         let
           val fp = firstpos (ast, [])
           val endMarker =
-            CHAR_LITERAL {char = Fn.endMarker, position = numStates + 1}
+            CHAR_LITERAL
+              {char = Fn.endMarker, position = numStates + 1, follows = []}
           val ast = CONCAT
             { l = ast
             , leftMaxState = numStates
