@@ -63,54 +63,32 @@ struct
 
     | GROUP regex => isNullable regex
 
-
   fun firstpos (tree, acc) =
     case tree of
       CHAR_LITERAL {position, ...} => position :: acc
+    | WILDCARD i => i :: acc
     | IS_ANY_CHARACTER {position, ...} => position :: acc
     | NOT_ANY_CHARACTER {position, ...} => position :: acc
-    | WILDCARD i => i :: acc
-
-    | CONCAT {l, r, ...} =>
-        if isNullable l then
-          let val acc = firstpos (l, acc)
-          in firstpos (r, acc)
-          end
-        else
-          firstpos (l, acc)
-    | ALTERNATION {l, r, ...} =>
-        let val acc = firstpos (l, acc)
-        in firstpos (r, acc)
-        end
-
-    | ZERO_OR_ONE regex => firstpos (regex, acc)
-    | ZERO_OR_MORE regex => firstpos (regex, acc)
-    | ONE_OR_MORE regex => firstpos (regex, acc)
-    | GROUP regex => firstpos (regex, acc)
+    | CONCAT {firstpos = fp, ...} => fp @ acc
+    | ALTERNATION {firstpos = fp, ...} => fp @ acc
+    | ZERO_OR_ONE tree => firstpos (tree, acc)
+    | ZERO_OR_MORE tree => firstpos (tree, acc)
+    | ONE_OR_MORE tree => firstpos (tree, acc)
+    | GROUP tree => firstpos (tree, acc)
 
   fun lastpos (tree, acc) =
     case tree of
       CHAR_LITERAL {position, ...} => position :: acc
+    | WILDCARD i => i :: acc
     | IS_ANY_CHARACTER {position, ...} => position :: acc
     | NOT_ANY_CHARACTER {position, ...} => position :: acc
-    | WILDCARD i => i :: acc
+    | CONCAT {lastpos = lp, ...} => lp @ acc
+    | ALTERNATION {lastpos = lp, ...} => lp @ acc
+    | ZERO_OR_ONE tree => lastpos (tree, acc)
+    | ZERO_OR_MORE tree => lastpos (tree, acc)
+    | ONE_OR_MORE tree => lastpos (tree, acc)
+    | GROUP tree => lastpos (tree, acc)
 
-    | CONCAT {l, r, ...} =>
-        if isNullable r then
-          let val acc = lastpos (l, acc)
-          in lastpos (r, acc)
-          end
-        else
-          lastpos (r, acc)
-    | ALTERNATION {l, r, ...} =>
-        let val acc = lastpos (l, acc)
-        in lastpos (r, acc)
-        end
-
-    | ZERO_OR_ONE regex => lastpos (regex, acc)
-    | ZERO_OR_MORE regex => lastpos (regex, acc)
-    | ONE_OR_MORE regex => lastpos (regex, acc)
-    | GROUP regex => lastpos (regex, acc)
 
   structure Set =
   struct
