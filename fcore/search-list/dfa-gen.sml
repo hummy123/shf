@@ -109,6 +109,16 @@ struct
             BRANCH (l, newKey, newVal, r)
       | LEAF => BRANCH (LEAF, newKey, newVal, LEAF)
 
+    fun addFromList (lst, tree) =
+      case lst of
+        [] => tree
+      | (k, v) :: tl =>
+          let
+            val tree = insertOrReplace (k, v, tree)
+          in
+            addFromList (tl, tree)
+          end
+
     fun getOrDefault (findKey, tree, default) =
       case tree of
         BRANCH (l, curKey, curVal, r) =>
