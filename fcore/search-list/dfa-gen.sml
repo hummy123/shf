@@ -630,6 +630,7 @@ struct
           end
       | ONE_OR_MORE child =>
           let
+            val followSet = addToFollowSet (child, followSet)
             val lp = lastpos (child, [])
             val fp = firstpos (child, [])
             val fp = Set.addFromList (fp, Set.LEAF)
