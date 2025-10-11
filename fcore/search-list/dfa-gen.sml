@@ -22,26 +22,14 @@ end
 functor MakeDfaGen(Fn: DFA_GEN_PARAMS): DFA_GEN =
 struct
   datatype parse_tree =
-    CHAR_LITERAL of {char: char, position: int, follows: int list}
-  | WILDCARD of {position: int, follows: int list}
-  | IS_ANY_CHARACTER of {chars: char vector, position: int, follows: int list}
-  | NOT_ANY_CHARACTER of {chars: char vector, position: int, follows: int list}
+    CHAR_LITERAL of {char: char, position: int}
+  | WILDCARD of int
+  | IS_ANY_CHARACTER of {chars: char vector, position: int}
+  | NOT_ANY_CHARACTER of {chars: char vector, position: int}
   | CONCAT of
-      { l: parse_tree
-      , r: parse_tree
-      , leftMaxState: int
-      , rightMaxState: int
-      , firstpos: int list
-      , lastpos: int list
-      }
+      {l: parse_tree, r: parse_tree, leftMaxState: int, rightMaxState: int}
   | ALTERNATION of
-      { l: parse_tree
-      , r: parse_tree
-      , leftMaxState: int
-      , rightMaxState: int
-      , firstpos: int list
-      , lastpos: int list
-      }
+      {l: parse_tree, r: parse_tree, leftMaxState: int, rightMaxState: int}
   | ZERO_OR_ONE of parse_tree
   | ZERO_OR_MORE of parse_tree
   | ONE_OR_MORE of parse_tree
@@ -66,29 +54,50 @@ struct
   fun firstpos (tree, acc) =
     case tree of
       CHAR_LITERAL {position, ...} => position :: acc
-    | WILDCARD {position, ...} => position :: acc
     | IS_ANY_CHARACTER {position, ...} => position :: acc
     | NOT_ANY_CHARACTER {position, ...} => position :: acc
-    | CONCAT {firstpos = fp, ...} => fp @ acc
-    | ALTERNATION {firstpos = fp, ...} => fp @ acc
-    | ZERO_OR_ONE tree => firstpos (tree, acc)
-    | ZERO_OR_MORE tree => firstpos (tree, acc)
-    | ONE_OR_MORE tree => firstpos (tree, acc)
-    | GROUP tree => firstpos (tree, acc)
+    | WILDCARD i => i :: acc
+
+    | CONCAT {l, r, ...} =>
+        if isNullable l then
+          let val acc = firstpos (l, acc)
+          in firstpos (r, acc)
+          end
+        else
+          firstpos (l, acc)
+    | ALTERNATION {l, r, ...} =>
+        let val acc = firstpos (l, acc)
+        in firstpos (r, acc)
+        end
+
+    | ZERO_OR_ONE regex => firstpos (regex, acc)
+    | ZERO_OR_MORE regex => firstpos (regex, acc)
+    | ONE_OR_MORE regex => firstpos (regex, acc)
+    | GROUP regex => firstpos (regex, acc)
 
   fun lastpos (tree, acc) =
     case tree of
       CHAR_LITERAL {position, ...} => position :: acc
-    | WILDCARD {position, ...} => position :: acc
     | IS_ANY_CHARACTER {position, ...} => position :: acc
     | NOT_ANY_CHARACTER {position, ...} => position :: acc
-    | CONCAT {lastpos = lp, ...} => lp @ acc
-    | ALTERNATION {lastpos = lp, ...} => lp @ acc
-    | ZERO_OR_ONE tree => lastpos (tree, acc)
-    | ZERO_OR_MORE tree => lastpos (tree, acc)
-    | ONE_OR_MORE tree => lastpos (tree, acc)
-    | GROUP tree => lastpos (tree, acc)
+    | WILDCARD i => i :: acc
 
+    | CONCAT {l, r, ...} =>
+        if isNullable r then
+          let val acc = lastpos (l, acc)
+          in lastpos (r, acc)
+          end
+        else
+          lastpos (r, acc)
+    | ALTERNATION {l, r, ...} =>
+        let val acc = lastpos (l, acc)
+        in lastpos (r, acc)
+        end
+
+    | ZERO_OR_ONE regex => lastpos (regex, acc)
+    | ZERO_OR_MORE regex => lastpos (regex, acc)
+    | ONE_OR_MORE regex => lastpos (regex, acc)
+    | GROUP regex => lastpos (regex, acc)
 
   structure Set =
   struct
@@ -156,6 +165,19 @@ struct
 
     fun keysToList tree = helpKeysToList (tree, [])
 
+    fun helpValuesToList (tree, acc) =
+      case tree of
+        BRANCH (l, _, v, r) =>
+          let
+            val acc = helpValuesToList (r, acc)
+            val acc = v :: acc
+          in
+            helpValuesToList (l, acc)
+          end
+      | LEAF => acc
+
+    fun valuesToList tree = helpValuesToList (tree, [])
+
     fun map (f, tree) =
       case tree of
         BRANCH (l, key, value, r) =>
@@ -176,6 +198,17 @@ struct
             val acc = f (v, acc)
           in
             foldl (f, r, acc)
+          end
+      | LEAF => acc
+
+    fun foldr (f, tree, acc) =
+      case tree of
+        BRANCH (l, k, v, r) =>
+          let
+            val acc = foldr (f, r, acc)
+            val acc = f (v, acc)
+          in
+            foldr (f, l, acc)
           end
       | LEAF => acc
   end
@@ -363,9 +396,7 @@ struct
       case getCharsInBrackets (pos, str, []) of
         SOME (pos, chars) =>
           let
-            val node =
-              IS_ANY_CHARACTER
-                {chars = chars, position = stateNum + 1, follows = []}
+            val node = IS_ANY_CHARACTER {chars = chars, position = stateNum + 1}
           in
             SOME (pos, node, stateNum + 1)
           end
@@ -376,8 +407,7 @@ struct
         SOME (pos, chars) =>
           let
             val node =
-              NOT_ANY_CHARACTER
-                {chars = chars, position = stateNum + 1, follows = []}
+              NOT_ANY_CHARACTER {chars = chars, position = stateNum + 1}
           in
             SOME (pos, node, stateNum + 1)
           end
@@ -414,9 +444,7 @@ struct
                   NONE
                 else if isValid then
                   let
-                    val chr =
-                      CHAR_LITERAL
-                        {char = chr, position = stateNum + 1, follows = []}
+                    val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
                   in
                     SOME (pos + 2, chr, stateNum + 1)
                   end
@@ -424,7 +452,7 @@ struct
                   NONE
               end
         | #"." =>
-            let val w = WILDCARD {position = stateNum + 1, follows = []}
+            let val w = WILDCARD (stateNum + 1)
             in SOME (pos + 1, w, stateNum + 1)
             end
         | #"[" =>
@@ -445,12 +473,8 @@ struct
             if Fn.charIsEqual (chr, Fn.endMarker) then
               NONE
             else
-              let
-                val chr =
-                  CHAR_LITERAL
-                    {char = chr, position = stateNum + 1, follows = []}
-              in
-                SOME (pos + 1, chr, stateNum + 1)
+              let val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
+              in SOME (pos + 1, chr, stateNum + 1)
               end
 
     and climb (pos, str, lhs, level, stateNum) : (int * parse_tree * int) option =
@@ -464,26 +488,16 @@ struct
             else if pos + 1 < String.size str then
               let
                 val chr = String.sub (str, pos + 1)
-                val chr =
-                  CHAR_LITERAL
-                    {char = chr, position = stateNum + 1, follows = []}
+                val chr = CHAR_LITERAL {char = chr, position = stateNum + 1}
               in
                 case climb (pos + 2, str, chr, altLevel, stateNum + 1) of
                   SOME (pos, rhs, rightStateNum) =>
                     let
-                      val fp = let val acc = firstpos (lhs, [])
-                               in firstpos (rhs, acc)
-                               end
-                      val lp = let val acc = lastpos (lhs, [])
-                               in lastpos (rhs, acc)
-                               end
                       val result = ALTERNATION
                         { l = lhs
                         , r = rhs
                         , leftMaxState = stateNum
                         , rightMaxState = rightStateNum
-                        , firstpos = fp
-                        , lastpos = lp
                         }
                     in
                       SOME (pos, result, rightStateNum)
@@ -522,29 +536,11 @@ struct
                   (case climb (nextPos, str, curAtom, concatLevel, atomStateNum) of
                      SOME (pos, rhs, rightStateNum) =>
                        let
-                         val fp =
-                           if isNullable lhs then
-                             let val acc = firstpos (lhs, [])
-                             in firstpos (rhs, acc)
-                             end
-                           else
-                             firstpos (lhs, [])
-
-                         val lp =
-                           if isNullable rhs then
-                             let val acc = lastpos (lhs, [])
-                             in lastpos (rhs, acc)
-                             end
-                           else
-                             lastpos (rhs, [])
-
                          val result = CONCAT
                            { l = lhs
                            , r = rhs
                            , leftMaxState = stateNum
                            , rightMaxState = rightStateNum
-                           , firstpos = fp
-                           , lastpos = lp
                            }
                        in
                          SOME (pos, result, rightStateNum)
@@ -571,12 +567,8 @@ struct
 
   structure ToDfa =
   struct
-    fun followpos (char, regex, acc) =
-      case regex of
-        CONCAT {r, ...} => firstpos (r, acc)
-      | ZERO_OR_MORE r => firstpos (r, acc)
-      | ONE_OR_MORE r => firstpos (r, acc)
-      | _ => acc
+    type dstate_element = {marked: bool, transitions: int list}
+    type dstate_vec = dstate_element vector
 
     fun chrExistsInVec (idx, vec, curChr) =
       if idx = Vector.length vec then
@@ -588,112 +580,6 @@ struct
           Fn.charIsEqual (idxChr, curChr)
           orelse chrExistsInVec (idx + 1, vec, curChr)
         end
-
-    (* Does two things:
-     * 1. Descends to the leaf matching 'pos'.
-     * 2. If the character at 'pos' matches the current character, 
-     *    calls followpos at the appropriate nodes. 
-     * In the end, we get a list of positions to follow. 
-     * Note: The character #"\^@" is an endmarker
-     * indicating that this is the final state.
-     * We say that there is no match, 
-     * even if the curChr is the endmarker. *)
-    fun getFollowsForPositionAndChar (regex: parse_tree, pos, curChr) =
-      case regex of
-        CHAR_LITERAL {char, ...} =>
-          let val charIsMatch = Fn.charIsEqual (char, curChr)
-          in {sawConcat = false, follows = [], charIsMatch = charIsMatch}
-          end
-      | WILDCARD _ =>
-          let val isNotEndmarker = Fn.charIsNotEqual (curChr, Fn.endMarker)
-          in {sawConcat = false, follows = [], charIsMatch = isNotEndmarker}
-          end
-      | IS_ANY_CHARACTER {chars, ...} =>
-          let val chrExists = chrExistsInVec (0, chars, curChr)
-          in {sawConcat = false, follows = [], charIsMatch = chrExists}
-          end
-      | NOT_ANY_CHARACTER {chars, ...} =>
-          let
-            val charIsValid = chrExistsInVec (0, chars, curChr)
-            val charIsValid =
-              not charIsValid andalso Fn.charIsNotEqual (curChr, Fn.endMarker)
-          in
-            {sawConcat = false, follows = [], charIsMatch = charIsValid}
-          end
-      | ALTERNATION {l, r, leftMaxState, rightMaxState, ...} =>
-          let val nodeToFollow = if pos <= leftMaxState then l else r
-          in getFollowsForPositionAndChar (nodeToFollow, pos, curChr)
-          end
-      | GROUP regex => getFollowsForPositionAndChar (regex, pos, curChr)
-
-      | CONCAT {l, r, leftMaxState, ...} =>
-          if pos <= leftMaxState then
-            let
-              val result = getFollowsForPositionAndChar (l, pos, curChr)
-              val {sawConcat, follows, charIsMatch} = result
-            in
-              if charIsMatch then
-                if sawConcat then
-                  (* we already saw a concat and got followpos *)
-                  result
-                else
-                  let val fp = followpos (curChr, regex, follows)
-                  in {sawConcat = true, follows = fp, charIsMatch = true}
-                  end
-              else
-                (* char is not match, so don't get follow pos *)
-                result
-            end
-          else
-            getFollowsForPositionAndChar (r, pos, curChr)
-      | ZERO_OR_MORE child =>
-          let
-            val result = getFollowsForPositionAndChar (child, pos, curChr)
-            val {sawConcat, follows, charIsMatch} = result
-          in
-            if charIsMatch then
-              { sawConcat = false
-              , follows = firstpos (child, follows)
-              , charIsMatch = true
-              }
-            else
-              result
-          end
-      | ZERO_OR_ONE child => getFollowsForPositionAndChar (child, pos, curChr)
-      | ONE_OR_MORE child =>
-          let
-            val result = getFollowsForPositionAndChar (child, pos, curChr)
-            val {sawConcat, follows, charIsMatch} = result
-          in
-            if charIsMatch then
-              { sawConcat = false
-              , follows = firstpos (child, follows)
-              , charIsMatch = true
-              }
-            else
-              result
-          end
-
-    fun getFollowPositionsFromList (lst: int list, regex, char, followSet) =
-      case lst of
-        hd :: tl =>
-          let
-            val fpList = getFollowsForPositionAndChar (regex, hd, char)
-            val {sawConcat, follows, charIsMatch} = fpList
-            val follows =
-              if charIsMatch andalso not sawConcat then
-                (Char.ord Fn.endMarker) :: follows
-              else
-                follows
-
-            val followSet =
-              List.foldl
-                (fn (fp, followSet) => Set.insertOrReplace (fp, (), followSet))
-                followSet follows
-          in
-            getFollowPositionsFromList (tl, regex, char, followSet)
-          end
-      | [] => Set.keysToList followSet
 
     fun addKeysToFollowSet (lst, addSet, followSet) =
       case lst of
@@ -748,12 +634,13 @@ struct
       | ZERO_OR_ONE child => addToFollowSet (child, followSet)
       | GROUP child => addToFollowSet (child, followSet)
 
-
     fun appendIfNew (pos, dstates, newStates) =
       if pos = Vector.length dstates then
         let
           val record = {transitions = newStates, marked = false}
           val dstates = Vector.concat [dstates, Vector.fromList [record]]
+          val () = print
+            ("658 new append = " ^ PolyML.makestring newStates ^ "\n")
         in
           (pos, dstates)
         end
@@ -770,18 +657,13 @@ struct
         NONE
       else
         let
-          val record = Vector.sub (dstates, pos)
+          val record: dstate_element = Vector.sub (dstates, pos)
         in
           if #marked record then
             getUnmarkedTransitionsIfExists (pos + 1, dstates)
           else
             SOME (pos, #transitions record)
         end
-
-    (* the int key in dtran refers to the char code
-     * while the int value refers to the idx from dstates
-     * that this char transitions to *)
-    type dtran = int Set.set
 
     fun isCharMatch (regex, pos, curChr) =
       case regex of
@@ -803,99 +685,99 @@ struct
       | ONE_OR_MORE child => isCharMatch (child, pos, curChr)
       | GROUP child => isCharMatch (child, pos, curChr)
 
-    fun positionsThatCorrespondToChar (char, curStates, followsForChar, regex) =
+    fun positionsThatCorrespondToChar (char, curStates, regex, acc, followSet) =
       case curStates of
-        [] => Set.keysToList followsForChar
+        [] => List.concat (Set.valuesToList acc)
       | pos :: tl =>
+          if isCharMatch (regex, pos, Char.chr char) then
+            let
+              (* get union of new and previous follows *)
+              val prevFollows = Set.getOrDefault (char, acc, [])
+              val newFollows = Set.getOrDefault (pos, followSet, [])
+
+              val tempSet = Set.addFromList (prevFollows, Set.LEAF)
+              val tempSet = Set.addFromList (newFollows, tempSet)
+              val allFollowList = Set.keysToList tempSet
+
+              (* store union of new and previous follows so far *)
+              val acc = Set.insertOrReplace (char, allFollowList, acc)
+            in
+              positionsThatCorrespondToChar (char, tl, regex, acc, followSet)
+            end
+          else
+            positionsThatCorrespondToChar (char, tl, regex, acc, followSet)
+
+    structure Dtran =
+    struct
+      (* vector, with idx corresponding to state in dstate,
+      * an int key which corresponds to char's ascii code,
+      * and an int value corresponding to state we will transition to *)
+      type t = int Set.set vector
+
+      fun insert (dStateIdx, char, toStateIdx, dtran: t) =
+        if dStateIdx = Vector.length dtran then
           let
-            val followsForChar =
-              if isCharMatch (regex, pos, Char.chr char) then
-                Set.insertOrReplace (pos, (), followsForChar)
-              else
-                followsForChar
+            val el = Set.insertOrReplace (char, toStateIdx, Set.LEAF)
+            val el = Vector.fromList [el]
           in
-            positionsThatCorrespondToChar (char, tl, followsForChar, regex)
+            Vector.concat [dtran, el]
           end
+        else
+          let
+            val el = Vector.sub (dtran, dStateIdx)
+            val el = Set.insertOrReplace (char, toStateIdx, el)
+          in
+            Vector.update (dtran, dStateIdx, el)
+          end
+    end
 
     fun convertChar
       ( char
       , regex
       , dstates
-      , dtran: dtran vector
-      , curStates
-      , curStatesIdx
-      , setForCurStates
+      , dtran: Dtran.t
+      , unmarkedState
+      , unmarkedIdx
       , followSet
-      , followPositionsForAllChars
       ) =
       if char < 0 then
-        let
-          (* append setForCurStates which was accumulated in this function
-           * to the end of dtran. *)
-          val dtran = Vector.concat [dtran, Vector.fromList [setForCurStates]]
-        in
-          (dstates, dtran)
-        end
+        (dstates, dtran)
       else
         let
-          (* get union of all follow positions that match char *)
-          val followsForCurrentChr =
-            positionsThatCorrespondToChar
-              (char, followPositionsForAllChars, Set.LEAF, regex)
+          val u = positionsThatCorrespondToChar
+            (char, unmarkedState, regex, Set.LEAF, followSet)
         in
-          case followsForCurrentChr of
+          case u of
             [] =>
-              (* no follow positions from here, so don't add to dstates *)
               convertChar
                 ( char - 1
                 , regex
                 , dstates
                 , dtran
-                , curStates
-                , curStatesIdx
-                , setForCurStates
+                , unmarkedState
+                , unmarkedIdx
                 , followSet
-                , followPositionsForAllChars
                 )
           | _ =>
               let
-                (* add follow positions to dstates if they are not already inside
-                 * and if follow is not empty *)
-                val (newStateIdx, dstates) =
-                  appendIfNew (0, dstates, followsForCurrentChr)
-
-                (* update dtran to include transitions for char. *)
-                val setForCurStates =
-                  Set.insertOrReplace (char, newStateIdx, setForCurStates)
+                (* dtran is idx -> char -> state_list map *)
+                val (uIdx, dstates) = appendIfNew (0, dstates, u)
+                val dtran = Dtran.insert (unmarkedIdx, char, uIdx, dtran)
               in
                 convertChar
                   ( char - 1
                   , regex
                   , dstates
                   , dtran
-                  , curStates
-                  , curStatesIdx
-                  , setForCurStates
+                  , unmarkedState
+                  , unmarkedIdx
                   , followSet
-                  , followPositionsForAllChars
                   )
               end
         end
 
-    fun getFollowsForUnmarked (unmarked, followsForUnmarked, followSet) =
-      case unmarked of
-        [] => List.concat followsForUnmarked
-      | hd :: tl =>
-          let
-            val followForHd = Set.getOrDefault (hd, followSet, [])
-          in
-            case followForHd of
-              [] => getFollowsForUnmarked (tl, followsForUnmarked, followSet)
-            | _ =>
-                let val followsForUnmarked = followForHd :: followsForUnmarked
-                in getFollowsForUnmarked (tl, followsForUnmarked, followSet)
-                end
-          end
+    fun makeEndmarkerVec i =
+      if i = Char.ord Fn.endMarker then Char.ord Fn.endMarker else ~1
 
     fun convertLoop (regex, dstates, dtran, followSet) =
       case getUnmarkedTransitionsIfExists (0, dstates) of
@@ -909,10 +791,6 @@ struct
                 Vector.update (dstates, unmarkedIdx, newMark)
               end
 
-            (* get follow positions for all chars *)
-            val followPositionsForAllChars =
-              getFollowsForUnmarked (unamarkedTransition, [], followSet)
-
             val (dstates, dtran) = convertChar
               ( 255
               , regex
@@ -920,18 +798,23 @@ struct
               , dtran
               , unamarkedTransition
               , unmarkedIdx
-              , Set.LEAF
               , followSet
-              , followPositionsForAllChars
               )
           in
             convertLoop (regex, dstates, dtran, followSet)
           end
       | NONE =>
-          Vector.map
-            (fn set =>
-               Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
-            dtran
+          let
+            val result =
+              Vector.map
+                (fn set =>
+                   Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
+                dtran
+            val endMarker = Vector.tabulate (256, makeEndmarkerVec)
+            val endMarker = Vector.fromList [endMarker]
+          in
+            Vector.concat [result, endMarker]
+          end
 
     fun convert regex =
       let
@@ -952,17 +835,13 @@ struct
     case ParseDfa.parse (str, 0) of
       SOME (ast, numStates) =>
         let
-          val fp = firstpos (ast, [])
           val endMarker =
-            CHAR_LITERAL
-              {char = Fn.endMarker, position = numStates + 1, follows = []}
+            CHAR_LITERAL {char = Fn.endMarker, position = numStates + 1}
           val ast = CONCAT
             { l = ast
             , leftMaxState = numStates
             , r = endMarker
             , rightMaxState = numStates + 1
-            , firstpos = fp
-            , lastpos = []
             }
         in
           ToDfa.convert ast
@@ -1040,3 +919,6 @@ structure CaseSensitiveDfa =
        fun charIsEqual (a: char, b: char) = a = b
        fun charIsNotEqual (a: char, b: char) = a <> b
      end)
+
+val fs = CaseSensitiveDfa.fromString
+val s = "(a|b)*abb#"
