@@ -639,8 +639,6 @@ struct
         let
           val record = {transitions = newStates, marked = false}
           val dstates = Vector.concat [dstates, Vector.fromList [record]]
-          val () = print
-            ("658 new append = " ^ PolyML.makestring newStates ^ "\n")
         in
           (pos, dstates)
         end
@@ -685,7 +683,8 @@ struct
       | ONE_OR_MORE child => isCharMatch (child, pos, curChr)
       | GROUP child => isCharMatch (child, pos, curChr)
 
-    fun positionsThatCorrespondToChar (char, curStates, regex, acc, followSet) =
+    fun positionsThatCorrespondToChar
+      (char, curStates, regex, acc, followSet, hasAnyMatch) =
       case curStates of
         [] => List.concat (Set.valuesToList acc)
       | pos :: tl =>
@@ -702,10 +701,12 @@ struct
               (* store union of new and previous follows so far *)
               val acc = Set.insertOrReplace (char, allFollowList, acc)
             in
-              positionsThatCorrespondToChar (char, tl, regex, acc, followSet)
+              positionsThatCorrespondToChar
+                (char, tl, regex, acc, followSet, true)
             end
           else
-            positionsThatCorrespondToChar (char, tl, regex, acc, followSet)
+            positionsThatCorrespondToChar
+              (char, tl, regex, acc, followSet, hasAnyMatch)
 
     structure Dtran =
     struct
@@ -741,11 +742,24 @@ struct
       , followSet
       ) =
       if char < 0 then
-        (dstates, dtran)
+        if Vector.length dtran = unmarkedIdx then
+          (dstates, Dtran.insert (unmarkedIdx, Char.ord Fn.endMarker, 0, dtran))
+        else
+          (dstates, dtran)
+      else if Char.chr char = Fn.endMarker then
+        convertChar
+          ( char - 1
+          , regex
+          , dstates
+          , dtran
+          , unmarkedState
+          , unmarkedIdx
+          , followSet
+          )
       else
         let
           val u = positionsThatCorrespondToChar
-            (char, unmarkedState, regex, Set.LEAF, followSet)
+            (char, unmarkedState, regex, Set.LEAF, followSet, false)
         in
           case u of
             [] =>
@@ -804,17 +818,10 @@ struct
             convertLoop (regex, dstates, dtran, followSet)
           end
       | NONE =>
-          let
-            val result =
-              Vector.map
-                (fn set =>
-                   Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
-                dtran
-            val endMarker = Vector.tabulate (256, makeEndmarkerVec)
-            val endMarker = Vector.fromList [endMarker]
-          in
-            Vector.concat [result, endMarker]
-          end
+          Vector.map
+            (fn set =>
+               Vector.tabulate (256, fn i => Set.getOrDefault (i, set, ~1)))
+            dtran
 
     fun convert regex =
       let
@@ -827,7 +834,7 @@ struct
 
         val dstates = Vector.fromList [{transitions = first, marked = false}]
       in
-        convertLoop (regex, dstates, Vector.fromList [], followSet)
+        convertLoop (regex, dstates, Vector.fromList [Set.LEAF], followSet)
       end
   end
 
