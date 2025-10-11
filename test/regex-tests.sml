@@ -103,21 +103,37 @@ struct
     ]
 
   val endMarkerTests = describe "regex endMarker"
-    [test "returns an empty DFA when regexString contains endMarker" (fn _ =>
-       let
-         (* arrange *)
-         (* the end marker is #"\^@" *)
-         val regexString = "hello \^@ world"
+    [ test "returns an empty DFA when regexString contains endMarker" (fn _ =>
+        let
+          (* arrange *)
+          (* the end marker is #"\^@" *)
+          val regexString = "hello \^@ world"
 
-         (* act *)
-         val dfa = CsDfa.fromString regexString
+          (* act *)
+          val dfa = CsDfa.fromString regexString
 
-         (* assert *)
-         val actualLength = Vector.length dfa
-         val expectedLength = 0
-       in
-         Expect.isTrue (actualLength = expectedLength)
-       end)]
+          (* assert *)
+          val actualLength = Vector.length dfa
+          val expectedLength = 0
+        in
+          Expect.isTrue (actualLength = expectedLength)
+        end)
+    , test "matches a string when regex has question mark at the end" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "favo"
+          val regexString = "favou?"
+          val dfa = CsDfa.fromString "favorite"
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(0, 3)]
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    ]
 
   fun recogniseEscapeSequence (regexString, inputString) =
     let
