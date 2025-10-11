@@ -740,9 +740,14 @@ struct
       , unmarkedState
       , unmarkedIdx
       , followSet
+      , prevDstateLength
       ) =
       if char < 0 then
         if Vector.length dtran = unmarkedIdx then
+          (* no follows from this state: insert endMarker to signal end *)
+          (dstates, Dtran.insert (unmarkedIdx, Char.ord Fn.endMarker, 0, dtran))
+        else if Vector.length dstates = prevDstateLength then
+          (* no follows, except looping back to itself. So insert endMarker *)
           (dstates, Dtran.insert (unmarkedIdx, Char.ord Fn.endMarker, 0, dtran))
         else
           (dstates, dtran)
@@ -755,6 +760,7 @@ struct
           , unmarkedState
           , unmarkedIdx
           , followSet
+          , prevDstateLength
           )
       else
         let
@@ -771,6 +777,7 @@ struct
                 , unmarkedState
                 , unmarkedIdx
                 , followSet
+                , prevDstateLength
                 )
           | _ =>
               let
@@ -786,12 +793,10 @@ struct
                   , unmarkedState
                   , unmarkedIdx
                   , followSet
+                  , prevDstateLength
                   )
               end
         end
-
-    fun makeEndmarkerVec i =
-      if i = Char.ord Fn.endMarker then Char.ord Fn.endMarker else ~1
 
     fun convertLoop (regex, dstates, dtran, followSet) =
       case getUnmarkedTransitionsIfExists (0, dstates) of
@@ -813,6 +818,7 @@ struct
               , unamarkedTransition
               , unmarkedIdx
               , followSet
+              , Vector.length dstates
               )
           in
             convertLoop (regex, dstates, dtran, followSet)
@@ -926,6 +932,3 @@ structure CaseSensitiveDfa =
        fun charIsEqual (a: char, b: char) = a = b
        fun charIsNotEqual (a: char, b: char) = a <> b
      end)
-
-val fs = CaseSensitiveDfa.fromString
-val s = "(a|b)*abb#"

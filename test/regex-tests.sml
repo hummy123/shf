@@ -541,7 +541,7 @@ struct
 
           (* assert *)
           val expectedSoccerMatches = [(0, 3)]
-          val expectedGPhraseMatches = [(0, 0)]
+          val expectedGPhraseMatches = [(0, 0), (10, 10)]
           val expectedOPhraseMatches = []
 
           val isExpected =
