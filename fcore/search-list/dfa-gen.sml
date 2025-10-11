@@ -2,7 +2,6 @@ signature DFA_GEN_PARAMS =
 sig
   val endMarker: char
   val charIsEqual: char * char -> bool
-  val charIsNotEqual: char * char -> bool
 end
 
 signature DFA_GEN =
@@ -597,7 +596,12 @@ struct
     fun addToFollowSet (tree, followSet) =
       case tree of
         WILDCARD _ => followSet
-      | CHAR_LITERAL _ => followSet
+      | CHAR_LITERAL {char, position} =>
+          (* we add the endMarker and its position to the followSet *)
+          if char = Fn.endMarker then
+            Set.insertOrReplace (position, [Char.ord Fn.endMarker], followSet)
+          else
+            followSet
       | IS_ANY_CHARACTER _ => followSet
       | NOT_ANY_CHARACTER _ => followSet
       | CONCAT {l, r, ...} =>
@@ -605,11 +609,11 @@ struct
             val followSet = addToFollowSet (l, followSet)
             val followSet = addToFollowSet (r, followSet)
 
-            val lp = lastpos (l, [])
-            val fp = firstpos (r, [])
-            val fp = Set.addFromList (fp, Set.LEAF)
+            val lpOfLeft = lastpos (l, [])
+            val fpOfRight = firstpos (r, [])
+            val fpOfRight = Set.addFromList (fpOfRight, Set.LEAF)
           in
-            addKeysToFollowSet (lp, fp, followSet)
+            addKeysToFollowSet (lpOfLeft, fpOfRight, followSet)
           end
       | ALTERNATION {l, r, ...} =>
           let val followSet = addToFollowSet (l, followSet)
@@ -617,9 +621,10 @@ struct
           end
       | ZERO_OR_MORE child =>
           let
-            val lp = lastpos (child, [])
+            val followSet = addToFollowSet (child, followSet)
             val fp = firstpos (child, [])
             val fp = Set.addFromList (fp, Set.LEAF)
+            val lp = lastpos (child, [])
           in
             addKeysToFollowSet (lp, fp, followSet)
           end
@@ -666,11 +671,11 @@ struct
     fun isCharMatch (regex, pos, curChr) =
       case regex of
         CHAR_LITERAL {char, ...} => Fn.charIsEqual (char, curChr)
-      | WILDCARD _ => Fn.charIsNotEqual (curChr, Fn.endMarker)
+      | WILDCARD _ => true
       | IS_ANY_CHARACTER {chars, ...} => chrExistsInVec (0, chars, curChr)
       | NOT_ANY_CHARACTER {chars, ...} =>
           let val charIsValid = chrExistsInVec (0, chars, curChr)
-          in not charIsValid andalso Fn.charIsNotEqual (curChr, Fn.endMarker)
+          in not charIsValid
           end
       | ALTERNATION {l, r, leftMaxState, ...} =>
           if pos > leftMaxState then isCharMatch (r, pos, curChr)
@@ -743,25 +748,7 @@ struct
       , prevDstateLength
       ) =
       if char < 0 then
-        if Vector.length dtran = unmarkedIdx then
-          (* no follows from this state: insert endMarker to signal end *)
-          (dstates, Dtran.insert (unmarkedIdx, Char.ord Fn.endMarker, 0, dtran))
-        else if Vector.length dstates = prevDstateLength then
-          (* no follows, except looping back to itself. So insert endMarker *)
-          (dstates, Dtran.insert (unmarkedIdx, Char.ord Fn.endMarker, 0, dtran))
-        else
-          (dstates, dtran)
-      else if Char.chr char = Fn.endMarker then
-        convertChar
-          ( char - 1
-          , regex
-          , dstates
-          , dtran
-          , unmarkedState
-          , unmarkedIdx
-          , followSet
-          , prevDstateLength
-          )
+        (dstates, dtran)
       else
         let
           val u = positionsThatCorrespondToChar
@@ -922,7 +909,6 @@ structure CaseInsensitiveDfa =
     (struct
        val endMarker = #"\^@"
        fun charIsEqual (a: char, b: char) = Char.toLower a = Char.toLower b
-       fun charIsNotEqual (a: char, b: char) = a <> b
      end)
 
 structure CaseSensitiveDfa =
@@ -930,5 +916,4 @@ structure CaseSensitiveDfa =
     (struct
        val endMarker = #"\^@"
        fun charIsEqual (a: char, b: char) = a = b
-       fun charIsNotEqual (a: char, b: char) = a <> b
      end)

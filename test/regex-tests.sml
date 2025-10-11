@@ -123,7 +123,7 @@ struct
           (* arrange *)
           val sentence = "favo"
           val regexString = "favou?"
-          val dfa = CsDfa.fromString "favorite"
+          val dfa = CsDfa.fromString regexString
 
           (* act *)
           val matches = CsDfa.matchString (dfa, sentence)
