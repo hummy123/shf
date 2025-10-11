@@ -551,6 +551,44 @@ struct
         in
           Expect.isTrue isExpected
         end)
+    , test "chewie quote" (fn _ =>
+        let
+          (* arrange *)
+          val sentence = "Aaaaaaargh"
+          val regexString = "Aa*"
+          val dfa = CsDfa.fromString regexString
+
+          (* act *)
+          val matches = CsDfa.matchString (dfa, sentence)
+
+          (* assert *)
+          val expectedMatches = [(0, 6)]
+        in
+          Expect.isTrue (matches = expectedMatches)
+        end)
+    , test "favorite" (fn _ =>
+        let
+          (* arrange *)
+          val sentenceWithoutU = "favorite"
+          val sentenceWithU = "favourite"
+
+          val regexString = "favou?rite"
+          val dfa = CsDfa.fromString regexString
+
+          (* act *)
+          val matchesWithoutU = CsDfa.matchString (dfa, sentenceWithoutU)
+          val matchesWithU = CsDfa.matchString (dfa, sentenceWithU)
+
+          (* assert *)
+          val expectedMatchesWithoutU = [(0, 7)]
+          val expectedMatchesWithU = [(0, 8)]
+
+          val isExpected =
+            matchesWithoutU = expectedMatchesWithoutU
+            andalso matchesWithU = expectedMatchesWithU
+        in
+          Expect.isTrue isExpected
+        end)
     ]
 
   val tests =
