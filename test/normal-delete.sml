@@ -2002,6 +2002,50 @@ struct
            in
              Expect.isTrue (stringIsExpected andalso cursorIsExpected)
            end)
+    , test "deletes spaces and word before spaces, when cursor is on space"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello           again\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 13)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "db")
+
+             (* assert *)
+             val expectedString = "   again\n"
+             val expectedCursor = 0
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test "does not delete when cursor is on first character of first line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "db")
+
+             (* assert *)
+             val expectedString = originalString
+             val expectedCursor = 0
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
     ]
 
   val tests =
