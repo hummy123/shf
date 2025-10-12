@@ -1809,6 +1809,104 @@ struct
            end)
     ]
 
+  val dbDelete = describe "delete motion 'db'"
+    [ test
+        "deletes all characters in last word except last character \
+        \when cursor is on last character of last word in buffer"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val originalIdx = String.size originalString - 2
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "db")
+
+             (* assert *)
+             val expectedString = "hello d\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedIdx = String.size expectedString - 2
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
+           end)
+    , test "deletes second word as expected when there are three words" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello world again\n"
+
+          val app = TestUtils.init originalString
+
+          (* all the different positions the cursor can be
+           * on the second word *)
+          val app1 = AppWith.idx (app, 6)
+          val app2 = AppWith.idx (app, 7)
+          val app3 = AppWith.idx (app, 8)
+          val app4 = AppWith.idx (app, 9)
+          val app5 = AppWith.idx (app, 10)
+          val app6 = AppWith.idx (app, 11)
+
+          (* act *)
+          val newApp1 = TestUtils.updateMany (app1, "db")
+          val newApp2 = TestUtils.updateMany (app2, "db")
+          val newApp3 = TestUtils.updateMany (app3, "db")
+          val newApp4 = TestUtils.updateMany (app4, "db")
+          val newApp5 = TestUtils.updateMany (app5, "db")
+          val newApp6 = TestUtils.updateMany (app6, "db")
+
+          (* assert *)
+          val expectedString1 = "world again\n"
+          val expectedString2 = "hello orld again\n"
+          val expectedString3 = "hello rld again\n"
+          val expectedString4 = "hello ld again\n"
+          val expectedString5 = "hello d again\n"
+          val expectedString6 = "hello  again\n"
+
+          val actualString1 = LineGap.toString (#buffer newApp1)
+          val actualString2 = LineGap.toString (#buffer newApp2)
+          val actualString3 = LineGap.toString (#buffer newApp3)
+          val actualString4 = LineGap.toString (#buffer newApp4)
+          val actualString5 = LineGap.toString (#buffer newApp5)
+          val actualString6 = LineGap.toString (#buffer newApp6)
+
+          val stringsAreExpected =
+            expectedString1 = actualString1
+            andalso expectedString2 = actualString2
+            andalso expectedString3 = actualString3
+            andalso expectedString4 = actualString4
+            andalso expectedString5 = actualString5
+            andalso expectedString6 = actualString6
+
+          val expectedCursor1 = 0
+          val expectedCursor2 = 6
+          val expectedCursor3 = 6
+          val expectedCursor4 = 6
+          val expectedCursor5 = 6
+          val expectedCursor6 = 6
+
+          val actualCursor1 = #cursorIdx newApp1
+          val actualCursor2 = #cursorIdx newApp2
+          val actualCursor3 = #cursorIdx newApp3
+          val actualCursor4 = #cursorIdx newApp4
+          val actualCursor5 = #cursorIdx newApp5
+          val actualCursor6 = #cursorIdx newApp6
+
+          val cursorsAreExpected =
+            expectedCursor1 = actualCursor1
+            andalso expectedCursor2 = actualCursor2
+            andalso expectedCursor3 = actualCursor3
+            andalso expectedCursor4 = actualCursor4
+            andalso expectedCursor5 = actualCursor5
+            andalso expectedCursor6 = actualCursor6
+        in
+          Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
+        end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -1819,5 +1917,6 @@ struct
     , dWDelete
     , deDelete
     , dEdelete
+    , dbDelete
     ]
 end
