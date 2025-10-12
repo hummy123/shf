@@ -1905,6 +1905,103 @@ struct
         in
           Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
         end)
+    , test
+        "deletes newline and preceding word when cursor is \
+        \on first character of word that has a newline before it"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\nagain\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "db")
+
+             (* assert *)
+             val expectedString = "world\nagain\n"
+             val expectedCursor = 0
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes first punctuation char when on an alpha char \
+        \which is immediately preceded by a punctuation char"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello!world!again\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "db")
+
+             (* assert *)
+             val expectedString = "helloworld!again\n"
+             val expectedCursor = 5
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes chars until reaching punctuation when \
+        \cursor is on alpha char, preceded by more alpha chars, \
+        \until preceded by punctuation"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello!world!again\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "db")
+
+             (* assert *)
+             val expectedString = "hello!orld!again\n"
+             val expectedCursor = 6
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes alpha chars when on punctuation which is immediately preceded \
+        \by more alpha chars, until preceded by punctuation again"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello!world!again\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 11)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "db")
+
+             (* assert *)
+             val expectedString = "hello!!again\n"
+             val expectedCursor = 6
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
     ]
 
   val tests =
