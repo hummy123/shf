@@ -373,28 +373,34 @@ struct
     end
 
   fun deleteToEndOfPrevWord (app: app_type, count, time) =
-    let
-      val {buffer, cursorIdx, ...} = app
+    if #cursorIdx app = 0 then
+      NormalFinish.clearMode app
+    else
+      let
+        val {buffer, cursorIdx, ...} = app
 
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val low = Cursor.endOfPrevWord (buffer, cursorIdx, count)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val low = Cursor.endOfPrevWord (buffer, cursorIdx, count)
 
-      val length = (cursorIdx + 1) - low
-    in
-      deleteAndFinish (app, low, length, buffer, time)
-    end
+        val length = (cursorIdx + 1) - low
+      in
+        deleteAndFinish (app, low, length, buffer, time)
+      end
 
   fun deleteToEndOfPrevWORD (app: app_type, count, time) =
-    let
-      val {buffer, cursorIdx, ...} = app
+    if #cursorIdx app = 0 then
+      NormalFinish.clearMode app
+    else
+      let
+        val {buffer, cursorIdx, ...} = app
 
-      val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val low = Cursor.endOfPrevWORD (buffer, cursorIdx, count)
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val low = Cursor.endOfPrevWORD (buffer, cursorIdx, count)
 
-      val length = (cursorIdx + 1) - low
-    in
-      deleteAndFinish (app, low, length, buffer, time)
-    end
+        val length = (cursorIdx + 1) - low
+      in
+        deleteAndFinish (app, low, length, buffer, time)
+      end
 
   fun deleteToEndOfLine (app: app_type, time) =
     let
