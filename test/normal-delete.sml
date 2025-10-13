@@ -2289,6 +2289,26 @@ struct
            end)
     ]
 
+  val dgeDelete = describe "delete motion 'dge'"
+    [test "does not delete when cursor is at start of file" (fn _ =>
+       let
+         (* arrange *)
+         val originalString = "hello\n"
+         val app = TestUtils.init originalString
+         val app = AppWith.idx (app, 0)
+
+         (* act *)
+         val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
+
+         (* assert *)
+         val actualString = LineGap.toString buffer
+         val expectedString = originalString
+         val expectedCursorIdx = 0
+       in
+         Expect.isTrue
+           (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
+       end)]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -2301,5 +2321,6 @@ struct
     , dEdelete
     , dbDelete
     , dBDelete
+    , dgeDelete
     ]
 end
