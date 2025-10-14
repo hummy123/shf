@@ -2372,6 +2372,28 @@ struct
            in
              Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
            end)
+    , test
+        "deletes all characters in word \
+        \when on last character of last word in buffer"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, String.size originalString - 2)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hell world\n"
+             val expectedCursorIdx = String.size expectedString - 2
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
     ]
 
   val tests =
