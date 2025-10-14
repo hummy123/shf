@@ -67,6 +67,15 @@ struct
            in
              Expect.isTrue true
            end)
+    , test
+        "DfaGen does not cause exception \
+        \when parsing alternation that contains a char \
+        \from the previous alternation (1)"
+        (fn _ =>
+           (let val dfa = CaseSensitiveDfa.fromString "str|s"
+            in Expect.isTrue true
+            end)
+           handle _ => Expect.isTrue false)
     ]
 
   val tests = [charEventTests]

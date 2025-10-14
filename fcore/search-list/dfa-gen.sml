@@ -729,12 +729,20 @@ struct
           in
             Vector.concat [dtran, el]
           end
-        else
+        else if dStateIdx < Vector.length dtran then
           let
             val el = Vector.sub (dtran, dStateIdx)
             val el = Set.insertOrReplace (char, toStateIdx, el)
           in
             Vector.update (dtran, dStateIdx, el)
+          end
+        else
+          let
+            val appendLength = dStateIdx - Vector.length dtran
+            val appendVecs = Vector.tabulate (appendLength, fn _ => Set.LEAF)
+            val dtran = Vector.concat [dtran, appendVecs]
+          in
+            insert (dStateIdx, char, toStateIdx, dtran)
           end
     end
 
