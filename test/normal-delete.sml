@@ -2387,7 +2387,7 @@ struct
 
              (* assert *)
              val actualString = LineGap.toString buffer
-             val expectedString = "hell world\n"
+             val expectedString = "hell\n"
              val expectedCursorIdx = String.size expectedString - 2
            in
              Expect.isTrue

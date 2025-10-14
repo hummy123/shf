@@ -383,8 +383,17 @@ struct
         val low = Cursor.endOfPrevWord (buffer, cursorIdx, count)
 
         val length = (cursorIdx + 1) - low
+
+        val buffer = LineGap.goToIdx (cursorIdx + 1, buffer)
+        val initialMsg = Fn.initMsgs (low, length, buffer)
+        val buffer = LineGap.delete (low, length, buffer)
+
+        val buffer = LineGap.goToIdx (low, buffer)
+        val newCursorIdx =
+          if Cursor.isOnNewlineAfterChr (buffer, low) then Int.max (low - 1, 0)
+          else low
       in
-        deleteAndFinish (app, low, length, buffer, time)
+        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
 
   fun deleteToEndOfPrevWORD (app: app_type, count, time) =
@@ -398,8 +407,17 @@ struct
         val low = Cursor.endOfPrevWORD (buffer, cursorIdx, count)
 
         val length = (cursorIdx + 1) - low
+
+        val buffer = LineGap.goToIdx (cursorIdx + 1, buffer)
+        val initialMsg = Fn.initMsgs (low, length, buffer)
+        val buffer = LineGap.delete (low, length, buffer)
+
+        val buffer = LineGap.goToIdx (low, buffer)
+        val newCursorIdx =
+          if Cursor.isOnNewlineAfterChr (buffer, low) then Int.max (low - 1, 0)
+          else low
       in
-        deleteAndFinish (app, low, length, buffer, time)
+        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
 
   fun deleteToEndOfLine (app: app_type, time) =
