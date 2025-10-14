@@ -2415,6 +2415,31 @@ struct
         in
           Expect.isTrue (stringIsExpected andalso cursorIsExpected)
         end)
+    , test
+        "deletes only two chars when cursor is \
+        \on an a punctuation char which is immediately preceded \
+        \by an alpha char"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello!world!again\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 5)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
+
+             (* assert *)
+             val expectedString = "hellworld!again\n"
+             val expectedCursor = 4
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
     ]
 
   val tests =
