@@ -2290,24 +2290,89 @@ struct
     ]
 
   val dgeDelete = describe "delete motion 'dge'"
-    [test "does not delete when cursor is at start of file" (fn _ =>
-       let
-         (* arrange *)
-         val originalString = "hello\n"
-         val app = TestUtils.init originalString
-         val app = AppWith.idx (app, 0)
+    [ test "does not delete when cursor is at start of file" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 0)
 
-         (* act *)
-         val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
 
-         (* assert *)
-         val actualString = LineGap.toString buffer
-         val expectedString = originalString
-         val expectedCursorIdx = 0
-       in
-         Expect.isTrue
-           (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
-       end)]
+          (* assert *)
+          val actualString = LineGap.toString buffer
+          val expectedString = originalString
+          val expectedCursorIdx = 0
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
+        end)
+    , test "deletes as expected when on second word and there are three words"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world again\n"
+
+             val app = TestUtils.init originalString
+
+             (* all the different positions the cursor can be
+              * on the second word *)
+             val app1 = AppWith.idx (app, 6)
+             val app2 = AppWith.idx (app, 7)
+             val app3 = AppWith.idx (app, 8)
+             val app4 = AppWith.idx (app, 9)
+             val app5 = AppWith.idx (app, 10)
+
+             (* act *)
+             val newApp1 = TestUtils.updateMany (app1, "dge")
+             val newApp2 = TestUtils.updateMany (app2, "dge")
+             val newApp3 = TestUtils.updateMany (app3, "dge")
+             val newApp4 = TestUtils.updateMany (app4, "dge")
+             val newApp5 = TestUtils.updateMany (app5, "dge")
+
+             (* assert *)
+             val expectedString1 = "hellorld again\n"
+             val expectedString2 = "hellrld again\n"
+             val expectedString3 = "hellld again\n"
+             val expectedString4 = "helld again\n"
+             val expectedString5 = "hell again\n"
+
+             val actualString1 = LineGap.toString (#buffer newApp1)
+             val actualString2 = LineGap.toString (#buffer newApp2)
+             val actualString3 = LineGap.toString (#buffer newApp3)
+             val actualString4 = LineGap.toString (#buffer newApp4)
+             val actualString5 = LineGap.toString (#buffer newApp5)
+
+             val stringsAreExpected =
+               expectedString1 = actualString1
+               andalso expectedString2 = actualString2
+               andalso expectedString3 = actualString3
+               andalso expectedString4 = actualString4
+               andalso expectedString5 = actualString5
+
+             val expectedCursor1 = 4
+             val expectedCursor2 = 4
+             val expectedCursor3 = 4
+             val expectedCursor4 = 4
+             val expectedCursor5 = 4
+
+             val actualCursor1 = #cursorIdx newApp1
+             val actualCursor2 = #cursorIdx newApp2
+             val actualCursor3 = #cursorIdx newApp3
+             val actualCursor4 = #cursorIdx newApp4
+             val actualCursor5 = #cursorIdx newApp5
+
+             val cursorsAreExpected =
+               expectedCursor1 = actualCursor1
+               andalso expectedCursor2 = actualCursor2
+               andalso expectedCursor3 = actualCursor3
+               andalso expectedCursor4 = actualCursor4
+               andalso expectedCursor5 = actualCursor5
+           in
+             Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
+           end)
+    ]
 
   val tests =
     [ dhDelete
