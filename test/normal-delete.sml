@@ -2394,6 +2394,27 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test "deletes past newline when on first word after newline" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\nagain\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 6)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
+
+          (* assert *)
+          val expectedString = "hellorld\nagain\n"
+          val expectedCursor = 4
+
+          val actualString = LineGap.toString buffer
+
+          val stringIsExpected = expectedString = actualString
+          val cursorIsExpected = expectedCursor = cursorIdx
+        in
+          Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+        end)
     ]
 
   val tests =
