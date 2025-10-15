@@ -2690,6 +2690,117 @@ struct
            end)
     ]
 
+  val dggDelete = describe "delete motion 'dgg'"
+    [ test "leaves newline behind when deleting from last line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 7)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dgg")
+
+          (* assert *)
+          val actualString = LineGap.toString buffer
+          val expectedString = "\n"
+          val expectedCursorIdx = 0
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
+        end)
+    , test
+        "deletes whole line that cursor is currently on, \
+        \and all lines preceding cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\nagain\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dgg")
+
+             (* assert *)
+             val expectedString = "again\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedCursurIdx = 0
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursurIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes current line and preceding lines \
+        \when current line does not end with a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dgg")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes current line and preceding line \
+        \when cursor is on a newline preceded by a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "\n\nhello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 1)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dgg")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello world\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes current line and preceding line \
+        \when cursor is on a newline, followed by another newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "\n\n\nhello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 1)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dgg")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "\nhello world\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -2704,5 +2815,6 @@ struct
     , dBDelete
     , dgeDelete
     , dgEDelete
+    , dggDelete
     ]
 end

@@ -72,7 +72,6 @@ struct
         finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
     end
 
-
   (* equivalent of vi's 'x' command **)
   fun removeChr (app: app_type, count, time) =
     let
@@ -727,6 +726,11 @@ struct
       val initialMsg = Fn.initMsgs (0, cursorIdx, buffer)
 
       val buffer = LineGap.delete (0, cursorIdx, buffer)
+      val buffer =
+        if #textLength buffer = 0 then
+          LineGap.fromString "\n"
+        else
+          buffer
       val buffer = LineGap.goToStart buffer
       val initialMsg = SEARCH (buffer, dfa, time) :: initialMsg
 
