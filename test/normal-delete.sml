@@ -2440,6 +2440,54 @@ struct
            in
              Expect.isTrue (stringIsExpected andalso cursorIsExpected)
            end)
+    , test
+        "deletes only one punctuation char when on an alpha char \
+        \which is preceded by punctuation"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "!#%&(hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
+
+             (* assert *)
+             val expectedString = "!#%&lo\n"
+             val expectedCursor = 4
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test
+        "deletes spaces until reaching non-space char, \
+        \when cursor is on space and is preceded by more spaces"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello           again\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 13)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dge")
+
+             (* assert *)
+             val expectedString = "hell  again\n"
+             val expectedCursor = 4
+
+             val actualString = LineGap.toString buffer
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursor = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
     ]
 
   val tests =
