@@ -146,7 +146,7 @@ struct
                 acc
             val acc =
               if PersistentVector.isInRange (absIdx, #searchList env) then
-                Utils.makeHighlight (posX, posY, env) :: acc
+                Utils.makeSearchHighlight (posX, posY, env) :: acc
               else
                 acc
             val posX =
@@ -231,11 +231,11 @@ struct
             let
               val acc =
                 if absIdx = cursorIdx then
-                  Utils.makeCursorOnChr (chr, posX, posY, env)
+                  Utils.makeCursorHighlightedChr (chr, posX, posY, env)
                   :: Utils.makeCursor (posX, posY, env) :: acc
                 else if PersistentVector.isInRange (absIdx, #searchList env) then
-                  Utils.makeHighlightChr (chr, posX, posY, env)
-                  :: Utils.makeHighlight (posX, posY, env) :: acc
+                  Utils.makeSearchHighlightedChr (chr, posX, posY, env)
+                  :: Utils.makeSearchHighlight (posX, posY, env) :: acc
                 else
                   Utils.makeChr (chr, posX, posY, env) :: acc
             in

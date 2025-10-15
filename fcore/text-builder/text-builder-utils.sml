@@ -157,7 +157,7 @@ struct
       , #cursorB env
       )
 
-  fun makeHighlight (posX, posY, env: env_data) =
+  fun makeSearchHighlight (posX, posY, env: env_data) =
     Rect.lerp
       ( Real32.fromInt (posX - 2)
       , Real32.fromInt posY
@@ -184,7 +184,7 @@ struct
       , #charB env
       )
 
-  fun makeCursorOnChr (chr, posX, posY, env: env_data) =
+  fun makeCursorHighlightedChr (chr, posX, posY, env: env_data) =
     CozetteAscii.make
       ( chr
       , Real32.fromInt posX
@@ -198,7 +198,7 @@ struct
       , #cursorHighlightedCharB env
       )
 
-  fun makeHighlightChr (chr, posX, posY, env: env_data) =
+  fun makeSearchHighlightedChr (chr, posX, posY, env: env_data) =
     CozetteAscii.make
       ( chr
       , Real32.fromInt posX

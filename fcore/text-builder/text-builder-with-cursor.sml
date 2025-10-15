@@ -226,8 +226,10 @@ struct
             let
               val acc =
                 if absIdx = cursorIdx then
-                  let val acc = Utils.makeCursor (posX, posY, env) :: acc
-                  in Utils.makeCursorOnChr (chr, posX, posY, env) :: acc
+                  let
+                    val acc = Utils.makeCursor (posX, posY, env) :: acc
+                  in
+                    Utils.makeCursorHighlightedChr (chr, posX, posY, env) :: acc
                   end
                 else
                   Utils.makeChr (chr, posX, posY, env) :: acc
