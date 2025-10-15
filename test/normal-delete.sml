@@ -2801,6 +2801,92 @@ struct
            end)
     ]
 
+  val d0Delete = describe "delete motion 'd0'"
+    [ test "does not delete when on first word in buffer" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 0)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d0")
+
+          (* assert *)
+          val actualString = LineGap.toString buffer
+          val expectedString = originalString
+          val expectedCursorIdx = 0
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
+        end)
+    , test "does not delete when cursor is on a newline" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\n\nworld\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 6)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d0")
+
+          (* assert *)
+          val expectedString = originalString
+          val actualString = LineGap.toString buffer
+
+          val expectedCursurIdx = 6
+
+          val stringIsExpected = expectedString = actualString
+          val cursorIsExpected = expectedCursurIdx = cursorIdx
+        in
+          Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+        end)
+    , test
+        "deletes from cursor to first character in buffer \
+        \when cursor is on first line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 3)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d0")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "lo\nworld"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from cursor to up to (not including) \
+        \closest newline, when cursor is on second line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d0")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello\norld\n"
+             val expectedCursorIdx = 6
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -2816,5 +2902,6 @@ struct
     , dgeDelete
     , dgEDelete
     , dggDelete
+    , d0Delete
     ]
 end
