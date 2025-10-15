@@ -11,22 +11,22 @@ struct
     , cursorG: Real32.real
     , cursorB: Real32.real
 
-    , highlightR: Real32.real
-    , highlightG: Real32.real
-    , highlightB: Real32.real
+    , searchHighlightR: Real32.real
+    , searchHighlightG: Real32.real
+    , searchHighlightB: Real32.real
 
     (* different colours for char when cursor is on char *)
-    , cursorOnCharR: Real32.real
-    , cursorOnCharG: Real32.real
-    , cursorOnCharB: Real32.real
+    , cursorHighlightedCharR: Real32.real
+    , cursorHighlightedCharG: Real32.real
+    , cursorHighlightedCharB: Real32.real
 
-    , highlightOnCharR: Real32.real
-    , highlightOnCharG: Real32.real
-    , highlightOnCharB: Real32.real
+    , searchHighlightedCharR: Real32.real
+    , searchHighlightedCharG: Real32.real
+    , searchHighlightedCharB: Real32.real
 
     , charZ: Real32.real
     , cursorZ: Real32.real
-    , highlightZ: Real32.real
+    , searchHighlightZ: Real32.real
 
     , startX: int
     , startY: int
@@ -68,25 +68,25 @@ struct
         , charG = 0.01
         , charB = 0.01
 
-        , highlightR = 0.76
-        , highlightG = 0.73
-        , highlightB = 0.71
+        , searchHighlightR = 0.76
+        , searchHighlightG = 0.73
+        , searchHighlightB = 0.71
 
         , cursorR = 0.65
         , cursorG = 0.01
         , cursorB = 0.01
 
-        , highlightOnCharR = 0.0
-        , highlightOnCharG = 0.0
-        , highlightOnCharB = 0.0
+        , searchHighlightedCharR = 0.0
+        , searchHighlightedCharG = 0.0
+        , searchHighlightedCharB = 0.0
 
-        , cursorOnCharR = 1.0
-        , cursorOnCharG = 1.0
-        , cursorOnCharB = 1.0
+        , cursorHighlightedCharR = 1.0
+        , cursorHighlightedCharG = 1.0
+        , cursorHighlightedCharB = 1.0
 
         , charZ = 0.01
         , cursorZ = 0.03
-        , highlightZ = 0.05
+        , searchHighlightZ = 0.05
 
         , startX = startX
         , startY = startX
@@ -108,25 +108,25 @@ struct
           , charG = 0.01
           , charB = 0.01
 
-          , highlightR = 0.76
-          , highlightG = 0.73
-          , highlightB = 0.71
+          , searchHighlightR = 0.76
+          , searchHighlightG = 0.73
+          , searchHighlightB = 0.71
 
           , cursorR = 0.65
           , cursorG = 0.01
           , cursorB = 0.01
 
-          , highlightOnCharR = 0.0
-          , highlightOnCharG = 0.0
-          , highlightOnCharB = 0.0
+          , searchHighlightedCharR = 0.0
+          , searchHighlightedCharG = 0.0
+          , searchHighlightedCharB = 0.0
 
-          , cursorOnCharR = 1.0
-          , cursorOnCharG = 1.0
-          , cursorOnCharB = 1.0
+          , cursorHighlightedCharR = 1.0
+          , cursorHighlightedCharG = 1.0
+          , cursorHighlightedCharB = 1.0
 
           , charZ = 0.01
           , cursorZ = 0.03
-          , highlightZ = 0.05
+          , searchHighlightZ = 0.05
 
           , startX = startX
           , startY = startY
@@ -161,13 +161,13 @@ struct
     Rect.lerp
       ( Real32.fromInt (posX - 2)
       , Real32.fromInt posY
-      , #highlightZ env
+      , #searchHighlightZ env
       , TC.scale
       , #fw env
       , #fh env
-      , #highlightR env
-      , #highlightG env
-      , #highlightB env
+      , #searchHighlightR env
+      , #searchHighlightG env
+      , #searchHighlightB env
       )
 
   fun makeChr (chr, posX, posY, env: env_data) =
@@ -193,9 +193,9 @@ struct
       , TC.scale
       , #fw env
       , #fh env
-      , #cursorOnCharR env
-      , #cursorOnCharG env
-      , #cursorOnCharB env
+      , #cursorHighlightedCharR env
+      , #cursorHighlightedCharG env
+      , #cursorHighlightedCharB env
       )
 
   fun makeHighlightChr (chr, posX, posY, env: env_data) =
@@ -207,9 +207,9 @@ struct
       , TC.scale
       , #fw env
       , #fh env
-      , #highlightOnCharR env
-      , #highlightOnCharG env
-      , #highlightOnCharB env
+      , #searchHighlightedCharR env
+      , #searchHighlightedCharG env
+      , #searchHighlightedCharB env
       )
 
   (* gets line start idx, relative to right hd *)
