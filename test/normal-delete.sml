@@ -3184,6 +3184,51 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test
+        "deletes from start of line until first non-space char \
+        \when cursor is on first character of line \
+        \and line starts with spaces"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "   hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d^")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from cursor position to first non-space char \
+        \when cursor is on last non-space char at end of line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "   hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d^")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "   o\n"
+             val expectedCursorIdx = 3
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
     ]
 
   val tests =
