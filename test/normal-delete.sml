@@ -3347,6 +3347,102 @@ struct
            end)
     ]
 
+  val dNDelete = describe "delete motion 'dN'"
+    [ test "does not delete or move cursor when there is no search" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 0)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dN")
+
+          (* assert *)
+          val actualString = LineGap.toString buffer
+          val expectedString = originalString
+          val expectedCursorIdx = 0
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
+        end)
+    , test
+        "does not delete when cursor is before first character of first search"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "world hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 2)
+
+             (** perform search **)
+             val app = TestUtils.updateMany (app, "/hello")
+             val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dN")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 2
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test "does not delete when cursor is on first character of first search"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hey hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 4)
+
+             (** perform search **)
+             val app = TestUtils.updateMany (app, "/hello")
+             val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dN")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 4
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from cursor position to first character of search \
+        \when there is a search position before the cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (** perform search **)
+             val app = TestUtils.updateMany (app, "/hello")
+             val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dN")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "orld hello\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -3367,5 +3463,6 @@ struct
     , dDlrDelete
     , dCaretDelete
     , dnDelete
+    , dNDelete
     ]
 end
