@@ -194,6 +194,7 @@ struct
         if String.size str = 0 then NormalMove.moveToEnd app
         else NormalMove.moveToLine (app, count)
     | #"%" => NormalMove.moveToMatchingPair app
+    | #"D" => NormalDelete.deleteToEndOfLine (app, time)
     | #"x" => NormalDelete.removeChr (app, count, time)
     | #"J" => NormalDelete.removeLineBreaks (app, count, time)
     | #"/" => switchToNormalSearchMode (app, false)

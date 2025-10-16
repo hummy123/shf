@@ -16,4 +16,4 @@
   - They should search for the next char in the specific pair, the same way in Vim
   - Add tests for both
 
-Afterwards, add tests for yanking.
+  Afterwards, add tests for yanking.
