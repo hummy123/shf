@@ -2690,6 +2690,75 @@ struct
            end)
     ]
 
+  val dGDelete = describe "delete motion 'dG'"
+    [ test
+        "deletes whole buffer, leaving only a newline, \
+        \when cursor is on first line of buffer"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 3)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dG")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from second line to end of buffer \
+        \when first and second line only contain one newline each"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "\n\nhello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 1)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dG")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedCursurIdx = 0
+
+             val stringIsExpected = expectedString = actualString
+             val cursorIsExpected = expectedCursurIdx = cursorIdx
+           in
+             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+           end)
+    , test "deletes from second line onwards when cursor is on second line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\nagain\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dG")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val dggDelete = describe "delete motion 'dgg'"
     [ test "leaves newline behind when deleting from last line" (fn _ =>
         let
@@ -2901,6 +2970,7 @@ struct
     , dBDelete
     , dgeDelete
     , dgEDelete
+    , dGDelete
     , dggDelete
     , d0Delete
     ]
