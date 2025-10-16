@@ -1,6 +1,7 @@
 # To-do list
 
 - Add tests for:
+  - `dG`
   - `d$`
   - `d^`
   - `dd`
@@ -18,6 +19,5 @@
 - Reimplement `di<symbol>` and `da<symbol>`
   - They should search for the next char in the specific pair, the same way in Vim
   - Add tests for both
-- Implement `dG` motion and test it
 
 Afterwards, add tests for yanking.

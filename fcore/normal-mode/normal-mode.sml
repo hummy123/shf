@@ -274,6 +274,7 @@ struct
       | #"n" => NormalDelete.deleteToNextMatch (app, count, time)
       | #"N" => NormalDelete.deleteToPrevMatch (app, count, time)
       | #"%" => NormalDelete.deletePair (app, time)
+      | #"G" => NormalDelete.deleteToEnd (app, time)
       (* non-terminal commands which require appending chr *)
       | #"t" => appendChr (app, chrCmd, str)
       | #"T" => appendChr (app, chrCmd, str)

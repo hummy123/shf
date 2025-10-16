@@ -727,10 +727,7 @@ struct
 
       val buffer = LineGap.delete (0, cursorIdx, buffer)
       val buffer =
-        if #textLength buffer = 0 then
-          LineGap.fromString "\n"
-        else
-          buffer
+        if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
       val buffer = LineGap.goToStart buffer
       val initialMsg = SEARCH (buffer, dfa, time) :: initialMsg
 
@@ -769,6 +766,35 @@ struct
         , time
         , visualScrollColumn
         )
+    end
+
+  fun deleteToEnd (app: app_type, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val startOfLineIdx = Cursor.vi0 (buffer, cursorIdx)
+      val length = #textLength buffer - startOfLineIdx
+
+      val buffer = LineGap.goToIdx (#textLength buffer, buffer)
+      val initialMsg = Fn.initMsgs (startOfLineIdx, length, buffer)
+
+      val buffer = LineGap.delete (startOfLineIdx, length, buffer)
+      val buffer =
+        if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
+
+      val newLineEndIdx = Int.max (startOfLineIdx - 1, 0)
+      val buffer = LineGap.goToIdx (newLineEndIdx, buffer)
+      val newLineEndIdx =
+        if Cursor.isOnNewlineAfterChr (buffer, newLineEndIdx) then
+          Int.max (newLineEndIdx - 1, 0)
+        else
+          newLineEndIdx
+
+      val buffer = LineGap.goToIdx (newLineEndIdx, buffer)
+      val newLineStartIdx = Cursor.vi0 (buffer, newLineEndIdx)
+    in
+      finishAfterDeletingBuffer (app, newLineStartIdx, buffer, time, initialMsg)
     end
 
   fun helpDeleteToMatch (app: app_type, low, high, time) =
