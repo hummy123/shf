@@ -1,7 +1,6 @@
 # To-do list
 
 - Add tests for:
-  - `dn`
   - `dN`
   - `df<char>`
   - `dF<char>`
