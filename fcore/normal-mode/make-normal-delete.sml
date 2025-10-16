@@ -431,7 +431,7 @@ struct
       else
         let
           val lineStart = Cursor.vi0 (buffer, cursorIdx)
-          val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
+          val high = Cursor.viDlr (buffer, cursorIdx, 1) + 1
           val length = high - cursorIdx
 
           val buffer = LineGap.goToIdx (high, buffer)
