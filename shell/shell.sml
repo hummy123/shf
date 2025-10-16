@@ -84,6 +84,7 @@ struct
       (* load file intol gap buffer and create initial app *)
       val io = TextIO.openIn "temp.txt"
       val lineGap = ioToLineGap (io, LineGap.empty)
+      val lineGap = LineGap.fromString "hello\nworld"
       val _ = TextIO.closeIn io
       val app = AppType.init (lineGap, 1920, 1080, Time.now ())
 
