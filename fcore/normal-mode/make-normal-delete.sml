@@ -445,6 +445,10 @@ struct
            * after having performed the deletion. *)
           val buffer = LineGap.goToIdx (lineStart, buffer)
           val cursorIdx = Cursor.viDlr (buffer, lineStart, 1)
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val cursorIdx =
+            if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then cursorIdx - 1
+            else cursorIdx
         in
           finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
         end

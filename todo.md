@@ -1,7 +1,6 @@
 # To-do list
 
 - Add tests for:
-  - `d$`
   - `d^`
   - `dd`
   - `dn`
