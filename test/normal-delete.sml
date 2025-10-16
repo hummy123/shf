@@ -3116,6 +3116,76 @@ struct
            end)
     ]
 
+  val dCaretDelete = describe "delete motion 'd^'"
+    [ test
+        "does not delete when cursor is on first character of first line \
+        \and first character is not a space"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d^")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes preceding characters when cursor is on \
+        \third character of first line, and line starts with an alpha character"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 2)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d^")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "llo\nworld\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes preceding characters on line when \
+        \cursor is on third character of second line \
+        \and line starts with alpha character"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 8)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d^")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello\nrld\n"
+             val expectedCursorIdx = 6
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -3134,5 +3204,6 @@ struct
     , dggDelete
     , d0Delete
     , dDlrDelete
+    , dCaretDelete
     ]
 end
