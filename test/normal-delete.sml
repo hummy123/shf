@@ -3229,6 +3229,27 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test
+        "does not delete from buffer or move cursor when cursor is on newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\n\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d^")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 6
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
     ]
 
   val tests =
