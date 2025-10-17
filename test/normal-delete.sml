@@ -3531,6 +3531,51 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test
+        "deletes from cursor's position to second occurrence of <char> \
+        \if motion has a count of 2"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "2dfo")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "rld\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from cursor's position to last occurrence of <char> \
+        \if motion has a count greater than \
+        \the number of occurences of <char>, after the cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "99dfl")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "d\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
     ]
 
   val tests =

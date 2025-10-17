@@ -677,34 +677,38 @@ struct
       deleteAndFinish (app, low, length, buffer, time)
     end
 
+  fun finishDeleteToChr (app, buffer, cursorIdx, otherIdx, time) =
+    let
+      val low = Int.min (cursorIdx, otherIdx)
+      val high = Int.max (cursorIdx, otherIdx)
+      val length = high - low
+    in
+      deleteAndFinish (app, low, length, buffer, time)
+    end
+
   fun helpDeleteToChr
     (app: app_type, buffer, cursorIdx, otherIdx, count, fMove, fInc, chr, time) =
     if count = 0 then
-      let
-        val low = Int.min (cursorIdx, otherIdx)
-        val high = Int.max (cursorIdx, otherIdx)
-        val length = high - low
-      in
-        deleteAndFinish (app, low, length, buffer, time)
-      end
+      finishDeleteToChr (app, buffer, cursorIdx, otherIdx, time)
     else
       let
         val buffer = LineGap.goToIdx (otherIdx, buffer)
         val newOtherIdx = fMove (buffer, otherIdx, chr)
-        val newCount = if newOtherIdx = otherIdx then 0 else count - 1
-        val newOtherIdx = fInc (newOtherIdx, 1)
       in
-        helpDeleteToChr
-          ( app
-          , buffer
-          , cursorIdx
-          , newOtherIdx
-          , newCount
-          , fMove
-          , fInc
-          , chr
-          , time
-          )
+        if otherIdx = newOtherIdx then
+          finishDeleteToChr (app, buffer, cursorIdx, otherIdx, time)
+        else
+          helpDeleteToChr
+            ( app
+            , buffer
+            , cursorIdx
+            , fInc (newOtherIdx, 1)
+            , count - 1
+            , fMove
+            , fInc
+            , chr
+            , time
+            )
       end
 
   fun deleteToChr (app: app_type, count, fMove, fInc, chr, time) =
