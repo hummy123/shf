@@ -3443,6 +3443,96 @@ struct
            end)
     ]
 
+  val dfDelete = describe "delete motion 'df<char>'"
+    [ test
+        "does not delete when there is no occurrence of <char> \
+        \after cursor position"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dff")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "does not delete when cursor is at last occurrence of <char> in buffer"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dfw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 6
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes up to <char> when \
+        \there is an ocurrence of <char> after cursor's position on same line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hey hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dfy")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = " hello\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes up to <char> when the next occurrence of <char> \
+        \is after a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dfr")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "ld\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -3464,5 +3554,6 @@ struct
     , dCaretDelete
     , dnDelete
     , dNDelete
+    , dfDelete
     ]
 end
