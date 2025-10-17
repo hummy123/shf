@@ -2,7 +2,6 @@
 
 - Add tests for:
   - `dF<char>`
-  - `dt<char>`
   - `dT<char>`
   - delete inside word
 - Implement delete-around-word and test it

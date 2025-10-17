@@ -3578,6 +3578,118 @@ struct
            end)
     ]
 
+  val dtDelete = describe "delete motion 'dt<char>'"
+    [ test
+        "does not delete when there is no occurrence of <char> \
+        \after cursor position"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dtf")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "does not delete when cursor is at last occurrence of <char> in buffer"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dtw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 6
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes up to (excluding) <char> when \
+        \there is an ocurrence of <char> after cursor's position on same line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hey hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dty")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "y hello\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes up to (excluding) <char> when the next occurrence of <char> \
+        \is after a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dtr")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "rld\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes up to just one occurrence \
+        \when motion has a count greater than 1"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "2dto")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "o world\n"
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -3600,5 +3712,6 @@ struct
     , dnDelete
     , dNDelete
     , dfDelete
+    , dtDelete
     ]
 end
