@@ -88,12 +88,9 @@ struct
       val app = AppType.init (lineGap, 1920, 1080, Time.now ())
 
       val () = registerCallbacks window
-
-      val _ = CML.spawn (fn () => GlDraw.loop (app, window))
-      val _ = CML.spawn SearchThread.loop
     in
-      ()
+      GlDraw.loop (app, window)
     end
 end
 
-val _ = RunCML.doit (Shell.main, SOME (Time.fromMicroseconds 555))
+val () = Shell.main ()

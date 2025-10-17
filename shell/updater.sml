@@ -4,10 +4,7 @@ struct
   open InputMsg
 
   fun sendMsg msg =
-    case msg of
-      DRAW msg => DrawMailbox.append msg
-    | SEARCH (buffer, searchString, time) =>
-        Mailbox.send (SearchMailbox.mailbox, (buffer, searchString, time))
+    case msg of DRAW msg => DrawMailbox.append msg
 
   fun sendMsgs msgList =
     case msgList of

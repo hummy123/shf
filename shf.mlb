@@ -18,7 +18,6 @@ fcore/search-list/search-list.sml
 
 message-types/input-msg.sml
 message-types/draw-msg.sml
-message-types/search-msg.sml
 message-types/mailbox-type.sml
 
 fcore/app-type.sml
@@ -64,7 +63,6 @@ fcore/app-update.sml
 
 (* IMPERATIVE SHELL *)
 $(SML_LIB)/basis/mlton.mlb
-$(SML_LIB)/cml/cml.mlb
 
 ann
   "allowFFI true"
@@ -81,10 +79,8 @@ in
 end
 shell/input-mailbox.sml
 shell/draw-mailbox.sml
-shell/search-mailbox.sml
 
 shell/exception-logger.sml
-shell/search-thread.sml
 shell/updater.sml
 shell/gl-shaders.sml
 shell/gl-draw.sml

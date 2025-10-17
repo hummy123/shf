@@ -33,10 +33,9 @@ struct
 
           val {cursorIdx = origCursorIdx, dfa, ...} = app
           val buffer = LineGap.goToStart buffer
-          val initialMsg = [SEARCH (buffer, dfa, time)]
         in
           NormalDelete.finishAfterDeletingBuffer
-            (app, origCursorIdx, buffer, time, initialMsg)
+            (app, origCursorIdx, buffer, time, [])
         end
       else
         let
@@ -127,10 +126,9 @@ struct
             loop (nextLine, buffer, count - 1)
 
         val buffer = LineGap.goToStart buffer
-        val initialMsg = [SEARCH (buffer, dfa, time)]
       in
         NormalDelete.finishAfterDeletingBuffer
-          (app, newCursorIdx, buffer, time, initialMsg)
+          (app, newCursorIdx, buffer, time, [])
       end
   end
 
@@ -616,8 +614,6 @@ struct
     | KEY_ESC => NormalFinish.clearMode app
     | RESIZE_EVENT (width, height) =>
         NormalFinish.resizeText (app, width, height)
-    | WITH_SEARCH_LIST (searchList, time) =>
-        NormalFinish.withSearchList (app, searchList, time)
 
     (* Don't need to handle these keys in normal mode.
      * Everything that is possible through them in Vi and Vim

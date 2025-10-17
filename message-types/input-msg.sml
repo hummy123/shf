@@ -6,7 +6,6 @@ struct
   | KEY_ENTER
   | KEY_BACKSPACE
   | RESIZE_EVENT of int * int
-  | WITH_SEARCH_LIST of PersistentVector.t * Time.time
   | ARROW_LEFT
   | ARROW_UP
   | ARROW_RIGHT

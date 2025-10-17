@@ -1,25 +1,30 @@
 structure SearchList =
 struct
-  structure DfaGen = CaseInsensitiveDfa
+  structure Dfa = CaseInsensitiveDfa
 
-  fun buildLoop (idx, iterator, dfa, acc, curState, startPos, prevFinalPos) =
+  fun buildLoop (idx, buffer, dfa, acc, curState, startPos, prevFinalPos) =
     let
-      val iterator = LineGap.moveIteratorToIdx (idx, iterator)
+      val buffer = LineGap.goToIdx (idx, buffer)
     in
-      if idx = #textLength iterator then
-        if prevFinalPos < 0 then acc
-        else PersistentVector.append (startPos, prevFinalPos, acc)
+      if idx = #textLength buffer then
+        let
+          val acc =
+            if prevFinalPos < 0 then acc
+            else PersistentVector.append (startPos, prevFinalPos, acc)
+        in
+          (buffer, acc)
+        end
       else
         let
-          val chr = LineGap.subIterator (idx, iterator)
-          val newState = DfaGen.nextState (dfa, curState, chr)
+          val chr = LineGap.sub (idx, buffer)
+          val newState = Dfa.nextState (dfa, curState, chr)
           val prevFinalPos =
-            if DfaGen.isFinal (dfa, newState) then idx else prevFinalPos
+            if Dfa.isFinal (dfa, newState) then idx else prevFinalPos
         in
-          if DfaGen.isDead newState then
+          if Dfa.isDead newState then
             if prevFinalPos = ~1 then
               (* no match found: restart search from `startPos + 1` *)
-              buildLoop (startPos + 1, iterator, dfa, acc, 0, startPos + 1, ~1)
+              buildLoop (startPos + 1, buffer, dfa, acc, 0, startPos + 1, ~1)
             else
               (* match found: append and continue *)
               let
@@ -28,19 +33,21 @@ struct
                 (* we start 1 idx after the final position we found *)
                 val newStart = prevFinalPos + 1
               in
-                buildLoop (newStart, iterator, dfa, acc, 0, newStart, ~1)
+                buildLoop (newStart, buffer, dfa, acc, 0, newStart, ~1)
               end
           else
             buildLoop
-              (idx + 1, iterator, dfa, acc, newState, startPos, prevFinalPos)
+              (idx + 1, buffer, dfa, acc, newState, startPos, prevFinalPos)
         end
     end
 
-  fun build (iterator, dfa) =
+  fun build (buffer, dfa) =
     if Vector.length dfa > 0 then
-      buildLoop (0, iterator, dfa, PersistentVector.empty, 0, 0, ~1)
+      let val buffer = LineGap.goToStart buffer
+      in buildLoop (0, buffer, dfa, PersistentVector.empty, 0, 0, ~1)
+      end
     else
-      PersistentVector.empty
+      (buffer, PersistentVector.empty)
 
   fun rangeLoop
     ( dfa
@@ -64,11 +71,11 @@ struct
       let
         val buffer = LineGap.goToIdx (bufferPos, buffer)
         val chr = LineGap.sub (bufferPos, buffer)
-        val newState = DfaGen.nextState (dfa, curState, chr)
+        val newState = Dfa.nextState (dfa, curState, chr)
         val prevFinalPos =
-          if DfaGen.isFinal (dfa, newState) then bufferPos else prevFinalPos
+          if Dfa.isFinal (dfa, newState) then bufferPos else prevFinalPos
       in
-        if DfaGen.isDead newState then
+        if Dfa.isDead newState then
           if prevFinalPos = ~1 then
             (* no match found: restart search from `startPos + 1` *)
             rangeLoop

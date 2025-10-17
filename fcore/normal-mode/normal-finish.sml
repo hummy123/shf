@@ -62,24 +62,6 @@ struct
         )
     end
 
-  fun withSearchList (app: app_type, searchList, searchTime) =
-    let
-      open Time
-    in
-      if searchTime >= #bufferModifyTime app then
-        let
-          val {buffer, cursorIdx, bufferModifyTime, ...} = app
-          val app =
-            NormalModeWith.searchList
-              (app, searchList, buffer, bufferModifyTime)
-        in
-          buildTextAndClear
-            (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
-        end
-      else
-        app
-    end
-
   fun resizeText (app: app_type, newWidth, newHeight) =
     let
       val

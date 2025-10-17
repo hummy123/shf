@@ -82,7 +82,7 @@ struct
         else CaseInsensitiveDfa.fromString searchString
 
       val buffer = LineGap.goToStart buffer
-      val initialMsg = [SEARCH (buffer, dfa, time)]
+      val searchList = SearchList.build (buffer, dfa)
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -101,7 +101,7 @@ struct
         )
       val drawMsg = Vector.concat drawMsg
       val drawMsg = DrawMsg.DRAW_TEXT drawMsg
-      val msgs = DRAW drawMsg :: initialMsg
+      val msgs = [DRAW drawMsg]
 
       val mode = NORMAL_MODE ""
     in
@@ -253,8 +253,6 @@ struct
           , searchScrollColumn
           , caseSensitive
           )
-    | WITH_SEARCH_LIST (searchList, time) =>
-        NormalFinish.withSearchList (app, searchList, time)
     | RESIZE_EVENT (width, height) =>
         NormalSearchFinish.resize
           ( app

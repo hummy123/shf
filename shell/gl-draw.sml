@@ -1,6 +1,5 @@
 structure GlDraw =
 struct
-  open CML
   open DrawMsg
 
   (* The name doesn't make it clear, but this structure

@@ -18,7 +18,6 @@ fcore/search-list/search-list.sml
 
 message-types/input-msg.sml
 message-types/draw-msg.sml
-message-types/search-msg.sml
 message-types/mailbox-type.sml
 
 fcore/app-type.sml
