@@ -64,25 +64,25 @@ struct
         end
     in
       if TC.textLineWidth > width then
-        { charR = 0.01
-        , charG = 0.01
-        , charB = 0.01
+        { charR = 0.0
+        , charG = 0.0
+        , charB = 0.0
 
-        , searchHighlightR = 0.76
-        , searchHighlightG = 0.73
-        , searchHighlightB = 0.71
+        , searchHighlightR = 0.41
+        , searchHighlightG = 0.05
+        , searchHighlightB = 0.67
 
-        , cursorR = 0.65
-        , cursorG = 0.01
-        , cursorB = 0.01
+        , cursorR = 0.0
+        , cursorG = 0.0
+        , cursorB = 0.0
 
-        , searchHighlightedCharR = 0.0
-        , searchHighlightedCharG = 0.0
-        , searchHighlightedCharB = 0.0
+        , searchHighlightedCharR = 0.89
+        , searchHighlightedCharG = 0.89
+        , searchHighlightedCharB = 0.89
 
-        , cursorHighlightedCharR = 1.0
-        , cursorHighlightedCharG = 1.0
-        , cursorHighlightedCharB = 1.0
+        , cursorHighlightedCharR = 0.89
+        , cursorHighlightedCharG = 0.89
+        , cursorHighlightedCharB = 0.89
 
         , charZ = 0.01
         , cursorZ = 0.03
@@ -104,25 +104,25 @@ struct
         let
           val startX = (width - TC.textLineWidth) div 2
         in
-          { charR = 0.01
-          , charG = 0.01
-          , charB = 0.01
+          { charR = 0.0
+          , charG = 0.0
+          , charB = 0.0
 
-          , searchHighlightR = 0.76
-          , searchHighlightG = 0.73
-          , searchHighlightB = 0.71
+          , searchHighlightR = 0.41
+          , searchHighlightG = 0.05
+          , searchHighlightB = 0.67
 
-          , cursorR = 0.65
-          , cursorG = 0.01
-          , cursorB = 0.01
+          , cursorR = 0.0
+          , cursorG = 0.0
+          , cursorB = 0.0
 
-          , searchHighlightedCharR = 0.0
-          , searchHighlightedCharG = 0.0
-          , searchHighlightedCharB = 0.0
+          , searchHighlightedCharR = 0.89
+          , searchHighlightedCharG = 0.89
+          , searchHighlightedCharB = 0.89
 
-          , cursorHighlightedCharR = 1.0
-          , cursorHighlightedCharG = 1.0
-          , cursorHighlightedCharB = 1.0
+          , cursorHighlightedCharR = 0.89
+          , cursorHighlightedCharG = 0.89
+          , cursorHighlightedCharB = 0.89
 
           , charZ = 0.01
           , cursorZ = 0.03
