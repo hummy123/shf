@@ -728,6 +728,9 @@ struct
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
           val buffer = LineGap.delete (cursorIdx, length, buffer)
 
+          val buffer =
+            if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
+
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val cursorIdx =
             if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then cursorIdx - 1

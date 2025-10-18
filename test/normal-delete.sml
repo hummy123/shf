@@ -3598,6 +3598,24 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test "leaves a newline behind if whole buffer is deleted" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hey hello\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 0)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dfo")
+
+          (* assert *)
+          val actualString = LineGap.toString buffer
+          val expectedString = "\n"
+          val expectedCursorIdx = 0
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
+        end)
     ]
 
   val dtDelete = describe "delete motion 'dt<char>'"
