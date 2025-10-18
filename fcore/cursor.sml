@@ -304,9 +304,6 @@ struct
   fun tillNextChr (lineGap, cursorIdx, chr) =
     nextChr (lineGap, cursorIdx, chr, startTillNextChr)
 
-  fun toNextChr (lineGap, cursorIdx, chr) =
-    nextChr (lineGap, cursorIdx, chr, startToNextChr)
-
   structure ToNextChr =
     MakeIfCharFolderNext
       (struct

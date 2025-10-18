@@ -531,8 +531,7 @@ struct
         case String.sub (str, strPos + 1) of
           #"t" => NormalYank.yankToChr (app, 1, Cursor.tillNextChr, op+, chrCmd)
         | #"T" => NormalYank.yankToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
-        | #"f" =>
-            NormalYank.yankToChr (app, count, Cursor.toNextChr, op+, chrCmd)
+        | #"f" => NormalYank.yankToNextChr (app, count, chrCmd)
         | #"F" =>
             NormalYank.yankToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
         | #"g" => parseYankGo (count, app, chrCmd)
