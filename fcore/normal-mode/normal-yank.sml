@@ -251,6 +251,27 @@ struct
         end
     end
 
+  fun yankTillNextChr (app: app_type, count, chr) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toNextChr (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val length = newCursorIdx - cursorIdx
+          val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+          val str = LineGap.substring (cursorIdx, length, buffer)
+          val msg = YANK str
+          val mode = NORMAL_MODE ""
+        in
+          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+        end
+    end
+
   fun yankToChr (app: app_type, count, fMove, fInc, chr) =
     helpYankToChr
       ( app

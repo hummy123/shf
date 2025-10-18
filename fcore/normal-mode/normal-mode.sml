@@ -529,7 +529,7 @@ struct
         parseYankTerminal (str, count, app, chrCmd, time)
       else
         case String.sub (str, strPos + 1) of
-          #"t" => NormalYank.yankToChr (app, 1, Cursor.tillNextChr, op+, chrCmd)
+          #"t" => NormalYank.yankTillNextChr (app, count, chrCmd)
         | #"T" => NormalYank.yankToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
         | #"f" => NormalYank.yankToNextChr (app, count, chrCmd)
         | #"F" =>
