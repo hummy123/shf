@@ -298,9 +298,7 @@ struct
       else
         (* have to continue parsing string *)
         case String.sub (str, strPos + 1) of
-          #"t" =>
-            NormalDelete.deleteToChr
-              (app, 1, Cursor.tillNextChr, op+, chrCmd, time)
+          #"t" => NormalDelete.deleteTillNextChr (app, count, chrCmd, time)
         | #"T" =>
             NormalDelete.deleteToChr
               (app, 1, Cursor.tillPrevChr, op-, chrCmd, time)

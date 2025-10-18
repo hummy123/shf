@@ -740,6 +740,21 @@ struct
         end
     end
 
+  fun deleteTillNextChr (app: app_type, count, chr, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toNextChrNew (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let val length = newCursorIdx - cursorIdx
+        in deleteAndFinish (app, cursorIdx, length, buffer, time)
+        end
+    end
+
   fun deleteToStart (app: app_type, time) : AppType.app_type =
     let
       val {cursorIdx, buffer, windowWidth, windowHeight, dfa, ...} = app

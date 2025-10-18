@@ -3707,7 +3707,7 @@ struct
                 andalso cursorIdx = expectedCursorIdx)
            end)
     , test
-        "deletes up to just one occurrence \
+        "deletes up to (excluding) last occurrence of chr \
         \when motion has a count greater than 1"
         (fn _ =>
            let
@@ -3721,7 +3721,7 @@ struct
 
              (* assert *)
              val actualString = LineGap.toString buffer
-             val expectedString = "o world\n"
+             val expectedString = "orld\n"
              val expectedCursorIdx = 0
            in
              Expect.isTrue
