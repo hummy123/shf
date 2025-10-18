@@ -571,9 +571,7 @@ struct
         parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
     | #"y" => ParseYank.parseYank (strPos, str, count, app, chrCmd, time)
     | #"d" => ParseDelete.parseDelete (strPos, str, count, app, chrCmd, time)
-    | #"f" =>
-        (* to chr, forward *)
-        parseMoveToChr (count, app, Cursor.toNextChr, chrCmd)
+    | #"f" => (* to chr, forward *) NormalMove.toNextChr (app, count, chrCmd)
     | #"F" =>
         (* to chr, backward *)
         parseMoveToChr (count, app, Cursor.toPrevChr, chrCmd)

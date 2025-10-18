@@ -307,6 +307,55 @@ struct
   fun toNextChr (lineGap, cursorIdx, chr) =
     nextChr (lineGap, cursorIdx, chr, startToNextChr)
 
+  structure ToNextChr =
+    MakeIfCharFolderNext
+      (struct
+         type env = {findChr: char, count: int}
+
+         fun helpToNextChr
+           (strPos, str, absIdx, stl, lastFoundIdx, findChr, count) =
+           if strPos = String.size str then
+             case stl of
+               str :: stl =>
+                 helpToNextChr
+                   (0, str, absIdx, stl, lastFoundIdx, findChr, count)
+             | [] => lastFoundIdx
+           else
+             let
+               val chr = String.sub (str, strPos)
+             in
+               if chr = findChr then
+                 if count - 1 = 0 then
+                   absIdx
+                 else
+                   helpToNextChr
+                     ( strPos + 1
+                     , str
+                     , absIdx + 1
+                     , stl
+                     , absIdx
+                     , findChr
+                     , count - 1
+                     )
+               else
+                 helpToNextChr
+                   ( strPos + 1
+                   , str
+                   , absIdx + 1
+                   , stl
+                   , lastFoundIdx
+                   , findChr
+                   , count
+                   )
+             end
+
+         fun fStart (strPos, str, _, absIdx, stl, _, {findChr, count}) =
+           (* we want to start iterating from char after cursor *)
+           helpToNextChr (strPos + 1, str, absIdx + 1, stl, ~1, findChr, count)
+       end)
+
+  val toNextChrNew = ToNextChr.foldNext
+
   structure ToPrevChr =
     MakeIfCharFolderPrev
       (struct
