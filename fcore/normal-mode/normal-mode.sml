@@ -565,7 +565,7 @@ struct
          * tillNextChr with count of 1 has same effect
          * as tillNextChr with any count above 1
          * so just hardcode 1 *)
-        parseMoveToChr (1, app, Cursor.tillNextChr, chrCmd)
+        NormalMove.tillNextChr (app, count, chrCmd)
     | #"T" =>
         (* to just before chr, backward *)
         parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
