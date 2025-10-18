@@ -343,8 +343,8 @@ struct
     fun parseDeleteTerminal (str, count, app, chrCmd, time) =
       case chrCmd of
       (* terminal commands: require no input after *)
-        #"h" => NormalYankDelete.deleteByDfa (app, count, Cursor.viH, time)
-      | #"l" => NormalYankDelete.deleteByDfa (app, count, Cursor.viL, time)
+        #"h" => NormalYankDelete.deleteCharsLeft (app, count, time)
+      | #"l" => NormalYankDelete.removeChr (app, count, time)
       (* vi's 'j' and 'k' commands move up or down a column
        * but 'dj' or 'dk' delete whole lines
        * so their implementation differs from
@@ -368,6 +368,7 @@ struct
       | #"n" => NormalYankDelete.deleteToNextMatch (app, count, time)
       | #"N" => NormalYankDelete.deleteToPrevMatch (app, count, time)
       | #"%" => NormalYankDelete.deletePair (app, time)
+      | #"G" => NormalYankDelete.deleteToEnd (app, time)
       (* non-terminal commands which require appending chr *)
       | #"t" => appendChr (app, chrCmd, str)
       | #"T" => appendChr (app, chrCmd, str)
@@ -392,15 +393,11 @@ struct
       else
         (* have to continue parsing string *)
         case String.sub (str, strPos + 1) of
-          #"t" =>
-            NormalYankDelete.deleteToChr
-              (app, 1, Cursor.tillNextChr, op+, chrCmd, time)
+          #"t" => NormalYankDelete.deleteTillNextChr (app, count, chrCmd, time)
         | #"T" =>
             NormalYankDelete.deleteToChr
               (app, 1, Cursor.tillPrevChr, op-, chrCmd, time)
-        | #"f" =>
-            NormalYankDelete.deleteToChr
-              (app, count, Cursor.toNextChr, op+, chrCmd, time)
+        | #"f" => NormalYankDelete.deleteToNextChr (app, count, chrCmd, time)
         | #"F" =>
             NormalYankDelete.deleteToChr
               (app, count, Cursor.toPrevChr, op-, chrCmd, time)
