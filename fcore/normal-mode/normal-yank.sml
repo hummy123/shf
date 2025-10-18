@@ -235,7 +235,7 @@ struct
       val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val newCursorIdx =
-        Cursor.toNextChrNew (buffer, cursorIdx, {findChr = chr, count = count})
+        Cursor.toNextChr (buffer, cursorIdx, {findChr = chr, count = count})
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
@@ -350,7 +350,7 @@ struct
       val start = Int.max (cursorIdx - 1, 0)
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val high = Cursor.toNextChrNew (buffer, start, {findChr = chr, count = 1})
+      val high = Cursor.toNextChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (high, buffer)
       val low = Cursor.matchPair (buffer, high) + 1
     in
@@ -382,7 +382,7 @@ struct
       val start = Int.max (cursorIdx - 1, 0)
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val high = Cursor.toNextChrNew (buffer, start, {findChr = chr, count = 1})
+      val high = Cursor.toNextChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (high, buffer)
       val low = Cursor.matchPair (buffer, high)
       val high = high + 1

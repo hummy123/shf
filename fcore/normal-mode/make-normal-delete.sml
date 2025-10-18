@@ -149,8 +149,7 @@ struct
         else
           let
             val newCursorIdx =
-              Cursor.toNextChrNew
-                (buffer, cursorIdx, {findChr = #"\n", count = 1})
+              Cursor.toNextChr (buffer, cursorIdx, {findChr = #"\n", count = 1})
           in
             if newCursorIdx >= #textLength buffer - 2 then
               finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
@@ -181,8 +180,7 @@ struct
         let
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val newCursorIdx =
-            Cursor.toNextChrNew
-              (buffer, cursorIdx, {findChr = #"\n", count = 1})
+            Cursor.toNextChr (buffer, cursorIdx, {findChr = #"\n", count = 1})
           val buffer = LineGap.goToIdx (newCursorIdx, buffer)
         in
           if
@@ -721,7 +719,7 @@ struct
       val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val newCursorIdx =
-        Cursor.toNextChrNew (buffer, cursorIdx, {findChr = chr, count = count})
+        Cursor.toNextChr (buffer, cursorIdx, {findChr = chr, count = count})
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
@@ -749,7 +747,7 @@ struct
       val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val newCursorIdx =
-        Cursor.toNextChrNew (buffer, cursorIdx, {findChr = chr, count = count})
+        Cursor.toNextChr (buffer, cursorIdx, {findChr = chr, count = count})
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
@@ -980,7 +978,7 @@ struct
       val start = Int.max (cursorIdx - 1, 0)
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val high = Cursor.toNextChrNew (buffer, start, {findChr = chr, count = 1})
+      val high = Cursor.toNextChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (high, buffer)
       val origLow = Cursor.matchPair (buffer, high)
     in
@@ -1024,7 +1022,7 @@ struct
       val start = Int.max (cursorIdx - 1, 0)
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val high = Cursor.toNextChrNew (buffer, start, {findChr = chr, count = 1})
+      val high = Cursor.toNextChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (high, buffer)
       val low = Cursor.matchPair (buffer, high)
     in

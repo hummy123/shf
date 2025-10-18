@@ -522,7 +522,7 @@ struct
       val {cursorIdx, buffer, searchList, bufferModifyTime, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val newCursorIdx =
-        Cursor.toNextChrNew (buffer, cursorIdx, {findChr = chr, count = count})
+        Cursor.toNextChr (buffer, cursorIdx, {findChr = chr, count = count})
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app
@@ -536,7 +536,7 @@ struct
       val {cursorIdx, buffer, searchList, bufferModifyTime, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val newCursorIdx =
-        Cursor.toNextChrNew (buffer, cursorIdx, {findChr = chr, count = count})
+        Cursor.toNextChr (buffer, cursorIdx, {findChr = chr, count = count})
     in
       if newCursorIdx = ~1 then
         NormalFinish.clearMode app

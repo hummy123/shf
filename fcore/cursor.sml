@@ -351,7 +351,7 @@ struct
            helpToNextChr (strPos + 1, str, absIdx + 1, stl, ~1, findChr, count)
        end)
 
-  val toNextChrNew = ToNextChr.foldNext
+  val toNextChr = ToNextChr.foldNext
 
   structure ToPrevChr =
     MakeIfCharFolderPrev
