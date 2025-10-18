@@ -3690,6 +3690,141 @@ struct
            end)
     ]
 
+  val dFDelete = describe "delete motion 'dF<char>'"
+    [ test
+        "does not delete when there is no occurrence of <char> \
+        \before cursor position"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dFq")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "does not delete when cursor is at first occurrence of <char> in buffer"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dFw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = originalString
+             val expectedCursorIdx = 6
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from cursor position to previous <char> when \
+        \there is an ocurrence of <char> before cursor's position on same line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hey hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 5)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dFy")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "heello\n"
+             val expectedCursorIdx = 2
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes up to <char> when the previous occurrence of <char> \
+        \is before a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dFl")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "helorld\n"
+             val expectedCursorIdx = 3
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from cursor's position to second occurrence of <char> \
+        \if motion has a count of 2"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "2dFo")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hellld\n"
+             val expectedCursorIdx = 4
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes from cursor's position to first occurrence of <char> \
+        \if motion has a count greater than \
+        \the number of occurences of <char>, before the cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "99dFl")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "heorld\n"
+             val expectedCursorIdx = 2
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -3713,5 +3848,6 @@ struct
     , dNDelete
     , dfDelete
     , dtDelete
+    , dFDelete
     ]
 end
