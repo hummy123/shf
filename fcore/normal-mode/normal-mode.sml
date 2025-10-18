@@ -304,9 +304,7 @@ struct
         | #"T" =>
             NormalDelete.deleteToChr
               (app, 1, Cursor.tillPrevChr, op-, chrCmd, time)
-        | #"f" =>
-            NormalDelete.deleteToChr
-              (app, count, Cursor.toNextChr, op+, chrCmd, time)
+        | #"f" => NormalDelete.deleteToNextChr (app, count, chrCmd, time)
         | #"F" =>
             NormalDelete.deleteToChr
               (app, count, Cursor.toPrevChr, op-, chrCmd, time)
@@ -560,18 +558,13 @@ struct
      * which can be made terminal by adding "w" or "e" at the end. 
      * *)
     case String.sub (str, strPos) of
-      #"t" =>
-        (* to just before char, forward 
-         * tillNextChr with count of 1 has same effect
-         * as tillNextChr with any count above 1
-         * so just hardcode 1 *)
-        NormalMove.tillNextChr (app, count, chrCmd)
+      #"t" => NormalMove.tillNextChr (app, count, chrCmd)
     | #"T" =>
         (* to just before chr, backward *)
         parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
     | #"y" => ParseYank.parseYank (strPos, str, count, app, chrCmd, time)
     | #"d" => ParseDelete.parseDelete (strPos, str, count, app, chrCmd, time)
-    | #"f" => (* to chr, forward *) NormalMove.toNextChr (app, count, chrCmd)
+    | #"f" => NormalMove.toNextChr (app, count, chrCmd)
     | #"F" =>
         (* to chr, backward *)
         parseMoveToChr (count, app, Cursor.toPrevChr, chrCmd)

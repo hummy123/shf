@@ -648,7 +648,7 @@ struct
 
   fun deleteToFirstNonSpaceChr (app: app_type, time) =
     let
-      val {buffer, cursorIdx, windowWidth, windowHeight, startLine, ...} = app
+      val {buffer, cursorIdx, ...} = app
 
       (* move LineGap and buffer to start of line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -711,6 +711,31 @@ struct
       , chr
       , time
       )
+
+  fun deleteToNextChr (app: app_type, count, chr, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toNextChrNew (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val length = newCursorIdx - cursorIdx + 1
+          val buffer = LineGap.goToIdx (newCursorIdx, buffer)
+          val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
+          val buffer = LineGap.delete (cursorIdx, length, buffer)
+
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val cursorIdx =
+            if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then cursorIdx - 1
+            else cursorIdx
+        in
+          finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
+        end
+    end
 
   fun deleteToStart (app: app_type, time) : AppType.app_type =
     let

@@ -3576,6 +3576,28 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test
+        "moves cursor back by one, when deletion range is \
+        \from a newline that follows a non-newline char"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hey hello\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 3)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dfo")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hey\n"
+             val expectedCursorIdx = 2
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
     ]
 
   val dtDelete = describe "delete motion 'dt<char>'"
