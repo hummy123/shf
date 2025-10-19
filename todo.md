@@ -1,8 +1,6 @@
 # To-do list
 
 - Add tests for:
-  - `dF<char>`
-  - `dT<char>`
   - delete inside word
 - Implement delete-around-word and test it
 - Reimplement `%` motion and `d%` motion.
