@@ -544,4 +544,32 @@ struct
         NormalFinish.buildTextAndClear
           (app, buffer, newCursorIdx - 1, searchList, [], bufferModifyTime)
     end
+
+  fun toPrevChr (app: app_type, count, chr) =
+    let
+      val {cursorIdx, buffer, searchList, bufferModifyTime, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toPrevChr (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        NormalFinish.buildTextAndClear
+          (app, buffer, newCursorIdx, searchList, [], bufferModifyTime)
+    end
+
+  fun tillPrevChr (app: app_type, count, chr) =
+    let
+      val {cursorIdx, buffer, searchList, bufferModifyTime, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toPrevChr (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        NormalFinish.buildTextAndClear
+          (app, buffer, newCursorIdx + 1, searchList, [], bufferModifyTime)
+    end
 end

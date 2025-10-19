@@ -196,114 +196,6 @@ struct
   fun firstNonSpaceChr (lineGap, cursorIdx) =
     FirstNonSpaceChr.foldPrev (lineGap, cursorIdx, ())
 
-  fun helpToNextChr (strPos, str, absIdx, stl, ltl, origIdx, findChr) =
-    if strPos = String.size str then
-      case (stl, ltl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpToNextChr (0, shd, absIdx, stl, ltl, origIdx, findChr)
-      | (_, _) => origIdx
-    else if String.sub (str, strPos) = findChr then
-      absIdx
-    else
-      helpToNextChr (strPos + 1, str, absIdx + 1, stl, ltl, origIdx, findChr)
-
-  fun startToNextChr (shd, strIdx, absIdx, stl, ltl, findChr) =
-    (* we want to start iterating from next char after strIdx *)
-    if strIdx - 1 < String.size shd then
-      helpToNextChr (strIdx + 1, shd, absIdx + 1, stl, ltl, absIdx, findChr)
-    else
-      case (stl, ltl) of
-        (stlhd :: stltl, ltlhd :: ltltl) =>
-          helpToNextChr (0, stlhd, absIdx + 1, stltl, ltltl, absIdx, findChr)
-      | (_, _) => (* tl is empty; just return absIdx *) absIdx
-
-  fun helpTillNextChr
-    (strPos, str, absIdx, stl, ltl, origIdx, findChr, lastNonLine, lastLine) =
-    if strPos = String.size str then
-      case (stl, ltl) of
-        (shd :: stl, lhd :: ltl) =>
-          helpTillNextChr
-            (0, shd, absIdx, stl, ltl, origIdx, findChr, lastNonLine, lastLine)
-      | (_, _) => origIdx
-    else
-      let
-        val chr = String.sub (str, strPos)
-      in
-        if chr = findChr then
-          if lastLine = lastNonLine + 1 then
-            (* graphical-chr -> \n
-             * so return graphical-chr *)
-            lastNonLine
-          else
-            Int.max (lastLine, lastNonLine)
-        else
-          let
-            val lastLine = if chr = #"\n" then absIdx else lastLine
-            val lastNonLine = if chr = #"\n" then lastNonLine else absIdx
-          in
-            helpTillNextChr
-              ( strPos + 1
-              , str
-              , absIdx + 1
-              , stl
-              , ltl
-              , origIdx
-              , findChr
-              , lastNonLine
-              , lastLine
-              )
-          end
-      end
-
-  fun startTillNextChr (shd, strIdx, absIdx, stl, ltl, findChr) =
-    (* we want to start iterating from next char after strIdx *)
-    if strIdx + 1 < String.size shd then
-      helpTillNextChr
-        (strIdx + 1, shd, absIdx + 1, stl, ltl, absIdx, findChr, absIdx, absIdx)
-    else
-      case (stl, ltl) of
-        (stlhd :: stltl, ltlhd :: ltltl) =>
-          helpTillNextChr
-            ( 0
-            , stlhd
-            , absIdx + 1
-            , stltl
-            , ltltl
-            , absIdx
-            , findChr
-            , absIdx
-            , absIdx
-            )
-      | (_, _) => (* tl is empty; just return absIdx *) absIdx
-
-  fun nextChr (lineGap: LineGap.t, cursorIdx, chr, fStart) =
-    let
-      val {rightStrings, rightLines, idx = bufferIdx, ...} = lineGap
-    in
-      case (rightStrings, rightLines) of
-        (shd :: stl, lhd :: ltl) =>
-          let
-            (* convert absolute cursorIdx to idx relative to hd string *)
-            val strIdx = cursorIdx - bufferIdx
-          in
-            if strIdx < String.size shd then
-              (* strIdx is in this string *)
-              fStart (shd, strIdx, cursorIdx, stl, ltl, chr)
-            else
-              (* strIdx is in tl *)
-              (case (stl, ltl) of
-                 (stlhd :: stltl, ltlhd :: ltltl) =>
-                   let val strIdx = strIdx - String.size shd
-                   in fStart (stlhd, strIdx, cursorIdx, stltl, ltltl, chr)
-                   end
-               | (_, _) => cursorIdx)
-          end
-      | (_, _) => cursorIdx
-    end
-
-  fun tillNextChr (lineGap, cursorIdx, chr) =
-    nextChr (lineGap, cursorIdx, chr, startTillNextChr)
-
   structure ToNextChr =
     MakeIfCharFolderNext
       (struct
@@ -356,148 +248,38 @@ struct
   structure ToPrevChr =
     MakeIfCharFolderPrev
       (struct
-         type env = char
+         type env = {findChr: char, count: int}
 
-         fun helpToPrevChr (strPos, str, absIdx, stl, origIdx, findChr) =
+         fun helpToPrevChr
+           (strPos, str, absIdx, stl, lastFoundIdx, findChr, count) =
            if strPos < 0 then
              case stl of
                shd :: stl =>
                  helpToPrevChr
-                   (String.size shd - 1, shd, absIdx, stl, origIdx, findChr)
-             | [] => origIdx
-           else if String.sub (str, strPos) = findChr then
-             absIdx
-           else
-             helpToPrevChr (strPos - 1, str, absIdx - 1, stl, origIdx, findChr)
-
-         fun fStart (strIdx, shd, _, absIdx, stl, _, findChr) =
-           (* we want to start iterating from Prev char after strIdx *)
-           if strIdx > 0 then
-             helpToPrevChr (strIdx - 1, shd, absIdx - 1, stl, absIdx, findChr)
-           else
-             case stl of
-               stlhd :: stltl =>
-                 helpToPrevChr
-                   ( String.size stlhd - 1
-                   , stlhd
-                   , absIdx - 1
-                   , stltl
-                   , absIdx
-                   , findChr
-                   )
-             | [] => (* tl is empty; return 0 for lineGap start *) 0
-       end)
-
-  val toPrevChr = ToPrevChr.foldPrev
-
-  structure TillPrevChr =
-    MakeIfCharFolderPrev
-      (struct
-         type env = char
-
-         fun helpTillPrevChr
-           ( strPos
-           , str
-           , absIdx
-           , stl
-           , origIdx
-           , findChr
-           , lastNonLine
-           , lastLine
-           , lastValid
-           ) =
-           if strPos < 0 then
-             case stl of
-               shd :: stl =>
-                 helpTillPrevChr
                    ( String.size shd - 1
                    , shd
                    , absIdx
                    , stl
-                   , origIdx
+                   , lastFoundIdx
                    , findChr
-                   , lastNonLine
-                   , lastLine
-                   , lastValid
+                   , count
                    )
-             | [] => origIdx
+             | [] => lastFoundIdx
+           else if String.sub (str, strPos) = findChr then
+             if count - 1 = 0 then
+               absIdx
+             else
+               helpToPrevChr
+                 (strPos - 1, str, absIdx - 1, stl, absIdx, findChr, count - 1)
            else
-             let
-               val chr = String.sub (str, strPos)
-             in
-               if chr = findChr then
-                 if lastLine = lastNonLine then lastNonLine
-                 else if absIdx + 1 = lastLine then lastValid + 1
-                 else Int.min (lastLine, lastNonLine)
-               else
-                 let
-                   val lastLine = if chr = #"\n" then absIdx else lastLine
-                   val lastNonLine = if chr = #"\n" then lastNonLine else absIdx
+             helpToPrevChr
+               (strPos - 1, str, absIdx - 1, stl, lastFoundIdx, findChr, count)
 
-                   (* There is a slightly tricky edge case 
-                    * which is the reason the lastValid variable.
-                    * Say we have a string "a\n\n\nbcd"
-                    * and we type "Ta" with the cursor at the end.
-                    * We want the cursor to go to the second line break
-                    * because (graphical-chr -> \n) should not be selectable.
-                    * However, with only lastLine and lastNonLine variables,
-                    * we only have information about the most recent \n 
-                    * and the most recent graphical-chr.
-                    * This means we don't have information about the case 
-                    * where a graphical-chr is followed by multiple '\n's.
-                    * The lastValid variable keeps track of this information
-                    * so we can use it to provide the expected behaviour.
-                    * *)
-                   val lastValid =
-                     if lastLine = lastNonLine + 1 then lastLine + 1
-                     else Int.min (lastLine, lastNonLine)
-                 in
-                   helpTillPrevChr
-                     ( strPos - 1
-                     , str
-                     , absIdx - 1
-                     , stl
-                     , origIdx
-                     , findChr
-                     , lastNonLine
-                     , lastLine
-                     , lastValid
-                     )
-                 end
-             end
-
-         fun fStart (strIdx, shd, _, absIdx, stl, ltl, findChr) =
-           (* we want to start iterating from Prev char after strIdx *)
-           if strIdx > 0 then
-             helpTillPrevChr
-               ( strIdx - 1
-               , shd
-               , absIdx - 1
-               , stl
-               , absIdx
-               , findChr
-               , absIdx
-               , absIdx
-               , absIdx
-               )
-           else
-             case stl of
-               stlhd :: stltl =>
-                 helpTillPrevChr
-                   ( String.size stlhd - 1
-                   , stlhd
-                   , absIdx - 1
-                   , stltl
-                   , absIdx
-                   , findChr
-                   , absIdx
-                   , absIdx
-                   , absIdx
-                   )
-             | [] => (* tl is empty; return 0 for lineGap start *) 0
+         fun fStart (strIdx, shd, _, absIdx, stl, _, {findChr, count}) =
+           helpToPrevChr (strIdx - 1, shd, absIdx - 1, stl, ~1, findChr, count)
        end)
 
-  val tillPrevChr = TillPrevChr.foldPrev
+  val toPrevChr = ToPrevChr.foldPrev
 
   fun helpMatchPairNext
     (strPos, str, absIdx, stl, origIdx, openChr, openNum, closeChr, closeNum) =

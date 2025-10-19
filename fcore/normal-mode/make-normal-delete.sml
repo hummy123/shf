@@ -757,6 +757,39 @@ struct
         end
     end
 
+  fun deleteToPrevChr (app: app_type, count, chr, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toPrevChr (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let val length = cursorIdx - newCursorIdx
+        in deleteAndFinish (app, newCursorIdx, length, buffer, time)
+        end
+    end
+
+  fun deleteTillPrevChr (app: app_type, count, chr, time) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toPrevChr (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val low = newCursorIdx + 1
+          val length = cursorIdx - newCursorIdx - 1
+        in
+          deleteAndFinish (app, low, length, buffer, time)
+        end
+    end
+
   fun deleteToStart (app: app_type, time) : AppType.app_type =
     let
       val {cursorIdx, buffer, windowWidth, windowHeight, dfa, ...} = app
@@ -964,7 +997,7 @@ struct
       val start = cursorIdx + 1
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val origLow = Cursor.toPrevChr (buffer, start, chr)
+      val origLow = Cursor.toPrevChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (origLow, buffer)
       val high = Cursor.matchPair (buffer, origLow)
     in
@@ -1007,7 +1040,7 @@ struct
       val start = cursorIdx + 1
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val low = Cursor.toPrevChr (buffer, start, chr)
+      val low = Cursor.toPrevChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (low, buffer)
       val high = Cursor.matchPair (buffer, low)
     in

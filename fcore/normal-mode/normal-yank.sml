@@ -272,17 +272,46 @@ struct
         end
     end
 
-  fun yankToChr (app: app_type, count, fMove, fInc, chr) =
-    helpYankToChr
-      ( app
-      , #buffer app
-      , #cursorIdx app
-      , #cursorIdx app
-      , count
-      , fMove
-      , fInc
-      , chr
-      )
+  fun yankToPrevChr (app: app_type, count, chr) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toPrevChr (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val length = cursorIdx - newCursorIdx
+          val str = LineGap.substring (newCursorIdx, length, buffer)
+          val msg = YANK str
+          val mode = NORMAL_MODE ""
+        in
+          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+        end
+    end
+
+  fun yankTillPrevChr (app: app_type, count, chr) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val newCursorIdx =
+        Cursor.toPrevChr (buffer, cursorIdx, {findChr = chr, count = count})
+    in
+      if newCursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val newCursorIdx = newCursorIdx + 1
+          val length = cursorIdx - newCursorIdx
+          val str = LineGap.substring (newCursorIdx, length, buffer)
+          val msg = YANK str
+          val mode = NORMAL_MODE ""
+        in
+          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+        end
+    end
 
   fun yankToStart (app: app_type) =
     let
@@ -354,7 +383,7 @@ struct
       val start = cursorIdx + 1
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val low = Cursor.toPrevChr (buffer, start, chr)
+      val low = Cursor.toPrevChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (low, buffer)
       val high = Cursor.matchPair (buffer, low)
       val buffer = LineGap.goToIdx (high, buffer)
@@ -386,7 +415,7 @@ struct
       val start = cursorIdx + 1
       val buffer = LineGap.goToIdx (start, buffer)
 
-      val low = Cursor.toPrevChr (buffer, start, chr)
+      val low = Cursor.toPrevChr (buffer, start, {findChr = chr, count = 1})
       val buffer = LineGap.goToIdx (low, buffer)
       val high = Cursor.matchPair (buffer, low) + 1
       val buffer = LineGap.goToIdx (high, buffer)

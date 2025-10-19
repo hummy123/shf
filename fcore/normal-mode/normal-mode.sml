@@ -132,9 +132,6 @@ struct
       end
   end
 
-  fun parseMoveToChr (count, app, fMove, chrCmd) =
-    NormalMove.moveToChr (app, count, fMove, chrCmd)
-
   fun parseGo (count, app, chrCmd) =
     case chrCmd of
       #"e" => MoveToEndOfPrevWord.move (app, count)
@@ -299,13 +296,9 @@ struct
         (* have to continue parsing string *)
         case String.sub (str, strPos + 1) of
           #"t" => NormalDelete.deleteTillNextChr (app, count, chrCmd, time)
-        | #"T" =>
-            NormalDelete.deleteToChr
-              (app, 1, Cursor.tillPrevChr, op-, chrCmd, time)
+        | #"T" => NormalDelete.deleteTillPrevChr (app, count, chrCmd, time)
         | #"f" => NormalDelete.deleteToNextChr (app, count, chrCmd, time)
-        | #"F" =>
-            NormalDelete.deleteToChr
-              (app, count, Cursor.toPrevChr, op-, chrCmd, time)
+        | #"F" => NormalDelete.deleteToPrevChr (app, count, chrCmd, time)
         | #"g" => parseDeleteGo (app, count, chrCmd, time)
         | #"i" => parseDeleteInside (app, chrCmd, time)
         | #"a" => parseDeleteAround (app, chrCmd, time)
@@ -394,13 +387,9 @@ struct
         (* have to continue parsing string *)
         case String.sub (str, strPos + 1) of
           #"t" => NormalYankDelete.deleteTillNextChr (app, count, chrCmd, time)
-        | #"T" =>
-            NormalYankDelete.deleteToChr
-              (app, 1, Cursor.tillPrevChr, op-, chrCmd, time)
+        | #"T" => NormalYankDelete.deleteTillPrevChr (app, count, chrCmd, time)
         | #"f" => NormalYankDelete.deleteToNextChr (app, count, chrCmd, time)
-        | #"F" =>
-            NormalYankDelete.deleteToChr
-              (app, count, Cursor.toPrevChr, op-, chrCmd, time)
+        | #"F" => NormalYankDelete.deleteToPrevChr (app, count, chrCmd, time)
         | #"g" => parseDeleteGo (app, count, chrCmd, time)
         | #"i" => parseDeleteInside (app, chrCmd, time)
         | #"a" => parseDeleteAround (app, chrCmd, time)
@@ -530,10 +519,9 @@ struct
       else
         case String.sub (str, strPos + 1) of
           #"t" => NormalYank.yankTillNextChr (app, count, chrCmd)
-        | #"T" => NormalYank.yankToChr (app, 1, Cursor.tillPrevChr, op-, chrCmd)
+        | #"T" => NormalYank.yankTillPrevChr (app, count, chrCmd)
         | #"f" => NormalYank.yankToNextChr (app, count, chrCmd)
-        | #"F" =>
-            NormalYank.yankToChr (app, count, Cursor.toPrevChr, op-, chrCmd)
+        | #"F" => NormalYank.yankToPrevChr (app, count, chrCmd)
         | #"g" => parseYankGo (count, app, chrCmd)
         | #"i" => parseYankInside (app, chrCmd)
         | #"a" => parseYankAround (app, chrCmd)
@@ -553,15 +541,11 @@ struct
      * *)
     case String.sub (str, strPos) of
       #"t" => NormalMove.tillNextChr (app, count, chrCmd)
-    | #"T" =>
-        (* to just before chr, backward *)
-        parseMoveToChr (1, app, Cursor.tillPrevChr, chrCmd)
+    | #"T" => NormalMove.tillPrevChr (app, count, chrCmd)
     | #"y" => ParseYank.parseYank (strPos, str, count, app, chrCmd, time)
     | #"d" => ParseDelete.parseDelete (strPos, str, count, app, chrCmd, time)
     | #"f" => NormalMove.toNextChr (app, count, chrCmd)
-    | #"F" =>
-        (* to chr, backward *)
-        parseMoveToChr (count, app, Cursor.toPrevChr, chrCmd)
+    | #"F" => NormalMove.toPrevChr (app, count, chrCmd)
     | #"g" => (* go *) parseGo (count, app, chrCmd)
     | #"c" => (* change *) NormalFinish.clearMode app
     | _ =>
