@@ -577,6 +577,35 @@ struct
           parseAfterCount (numLength, str, count, app, chrCmd, time)
       end
 
+  structure LeftArrow =
+  struct
+    fun parseLeftArrowCommand (strPos, str, count, app, time) =
+      raise Fail "unimplemented"
+
+    fun parse (app, str, time) =
+      if String.size str = 0 then
+        MoveViH.move (app, 1)
+      else if String.size str = 1 then
+        case Int.fromString str of
+          SOME count => MoveViH.move (app, count)
+        | NONE => parseLeftArrowCommand (0, app, str, 1, time)
+      else
+        let
+          val numLength = getNumLength (0, str)
+          val count = String.substring (str, 0, numLength)
+          val count =
+            case Int.fromString count of
+              SOME x => x
+            | NONE => 1
+        in
+          if numLength = String.size str then
+            (* reached end of string; string only contained numbers *)
+            MoveViH.move (app, count)
+          else
+            parseLeftArrowCommand (numLength, str, count, app, time)
+        end
+  end
+
   fun update (app, str, msg, time) =
     case msg of
       CHAR_EVENT chrCmd => parseNormalModeCommand (app, str, chrCmd, time)
@@ -592,7 +621,7 @@ struct
     | KEY_ENTER => NormalFinish.clearMode app
     | KEY_BACKSPACE => NormalFinish.clearMode app
     | ARROW_RIGHT => NormalFinish.clearMode app
-    | ARROW_LEFT => NormalFinish.clearMode app
+    | ARROW_LEFT => LeftArrow.parse (app, str, time)
     | ARROW_UP => NormalFinish.clearMode app
     | ARROW_DOWN => NormalFinish.clearMode app
 end
