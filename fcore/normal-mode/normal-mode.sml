@@ -580,7 +580,17 @@ struct
   structure LeftArrow =
   struct
     fun parseLeftArrowCommand (strPos, str, count, app, time) =
-      raise Fail "unimplemented"
+      case String.sub (str, strPos) of
+        #"y" =>
+          if strPos + 1 = String.size str then
+            (* terminal command, so simple yank *)
+            raise Fail "left-arrow-yank unimplemnted"
+          else
+            (case String.sub (str, strPos + 1) of
+               #"d" => NormalYankDelete.deleteCharsLeft (app, count, time)
+             | _ => NormalFinish.clearMode app)
+      | #"d" => NormalDelete.deleteCharsLeft (app, count, time)
+      | _ => NormalFinish.clearMode app
 
     fun parse (app, str, time) =
       if String.size str = 0 then
@@ -588,7 +598,7 @@ struct
       else if String.size str = 1 then
         case Int.fromString str of
           SOME count => MoveViH.move (app, count)
-        | NONE => parseLeftArrowCommand (0, app, str, 1, time)
+        | NONE => parseLeftArrowCommand (0, str, 1, app, time)
       else
         let
           val numLength = getNumLength (0, str)
