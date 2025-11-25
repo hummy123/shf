@@ -616,6 +616,44 @@ struct
         end
   end
 
+  structure RightArrow =
+  struct
+    fun parseRightArrowCommand (strPos, str, count, app, time) =
+      case String.sub (str, strPos) of
+        #"y" =>
+          if strPos + 1 = String.size str then
+            raise Fail "right-arrow-yank unimplemnted"
+          else
+            (case String.sub (str, strPos + 1) of
+               #"d" => NormalYankDelete.removeChr (app, count, time)
+             | _ => NormalFinish.clearMode app)
+      | #"d" => NormalDelete.removeChr (app, count, time)
+      | _ => NormalFinish.clearMode app
+
+    fun parse (app, str, time) =
+      if String.size str = 0 then
+        MoveViL.move (app, 1)
+      else if String.size str = 1 then
+        case Int.fromString str of
+          SOME count => MoveViL.move (app, count)
+        | NONE => parseRightArrowCommand (0, str, 1, app, time)
+      else
+        let
+          val numLength = getNumLength (0, str)
+          val count = String.substring (str, 0, numLength)
+          val count =
+            case Int.fromString count of
+              SOME x => x
+            | NONE => 1
+        in
+          if numLength = String.size str then
+            (* reached end of string; string only contained numbers *)
+            MoveViH.move (app, count)
+          else
+            parseRightArrowCommand (numLength, str, count, app, time)
+        end
+  end
+
   fun update (app, str, msg, time) =
     case msg of
       CHAR_EVENT chrCmd => parseNormalModeCommand (app, str, chrCmd, time)
@@ -623,15 +661,11 @@ struct
     | RESIZE_EVENT (width, height) =>
         NormalFinish.resizeText (app, width, height)
 
-    (* Don't need to handle these keys in normal mode.
-     * Everything that is possible through them in Vi and Vim
-     * is also possible through other keys,
-     * and it is better to use those othe keys to encourage 
-     * staying on the home row. *)
-    | KEY_ENTER => NormalFinish.clearMode app
-    | KEY_BACKSPACE => NormalFinish.clearMode app
-    | ARROW_RIGHT => NormalFinish.clearMode app
+    | ARROW_RIGHT => RightArrow.parse (app, str, time)
     | ARROW_LEFT => LeftArrow.parse (app, str, time)
     | ARROW_UP => NormalFinish.clearMode app
     | ARROW_DOWN => NormalFinish.clearMode app
+
+    | KEY_ENTER => NormalFinish.clearMode app
+    | KEY_BACKSPACE => NormalFinish.clearMode app
 end
