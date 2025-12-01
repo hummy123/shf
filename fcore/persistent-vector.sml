@@ -363,7 +363,7 @@ struct
                     val rightSize = VectorSlice.full #[getMaxSize right]
 
                     val leftLen = SOME idx
-                    val rightLen = SOME (idx - Vector.length nodes - 1)
+                    val rightLen = SOME (Vector.length nodes - idx - 1)
 
                     val leftSizeSlice = VectorSlice.slice (sizes, 0, leftLen)
                     val rightSizeSlice = VectorSlice.slice (sizes, idx + 1, rightLen)
@@ -426,11 +426,28 @@ struct
             if Vector.length sizes = maxSize then
               (* have to split *)
               let
-                val rightItems = #[{start = start, finish = finish}]
-                val rightSize = #[finish]
-                val right = LEAF (rightItems, rightSize)
+                val startLen = SOME halfSize
+                val midLen = SOME (Vector.length items - halfSize)
+
+                val leftSizes = VectorSlice.slice (sizes, 0, startLen)
+                val leftItems = VectorSlice.slice (items, 0, startLen)
+
+                val midSizes = VectorSlice.slice (sizes, halfSize, midLen)
+                val midItems = VectorSlice.slice (items, halfSize, midLen)
+
+                val rightSizes = VectorSlice.full #[finish]
+                val rightItems = VectorSlice.full #[{start = start, finish = finish}]
+
+                val rightItems = VectorSlice.concat [midItems, rightItems]
+                val leftItems = VectorSlice.vector leftItems
+
+                val rightSizes = VectorSlice.concat [midSizes, rightSizes]
+                val leftSizes = VectorSlice.vector leftSizes
+
+                val left = LEAF (leftItems, leftSizes)
+                val right = LEAF (rightItems, rightSizes)
               in
-                INSERT_SPLIT (tree, right)
+                INSERT_SPLIT (left, right)
               end
             else
               (* can just append *)
@@ -446,11 +463,28 @@ struct
             if Vector.length sizes = maxSize then
               (* have to split *)
               let
-                val leftItems = #[{start = start, finish = finish}]
-                val leftSize = #[finish]
-                val left = LEAF (leftItems, leftSize)
+                val leftSizes = VectorSlice.full #[finish]
+                val leftItems = VectorSlice.full #[{start = start, finish = finish}]
+
+                val midLen = SOME halfSize
+                val rightLen = SOME (Vector.length items - halfSize)
+
+                val midSizes = VectorSlice.slice (sizes, 0, midLen)
+                val midItems = VectorSlice.slice (items, 0, midLen)
+
+                val rightSizes = VectorSlice.slice (sizes, halfSize, rightLen)
+                val rightItems = VectorSlice.slice (items, halfSize, rightLen)
+
+                val leftSizes = VectorSlice.concat [leftSizes, midSizes]
+                val rightSizes = VectorSlice.vector rightSizes
+
+                val leftItems = VectorSlice.concat [leftItems, midItems]
+                val rightItems = VectorSlice.vector rightItems
+
+                val left = LEAF (leftItems, leftSizes)
+                val right = LEAF (rightItems, rightSizes)
               in
-                INSERT_SPLIT (left, tree)
+                INSERT_SPLIT (left, right)
               end
             else
               (* just prepend *)
@@ -466,7 +500,7 @@ struct
           let
             val idx = BinSearch.equalOrMore (finish, sizes)
             val leftLen = SOME idx
-            val rightLen = SOME (idx - Vector.length sizes)
+            val rightLen = SOME (Vector.length sizes - idx)
 
             val leftSizes = VectorSlice.slice (sizes, 0, leftLen)
             val rightSizes = VectorSlice.slice (sizes, idx, rightLen)
