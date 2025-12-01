@@ -425,7 +425,13 @@ struct
           if finish > Vector.sub (sizes, Vector.length sizes - 1) then
             if Vector.length sizes = maxSize then
               (* have to split *)
-              raise Fail "umimp"
+              let
+                val rightItems = #[{start = start, finish = finish}]
+                val rightSize = #[finish]
+                val right = LEAF (rightItems, rightSize)
+              in
+                INSERT_SPLIT (tree, right)
+              end
             else
               (* can just append *)
               let
@@ -439,7 +445,13 @@ struct
             (* prepend *)
             if Vector.length sizes = maxSize then
               (* have to split *)
-              raise Fail "umimp"
+              let
+                val leftItems = #[{start = start, finish = finish}]
+                val leftSize = #[finish]
+                val left = LEAF (leftItems, leftSize)
+              in
+                INSERT_SPLIT (left, tree)
+              end
             else
               (* just prepend *)
               let
@@ -461,16 +473,27 @@ struct
 
             val leftItems = VectorSlice.slice (items, 0, leftLen)
             val rightItems = VectorSlice.slice (items, idx, rightLen)
+            val midSize = VectorSlice.full #[finish]
+            val midItem = VectorSlice.full #[{start = start, finish = finish}]
           in
             if Vector.length items = maxSize then
               (* have to return split *)
-              raise Fail "umimp"
+              let
+                val leftSizes = VectorSlice.concat [leftSizes, midSize]
+                val rightSizes = VectorSlice.vector rightSizes
+
+                val leftItems = VectorSlice.concat [leftItems, midItem]
+                val rightItems = VectorSlice.vector rightItems
+
+                val left = LEAF (leftItems, leftSizes)
+                val right = LEAF (rightItems, rightSizes)
+              in
+                INSERT_SPLIT (left, right)
+              end
             else
               (* have to return update *)
               let
-                val midSize = VectorSlice.full #[finish]
                 val sizes = VectorSlice.concat [leftSizes, midSize, rightSizes]
-                val midItem = VectorSlice.full #[{start = start, finish = finish}]
                 val items = VectorSlice.concat [leftItems, midItem, rightItems]
               in
                 INSERT_UPDATE (LEAF (items, sizes))
