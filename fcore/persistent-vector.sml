@@ -412,6 +412,70 @@ struct
                     INSERT_UPDATE (BRANCH (nodes, sizes))
                   end
           end
+    | LEAF (items, sizes) =>
+        if Vector.length items = 0 then
+          (* leaf is empty, so return leaf containing one item *)
+          let
+            val item = #[{start = start, finish = finish}]
+            val size = #[finish]
+          in
+            INSERT_UPDATE (LEAF (item, size))
+          end
+        else
+          if finish > Vector.sub (sizes, Vector.length sizes - 1) then
+            if Vector.length sizes = maxSize then
+              (* have to split *)
+              raise Fail "umimp"
+            else
+              (* can just append *)
+              let
+                val sizes = Vector.concat [sizes, #[finish]]
+                val item = #[{start = start, finish = finish}]
+                val items = Vector.concat [items, item]
+              in
+                INSERT_UPDATE (LEAF (items, sizes))
+              end
+          else if finish < #start (Vector.sub (items, 0)) then
+            (* prepend *)
+            if Vector.length sizes = maxSize then
+              (* have to split *)
+              raise Fail "umimp"
+            else
+              (* just prepend *)
+              let
+                val sizes = Vector.concat [#[finish], sizes]
+                val item = {start = start, finish = finish}
+                val items = Vector.concat [#[item], items]
+              in
+                INSERT_UPDATE (LEAF (items, sizes))
+              end
+        else
+          (* insert into middle *)
+          let
+            val idx = BinSearch.equalOrMore (finish, sizes)
+            val leftLen = SOME idx
+            val rightLen = SOME (idx - Vector.length sizes)
+
+            val leftSizes = VectorSlice.slice (sizes, 0, leftLen)
+            val rightSizes = VectorSlice.slice (sizes, idx, rightLen)
+
+            val leftItems = VectorSlice.slice (items, 0, leftLen)
+            val rightItems = VectorSlice.slice (items, idx, rightLen)
+          in
+            if Vector.length items = maxSize then
+              (* have to return split *)
+              raise Fail "umimp"
+            else
+              (* have to return update *)
+              let
+                val midSize = VectorSlice.full #[finish]
+                val sizes = VectorSlice.concat [leftSizes, midSize, rightSizes]
+                val midItem = VectorSlice.full #[{start = start, finish = finish}]
+                val items = VectorSlice.concat [leftItems, midItem, rightItems]
+              in
+                INSERT_UPDATE (LEAF (items, sizes))
+              end
+          end
 
     fun insert (start, finish, tree) =
       case helpInsert (start, finish, tree) of
