@@ -278,7 +278,7 @@ struct
   fun getMaxSize tree =
     case tree of
       LEAF (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
-    | BRANCH (_, sizes) => getLast (Vector.sub (sizes, Vector.length sizes - 1))
+    | BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
 
   fun helpInsert (start, finish, tree) =
     case tree of
@@ -302,22 +302,24 @@ struct
               if Vector.length nodes = maxSize then
                 (* have to split *)
                 let
+                  val leftLen = SOME halfSize
                   val rightLen = SOME (Vector.length nodes - halfSize)
-                  val leftNodeSlice = VectorSlice.slice (nodes, 0, halfSize)
+
+                  val leftNodeSlice = VectorSlice.slice (nodes, 0, leftLen)
                   val rightNodeSlice =
                     VectorSlice.slice (nodes, halfSize, rightLen)
 
-                  val leftSizeSlice = VectorSlice.slice (sizes, 0, halfSize)
+                  val leftSizeSlice = VectorSlice.slice(sizes, 0, leftLen)
                   val rightSizeSlice =
                     VectorSlice.slice (sizes, halfSize, rightLen)
 
                   val leftNodes = VectorSlice.vector leftNodeSlice
                   val leftSizes = VectorSlice.vector leftSizeSlice
 
-                  val newLast = VectorSlice.full (Vector.fromList [newLast])
-                  val finish = VectorSlice.full (Vector.fromList [finish])
+                  val newLast = VectorSlice.full (#[newLast])
+                  val finish = VectorSlice.full (#[finish])
                   val rightNodes = VectorSlice.concat [rightNodeSlice, newLast]
-                  val rightSizes = VectorSlice.concat [rightSizesSlice, finish]
+                  val rightSizes = VectorSlice.concat [rightSizeSlice, finish]
 
                   val left = BRANCH (leftNodes, leftSizes)
                   val right = BRANCH (rightNodes, rightSizes)
@@ -327,8 +329,8 @@ struct
               else
                 (* append newLast to current node *)
                 let
-                  val newLast = Vector.fromList [newLast]
-                  val finish = Vector.fromList [finish]
+                  val newLast = #[newLast]
+                  val finish = #[finish]
 
                   val nodes = Vector.concat [nodes, newLast]
                   val sizes = Vector.concat [sizes, finish]
@@ -340,7 +342,75 @@ struct
             val idx = BinSearch.equalOrMore (finish, sizes)
             val idx = if idx = ~1 then 0 else idx
           in
-            3
+            case helpInsert (start, finish, tree) of
+              INSERT_UPDATE newNode =>
+                let
+                  val sizes =
+                    if finish > Vector.sub (sizes, idx) then
+                      Vector.update (sizes, idx, finish)
+                    else
+                      sizes
+                  val nodes = Vector.update (nodes, idx, newNode)
+                in
+                  INSERT_UPDATE (BRANCH (nodes, sizes))
+                end
+            | INSERT_SPLIT (left, right) =>
+                if Vector.length nodes = maxSize then
+                  (* have to split this node too *)
+                  let
+                    (* slice sizes *)
+                    val leftSize = VectorSlice.full #[getMaxSize left]
+                    val rightSize = VectorSlice.full #[getMaxSize right]
+
+                    val leftLen = SOME idx
+                    val rightLen = SOME (idx - Vector.length nodes - 1)
+
+                    val leftSizeSlice = VectorSlice.slice (sizes, 0, leftLen)
+                    val rightSizeSlice = VectorSlice.slice (sizes, idx + 1, rightLen)
+
+                    val leftSizes = VectorSlice.concat [leftSizeSlice, leftSize]
+                    val rightSizes = VectorSlice.concat [rightSizeSlice, rightSize]
+
+                    (* slice nodes *)
+                    val left = VectorSlice.full #[left]
+                    val right = VectorSlice.full #[right]
+
+                    val leftNodesSlice = VectorSlice.slice (nodes, 0, leftLen)
+                    val rightNodesSlice = VectorSlice.slice (nodes, idx + 1, rightLen)
+
+                    val leftNodes = VectorSlice.concat [leftNodesSlice, left]
+                    val rightNodes = VectorSlice.concat [right, rightNodesSlice]
+
+                    (* join sizes and nodes *)
+                    val left = BRANCH (leftNodes, leftSizes)
+                    val right = BRANCH (rightNodes, rightSizes)
+                  in
+                    INSERT_SPLIT (left, right)
+                  end
+                else
+                  (* can join children into parent *)
+                  let
+                    val midSizes = #[getMaxSize left, getMaxSize right]
+                    val midSizes = VectorSlice.full midSizes
+                    val midNodes = #[left, right]
+                    val midNodes = VectorSlice.full midNodes
+
+                    val leftLen = SOME idx
+                    val rightLen = SOME (Vector.length sizes - idx)
+
+                    val leftSizes = VectorSlice.slice (sizes, 0, leftLen)
+                    val rightSizes = VectorSlice.slice (sizes, idx, rightLen)
+
+                    val leftNodes = VectorSlice.slice (nodes, 0, leftLen)
+                    val rightNodes = VectorSlice.slice (nodes, idx, rightLen)
+
+                    val sizes = 
+                      VectorSlice.concat [leftSizes, midSizes, rightSizes]
+                    val nodes =
+                      VectorSlice.concat [leftNodes, midNodes, rightNodes]
+                  in
+                    INSERT_UPDATE (BRANCH (nodes, sizes))
+                  end
           end
 
     fun insert (start, finish, tree) =
@@ -348,11 +418,8 @@ struct
         INSERT_UPDATE tree => tree
       | INSERT_SPLIT (left, right) =>
           let
-            val leftSize = getMaxSize left
-            val rightSize = getMaxSize right
-
-            val sizes = #[leftSize, rightSize]
-            val nodes = #[left, righ]
+            val sizes = #[getMaxSize left, getMaxSize right]
+            val nodes = #[left, right]
           in
             BRANCH (nodes, sizes)
           end
