@@ -29,8 +29,14 @@ struct
         in
           if searchIdx = ~1 then
             false
-          else
+          else if searchIdx = 0 then
             isInRange (checkIdx, Vector.sub (nodes, searchIdx))
+          else
+            let
+              val nextCheckIdx = checkIdx - Vector.sub (sizes, searchIdx - 1)
+            in
+              isInRange (nextCheckIdx, Vector.sub (nodes, searchIdx))
+            end
         end
     | LEAF (values, sizes) =>
         let
@@ -56,8 +62,13 @@ struct
       BRANCH (nodes, sizes) =>
         let
           val lastNode = Vector.sub (nodes, Vector.length nodes - 1)
+          val prevSize =
+            if Vector.length sizes > 1 then
+              Vector.sub (sizes, Vector.length sizes - 2)
+            else
+              0
         in
-          case helpAppend (start, finish, lastNode) of
+          case helpAppend (start - prevSize, finish - prevSize, lastNode) of
             UPDATE newLast =>
               let
                 val lastPos = Vector.length nodes - 1
@@ -68,9 +79,14 @@ struct
                 UPDATE newNode
               end
           | APPEND newVec =>
-              if Vector.length nodes + 1 > maxSize then
-                let val newNode = BRANCH (#[newVec], #[finish])
-                in APPEND newNode
+              if Vector.length nodes = maxSize then
+                let 
+                  (* adjust "finish" so that it does not consider
+                   * offset for "lower" vector *)
+                  val finish = finish - Vector.sub (sizes, Vector.length sizes - 1)
+                  val newNode = BRANCH (#[newVec], #[finish])
+                in 
+                  APPEND newNode
                 end
               else
                 let
@@ -83,8 +99,17 @@ struct
         end
     | LEAF (values, sizes) =>
         if Vector.length values + 1 > maxSize then
-          let val newNode = LEAF (#[{start = start, finish = finish}], #[finish])
-          in APPEND newNode
+          (* when we split a leaf into two vectors, 
+           * we want to adjust the start and finish parameters
+           * so that they don't contain the offset relevant to the
+           * "lower" vector, which was split from *)
+          let 
+            val prevFinish = Vector.sub (sizes, Vector.length sizes - 1)
+            val start = start - prevFinish
+            val finish = finish - prevFinish
+            val newNode = LEAF (#[{start = start, finish = finish}], #[finish])
+          in 
+            APPEND newNode
           end
         else
           let
@@ -105,6 +130,9 @@ struct
         in
           BRANCH (#[tree, newNode], #[maxSize, finish])
         end
+
+  (* todo: modify below functions so that they also 
+   * use rope-like metadata *)
 
   fun getStart tree =
     case tree of
