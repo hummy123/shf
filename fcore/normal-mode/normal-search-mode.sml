@@ -63,9 +63,8 @@ struct
         (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
     end
 
-  (* save search string and tempSearchList and return to normal mode *)
-  fun saveSearch
-    (app: app_type, searchString, tempSearchList, caseSensitive, time) =
+  (* save search string and searchList and return to normal mode *)
+  fun saveSearch (app: app_type, searchString, caseSensitive, time) =
     let
       val
         { buffer
@@ -82,7 +81,7 @@ struct
         else CaseInsensitiveDfa.fromString searchString
 
       val buffer = LineGap.goToStart buffer
-      val searchList = SearchList.build (buffer, dfa)
+      val (buffer, searchList) = SearchList.build (buffer, dfa)
 
       (* move LineGap to first line displayed on screen *)
       val buffer = LineGap.goToLine (startLine, buffer)
@@ -96,7 +95,7 @@ struct
         , buffer
         , windowWidth
         , windowHeight
-        , tempSearchList
+        , searchList
         , visualScrollColumn
         )
       val drawMsg = Vector.concat drawMsg
@@ -106,7 +105,7 @@ struct
       val mode = NORMAL_MODE ""
     in
       NormalSearchModeWith.returnToNormalMode
-        (app, buffer, tempSearchList, startLine, mode, dfa, msgs)
+        (app, buffer, searchList, startLine, mode, dfa, msgs)
     end
 
   fun backspace
@@ -233,8 +232,7 @@ struct
           , caseSensitive
           )
     | KEY_ESC => exitToNormalMode app
-    | KEY_ENTER =>
-        saveSearch (app, searchString, tempSearchList, caseSensitive, time)
+    | KEY_ENTER => saveSearch (app, searchString, caseSensitive, time)
     | ARROW_LEFT =>
         moveLeft
           ( app
