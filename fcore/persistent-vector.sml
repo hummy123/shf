@@ -225,19 +225,34 @@ struct
           let val {start, finish} = getStart tree
           in loopNextMatch (start, finish, tree, count - 1)
           end
-        else if cursorIdx >= start andalso cursorIdx <= finish then
+        else 
+          let
+          in
+          if cursorIdx >= start andalso cursorIdx <= finish then
           loopNextMatch (start, finish, tree, count)
         else
           loopNextMatch (start, finish, tree, count - 1)
+          end
       end
 
-  (* todo: modify below functions so that they also 
-   * use rope-like metadata *)
-
-  fun getLast tree =
+  fun getLast (tree, acc) =
     case tree of
-      LEAF (values, _) => Vector.sub (values, Vector.length values - 1)
-    | BRANCH (nodes, _) => getLast (Vector.sub (nodes, Vector.length nodes - 1))
+      LEAF (values, _) => 
+        let
+          val {start, finish} = Vector.sub (values, Vector.length values - 1)
+        in
+          {start = start + acc, finish = finish + acc}
+        end
+    | BRANCH (nodes, sizes) =>
+        let
+          val acc =
+            if Vector.length sizes > 1 then
+              acc + Vector.sub (sizes, Vector.length sizes - 1)
+            else
+              acc
+        in
+          getLast (Vector.sub (nodes, Vector.length nodes - 1), acc)
+        end
 
   (* slightly tricky.
   * The `sizes` vector contains the last/finish position of the item
@@ -254,7 +269,7 @@ struct
   * There might not be a previous index because the current index is 0.
   * In this case, either the call stack will handle it,
   * or the caller to `helpPrevMatch` will. *)
-  fun helpPrevMatch (cursorIdx, tree) =
+  fun helpPrevMatch (cursorIdx, tree, acc) =
     case tree of
       LEAF (values, sizes) =>
         let
@@ -266,15 +281,18 @@ struct
             let
               val result = Vector.sub (values, 0)
             in
-              if #start result < cursorIdx then result
+              if #start result < cursorIdx then 
+                {start = #start result + acc, finish = #finish result + acc}
               else {start = ~1, finish = ~1}
             end
           else
             let
               val current = Vector.sub (values, idx)
+              val {start, finish} =
+                if cursorIdx > #start current then current
+                else Vector.sub (values, idx - 1)
             in
-              if cursorIdx > #start current then current
-              else Vector.sub (values, idx - 1)
+              {start = start + acc, finish = finish + acc}
             end
         end
     | BRANCH (nodes, sizes) =>
@@ -284,13 +302,23 @@ struct
           if idx < 0 then
             {start = ~1, finish = ~1}
           else if idx = 0 then
-            helpPrevMatch (cursorIdx, Vector.sub (nodes, idx))
+            helpPrevMatch (cursorIdx, Vector.sub (nodes, idx), acc)
           else
             let
               val node = Vector.sub (nodes, idx)
-              val result = helpPrevMatch (cursorIdx, node)
+              val prevSize = Vector.sub (sizes, idx - 1)
+              val result = helpPrevMatch (cursorIdx - prevSize, node, acc + prevSize)
             in
-              if #start result = ~1 then getLast (Vector.sub (nodes, idx - 1))
+              if #start result = ~1 then 
+                let
+                  val prevPrevSize =
+                    if idx - 2 < 0 then
+                      0
+                    else
+                      Vector.sub (sizes, idx - 2)
+                in
+                  getLast (Vector.sub (nodes, idx - 1), acc + prevPrevSize)
+                end
               else result
             end
         end
@@ -300,10 +328,10 @@ struct
       prevStart
     else
       let
-        val {start, finish} = helpPrevMatch (prevFinish - 1, tree)
+        val {start, finish} = helpPrevMatch (prevFinish - 1, tree, 0)
       in
         if start = ~1 then
-          let val {start, finish} = getLast tree
+          let val {start, finish} = getLast (tree, ~1)
           in loopPrevMatch (start, finish, tree, count - 1)
           end
         else
@@ -315,10 +343,10 @@ struct
       ~1
     else
       let
-        val {start, finish} = helpPrevMatch (cursorIdx, tree)
+        val {start, finish} = helpPrevMatch (cursorIdx, tree, 0)
       in
         if start = ~1 then
-          let val {start, finish} = getLast tree
+          let val {start, finish} = getLast (tree, ~1)
           in loopPrevMatch (start, finish, tree, count - 1)
           end
         else if cursorIdx >= start andalso cursorIdx <= finish then
@@ -326,6 +354,9 @@ struct
         else
           loopPrevMatch (start, finish, tree, count - 1)
       end
+
+  (* todo: modify below functions so that they also 
+   * use rope-like metadata *)
 
   datatype insert_result = INSERT_UPDATE of t | INSERT_SPLIT of t * t
 
