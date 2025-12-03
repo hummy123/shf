@@ -131,29 +131,42 @@ struct
           BRANCH (#[tree, newNode], #[maxSize, finish])
         end
 
-  (* todo: modify below functions so that they also 
-   * use rope-like metadata *)
-
   fun getStart tree =
     case tree of
       LEAF (values, _) => Vector.sub (values, 0)
     | BRANCH (nodes, _) => getStart (Vector.sub (nodes, 0))
 
-  fun helpNextMatch (cursorIdx, tree) =
+  fun helpNextMatch (cursorIdx, tree, acc) =
     case tree of
       LEAF (values, sizes) =>
         let
           val idx = BinSearch.equalOrMore (cursorIdx, sizes)
         in
           if idx = ~1 then {start = ~1, finish = ~1}
-          else Vector.sub (values, idx)
+          else 
+            let
+              val {start, finish} = Vector.sub (values, idx)
+            in
+              {start = start + acc, finish = finish + acc}
+            end
         end
     | BRANCH (nodes, sizes) =>
         let
           val idx = BinSearch.equalOrMore (cursorIdx, sizes)
         in
           if idx = ~1 then {start = ~1, finish = ~1}
-          else helpNextMatch (cursorIdx, Vector.sub (nodes, idx))
+          else 
+            let
+              val prevSize =
+                if idx = 0 then
+                  0
+                else
+                  Vector.sub (sizes, idx - 1)
+              val acc = acc + prevSize
+              val cursorIdx = cursorIdx - prevSize
+            in
+              helpNextMatch (cursorIdx, Vector.sub (nodes, idx), acc)
+            end
         end
 
   fun startNextMatch (cursorIdx, tree) =
@@ -173,7 +186,17 @@ struct
           val idx = BinSearch.equalOrMore (cursorIdx, sizes)
         in
           if idx = ~1 then {start = ~1, finish = ~1}
-          else helpNextMatch (cursorIdx, Vector.sub (nodes, idx))
+          else 
+            let
+              val prevSize =
+                if idx = 0 then
+                  0
+                else
+                  Vector.sub (sizes, idx - 1)
+              val cursorIdx = cursorIdx - prevSize
+            in
+              helpNextMatch (cursorIdx, Vector.sub (nodes, idx), prevSize)
+            end
         end
 
   fun loopNextMatch (prevStart, prevFinish, tree, count) =
@@ -207,6 +230,9 @@ struct
         else
           loopNextMatch (start, finish, tree, count - 1)
       end
+
+  (* todo: modify below functions so that they also 
+   * use rope-like metadata *)
 
   fun getLast tree =
     case tree of
