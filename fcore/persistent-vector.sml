@@ -362,6 +362,87 @@ struct
   fun helpInsert (start, finish, tree) =
     case tree of
       BRANCH (nodes, sizes) =>
+      if finish >= Vector.sub (sizes, Vector.length sizes - 1) then
+        (* we want to append *)
+        let
+          val prevSize = 
+            if Vector.length sizes > 1 then
+              Vector.sub (sizes, Vector.length sizes - 1)
+            else
+              0
+          val descendStart = start - prevSize
+          val descendFinish = finish - prevSize
+          val descendNode = Vector.sub (nodes, Vector.length nodes - 1)
+        in
+          case helpAppend (descendStart, descendFinish, descendNode) of
+            UPDATE newLast =>
+              let
+                val sizes = Vector.update (sizes, Vector.length sizes - 1, finish)
+                val nodes = Vector.update (nodes, Vector.length nodes - 1, newLast)
+              in
+                INSERT_UPDATE (BRANCH (nodes, sizes))
+              end
+          | APPEND newLast =>
+              if Vector.length nodes > maxSize then
+                (* we have to split *)
+                let
+                  val leftLen = SOME halfSize
+                  val rightLen = SOME (Vector.length nodes - halfSize)
+
+                  val leftNodeSlice = VectorSlice.slice (nodes, 0, leftLen)
+                  val leftSizeSlice = VectorSlice.slice (sizes, 0, leftLen)
+                  val leftNodes = VectorSlice.vector leftNodeSlice
+                  val leftSizes = VectorSlice.vector leftSizeSlice
+
+                  val rightNodeSlice =
+                    VectorSlice.slice (nodes, halfSize, rightLen)
+                  val rightSizeSlice =
+                    VectorSlice.slice (sizes, halfSize, rightLen)
+
+                  val rightNodes = 
+                    VectorSlice.concat [rightNodeSlice, VectorSlice.full #[newLast]]
+                  val rightSizes =
+                    let
+                      (* we want to maintain relative indexing metadata
+                       * so that each vector only considers the metadata of its
+                       * own nodes.
+                       * So, we need to subtract the maximum sizes of the leftSizes
+                       * from every size on the right node, to maintain relative
+                       * indexing metadata *)
+                      val maxLeftSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+                      val maxRightSize = Vector.sub (sizes, Vector.length sizes - 1)
+                      val finish = finish + maxRightSize
+                    in
+                      Vector.tabulate (VectorSlice.length rightSizeSlice + 1, 
+                        fn i =>
+                          if i < VectorSlice.length rightSizeSlice then
+                            Vector.sub (rightSizeSlice, i) - maxLeftSize
+                          else
+                            finish)
+                    end
+
+                  val left = BRANCH (leftNodes, leftSizes)
+                  val right = BRANCH (rightNodes, rightSizes)
+                in
+                  INSERT_SPLIT (left, right)
+                end
+              else
+                (* append newLast to current node *)
+                let
+                  val newLast = #[newLast]
+                  val finish = 
+                    #[Vector.sub (sizes, Vector.length sizes - 1) + finish]
+
+                  val nodes = Vector.concat [nodes, newLast]
+                  val sizes = Vector.concat [sizes, finish]
+                in
+                  INSERT_UPDATE (BRANCH (nodes, sizes))
+                end
+        end
+
+  fun helpInsert (start, finish, tree) =
+    case tree of
+      BRANCH (nodes, sizes) =>
         if finish >= Vector.sub (sizes, Vector.length sizes - 1) then
           (* if we want to append *)
           case
@@ -626,7 +707,8 @@ struct
       INSERT_UPDATE tree => tree
     | INSERT_SPLIT (left, right) =>
         let
-          val sizes = #[getMaxSize left, getMaxSize right]
+          val leftSize = getMaxSize left
+          val sizes = #[leftSize, leftSize + getMaxSize right]
           val nodes = #[left, right]
         in
           BRANCH (nodes, sizes)
