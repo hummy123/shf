@@ -439,6 +439,78 @@ struct
                   INSERT_UPDATE (BRANCH (nodes, sizes))
                 end
         end
+      else
+        let
+          val idx = BinSearch.equalOrMore (finish, sizes)
+          val idx = if idx = ~1 then 0 else idx
+          val prevSize =
+            if idx > 0 then
+              Vector.sub (sizes, idx - 1)
+            else
+              0
+          val descendStart = start - prevSize
+          val descendFinish = finish - prevSize
+          val descendNode = Vector.sub (nodes, idx)
+        in
+          case helpInsert (descendStart, descendFinish, descendNode) of
+              INSERT_UPDATE newNode =>
+                let
+                  val sizes =
+                    if finish > Vector.sub (sizes, idx) then
+                      Vector.update (sizes, idx, finish)
+                    else
+                      sizes
+                  val nodes = Vector.update (nodes, idx, newNode)
+                in
+                  INSERT_UPDATE (BRANCH (nodes, sizes))
+                end
+        | INSERT_SPLIT (left, right) =>
+            if Vector.length nodes = maxSize then
+              (* have to split *)
+              let
+                val leftSize = getMaxSize left + prevSize
+              in
+
+              end
+            else
+              (* can join into parent *)
+              let
+                (* join size/metadata table, changing metadata where needed *)
+                val sizes =
+                  let
+                    val midLeftSize = getMaxSize left + prevSize
+                    val midRightSize = getMaxSize right + midLeftSize
+                    val origIdxSize = Vector.sub (sizes, idx)
+                    val sizeDiff = midRightSize - origIdxSize
+                  in
+                    Vector.tabulate (Vector.length sizes + 1, 
+                      fn i =>
+                        if i = idx then
+                          midLeftSize
+                        else if i = idx + 1 then
+                          midRightSize
+                        else if i < idx then
+                          Vector.sub (sizes, i)
+                        else
+                          (* i > idx *)
+                          Vector.sub (sizes, i - 1) + sizeDiff
+                    )
+                  end
+                val midNodes = #[left, right]
+                val midNodes = VectorSlice.full midNodes
+
+                val leftLen = SOME idx
+                val rightLen = SOME (Vector.length sizes - idx)
+
+                val leftNodes = VectorSlice.slice (nodes, 0, leftLen)
+                val rightNodes = VectorSlice.slice (nodes, idx, rightLen)
+                val nodes =
+                  VectorSlice.concat [leftNodes, midNodes, rightNodes]
+              in
+                INSERT_UPDATE (BRANCH (nodes, sizes))
+              end
+        end
+
 
   fun helpInsert (start, finish, tree) =
     case tree of
