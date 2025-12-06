@@ -347,556 +347,103 @@ struct
           loopPrevMatch (start, finish, tree, count - 1)
       end
 
-  (* todo: modify below functions so that they also 
-   * use rope-like metadata *)
-
-  datatype insert_result =
-    INSERT_UPDATE of t
-  | INSERT_SPLIT of t * t
-
   fun getMaxSize tree =
     case tree of
       LEAF (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
     | BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
 
-  fun insertSplitSizesLeft (idx, sizes, left, right, prevSize) =
-    if idx < halfSize then
-      (* left-split node is in left vector *)
-      if idx + 1 < halfSize then
-        (* right-split node is also in left vector *)
-        let
-          val ls = getMaxSize left + prevSize
-          val rs = getMaxSize right + ls
-          val sizeDiff = rs - prevSize
-        in
-          Vector.tabulate (halfSize,
-            fn i =>
-              if i = idx then
-                ls
-              else if i = idx + 1 then
-                rs
-              else if i < idx then
-                Vector.sub (sizes, i)
-              else
-                Vector.sub (sizes, i - 1) + sizeDiff)
-        end
-      else
-        (* left-split node is in left vector 
-         * but right-split node is not *)
-        let
-          val ls = getMaxSize left + prevSize
-        in
-          Vector.tabulate (halfSize,
-            fn i =>
-              if i = idx then
-                ls
-              else
-                Vector.sub (sizes, i))
-        end
-    else
-      (* neither left-split node, nor right-split node,
-       * are in the left-split vector. *)
-       let
-         val slice = VectorSlice.slice (sizes, 0, SOME halfSize)
-       in
-         VectorSlice.vector slice
-       end
-
-  fun insertSplitSizesRight (idx, sizes, left, right, leftSizes) =
-    if idx + 1 >= halfSize then
-      (* right-split node is in right vector *)
-      if idx >= halfSize then
-        (* left-split node is in right vector as well *)
-        let
-          val relativeIdx = idx - Vector.length leftSizes
-          val maxLeftSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
-
-          val prevSize =
-            if relativeIdx = 0 then
-              0
-            else
-              Vector.sub (sizes, idx - 1)
-
-          val ls = getMaxSize left + prevSize
-          val rs = getMaxSize right + ls
-
-          val len = Vector.length sizes - Vector.length leftSizes
-          val sizeDiff = rs - maxLeftSize
-        in
-          Vector.tabulate (len,
-            fn i =>
-              if i < relativeIdx then
-                Vector.sub (sizes, i + relativeIdx) - maxLeftSize
-              else if i = relativeIdx then
-                ls
-              else if i = relativeIdx + 1 then
-                rs
-              else
-                (* i > relativeIdx *)
-                Vector.sub (sizes, i + relativeIdx - 1) + sizeDiff
-          )
-        end
-      else
-        (* only right-split node is in right vector *)
-        let
-          val maxLeft = Vector.sub (sizes, halfSize - 1)
-          val len = Vector.length sizes - Vector.length leftSizes
-        in
-          Vector.tabulate (len, 
-          fn i =>
-            if i = 0 then
-              getMaxSize right
-            else
-              Vector.sub (sizes, i + len) - maxLeft
-          )
-        end
-    else
-      (* neither left-split or right-split node are in right vector *)
-      let
-        val len = SOME (Vector.length sizes - Vector.length leftSizes)
-        val rightSizesSlice = VectorSlice.slice (sizes, halfSize, len)
-        val maxLeft = Vector.sub (sizes, halfSize - 1)
-      in
-        VectorSlice.map (fn sz => sz - maxLeft) rightSizesSlice
-      end
-
-  fun helpInsert (start, finish, tree) =
+  fun splitLeft (offset, tree) =
     case tree of
       BRANCH (nodes, sizes) =>
-      if finish >= Vector.sub (sizes, Vector.length sizes - 1) then
-        (* we want to append *)
-        let
-          val prevSize = 
-            if Vector.length sizes > 1 then
-              Vector.sub (sizes, Vector.length sizes - 1)
-            else
-              0
-          val descendStart = start - prevSize
-          val descendFinish = finish - prevSize
-          val descendNode = Vector.sub (nodes, Vector.length nodes - 1)
-        in
-          case helpAppend (descendStart, descendFinish, descendNode) of
-            UPDATE newLast =>
-              let
-                val sizes = Vector.update (sizes, Vector.length sizes - 1, finish)
-                val nodes = Vector.update (nodes, Vector.length nodes - 1, newLast)
-              in
-                INSERT_UPDATE (BRANCH (nodes, sizes))
-              end
-          | APPEND newLast =>
-              if Vector.length nodes > maxSize then
-                (* we have to split *)
-                let
-                  val leftLen = SOME halfSize
-                  val rightLen = SOME (Vector.length nodes - halfSize)
-
-                  val leftNodeSlice = VectorSlice.slice (nodes, 0, leftLen)
-                  val leftSizeSlice = VectorSlice.slice (sizes, 0, leftLen)
-                  val leftNodes = VectorSlice.vector leftNodeSlice
-                  val leftSizes = VectorSlice.vector leftSizeSlice
-
-                  val rightNodeSlice =
-                    VectorSlice.slice (nodes, halfSize, rightLen)
-                  val rightSizeSlice =
-                    VectorSlice.slice (sizes, halfSize, rightLen)
-
-                  val rightNodes = 
-                    VectorSlice.concat [rightNodeSlice, VectorSlice.full #[newLast]]
-                  val rightSizes =
-                    let
-                      (* we want to maintain relative indexing metadata
-                       * so that each vector only considers the metadata of its
-                       * own nodes.
-                       * So, we need to subtract the maximum sizes of the leftSizes
-                       * from every size on the right node, to maintain relative
-                       * indexing metadata *)
-                      val maxLeftSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
-                      val maxRightSize = Vector.sub (sizes, Vector.length sizes - 1)
-                      val finish = finish + maxRightSize
-                    in
-                      Vector.tabulate (VectorSlice.length rightSizeSlice + 1, 
-                        fn i =>
-                          if i < VectorSlice.length rightSizeSlice then
-                            VectorSlice.sub (rightSizeSlice, i) - maxLeftSize
-                          else
-                            finish)
-                    end
-
-                  val left = BRANCH (leftNodes, leftSizes)
-                  val right = BRANCH (rightNodes, rightSizes)
-                in
-                  INSERT_SPLIT (left, right)
-                end
+        if offset <= Vector.sub (sizes, 0) then
+          splitLeft (offset, Vector.sub (nodes, 0))
+        else if offset >= Vector.sub (sizes, Vector.length sizes - 1) then
+          let 
+            val prevSize =
+              if Vector.length sizes > 1 then
+                Vector.sub (sizes, Vector.length sizes - 1)
               else
-                (* append newLast to current node *)
-                let
-                  val newLast = #[newLast]
-                  val finish = 
-                    #[Vector.sub (sizes, Vector.length sizes - 1) + finish]
-
-                  val nodes = Vector.concat [nodes, newLast]
-                  val sizes = Vector.concat [sizes, finish]
-                in
-                  INSERT_UPDATE (BRANCH (nodes, sizes))
-                end
-        end
-      else
-        let
-          val idx = BinSearch.equalOrMore (finish, sizes)
-          val idx = if idx = ~1 then 0 else idx
-          val prevSize =
-            if idx > 0 then
-              Vector.sub (sizes, idx - 1)
-            else
-              0
-          val descendStart = start - prevSize
-          val descendFinish = finish - prevSize
-          val descendNode = Vector.sub (nodes, idx)
-        in
-          case helpInsert (descendStart, descendFinish, descendNode) of
-              INSERT_UPDATE newNode =>
-                let
-                  val sizes =
-                    if finish > Vector.sub (sizes, idx) then
-                      Vector.update (sizes, idx, finish)
-                    else
-                      sizes
-                  val nodes = Vector.update (nodes, idx, newNode)
-                in
-                  INSERT_UPDATE (BRANCH (nodes, sizes))
-                end
-        | INSERT_SPLIT (left, right) =>
-            if Vector.length nodes = maxSize then
-              (* have to split *)
+                0
+            val result =
+              splitLeft 
+                (offset - prevSize, Vector.sub (nodes, Vector.length nodes - 1))
+          in
+            if isEmpty result then
               let
-                val leftSizes = 
-                  insertSplitSizesLeft (idx, sizes, left, right, prevSize)
-                val rightSizes =
-                  insertSplitSizesRight (idx, sizes, left, right, leftSizes)
-
-                val leftNodes =
-                  VectorSlice.slice (nodes, 0, SOME halfSize)
-                val leftNodes = VectorSlice.vector leftNodes
-
-                val rightNodes = 
-                  VectorSlice.slice (nodes, halfSize, SOME (Vector.length rightSizes))
-                val rightNodes = VectorSlice.vector rightNodes
-
-                val left = BRANCH (leftNodes, leftSizes)
-                val right = BRANCH (rightNodes, rightSizes)
+                val len = SOME (Vector.length sizes - 1)
+                val sizeSlice = VectorSlice.slice (sizes, 0, len)
+                val sizes = VectorSlice.vector sizeSlice
+                val nodeSlice = VectorSlice.slice (nodes, 0, len)
+                val nodes = VectorSlice.vector nodeSlice
               in
-                INSERT_SPLIT (left, right)
+                BRANCH (nodes, sizes)
               end
             else
-              (* can join into parent *)
               let
-                (* join size/metadata table, changing metadata where needed *)
-                val sizes =
-                  let
-                    val midLeftSize = getMaxSize left + prevSize
-                    val midRightSize = getMaxSize right + midLeftSize
-                    val origIdxSize = Vector.sub (sizes, idx)
-                    val sizeDiff = midRightSize - origIdxSize
-                  in
-                    Vector.tabulate (Vector.length sizes + 1, 
-                      fn i =>
-                        if i = idx then
-                          midLeftSize
-                        else if i = idx + 1 then
-                          midRightSize
-                        else if i < idx then
-                          Vector.sub (sizes, i)
-                        else
-                          (* i > idx *)
-                          Vector.sub (sizes, i - 1) + sizeDiff
-                    )
-                  end
-                val midNodes = #[left, right]
-                val midNodes = VectorSlice.full midNodes
-
-                val leftLen = SOME idx
-                val rightLen = SOME (Vector.length sizes - idx)
-
-                val leftNodes = VectorSlice.slice (nodes, 0, leftLen)
-                val rightNodes = VectorSlice.slice (nodes, idx, rightLen)
-                val nodes =
-                  VectorSlice.concat [leftNodes, midNodes, rightNodes]
+                val newChildSize = getMaxSize result + prevSize
+                val sizes = Vector.update (sizes, Vector.length sizes - 1, newChildSize)
+                val nodes = Vector.update (nodes, Vector.length nodes - 1, result)
               in
-                INSERT_UPDATE (BRANCH (nodes, sizes))
+                BRANCH (nodes, sizes)
               end
-        end
-
-  fun helpInsert (start, finish, tree) =
-    case tree of
-      BRANCH (nodes, sizes) =>
-        if finish >= Vector.sub (sizes, Vector.length sizes - 1) then
-          (* if we want to append *)
-          case
-            helpAppend (start, finish, Vector.sub
-              (nodes, Vector.length sizes - 1))
-          of
-            UPDATE newLast =>
-              let
-                val sizes = Vector.update
-                  (sizes, Vector.length sizes - 1, finish)
-                val nodes = Vector.update
-                  (nodes, Vector.length nodes - 1, newLast)
-              in
-                INSERT_UPDATE (BRANCH (nodes, sizes))
-              end
-          | APPEND newLast =>
-              if Vector.length nodes = maxSize then
-                (* have to split *)
-                let
-                  val leftLen = SOME halfSize
-                  val rightLen = SOME (Vector.length nodes - halfSize)
-
-                  val leftNodeSlice = VectorSlice.slice (nodes, 0, leftLen)
-                  val rightNodeSlice =
-                    VectorSlice.slice (nodes, halfSize, rightLen)
-
-                  val leftSizeSlice = VectorSlice.slice (sizes, 0, leftLen)
-                  val rightSizeSlice =
-                    VectorSlice.slice (sizes, halfSize, rightLen)
-
-                  val leftNodes = VectorSlice.vector leftNodeSlice
-                  val leftSizes = VectorSlice.vector leftSizeSlice
-
-                  val newLast = VectorSlice.full (#[newLast])
-                  val finish = VectorSlice.full (#[finish])
-                  val rightNodes = VectorSlice.concat [rightNodeSlice, newLast]
-                  val rightSizes = VectorSlice.concat [rightSizeSlice, finish]
-
-                  val left = BRANCH (leftNodes, leftSizes)
-                  val right = BRANCH (rightNodes, rightSizes)
-                in
-                  INSERT_SPLIT (left, right)
-                end
-              else
-                (* append newLast to current node *)
-                let
-                  val newLast = #[newLast]
-                  val finish = #[finish]
-
-                  val nodes = Vector.concat [nodes, newLast]
-                  val sizes = Vector.concat [sizes, finish]
-                in
-                  INSERT_UPDATE (BRANCH (nodes, sizes))
-                end
+          end
         else
           let
-            val idx = BinSearch.equalOrMore (finish, sizes)
-            val idx = if idx = ~1 then 0 else idx
+            val idx = BinSearch.equalOrMore (offset, sizes)
+            val prevSize = 
+              if idx > 1 then
+                Vector.sub (sizes, idx - 1)
+              else
+                0
+            val result = splitLeft (offset - prevSize, Vector.sub (nodes, idx))
           in
-            case helpInsert (start, finish, tree) of
-              INSERT_UPDATE newNode =>
-                let
-                  val sizes =
-                    if finish > Vector.sub (sizes, idx) then
-                      Vector.update (sizes, idx, finish)
+            if isEmpty result then
+              let
+                val len = SOME idx
+                val sizeSlice = VectorSlice.slice (sizes, 0, len)
+                val sizes = VectorSlice.vector sizeSlice
+                val nodeSlice = VectorSlice.slice (nodes, 0, len)
+                val nodes = VectorSlice.vector nodeSlice
+              in
+                BRANCH (nodes, sizes)
+              end
+            else
+              let
+                val len = idx + 1
+                val sizes = Vector.tabulate (len,
+                  fn i =>
+                    if i = idx then
+                      getMaxSize result + prevSize
                     else
-                      sizes
-                  val nodes = Vector.update (nodes, idx, newNode)
-                in
-                  INSERT_UPDATE (BRANCH (nodes, sizes))
-                end
-            | INSERT_SPLIT (left, right) =>
-                if Vector.length nodes = maxSize then
-                  (* have to split this node too *)
-                  let
-                    (* slice sizes *)
-                    val leftSize =
-                      VectorSlice.full #[getMaxSize left]
-                    val rightSize =
-                      VectorSlice.full #[getMaxSize right]
-
-                    val leftLen = SOME idx
-                    val rightLen = SOME (Vector.length nodes - idx - 1)
-
-                    val leftSizeSlice = VectorSlice.slice (sizes, 0, leftLen)
-                    val rightSizeSlice =
-                      VectorSlice.slice (sizes, idx + 1, rightLen)
-
-                    val leftSizes = VectorSlice.concat [leftSizeSlice, leftSize]
-                    val rightSizes =
-                      VectorSlice.concat [rightSizeSlice, rightSize]
-
-                    (* slice nodes *)
-                    val left = VectorSlice.full #[left]
-                    val right = VectorSlice.full #[right]
-
-                    val leftNodesSlice = VectorSlice.slice (nodes, 0, leftLen)
-                    val rightNodesSlice =
-                      VectorSlice.slice (nodes, idx + 1, rightLen)
-
-                    val leftNodes = VectorSlice.concat [leftNodesSlice, left]
-                    val rightNodes = VectorSlice.concat [right, rightNodesSlice]
-
-                    (* join sizes and nodes *)
-                    val left = BRANCH (leftNodes, leftSizes)
-                    val right = BRANCH (rightNodes, rightSizes)
-                  in
-                    INSERT_SPLIT (left, right)
-                  end
-                else
-                  (* can join children into parent *)
-                  let
-                    val midSizes =
-                      #[getMaxSize left, getMaxSize right]
-                    val midSizes = VectorSlice.full midSizes
-                    val midNodes = #[left, right]
-                    val midNodes = VectorSlice.full midNodes
-
-                    val leftLen = SOME idx
-                    val rightLen = SOME (Vector.length sizes - idx)
-
-                    val leftSizes = VectorSlice.slice (sizes, 0, leftLen)
-                    val rightSizes = VectorSlice.slice (sizes, idx, rightLen)
-
-                    val leftNodes = VectorSlice.slice (nodes, 0, leftLen)
-                    val rightNodes = VectorSlice.slice (nodes, idx, rightLen)
-
-                    val sizes =
-                      VectorSlice.concat [leftSizes, midSizes, rightSizes]
-                    val nodes =
-                      VectorSlice.concat [leftNodes, midNodes, rightNodes]
-                  in
-                    INSERT_UPDATE (BRANCH (nodes, sizes))
-                  end
+                      Vector.sub (sizes, i)
+                )
+                val nodes = Vector.tabulate (lane,
+                  fn i =>
+                    if i = idx then
+                      result
+                    else
+                      Vector.sub (nodes, i)
+                )
+              in
+                BRANCH (nodes, sizes)
+              end
           end
     | LEAF (items, sizes) =>
-        if Vector.length items = 0 then
-          (* leaf is empty, so return leaf containing one item *)
-          let
-            val item = #[{start = start, finish = finish}]
-            val size = #[finish]
-          in
-            INSERT_UPDATE (LEAF (item, size))
-          end
-        else if finish > Vector.sub (sizes, Vector.length sizes - 1) then
-          if Vector.length sizes = maxSize then
-            (* have to split *)
-            let
-              val startLen = SOME halfSize
-              val midLen = SOME (Vector.length items - halfSize)
-
-              val leftSizes = VectorSlice.slice (sizes, 0, startLen)
-              val leftItems = VectorSlice.slice (items, 0, startLen)
-
-              val midSizes = VectorSlice.slice (sizes, halfSize, midLen)
-              val midItems = VectorSlice.slice (items, halfSize, midLen)
-
-              val rightSizes = VectorSlice.full #[finish]
-              val rightItems =
-                VectorSlice.full #[{start = start, finish = finish}]
-
-              val rightItems = VectorSlice.concat [midItems, rightItems]
-              val leftItems = VectorSlice.vector leftItems
-
-              val rightSizes = VectorSlice.concat [midSizes, rightSizes]
-              val leftSizes = VectorSlice.vector leftSizes
-
-              val left = LEAF (leftItems, leftSizes)
-              val right = LEAF (rightItems, rightSizes)
-            in
-              INSERT_SPLIT (left, right)
-            end
-          else
-            (* can just append *)
-            let
-              val sizes = Vector.concat [sizes, #[finish]]
-              val item = #[{start = start, finish = finish}]
-              val items = Vector.concat [items, item]
-            in
-              INSERT_UPDATE (LEAF (items, sizes))
-            end
-        else if finish < #start (Vector.sub (items, 0)) then
-          (* prepend *)
-          if Vector.length sizes = maxSize then
-            (* have to split *)
-            let
-              val leftSizes = VectorSlice.full #[finish]
-              val leftItems =
-                VectorSlice.full #[{start = start, finish = finish}]
-
-              val midLen = SOME halfSize
-              val rightLen = SOME (Vector.length items - halfSize)
-
-              val midSizes = VectorSlice.slice (sizes, 0, midLen)
-              val midItems = VectorSlice.slice (items, 0, midLen)
-
-              val rightSizes = VectorSlice.slice (sizes, halfSize, rightLen)
-              val rightItems = VectorSlice.slice (items, halfSize, rightLen)
-
-              val leftSizes = VectorSlice.concat [leftSizes, midSizes]
-              val rightSizes = VectorSlice.vector rightSizes
-
-              val leftItems = VectorSlice.concat [leftItems, midItems]
-              val rightItems = VectorSlice.vector rightItems
-
-              val left = LEAF (leftItems, leftSizes)
-              val right = LEAF (rightItems, rightSizes)
-            in
-              INSERT_SPLIT (left, right)
-            end
-          else
-            (* just prepend *)
-            let
-              val sizes = Vector.concat [#[finish], sizes]
-              val item = {start = start, finish = finish}
-              val items = Vector.concat [#[item], items]
-            in
-              INSERT_UPDATE (LEAF (items, sizes))
-            end
+        if Vector.length sizes > 0 then
+          if offset > Vector.sub (sizes, Vector.length sizes - 1) then
+            tree
+          else if offset < Vector.sub (sizes, 0) then
+            LEAF (#[], #[])
+         else
+           let
+             val len = BinSearch.equalOrMore (offset, sizes)
+             val sizes = VectorSlice.slice (sizes, 0, SOME len)
+             val sizes = VectorSlice.vector sizes
+             val nodes = VectorSlice.slice (nodes, 0, SOME len)
+             val nodes = VectorSlice.vector nodes
+           in
+             LEAF (nodes, sizes)
+           end
         else
-          (* insert into middle *)
-          let
-            val idx = BinSearch.equalOrMore (finish, sizes)
-            val leftLen = SOME idx
-            val rightLen = SOME (Vector.length sizes - idx)
-
-            val leftSizes = VectorSlice.slice (sizes, 0, leftLen)
-            val rightSizes = VectorSlice.slice (sizes, idx, rightLen)
-
-            val leftItems = VectorSlice.slice (items, 0, leftLen)
-            val rightItems = VectorSlice.slice (items, idx, rightLen)
-            val midSize = VectorSlice.full #[finish]
-            val midItem =
-              VectorSlice.full #[{start = start, finish = finish}]
-          in
-            if Vector.length items = maxSize then
-              (* have to return split *)
-              let
-                val leftSizes = VectorSlice.concat [leftSizes, midSize]
-                val rightSizes = VectorSlice.vector rightSizes
-
-                val leftItems = VectorSlice.concat [leftItems, midItem]
-                val rightItems = VectorSlice.vector rightItems
-
-                val left = LEAF (leftItems, leftSizes)
-                val right = LEAF (rightItems, rightSizes)
-              in
-                INSERT_SPLIT (left, right)
-              end
-            else
-              (* have to return update *)
-              let
-                val sizes = VectorSlice.concat [leftSizes, midSize, rightSizes]
-                val items = VectorSlice.concat [leftItems, midItem, rightItems]
-              in
-                INSERT_UPDATE (LEAF (items, sizes))
-              end
-          end
-
-  fun insert (start, finish, tree) =
-    case helpInsert (start, finish, tree) of
-      INSERT_UPDATE tree => tree
-    | INSERT_SPLIT (left, right) =>
-        let
-          val leftSize = getMaxSize left
-          val sizes = #[leftSize, leftSize + getMaxSize right]
-          val nodes = #[left, right]
-        in
-          BRANCH (nodes, sizes)
-        end
+          tree
 end
