@@ -397,10 +397,68 @@ struct
       (* neither left-split node, nor right-split node,
        * are in the left-split vector. *)
        let
-         val slice = Vector.slice (sizes, 0, SOME halfSize)
+         val slice = VectorSlice.slice (sizes, 0, SOME halfSize)
        in
          VectorSlice.vector slice
        end
+
+  fun insertSplitSizesRight (idx, sizes, left, right, leftSizes) =
+    if idx + 1 >= halfSize then
+      (* right-split node is in right vector *)
+      if idx >= halfSize then
+        (* left-split node is in right vector as well *)
+        let
+          val relativeIdx = idx - Vector.length leftSizes
+          val maxLeftSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+
+          val prevSize =
+            if relativeIdx = 0 then
+              0
+            else
+              Vector.sub (sizes, idx - 1)
+
+          val ls = getMaxSize left + prevSize
+          val rs = getMaxSize right + ls
+
+          val len = Vector.length sizes - Vector.length leftSizes
+          val sizeDiff = rs - maxLeftSize
+        in
+          Vector.tabulate (len,
+            fn i =>
+              if i < relativeIdx then
+                Vector.sub (sizes, i + relativeIdx) - maxLeftSize
+              else if i = relativeIdx then
+                ls
+              else if i = relativeIdx + 1 then
+                rs
+              else
+                (* i > relativeIdx *)
+                Vector.sub (sizes, i + relativeIdx - 1) + sizeDiff
+          )
+        end
+      else
+        (* only right-split node is in right vector *)
+        let
+          val maxLeft = Vector.sub (sizes, halfSize - 1)
+          val len = Vector.length sizes - Vector.length leftSizes
+        in
+          Vector.tabulate (len, 
+          fn i =>
+            if i = 0 then
+              getMaxSize right
+            else
+              Vector.sub (sizes, i + len) - maxLeft
+          )
+        end
+    else
+      (* neither left-split or right-split node are in right vector *)
+      let
+        val len = SOME (Vector.length sizes - Vector.length leftSizes)
+        val rightSizesSlice = VectorSlice.slice (sizes, halfSize, len)
+        val maxLeft = Vector.sub (sizes, halfSize - 1)
+      in
+        VectorSlice.map (fn sz => sz - maxLeft) rightSizesSlice
+      end
 
   fun helpInsert (start, finish, tree) =
     case tree of
@@ -459,7 +517,7 @@ struct
                       Vector.tabulate (VectorSlice.length rightSizeSlice + 1, 
                         fn i =>
                           if i < VectorSlice.length rightSizeSlice then
-                            Vector.sub (rightSizeSlice, i) - maxLeftSize
+                            VectorSlice.sub (rightSizeSlice, i) - maxLeftSize
                           else
                             finish)
                     end
@@ -513,8 +571,21 @@ struct
               let
                 val leftSizes = 
                   insertSplitSizesLeft (idx, sizes, left, right, prevSize)
-              in
+                val rightSizes =
+                  insertSplitSizesRight (idx, sizes, left, right, leftSizes)
 
+                val leftNodes =
+                  VectorSlice.slice (nodes, 0, SOME halfSize)
+                val leftNodes = VectorSlice.vector leftNodes
+
+                val rightNodes = 
+                  VectorSlice.slice (nodes, halfSize, SOME (Vector.length rightSizes))
+                val rightNodes = VectorSlice.vector rightNodes
+
+                val left = BRANCH (leftNodes, leftSizes)
+                val right = BRANCH (rightNodes, rightSizes)
+              in
+                INSERT_SPLIT (left, right)
               end
             else
               (* can join into parent *)
@@ -554,7 +625,6 @@ struct
                 INSERT_UPDATE (BRANCH (nodes, sizes))
               end
         end
-
 
   fun helpInsert (start, finish, tree) =
     case tree of
