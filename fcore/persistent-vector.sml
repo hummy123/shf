@@ -347,10 +347,19 @@ struct
           loopPrevMatch (start, finish, tree, count - 1)
       end
 
+  fun getFirstItem tree =
+    case tree of
+      BRANCH (nodes, _) => getFirstItem (Vector.sub (nodes, 0))
+    | LEAF (items, _) =>
+        if Vector.length items = 0 then
+          {start = ~1, finish = ~1}
+        else
+          Vector.sub (items, 0)
+
   fun getMaxSize tree =
     case tree of
-      LEAF (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
-    | BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
+      BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
+    | LEAF (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
 
   fun splitLeft (offset, tree) =
     case tree of
@@ -555,5 +564,86 @@ struct
                     items
               in
                 LEAF (items, sizes)
+              end
+
+    fun getDepth (tree, acc) =
+      case tree of
+        BRANCH (nodes, _) => getDepth (Vector.sub (nodes, 0), acc + 1)
+      | LEAF (_, _) => acc
+
+    fun getRootVecLength tree =
+      case tree of
+        BRANCH (_, sizes) => Vector.length sizes
+      | LEAF (_, sizes) => Vector.length sizes
+
+    fun joinSameDepth (left, right) =
+      case (left, right) of
+        (BRANCH (leftNodes, leftSizes), BRANCH (rightNodes, rightSizes)) =>
+          let
+            val nodes = Vector.concat [leftNodes, rightNodes]
+            val maxLeftSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+            val sizes = Vector.tabulate 
+              (Vector.length leftSizes + Vector.length rightSizes,
+                fn i =>
+                  if i < Vector.length leftSizes then
+                    Vector.sub (leftSizes, i)
+                  else
+                    Vector.sub (rightSizes, i - Vector.length leftSizes)
+                    + maxLeftSize
+              )
+          in
+            BRANCH (nodes, sizes)
+          end
+      | (LEAF (leftItems, leftSizes), LEAF (rightItems, rightSizes)) =>
+          let
+            val maxLeftSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+            val len = Vector.length leftItems + Vector.length rightItems
+            val items =
+              Vector.tabulate (len,
+                fn i =>
+                  if i < Vector.length leftItems then
+                    Vector.sub (leftItems, i)
+                  else
+                    let
+                      val {start, finish} = Vector.sub (rightItems, i - Vector.length leftItems)
+                    in
+                      {start + maxLeftSize, finish + maxLeftSize}
+                    end
+              )
+            val sizes =
+              Vector.tabulate (len,
+                fn i =>
+                  if i < Vector.length leftSizes then
+                    Vector.sub (leftSizes, i)
+                  else
+                    Vector.sub (rightSizes, i - Vector.length leftSizes)
+                    + maxLeftSize
+              )
+          in
+            LEAF (items, sizes)
+          end
+      | _ => raise Fail "PersistentVector.joinSameDepth: one is BRANCH and other is LEAF"
+
+    fun join (left, right) =
+      if isEmpty left then
+        right
+      else if isEmpty right then
+        left
+      else
+        let
+          val leftDepth = getDepth left
+          val rightDepth = getDepth right
+        in
+          if leftDepth = rightDepth then
+            if getRootVecLength left + getRootVecLength right <= maxSize then
+              joinSameDepth (left, right)
+            else
+              let
+                val ls = getMaxSize left
+                val rs = getMaxSize right + ls
+                val sizes = #[ls, rs]
+                val nodes = #[left, right]
+              in
+                BRANCH (nodes, sizes)
               end
 end
