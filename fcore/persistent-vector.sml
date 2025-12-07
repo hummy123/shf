@@ -417,7 +417,7 @@ struct
                     else
                       Vector.sub (sizes, i)
                 )
-                val nodes = Vector.tabulate (lane,
+                val nodes = Vector.tabulate (len,
                   fn i =>
                     if i = idx then
                       result
@@ -456,6 +456,7 @@ struct
       case tree of
         BRANCH (nodes, sizes) =>
         if offset <= Vector.sub (sizes, 0) then
+          (* we want to split first node *)
           let
             val firstSizeBefore = Vector.sub (sizes, 0)
             val result = splitRight (offset, Vector.sub (nodes, 0))
@@ -488,23 +489,38 @@ struct
               in
                 BRANCH (nodes, sizes)
               end
+          end
         else if offset >= Vector.sub (sizes, Vector.length sizes - 1) then
+          (* we want to split after last node, leaving empty *)
+          BRANCH (#[], #[])
+        else
           let
-            val prevSize =
-              if Vector.length sizes > 1 then
-                Vector.sub (sizes, Vector.length sizes - 2)
-              else
-                0
-            val node = Vector.sub (nodes, Vector.length nodes - 1)
-            val result = splitRight (offset - prevSize, node))
+            val idx = BinSearch.equalOrMore (offset, sizes)
+            val prevSize = Vector.sub (sizes, idx - 1)
+            val curSize = Vector.sub (sizes, idx)
+            val result = splitRight (offset - prevSize, Vector.sub (nodes, idx))
           in
             if isEmpty result then
-              result
+              let
+                val startIdx = idx + 1
+                val len = Vector.length sizes - startIdx
+
+                val sizeSlice = VectorSlice.slice (sizes, startIdx, SOME len)
+                val sizes = VectorSlice.map (fn el => el - curSize) sizeSlice
+
+                val nodeSlice = VectorSlice.slice (nodes, startIdx, SOME len)
+                val nodes = VectorSlice.vector nodeSlice
+              in
+                BRANCH (nodes, sizes)
+              end
             else
               let
+                val newCurSize = getMaxSize result
+                val sizeDiff = curSize - newCurSize
+
                 val len = Vector.length sizes - idx
                 val sizeSlice = VectorSlice.slice (sizes, idx, SOME len)
-                val sizes = VectorSlice.map (fn el => el - prevSize) sizeSlice
+                val sizes = VectorSlice.map (fn el => el - sizeDiff) sizeSlice
 
                 val nodeSlice = VectorSlice.slice (nodes, idx, SOME len)
                 val nodes = VectorSlice.vector nodeSlice
@@ -512,7 +528,6 @@ struct
                 BRANCH (nodes, sizes)
               end
           end
-        else
       | LEAF (items, sizes) =>
             if offset > Vector.sub (sizes, Vector.length sizes - 1) then
               LEAF (#[], #[])
