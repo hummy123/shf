@@ -432,18 +432,113 @@ struct
         if Vector.length sizes > 0 then
           if offset > Vector.sub (sizes, Vector.length sizes - 1) then
             tree
-          else if offset < Vector.sub (sizes, 0) then
+          else if offset <= Vector.sub (sizes, 0) then
             LEAF (#[], #[])
          else
            let
              val len = BinSearch.equalOrMore (offset, sizes)
              val sizes = VectorSlice.slice (sizes, 0, SOME len)
              val sizes = VectorSlice.vector sizes
-             val nodes = VectorSlice.slice (nodes, 0, SOME len)
-             val nodes = VectorSlice.vector nodes
+             val items = VectorSlice.slice (items, 0, SOME len)
+             val items = VectorSlice.vector items
            in
-             LEAF (nodes, sizes)
+             LEAF (items, sizes)
            end
         else
           tree
+
+    (* Unlike 'splitLeft' which leaves the size metadata alone
+     * (except for splitting it),
+     * we want splitRight to decrement the size metadata 
+     * by the largest entry in the size table that was split.
+     * This is so that we can maintain relative indexing metadata. *)
+    fun splitRight (offset, tree) =
+      case tree of
+        BRANCH (nodes, sizes) =>
+        if offset <= Vector.sub (sizes, 0) then
+          let
+            val firstSizeBefore = Vector.sub (sizes, 0)
+            val result = splitRight (offset, Vector.sub (nodes, 0))
+          in
+            if isEmpty result then
+              let
+                val len = Vector.length sizes - 1
+
+                val sizeSlice = VectorSlice.slice (sizes, 1, SOME len)
+                val sizes = VectorSlice.map (fn el => el - firstSizeBefore) sizeSlice
+
+                val nodeSlice = VectorSlice.slice (nodes, 1, SOME len)
+                val nodes = VectorSlice.vector nodeSlice
+              in
+                BRANCH (nodes, sizes)
+              end
+            else
+              let
+                val firstSizeAfter = getMaxSize result
+                val sizeDiff = firstSizeBefore - firstSizeAfter
+
+                val sizes = Vector.mapi (fn (idx, el) =>
+                if idx = 0 then
+                  firstSizeAfter
+                else
+                  el - sizeDiff
+                ) sizes
+
+                val nodes = Vector.update (nodes, 0, result)
+              in
+                BRANCH (nodes, sizes)
+              end
+        else if offset >= Vector.sub (sizes, Vector.length sizes - 1) then
+          let
+            val prevSize =
+              if Vector.length sizes > 1 then
+                Vector.sub (sizes, Vector.length sizes - 2)
+              else
+                0
+            val node = Vector.sub (nodes, Vector.length nodes - 1)
+            val result = splitRight (offset - prevSize, node))
+          in
+            if isEmpty result then
+              result
+            else
+              let
+                val len = Vector.length sizes - idx
+                val sizeSlice = VectorSlice.slice (sizes, idx, SOME len)
+                val sizes = VectorSlice.map (fn el => el - prevSize) sizeSlice
+
+                val nodeSlice = VectorSlice.slice (nodes, idx, SOME len)
+                val nodes = VectorSlice.vector nodeSlice
+              in
+                BRANCH (nodes, sizes)
+              end
+          end
+        else
+      | LEAF (items, sizes) =>
+            if offset > Vector.sub (sizes, Vector.length sizes - 1) then
+              LEAF (#[], #[])
+            else if offset <= Vector.sub (sizes, 0) then
+              tree
+            else
+              let
+                val idx = BinSearch.equalOrMore (offset, sizes)
+                val len = Vector.length sizes - idx
+                val len = SOME len
+
+                val prevSize =
+                  if idx < 1 then
+                    0
+                  else
+                    Vector.sub (sizes, idx - 1)
+                val sizes = VectorSlice.slice (sizes, idx, len)
+                val sizes = VectorSlice.map (fn i => i - prevSize) sizes
+
+                val items = VectorSlice.slice (items, idx, len)
+                val items = 
+                  VectorSlice.map 
+                  (fn {start, finish} => 
+                    {start = start - prevSize, finish = finish - prevSize})
+                    items
+              in
+                LEAF (items, sizes)
+              end
 end
