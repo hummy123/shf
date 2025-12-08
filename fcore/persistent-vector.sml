@@ -81,8 +81,7 @@ struct
                    * offset for "lower" vector *)
                   val finish =
                     finish - Vector.sub (sizes, Vector.length sizes - 1)
-                  val newNode = BRANCH
-                    (#[newVec], #[finish])
+                  val newNode = BRANCH (#[newVec], #[finish])
                 in
                   APPEND newNode
                 end
@@ -607,7 +606,7 @@ struct
                     let
                       val {start, finish} = Vector.sub (rightItems, i - Vector.length leftItems)
                     in
-                      {start + maxLeftSize, finish + maxLeftSize}
+                      {start = start + maxLeftSize, finish = finish + maxLeftSize}
                     end
               )
             val sizes =
@@ -624,6 +623,121 @@ struct
           end
       | _ => raise Fail "PersistentVector.joinSameDepth: one is BRANCH and other is LEAF"
 
+    datatype join_result =
+      JOIN_APPEND of t
+    | JOIN_UPDATE of t
+
+    fun appendJoin (left, right, joinDepth, rightLength) =
+      case left of
+        BRANCH (nodes, sizes) =>
+          if joinDepth = 0 then
+            (* base case: should join at this depth *)
+            if Vector.length nodes + rightLength > maxSize then
+              JOIN_APPEND right
+            else
+              (case right of
+                BRANCH (rightNodes, rightSizes) =>
+                  let
+                    val nodes = Vector.concat [nodes, rightNodes]
+
+                    val lastLeftSize = Vector.sub (sizes, Vector.length sizes - 1)
+                    val sizes = Vector.tabulate (Vector.length nodes,
+                      fn i =>
+                        if i < Vector.length sizes then
+                          Vector.sub (sizes, i)
+                        else
+                          Vector.sub (rightSizes, i - Vector.length sizes)
+                          + lastLeftSize
+                    )
+                  in
+                    JOIN_UPDATE (BRANCH (nodes, sizes))
+                  end
+              | LEAF _ => 
+                  raise Fail 
+                    "persistent-vector.sml appendJoin: \
+                    \expected to join when left and right are both BRANCH \
+                    \but left is BRANCH and right is LEAF"
+                  )
+          else
+            (* recursion case: join below *)
+            let
+              val lastIdx = Vector.length nodes - 1
+              val lastNode = Vector.sub (nodes, lastIdx)
+            in
+              case appendJoin (lastNode, right, joinDepth - 1, rightLength) of
+                JOIN_UPDATE newLast =>
+                  let
+                    val prevSize =
+                      if lastIdx > 0 then Vector.sub (sizes, lastIdx - 1)
+                      else 0
+                    val newLastSize = getMaxSize newLast + prevSize
+                    val sizes = Vector.update (sizes, lastIdx, newLastSize)
+                    val nodes = Vector.update (nodes, lastIdx, newLast)
+                  in
+                    JOIN_UPDATE (BRANCH (nodes, sizes))
+                  end
+              | JOIN_APPEND newNode =>
+                  if Vector.length nodes + rightLength > maxSize then
+                    (* parent has to append insead as this node
+                     * would exceed capacity if appended here *)
+
+                    (* todo: I would prefer to take some nodes from right,
+                     * then append those nodes to this one to make it reach
+                     * max capacity, then return update left * right. *)
+                    JOIN_APPEND (BRANCH (#[newNode], #[getMaxSize newNode]))
+                  else
+                    let
+                      val prevSize = 
+                        Vector.sub (sizes, Vector.length sizes - 1)
+                      val newNodeSize = #[getMaxSize newNode + prevSize]
+                      val sizes = Vector.concat [sizes, newNodeSize]
+
+                      val newNode = #[newNode]
+                      val nodes = Vector.concat [nodes, newNode]
+                    in
+                      JOIN_UPDATE (BRANCH (nodes, sizes))
+                    end
+              end
+      | LEAF (items, sizes) =>
+          (* joinDepth should = 0, and we assume it is *)
+          if Vector.length items + rightLength > maxSize then
+            JOIN_APPEND right
+          else
+            (case right of
+              LEAF (rightItems, rightSizes) =>
+                let
+                  val leftMaxSize = Vector.sub (sizes, Vector.length sizes - 1)
+
+                  val newLen = Vector.length items + Vector.length rightItems
+                  val items = Vector.tabulate (newLen,
+                    fn i =>
+                      if i < Vector.length items then
+                        Vector.sub (items, i)
+                      else
+                        let
+                          val {start, finish} = Vector.sub (rightItems, i - Vector.length items)
+                        in
+                          {start = start + leftMaxSize, finish = finish + leftMaxSize}
+                        end
+                    )
+                  val sizes = Vector.tabulate (newLen,
+                    fn i =>
+                      if i < Vector.length sizes then
+                        Vector.sub (sizes, i)
+                      else
+                        Vector.sub (rightSizes, i - Vector.length sizes)
+                        + leftMaxSize
+                    )
+                in
+                  JOIN_UPDATE (LEAF (items, sizes))
+                end
+            | BRANCH _ => 
+                raise Fail 
+                  "persistent-vector.sml appendJoin: \
+                  \left is LEAF and expected right to also be LEAF \
+                  \but right is BRANCH"
+              )
+
     fun join (left, right) =
       if isEmpty left then
         right
@@ -631,8 +745,8 @@ struct
         left
       else
         let
-          val leftDepth = getDepth left
-          val rightDepth = getDepth right
+          val leftDepth = getDepth (left, 0)
+          val rightDepth = getDepth (right, 0)
         in
           if leftDepth = rightDepth then
             if getRootVecLength left + getRootVecLength right <= maxSize then
@@ -646,4 +760,24 @@ struct
               in
                 BRANCH (nodes, sizes)
               end
+          else if leftDepth > rightDepth then
+            let
+              val joinDepth = leftDepth - rightDepth
+              val rightLength = getRootVecLength right
+            in
+              case appendJoin (left, right, joinDepth, rightLength) of
+                JOIN_UPDATE t => t
+              | JOIN_APPEND newRight =>
+                  let
+                    val ls = getMaxSize left
+                    val rs = getMaxSize right + ls
+                    val sizes = #[ls, rs]
+                    val nodes = #[left, newRight]
+                  in
+                    BRANCH (nodes, sizes)
+                  end
+            end
+        else
+          raise Fail "unimplemented"
+      end
 end
