@@ -804,6 +804,43 @@ struct
                       PREPEND_JOIN_UPDATE (BRANCH (nodes, sizes))
                     end)
             end
+      | LEAF (rightItems, rightSizes) =>
+          (* joinDepth should = 0, and we assume it is *)
+          if Vector.length rightItems + leftLength > maxSize then
+            PREPEND_JOIN_PREPEND left
+          else
+            (case left of
+              LEAF (leftItems, leftSizes) =>
+                let
+                  val maxLeftSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+                  val len = Vector.length leftSizes + Vector.length rightItems
+                  val sizes = Vector.tabulate (len, 
+                    fn i =>
+                      if i < Vector.length leftSizes then
+                        Vector.sub (leftSizes, i)
+                      else
+                        Vector.sub (rightSizes, i - Vector.length leftSizes)
+                        + maxLeftSize)
+                  val items = Vector.tabulate (len,
+                    fn i =>
+                      if i < Vector.length leftItems then
+                        Vector.sub (leftItems, i)
+                      else
+                        let
+                          val {start, finish} = 
+                            Vector.sub (rightItems, i - Vector.length leftItems)
+                        in
+                          {start = start + maxLeftSize, finish = finish + maxLeftSize}
+                        end
+                  )
+                in
+                  PREPEND_JOIN_UPDATE (LEAF (items, sizes))
+                end
+            | BRANCH _ =>
+                raise Fail
+                  "persistent-vector.sml prependJoin: \
+                  \expected left and right to be LEAF \
+                  \but right is LEAF while left is BRANCH")
 
     fun join (left, right) =
       if isEmpty left then
