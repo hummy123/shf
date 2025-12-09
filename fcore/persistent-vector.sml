@@ -955,6 +955,15 @@ struct
           end
       end
 
+  fun insert (start, length, tree) =
+    let
+      val left = splitLeft (start, tree)
+      val left = append (start, start + length, tree)
+      val right = splitRight (start + 1, tree)
+    in
+      join (left, right)
+    end
+
   (* conversion functions for testing *)
   fun helpFromList ([], acc) = acc
     | helpFromList ((start, finish) :: tl, acc) =
