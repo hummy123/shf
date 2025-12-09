@@ -349,8 +349,16 @@ struct
 
   fun getMaxSize tree =
     case tree of
-      BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
-    | LEAF (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
+      BRANCH (_, sizes) => 
+        if Vector.length sizes = 0 then
+          0
+        else
+          Vector.sub (sizes, Vector.length sizes - 1)
+    | LEAF (_, sizes) => 
+        if Vector.length sizes = 0 then
+          0
+        else
+          Vector.sub (sizes, Vector.length sizes - 1)
 
   fun splitLeft (offset, tree) =
     case tree of
@@ -893,7 +901,7 @@ struct
     fun delete (start, length, tree) =
       let
         val finishIdx = start + length
-        val {start, finish} = startNextMatch (finishIdx, tree)
+        val {start, finish} = startNextMatch (start, tree)
       in
         if start = ~1 then
           (* nothing to delete *)
@@ -902,26 +910,48 @@ struct
           let
             (* split left and right side *)
             val left = splitLeft (start, tree)
-            val left = root left
-
             val right = splitRight (finishIdx, tree)
-            val right = root right
-
-            (* calculate what the new index should be
-             * for the first match in the right tree,
-             * and decrement the right tree to reach this index
-             * if necessary. *)
-            val leftSize = getMaxSize left
-            val {start = rightStart, ...} = getFirstItem right
-            val rightStart = rightStart + leftSize
-            val difference = start - rightStart
-            val right =
-              if difference = 0 then
-                right
-              else
-                decrement (difference, right)
           in
-            join (left, right)
+            if isEmpty right then
+              root left
+            else
+              let
+                val left = root left
+                val right = root right
+
+                (* calculate what the new index should be
+                 * for the first match in the right tree,
+                 * and decrement the right tree to reach this index
+                 * if necessary. 
+                 *
+                 * We calculate the index the right node should start at
+                 * using this method:
+                 * 1. We get the first match after finishIdx from the original * tree
+                 * 2. We subtract this by the length provided to us,
+                 *    which tells us where the right node should start at.
+                 * 3. We get the first item in the right node,
+                 *    and add the last item in the left node 
+                 *    to get an absolute value.
+                 * 4. We subtract the match from the original tree
+                 *    by the first item in the right node.
+                 *    This step gives us the difference: how much
+                 *    we need to decrement the right node by.
+                 * *)
+                val {start = shouldBeStart, ...} = 
+                  startNextMatch (finishIdx, tree)
+                val shouldBeStart = shouldBeStart - length
+
+                val leftSize = getMaxSize left
+                val {start = rightStart, ...} = getFirstItem right
+                val difference = rightStart - shouldBeStart
+                val right =
+                  if difference = 0 then
+                    right
+                  else
+                    decrement (difference, right)
+              in
+                join (left, right)
+              end
           end
       end
 
