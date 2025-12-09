@@ -870,12 +870,12 @@ struct
       | LEAF _ => tree
 
     fun decrement (minusBy, tree) =
-      case t of
+      case tree of
         BRANCH (nodes, sizes) =>
           let
             val sizes = Vector.map (fn el => el - minusBy) sizes
             val newFirstNode = decrement (minusBy, Vector.sub (nodes, 0))
-            val nodes = Vector.update (0, nodes, newFirstNode)
+            val nodes = Vector.update (nodes, 0, newFirstNode)
           in
             BRANCH (nodes, sizes)
           end
@@ -889,4 +889,39 @@ struct
           in
             LEAF (items, sizes)
           end
+
+    fun delete (start, length, tree) =
+      let
+        val finishIdx = start + length
+        val {start, finish} = startNextMatch (finishIdx, tree)
+      in
+        if start = ~1 then
+          (* nothing to delete *)
+          tree
+        else
+          let
+            (* split left and right side *)
+            val left = splitLeft (start, tree)
+            val left = root left
+
+            val right = splitRight (finishIdx, tree)
+            val right = root right
+
+            (* calculate what the new index should be
+             * for the first match in the right tree,
+             * and decrement the right tree to reach this index
+             * if necessary. *)
+            val leftSize = getMaxSize left
+            val {start = rightStart, ...} = getFirstItem right
+            val rightStart = rightStart + leftSize
+            val difference = start - rightStart
+            val right =
+              if difference = 0 then
+                right
+              else
+                decrement (difference, right)
+          in
+            join (left, right)
+          end
+      end
 end
