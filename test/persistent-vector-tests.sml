@@ -51,6 +51,23 @@ struct
              Expect.isTrue (outputList = expectedList)
            end)
     , test
+        "deletes second-last value correctly \
+        \and adjusts last value as expected"
+        (fn _ =>
+           let
+             (* arrange *)
+             val pv = Pv.fromList [(0, 0), (3, 3), (5, 5), (7, 7)]
+
+             (* act *)
+             val pv = Pv.delete (4, 1, pv)
+
+             (* assert *)
+             val outputList = Pv.toList pv
+             val expectedList = [(0, 0), (3, 3), (6, 6)]
+           in
+             Expect.isTrue (outputList = expectedList)
+           end)
+    , test
         "deletes middle value correctly \
         \and adjusts values-after-middle as well"
         (fn _ =>

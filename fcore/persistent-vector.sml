@@ -900,7 +900,7 @@ struct
 
     fun delete (start, length, tree) =
       let
-        val finishIdx = start + length
+        val finishIdx = start + length + 1
         val {start, finish} = startNextMatch (start, tree)
       in
         if start = ~1 then
@@ -910,15 +910,14 @@ struct
           let
             (* split left and right side *)
             val left = splitLeft (start, tree)
+            val left = root left
             val right = splitRight (finishIdx, tree)
+            val right = root right
           in
             if isEmpty right then
-              root left
+              left
             else
               let
-                val left = root left
-                val right = root right
-
                 (* calculate what the new index should be
                  * for the first match in the right tree,
                  * and decrement the right tree to reach this index
@@ -937,13 +936,13 @@ struct
                  *    This step gives us the difference: how much
                  *    we need to decrement the right node by.
                  * *)
-                val {start = shouldBeStart, ...} = 
-                  startNextMatch (finishIdx, tree)
-                val shouldBeStart = shouldBeStart - length
+                val {start = originalStart, ...} = startNextMatch (finishIdx, tree)
+                val originalStart = originalStart - length
 
                 val leftSize = getMaxSize left
                 val {start = rightStart, ...} = getFirstItem right
-                val difference = rightStart - shouldBeStart
+                val rightStart = rightStart + leftSize
+                val difference = rightStart - originalStart
                 val right =
                   if difference = 0 then
                     right
