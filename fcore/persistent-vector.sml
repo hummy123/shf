@@ -924,4 +924,46 @@ struct
             join (left, right)
           end
       end
+
+  (* conversion functions for testing *)
+  fun helpFromList ([], acc) = acc
+    | helpFromList ((start, finish) :: tl, acc) =
+      let
+        val acc = append (start, finish, acc)
+      in
+        helpFromList (tl, acc)
+      end
+
+  fun fromList lst = helpFromList (lst, empty)
+
+  fun helpToList (tree, acc): (int * int) list =
+    case tree of
+      BRANCH (nodes, _) => 
+        helpToListNodes (Vector.length nodes - 1, nodes, acc)
+    | LEAF (items, _) =>
+        helpToListItems (Vector.length items - 1, items, acc)
+
+  and helpToListItems (pos, items, acc) =
+    if pos < 0 then
+      acc
+    else
+      let
+        val {start, finish} = Vector.sub (items, pos)
+        val acc = (start, finish) :: acc
+      in
+        helpToListItems (pos - 1, items, acc)
+      end
+
+  and helpToListNodes (pos, nodes, acc) =
+    if pos < 0 then
+      acc
+    else
+      let
+        val node = Vector.sub (nodes, pos)
+        val acc = helpToList (node, acc)
+      in
+        helpToListNodes (pos - 1, nodes, acc)
+      end
+
+  fun toList tree = helpToList (tree, [])
 end
