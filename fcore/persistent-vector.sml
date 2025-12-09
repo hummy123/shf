@@ -859,4 +859,34 @@ struct
                 end
           end
       end
+
+    fun root tree =
+      case tree of
+        BRANCH (nodes, sizes) =>
+          if Vector.length nodes = 1 then
+            Vector.sub (nodes, 0)
+          else
+            tree
+      | LEAF _ => tree
+
+    fun decrement (minusBy, tree) =
+      case t of
+        BRANCH (nodes, sizes) =>
+          let
+            val sizes = Vector.map (fn el => el - minusBy) sizes
+            val newFirstNode = decrement (minusBy, Vector.sub (nodes, 0))
+            val nodes = Vector.update (0, nodes, newFirstNode)
+          in
+            BRANCH (nodes, sizes)
+          end
+      | LEAF (items, sizes) =>
+          let
+            val sizes = Vector.map (fn el => el - minusBy) sizes
+            val items = Vector.map 
+              (fn {start, finish} =>
+                {start = start - minusBy, finish = finish - minusBy})
+              items
+          in
+            LEAF (items, sizes)
+          end
 end
