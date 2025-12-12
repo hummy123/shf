@@ -4221,6 +4221,227 @@ struct
            end)
     ]
 
+  val diWDelete = describe "delete motion 'diW' (delete inside WORD)"
+    [ test
+        "deletes middle word when middle word is \
+        \an alphanumeric word surrounded on both sides by spaces"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello &bc_12# world\n"
+             val app = TestUtils.init originalString
+
+             val app1 = AppWith.idx (app, 6)
+             val app2 = AppWith.idx (app, 7)
+             val app3 = AppWith.idx (app, 8)
+             val app4 = AppWith.idx (app, 9)
+             val app5 = AppWith.idx (app, 10)
+             val app6 = AppWith.idx (app, 11)
+             val app7 = AppWith.idx (app, 12)
+
+             (* act *)
+             val app1 = TestUtils.updateMany (app1, "diW")
+             val app2 = TestUtils.updateMany (app2, "diW")
+             val app3 = TestUtils.updateMany (app3, "diW")
+             val app4 = TestUtils.updateMany (app4, "diW")
+             val app5 = TestUtils.updateMany (app5, "diW")
+             val app6 = TestUtils.updateMany (app6, "diW")
+             val app7 = TestUtils.updateMany (app7, "diW")
+
+             (* assert *)
+             val expectedString = "hello  world\n"
+             val expectedCursorIdx = 6
+
+             val actualString1 = LineGap.toString (#buffer app1)
+             val actualString2 = LineGap.toString (#buffer app2)
+             val actualString3 = LineGap.toString (#buffer app3)
+             val actualString4 = LineGap.toString (#buffer app4)
+             val actualString5 = LineGap.toString (#buffer app5)
+             val actualString6 = LineGap.toString (#buffer app6)
+             val actualString7 = LineGap.toString (#buffer app7)
+
+             val stringsAreExpected =
+               actualString1 = expectedString
+               andalso actualString2 = expectedString
+               andalso actualString3 = expectedString
+               andalso actualString4 = expectedString
+               andalso actualString5 = expectedString
+               andalso actualString6 = expectedString
+               andalso actualString7 = expectedString
+
+             val actualCursor1 = #cursorIdx app1
+             val actualCursor2 = #cursorIdx app2
+             val actualCursor3 = #cursorIdx app3
+             val actualCursor4 = #cursorIdx app4
+             val actualCursor5 = #cursorIdx app5
+             val actualCursor6 = #cursorIdx app6
+             val actualCursor7 = #cursorIdx app7
+
+             val cursorsAreExpected =
+               actualCursor1 = expectedCursorIdx
+               andalso actualCursor2 = expectedCursorIdx
+               andalso actualCursor3 = expectedCursorIdx
+               andalso actualCursor4 = expectedCursorIdx
+               andalso actualCursor5 = expectedCursorIdx
+               andalso actualCursor6 = expectedCursorIdx
+               andalso actualCursor7 = expectedCursorIdx
+           in
+             Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
+           end)
+    , test
+        "deletes middle word if word is a punctuation word \
+        \surrounded by spaces"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello !#%&~ world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes middle WORD when on alpha character, \
+        \including punctuation char on the left"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello !good world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes middle WORD when on punctuation character, \
+        \including alpha char on the left"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello a#%!& world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes middle WORD when on alpha char, \
+        \including punctuation to the right"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello good# world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes middle WORD when on punctuation char, \
+        \including alpha char to the right"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello #%!&z world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes middle WORD, including surrounding punctuation \
+        \when cursor is on alpha char"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello (zoo) world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes middle WORD, including surrounding alpha chars \
+        \when cursor is on punctuation char"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello a#%&~z world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes contiguous spaces when cursor is on space \
+        \which is between the middle of two words"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello     world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diW")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "helloworld\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -4247,5 +4468,6 @@ struct
     , dFDelete
     , dTDelete
     , diwDelete
+    , diWDelete
     ]
 end
