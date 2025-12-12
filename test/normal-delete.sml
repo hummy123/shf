@@ -4073,7 +4073,7 @@ struct
         (fn _ =>
            let
              (* arrange *)
-             val originalString = "hello !#%&( world\n"
+             val originalString = "hello !#%&~ world\n"
              val app = TestUtils.init originalString
              val app = AppWith.idx (app, 9)
 
@@ -4083,6 +4083,139 @@ struct
              (* assert *)
              val actualString = LineGap.toString buffer
              val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "does not delete punctuation char to the left \
+        \if middle word to be deleted is an alpha word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello !good world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello ! world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "does not delete alpha char to the left \
+        \if middle word to be deleted is a punctuation word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello a#%!& world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello a world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "does not delete punctuation char to the right \
+        \if middle word to be deleted is an alpha word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello good# world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello # world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "does not delete alpha char to the right \
+        \if middle word to be deleted is a punctuation word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello #%!&z world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello z world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "does not delete punctuation chars to the left and right \
+        \if middle word to be deleted is an alpha word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello (zoo) world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello () world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "does not delete alpha chars to the left and right \
+        \if middle word to be deleted is a punctuation word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello a#%&~z world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello az world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    , test
+        "deletes contiguous spaces when cursor is on space \
+        \which is between the middle of two words"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello     world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "helloworld\n"
            in
              Expect.isTrue (actualString = expectedString)
            end)
