@@ -25,10 +25,7 @@ struct
 
       val buffer = LineGap.goToIdx (low, buffer)
       val low =
-        if Cursor.isOnNewlineAfterChr (buffer, low) then
-          low - 1
-        else
-          low
+        if Cursor.isOnNewlineAfterChr (buffer, low) then low - 1 else low
     in
       finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
     end
@@ -915,11 +912,6 @@ struct
         helpDeleteToMatch (app, newCursorIdx, cursorIdx, time)
     end
 
-  (* check if we are trying to delete from an empty buffer
-   * or a buffer which consists of only one character which is \n *)
-  fun canDeleteInsideOrAround (buffer, low, length) =
-    not (length = 1 andalso LineGap.substring (low, 1, buffer) = "\n")
-
   fun deleteInsideWord (app: app_type, time) =
     let
       val {buffer, cursorIdx, dfa, ...} = app
@@ -959,26 +951,26 @@ struct
     let
       val {buffer, cursorIdx, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-
-      val low = Cursor.prevWORDStrict (buffer, cursorIdx, 1)
-      val high = Cursor.endOfWORDStrict (buffer, cursorIdx, 1) + 1
-
-      val buffer = LineGap.goToIdx (high, buffer)
-      val length = high - low
+      val chr = LineGap.sub (cursorIdx, buffer)
     in
-      if canDeleteInsideOrAround (buffer, low, length) then
+      if chr = #"\n" then
+        NormalFinish.clearMode app
+      else if Char.isSpace chr then
         let
-          val initialMsg = Fn.initMsgs (low, length, buffer)
-          val buffer = LineGap.delete (low, length, buffer)
-          val (buffer, searchList) = SearchList.build (buffer, dfa)
-
-          val buffer = LineGap.goToIdx (low, buffer)
+          val low = Cursor.firstContiguousSpace (buffer, cursorIdx)
+          val high = Cursor.lastContiguousSpace (buffer, cursorIdx) + 1
+          val length = high - low
         in
-          NormalFinish.buildTextAndClear
-            (app, buffer, low, searchList, initialMsg, time)
+          deleteAndFinish (app, low, length, buffer, time)
         end
       else
-        app
+        let
+          val low = Cursor.firstContiguousNonSpace (buffer, cursorIdx)
+          val high = Cursor.lastContiguousNonSpace (buffer, cursorIdx) + 1
+          val length = high - low
+        in
+          deleteAndFinish (app, low, length, buffer, time)
+        end
     end
 
   fun finishAfterDeleteInside (app: app_type, origLow, high, time) =

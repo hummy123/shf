@@ -569,6 +569,56 @@ struct
   fun lastContiguousPunct (lineGap, cursorIdx) =
     LastContiguousPunct.foldNext (lineGap, cursorIdx, ())
 
+  structure FirstContiguousNonSpace =
+    MakeIfCharFolderPrev
+      (struct
+         type env = unit
+
+         fun loop (strPos, shd, absIdx, stl) =
+           if strPos < 0 then
+             case stl of
+               shd :: stl => loop (String.size shd - 1, shd, absIdx, stl)
+             | [] => 0
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if Char.isSpace chr then absIdx + 1
+               else loop (strPos - 1, shd, absIdx - 1, stl)
+             end
+
+         fun fStart (strPos, shd, _, absIdx, stl, _, _) =
+           loop (strPos, shd, absIdx, stl)
+       end)
+
+  fun firstContiguousNonSpace (lineGap, cursorIdx) =
+    FirstContiguousNonSpace.foldPrev (lineGap, cursorIdx, ())
+
+  structure LastContiguousNonSpace =
+    MakeIfCharFolderNext
+      (struct
+         type env = unit
+
+         fun loop (strPos, shd, absIdx, stl) =
+           if strPos = String.size shd then
+             case stl of
+               shd :: stl => loop (0, shd, absIdx, stl)
+             | [] => Int.max (0, absIdx - 1)
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if Char.isSpace chr then absIdx - 1
+               else loop (strPos + 1, shd, absIdx + 1, stl)
+             end
+
+         fun fStart (strPos, shd, _, absIdx, stl, _, _) =
+           loop (strPos, shd, absIdx, stl)
+       end)
+
+  fun lastContiguousNonSpace (lineGap, cursorIdx) =
+    LastContiguousNonSpace.foldNext (lineGap, cursorIdx, ())
+
   (* Prerequisite: lineGap is moved to cursorIdx *)
   fun isCursorAtStartOfLine (lineGap: LineGap.t, cursorIdx) =
     let
