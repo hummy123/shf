@@ -22,6 +22,13 @@ struct
       val buffer = LineGap.goToIdx (low + length, buffer)
       val initialMsg = Fn.initMsgs (low, length, buffer)
       val buffer = LineGap.delete (low, length, buffer)
+
+      val buffer = LineGap.goToIdx (low, buffer)
+      val low =
+        if Cursor.isOnNewlineAfterChr (buffer, low) then
+          low - 1
+        else
+          low
     in
       finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
     end
