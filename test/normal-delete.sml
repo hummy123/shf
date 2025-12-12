@@ -4001,72 +4001,92 @@ struct
     ]
 
   val diwDelete = describe "delete motion 'diw' (delete inside word)"
-    [test
-       "deletes middle word when middle word is \
-       \an alphanumeric word surrounded on both sides by spaces"
-       (fn _ =>
-          let
-            (* arrange *)
-            val originalString = "hello abc_123 world\n"
-            val app = TestUtils.init originalString
+    [ test
+        "deletes middle word when middle word is \
+        \an alphanumeric word surrounded on both sides by spaces"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello abc_123 world\n"
+             val app = TestUtils.init originalString
 
-            val app1 = AppWith.idx (app, 6)
-            val app2 = AppWith.idx (app, 7)
-            val app3 = AppWith.idx (app, 8)
-            val app4 = AppWith.idx (app, 9)
-            val app5 = AppWith.idx (app, 10)
-            val app6 = AppWith.idx (app, 11)
-            val app7 = AppWith.idx (app, 12)
+             val app1 = AppWith.idx (app, 6)
+             val app2 = AppWith.idx (app, 7)
+             val app3 = AppWith.idx (app, 8)
+             val app4 = AppWith.idx (app, 9)
+             val app5 = AppWith.idx (app, 10)
+             val app6 = AppWith.idx (app, 11)
+             val app7 = AppWith.idx (app, 12)
 
-            (* act *)
-            val app1 = TestUtils.updateMany (app1, "diw")
-            val app2 = TestUtils.updateMany (app2, "diw")
-            val app3 = TestUtils.updateMany (app3, "diw")
-            val app4 = TestUtils.updateMany (app4, "diw")
-            val app5 = TestUtils.updateMany (app5, "diw")
-            val app6 = TestUtils.updateMany (app6, "diw")
-            val app7 = TestUtils.updateMany (app7, "diw")
+             (* act *)
+             val app1 = TestUtils.updateMany (app1, "diw")
+             val app2 = TestUtils.updateMany (app2, "diw")
+             val app3 = TestUtils.updateMany (app3, "diw")
+             val app4 = TestUtils.updateMany (app4, "diw")
+             val app5 = TestUtils.updateMany (app5, "diw")
+             val app6 = TestUtils.updateMany (app6, "diw")
+             val app7 = TestUtils.updateMany (app7, "diw")
 
-            (* assert *)
-            val expectedString = "hello  world\n"
-            val expectedCursorIdx = 6
+             (* assert *)
+             val expectedString = "hello  world\n"
+             val expectedCursorIdx = 6
 
-            val actualString1 = LineGap.toString (#buffer app1)
-            val actualString2 = LineGap.toString (#buffer app2)
-            val actualString3 = LineGap.toString (#buffer app3)
-            val actualString4 = LineGap.toString (#buffer app4)
-            val actualString5 = LineGap.toString (#buffer app5)
-            val actualString6 = LineGap.toString (#buffer app6)
-            val actualString7 = LineGap.toString (#buffer app7)
+             val actualString1 = LineGap.toString (#buffer app1)
+             val actualString2 = LineGap.toString (#buffer app2)
+             val actualString3 = LineGap.toString (#buffer app3)
+             val actualString4 = LineGap.toString (#buffer app4)
+             val actualString5 = LineGap.toString (#buffer app5)
+             val actualString6 = LineGap.toString (#buffer app6)
+             val actualString7 = LineGap.toString (#buffer app7)
 
-            val stringsAreExpected =
-              actualString1 = expectedString
-              andalso actualString2 = expectedString
-              andalso actualString3 = expectedString
-              andalso actualString4 = expectedString
-              andalso actualString5 = expectedString
-              andalso actualString6 = expectedString
-              andalso actualString7 = expectedString
+             val stringsAreExpected =
+               actualString1 = expectedString
+               andalso actualString2 = expectedString
+               andalso actualString3 = expectedString
+               andalso actualString4 = expectedString
+               andalso actualString5 = expectedString
+               andalso actualString6 = expectedString
+               andalso actualString7 = expectedString
 
-            val actualCursor1 = #cursorIdx app1
-            val actualCursor2 = #cursorIdx app2
-            val actualCursor3 = #cursorIdx app3
-            val actualCursor4 = #cursorIdx app4
-            val actualCursor5 = #cursorIdx app5
-            val actualCursor6 = #cursorIdx app6
-            val actualCursor7 = #cursorIdx app7
+             val actualCursor1 = #cursorIdx app1
+             val actualCursor2 = #cursorIdx app2
+             val actualCursor3 = #cursorIdx app3
+             val actualCursor4 = #cursorIdx app4
+             val actualCursor5 = #cursorIdx app5
+             val actualCursor6 = #cursorIdx app6
+             val actualCursor7 = #cursorIdx app7
 
-            val cursorsAreExpected =
-              actualCursor1 = expectedCursorIdx
-              andalso actualCursor2 = expectedCursorIdx
-              andalso actualCursor3 = expectedCursorIdx
-              andalso actualCursor4 = expectedCursorIdx
-              andalso actualCursor5 = expectedCursorIdx
-              andalso actualCursor6 = expectedCursorIdx
-              andalso actualCursor7 = expectedCursorIdx
-          in
-            Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
-          end)]
+             val cursorsAreExpected =
+               actualCursor1 = expectedCursorIdx
+               andalso actualCursor2 = expectedCursorIdx
+               andalso actualCursor3 = expectedCursorIdx
+               andalso actualCursor4 = expectedCursorIdx
+               andalso actualCursor5 = expectedCursorIdx
+               andalso actualCursor6 = expectedCursorIdx
+               andalso actualCursor7 = expectedCursorIdx
+           in
+             Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
+           end)
+    , test
+        "deletes middle word if word is a punctuation word \
+        \surrounded by spaces"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello !#%&( world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "diw")
+
+             (* assert *)
+             val actualString = LineGap.toString buffer
+             val expectedString = "hello  world\n"
+           in
+             Expect.isTrue (actualString = expectedString)
+           end)
+    ]
 
   val tests =
     [ dhDelete

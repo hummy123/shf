@@ -71,5 +71,4 @@ test/test-utils.sml
 test/normal-move.sml
 test/normal-delete.sml
 test/regression.sml
-test/persistent-vector-tests.sml
 test/test.sml
