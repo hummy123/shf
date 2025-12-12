@@ -917,30 +917,35 @@ struct
     let
       val {buffer, cursorIdx, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-
-      val low = Cursor.prevWordStrict (buffer, cursorIdx, 1)
-      val high = Cursor.endOfWordStrict (buffer, cursorIdx, 1) + 1
-
-      val buffer = LineGap.goToIdx (high, buffer)
-      val length = high - low
+      val chr = LineGap.sub (cursorIdx, buffer)
     in
-      if canDeleteInsideOrAround (buffer, low, length) then
+      if chr = #"\n" then
+        NormalFinish.clearMode app
+      else if Char.isAlphaNum chr orelse chr = #"_" then
         let
-          val buffer = LineGap.goToIdx (high, buffer)
+          val low = Cursor.firstContiguousAlpha (buffer, cursorIdx)
+          val high = Cursor.lastContiguousAlpha (buffer, cursorIdx) + 1
           val length = high - low
-          val initialMsg = Fn.initMsgs (low, length, buffer)
-
-          val buffer = LineGap.delete (low, length, buffer)
-
-          val (buffer, searchList) = SearchList.build (buffer, dfa)
-
-          val buffer = LineGap.goToIdx (low, buffer)
         in
-          NormalFinish.buildTextAndClear
-            (app, buffer, low, searchList, initialMsg, time)
+          deleteAndFinish (app, low, length, buffer, time)
+        end
+      else if Char.isSpace chr then
+        let
+          val low = Cursor.firstContiguousSpace (buffer, cursorIdx)
+          val high = Cursor.lastContiguousSpace (buffer, cursorIdx) + 1
+          val length = high - low
+        in
+          deleteAndFinish (app, low, length, buffer, time)
         end
       else
-        app
+        (* char is punct *)
+        let
+          val low = Cursor.firstContiguousPunct (buffer, cursorIdx)
+          val high = Cursor.lastContiguousPunct (buffer, cursorIdx) + 1
+          val length = high - low
+        in
+          deleteAndFinish (app, low, length, buffer, time)
+        end
     end
 
   fun deleteInsideWORD (app: app_type, time) =
