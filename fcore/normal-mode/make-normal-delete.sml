@@ -997,8 +997,8 @@ struct
     let
       val {buffer, cursorIdx, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val low = raise Fail "unimplemented"
-      val high = raise Fail "unimplemented"
+      val low = Cursor.aroundWORDPrev (buffer, cursorIdx)
+      val high = Cursor.aroundWORDNext (buffer, cursorIdx) + 1
       val length = high - low
     in
       deleteAndFinish (app, low, length, buffer, time)
