@@ -23,7 +23,14 @@ struct
       val initialMsg = Fn.initMsgs (low, length, buffer)
       val buffer = LineGap.delete (low, length, buffer)
 
+      val low =
+        if low >= #textLength buffer - 1 then
+          Int.max (#textLength buffer - 1, 0)
+        else
+          low
+
       val buffer = LineGap.goToIdx (low, buffer)
+
       val low =
         if Cursor.isOnNewlineAfterChr (buffer, low) then low - 1 else low
     in
@@ -971,6 +978,30 @@ struct
         in
           deleteAndFinish (app, low, length, buffer, time)
         end
+    end
+
+  fun deleteAroundWord (app: app_type, time) =
+    let
+      val {buffer, cursorIdx, dfa, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val low = Cursor.aroundWordPrev (buffer, cursorIdx)
+      val high = Cursor.aroundWordNext (buffer, cursorIdx) + 1
+
+      val length = high - low
+    in
+      deleteAndFinish (app, low, length, buffer, time)
+    end
+
+  fun deleteAroundWORD (app: app_type, time) =
+    let
+      val {buffer, cursorIdx, dfa, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val low = raise Fail "unimplemented"
+      val high = raise Fail "unimplemented"
+      val length = high - low
+    in
+      deleteAndFinish (app, low, length, buffer, time)
     end
 
   fun finishAfterDeleteInside (app: app_type, origLow, high, time) =

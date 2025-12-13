@@ -1,1 +1,4 @@
 hello abc_123 world
+
+fun hello () =
+  print (##)lo"

@@ -619,7 +619,177 @@ struct
   fun lastContiguousNonSpace (lineGap, cursorIdx) =
     LastContiguousNonSpace.foldNext (lineGap, cursorIdx, ())
 
-  (* Prerequisite: lineGap is moved to cursorIdx *)
+  structure AroundWordPrev =
+    MakeIfCharFolderPrev
+      (struct
+         type env = unit
+
+         fun loopAlphaNum (strPos, shd, absIdx, stl) =
+           if strPos < 0 then
+             case stl of
+               shd :: stl =>
+                 loopAlphaNum (String.size shd - 1, shd, absIdx, stl)
+             | [] => 0
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if Char.isAlphaNum chr orelse chr = #"_" then
+                 loopAlphaNum (strPos - 1, shd, absIdx - 1, stl)
+               else
+                 absIdx + 1
+             end
+
+         fun loopPunct (strPos, shd, absIdx, stl) =
+           if strPos < 0 then
+             case stl of
+               shd :: stl => loopPunct (String.size shd - 1, shd, absIdx, stl)
+             | [] => 0
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if
+                 Char.isAlphaNum chr orelse chr = #"_" orelse chr = #"\n"
+                 orelse Char.isSpace chr
+               then absIdx + 1
+               else (* is punct *) loopPunct (strPos - 1, shd, absIdx - 1, stl)
+             end
+
+         fun loopSpace (strPos, shd, absIdx, stl) =
+           if strPos < 0 then
+             case stl of
+               shd :: stl => loopSpace (String.size shd - 1, shd, absIdx, stl)
+             | [] => 0
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if chr = #"\n" then
+                 absIdx + 1
+               else if Char.isSpace chr then
+                 loopSpace (strPos - 1, shd, absIdx - 1, stl)
+               else
+                 absIdx + 1
+             end
+
+         fun fStart (strPos, shd, _, absIdx, stl, _, _) =
+           let
+             val chr = String.sub (shd, strPos)
+           in
+             if chr = #"\n" then
+               absIdx
+             else if Char.isAlphaNum chr orelse chr = #"_" then
+               loopAlphaNum (strPos - 1, shd, absIdx - 1, stl)
+             else if Char.isSpace chr then
+               loopSpace (strPos - 1, shd, absIdx - 1, stl)
+             else
+               loopPunct (strPos - 1, shd, absIdx - 1, stl)
+           end
+       end)
+
+  fun aroundWordPrev (lineGap, cursorIdx) =
+    AroundWordPrev.foldPrev (lineGap, cursorIdx, ())
+
+  structure AroundWordNext =
+    MakeIfCharFolderNext
+      (struct
+         type env = unit
+
+         fun stopAtFirstNonSpace (strPos, shd, absIdx, stl) =
+           if strPos = String.size shd then
+             case stl of
+               shd :: stl => stopAtFirstNonSpace (0, shd, absIdx, stl)
+             | [] => absIdx
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if chr = #"\n" then
+                 absIdx - 1
+               else if Char.isSpace chr then
+                 stopAtFirstNonSpace (strPos + 1, shd, absIdx + 1, stl)
+               else
+                 absIdx - 1
+             end
+
+         fun loopAlphaNum (strPos, shd, absIdx, stl) =
+           if strPos = String.size shd then
+             case stl of
+               shd :: stl => loopAlphaNum (0, shd, absIdx, stl)
+             | [] => absIdx
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if chr = #"\n" then
+                 absIdx - 1
+               else if Char.isAlphaNum chr orelse chr = #"_" then
+                 loopAlphaNum (strPos + 1, shd, absIdx + 1, stl)
+               else if Char.isSpace chr then
+                 stopAtFirstNonSpace (strPos + 1, shd, absIdx + 1, stl)
+               else
+                 (* is punct *)
+                 absIdx - 1
+             end
+
+         fun loopPunct (strPos, shd, absIdx, stl) =
+           if strPos = String.size shd then
+             case stl of
+               shd :: stl => loopPunct (0, shd, absIdx, stl)
+             | [] => absIdx
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if chr = #"\n" then
+                 absIdx - 1
+               else if Char.isAlphaNum chr orelse chr = #"_" then
+                 absIdx - 1
+               else if Char.isSpace chr then
+                 stopAtFirstNonSpace (strPos + 1, shd, absIdx + 1, stl)
+               else
+                 (* is punct *)
+                 loopPunct (strPos + 1, shd, absIdx + 1, stl)
+             end
+
+         fun loopSpace (strPos, shd, absIdx, stl) =
+           if strPos = String.size shd then
+             case stl of
+               shd :: stl => loopSpace (0, shd, absIdx, stl)
+             | [] => absIdx
+           else
+             let
+               val chr = String.sub (shd, strPos)
+             in
+               if chr = #"\n" then
+                 absIdx - 1
+               else if Char.isAlphaNum chr orelse chr = #"_" then
+                 loopAlphaNum (strPos + 1, shd, absIdx + 1, stl)
+               else if Char.isSpace chr then
+                 loopSpace (strPos + 1, shd, absIdx + 1, stl)
+               else
+                 loopPunct (strPos + 1, shd, absIdx + 1, stl)
+             end
+
+         fun fStart (strPos, shd, _, absIdx, stl, _, _) =
+           let
+             val chr = String.sub (shd, strPos)
+           in
+             if chr = #"\n" then
+               absIdx
+             else if Char.isAlphaNum chr orelse chr = #"_" then
+               loopAlphaNum (strPos + 1, shd, absIdx + 1, stl)
+             else if Char.isSpace chr then
+               loopSpace (strPos + 1, shd, absIdx + 1, stl)
+             else
+               loopPunct (strPos + 1, shd, absIdx + 1, stl)
+           end
+       end)
+
+  fun aroundWordNext (lineGap, cursorIdx) =
+    AroundWordNext.foldNext (lineGap, cursorIdx, ())
+
   fun isCursorAtStartOfLine (lineGap: LineGap.t, cursorIdx) =
     let
       val {rightStrings, idx = bufferIdx, ...} = lineGap

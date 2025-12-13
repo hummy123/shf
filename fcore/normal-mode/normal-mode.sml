@@ -234,7 +234,9 @@ struct
 
     fun parseDeleteAround (app, chr, time) =
       case chr of
-        #"(" => NormalDelete.deleteAroundChrOpen (app, chr, time)
+        #"w" => NormalDelete.deleteAroundWord (app, time)
+      | #"W" => NormalDelete.deleteAroundWORD (app, time)
+      | #"(" => NormalDelete.deleteAroundChrOpen (app, chr, time)
       | #"[" => NormalDelete.deleteAroundChrOpen (app, chr, time)
       | #"{" => NormalDelete.deleteAroundChrOpen (app, chr, time)
       | #"<" => NormalDelete.deleteAroundChrOpen (app, chr, time)
