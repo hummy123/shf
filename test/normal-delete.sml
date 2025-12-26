@@ -4442,6 +4442,27 @@ struct
            end)
     ]
 
+  val dawDelete = describe "delete motion 'daw' (delete around word)"
+    [test "deletes a single newline when cursor is on a newline" (fn _ =>
+       let
+         (* arrange *)
+         val originalString = "hello\n\nworld\n"
+         val app = TestUtils.init originalString
+         val app = AppWith.idx (app, 6)
+
+         (* act *)
+         val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "daw")
+
+         (* assert *)
+         val expectedString = "hello\nworld\n"
+         val actualString = LineGap.toString buffer
+
+         val expectedCursorIdx = 6
+       in
+         Expect.isTrue
+           (actualString = expectedString andalso cursorIdx = expectedCursorIdx)
+       end)]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -4469,5 +4490,6 @@ struct
     , dTDelete
     , diwDelete
     , diWDelete
+    , dawDelete
     ]
 end
