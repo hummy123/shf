@@ -4517,6 +4517,52 @@ struct
            in
              Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
            end)
+    , test
+        "deletes trailing spaces when cursor is on word \
+        \that has multiple trailing spaces after it"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello again    world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 7)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "daw")
+
+             (* assert *)
+             val expectedString = "hello world\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedCursorIdx = 6
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes last world on line when cursor is on space \
+        \which immediately precedes last word"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello again    world\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 13)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "daw")
+
+             (* assert *)
+             val expectedString = "hello again\n"
+             val actualString = LineGap.toString buffer
+
+             val expectedCursorIdx = 10
+           in
+             Expect.isTrue
+               (actualString = expectedString
+                andalso cursorIdx = expectedCursorIdx)
+           end)
     ]
 
   val tests =
