@@ -624,26 +624,21 @@ struct
         in
           Expect.isTrue (chr = #"w")
         end)
-    , test "moves cursor past newline when next word is after newline" (fn _ =>
-        (* This behaviour makes behaviour different from vi,
-         * where "w" when a newline is in between causes cursor 
-         * to go to newline and not next word.
-         * I don't personally like this behaviour from vi 
-         * since one can just press "j" to go to the newline instead
-         * and it is more intuitive for the cursor to go the next word
-         * as usual with "w". *)
-        let
-          (* arrange *)
-          val app = TestUtils.init "hello \n\n\n world\n"
+    , test
+        "moves cursor to first char-after-newline \
+        \when cursor is on last word of line \
+        \and there is another line after this one"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello \n\n\n world\n"
 
-          (* act *)
-          val app = TestUtils.update (app, CHAR_EVENT #"w")
-
-          (* assert *)
-          val cursorChr = getChr app
-        in
-          Expect.isTrue (cursorChr = #"w")
-        end)
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"w")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 7)
+           end)
     , test "does not break on undescore when cursor is on alphanumeric char"
         (fn _ =>
            let
@@ -949,10 +944,10 @@ struct
         in
           Expect.isTrue (cursorChr = #")")
         end)
-    , test "skips 'space' chars: '\\n', '\\t', ' '" (fn _ =>
+    , test "skips past tab" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "0123   \t   \n   \t 789\n"
+          val app = TestUtils.init "0123   \t   \t   \t 789\n"
           val app = AppWith.idx (app, 4)
 
           (* act *)
@@ -992,6 +987,23 @@ struct
         in
           Expect.isTrue chrIsEnd
         end)
+    , test
+        "moves cursor to end of current word \
+        \when current word is last word in line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello\n\n\nworld\n"
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"e")
+
+             (* assert *)
+             val isAtEndOfHello = getChr app = #"o"
+           in
+             Expect.isTrue isAtEndOfHello
+           end)
     ]
 
   val EMove = describe "move motion 'E'"
@@ -1050,10 +1062,10 @@ struct
         in
           Expect.isTrue (cursorChr = #"o")
         end)
-    , test "skips 'space' chars: '\\n', '\\t', ' '" (fn _ =>
+    , test "skips past tab: '\\t'" (fn _ =>
         let
           (* arrange *)
-          val app = TestUtils.init "0123   \t   \n   \t 789\n"
+          val app = TestUtils.init "0123   \t   \t   \t 789\n"
           val app = AppWith.idx (app, 4)
 
           (* act *)
@@ -1175,6 +1187,19 @@ struct
              (* assert *)
              Expect.isTrue (getChr app = #"!")
            end)
+    , test "stops when char preceding word is newline" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\n\n\nworld\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, String.size originalString - 2)
+
+          (* act *)
+          val app = TestUtils.update (app, CHAR_EVENT #"b")
+        in
+          (* assert *)
+          Expect.isTrue (getChr app = #"w")
+        end)
     ]
 
   val BMove = describe "move motion 'B'"

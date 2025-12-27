@@ -1,4 +1,4 @@
-hello abc_123 world
+hello
 
-fun hello () =
-  print (##)lo"
+
+world

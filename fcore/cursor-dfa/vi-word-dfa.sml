@@ -12,14 +12,19 @@ struct
   val spaceToAlpha: Word8.word = 0w6
   val spaceToPunct: Word8.word = 0w7
 
-  val alphaToPunct: Word8.word = 0w8
-  val punctToAlpha: Word8.word = 0w9
+  val startNewline: Word8.word = 0w8
+  val newlineToNewline: Word8.word = 0w9
+  val chrToNewline: Word8.word = 0w10
+
+  val alphaToPunct: Word8.word = 0w11
+  val punctToAlpha: Word8.word = 0w12
 
   fun makeStart i =
     let
       val chr = Char.chr i
     in
       if Char.isAlphaNum chr orelse chr = #"_" then startAlpha
+      else if chr = #"\n" then startNewline
       else if Char.isSpace chr then startSpace
       else startPunct
     end
@@ -29,6 +34,7 @@ struct
       val chr = Char.chr i
     in
       if Char.isAlphaNum chr orelse chr = #"_" then startAlpha
+      else if chr = #"\n" then chrToNewline
       else if Char.isSpace chr then alphaToSpace
       else alphaToPunct
     end
@@ -38,6 +44,7 @@ struct
       val chr = Char.chr i
     in
       if Char.isAlphaNum chr orelse chr = #"_" then spaceToAlpha
+      else if chr = #"\n" then chrToNewline
       else if Char.isSpace chr then startSpace
       else spaceToPunct
     end
@@ -47,7 +54,18 @@ struct
       val chr = Char.chr i
     in
       if Char.isAlphaNum chr orelse chr = #"_" then punctToAlpha
+      else if chr = #"\n" then chrToNewline
       else if Char.isSpace chr then punctToSpace
+      else startPunct
+    end
+
+  fun makeStartNewline i =
+    let
+      val chr = Char.chr i
+    in
+      if Char.isAlphaNum chr orelse chr = #"_" then startAlpha
+      else if chr = #"\n" then newlineToNewline
+      else if Char.isSpace chr then startSpace
       else startPunct
     end
 
@@ -63,6 +81,8 @@ struct
   val spaceToAlphaTable = startAlphaTable
   val spaceToPunctTable = startPunctTable
 
+  val newlineTable = Vector.tabulate (255, makeStartNewline)
+
   val tables =
    #[ startTable
 
@@ -75,6 +95,10 @@ struct
 
     , spaceToAlphaTable
     , spaceToPunctTable
+
+    , newlineTable
+    , newlineTable
+    , newlineTable
     ]
 
   structure StartOfNextWord =
@@ -92,6 +116,7 @@ struct
                   currentState = alphaToPunct orelse currentState = punctToAlpha
                   orelse currentState = spaceToAlpha
                   orelse currentState = spaceToPunct
+                  orelse currentState = newlineToNewline
 
                 fun finish x = x
               end)
@@ -130,6 +155,8 @@ struct
          fun isFinal currentState =
            currentState = alphaToSpace orelse currentState = punctToSpace
            orelse currentState = alphaToPunct orelse currentState = punctToAlpha
+           orelse currentState = chrToNewline
+           orelse currentState = newlineToNewline
 
          fun finish idx = idx + 1
        end)
@@ -151,6 +178,7 @@ struct
   fun isFinalForEndOfCurrentWord currentState =
     currentState = alphaToSpace orelse currentState = punctToSpace
     orelse currentState = alphaToPunct orelse currentState = punctToAlpha
+    orelse currentState = chrToNewline
 
   structure EndOfCurrentWordFolder =
     MakeCharFolderNext
