@@ -1197,8 +1197,29 @@ struct
         in
           Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
         end)
+    , test "does not delete newline following WORD" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\nagain\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 0)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dW")
+
+          (* assert *)
+          val expectedString = "\nworld\nagain\n"
+          val expectedCursor = 0
+
+          val actualString = LineGap.toString buffer
+
+          val stringIsExpected = expectedString = actualString
+          val cursorIsExpected = expectedCursor = cursorIdx
+        in
+          Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+        end)
     , test
-        "deletes newline when there is a newline after current word \
+        "does not delete newline when there is a newline after current word \
         \and there is another word following that newline"
         (fn _ =>
            let
@@ -1211,8 +1232,8 @@ struct
              val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "dW")
 
              (* assert *)
-             val expectedString = "hworld\nagain\n"
-             val expectedCursor = 1
+             val expectedString = "h\nworld\nagain\n"
+             val expectedCursor = 0
 
              val actualString = LineGap.toString buffer
 

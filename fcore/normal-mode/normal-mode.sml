@@ -258,7 +258,7 @@ struct
       | #"j" => NormalDelete.deleteLineDown (app, count, time)
       | #"k" => NormalDelete.deleteLineBack (app, count, time)
       | #"w" => NormalDelete.deleteWord (app, count, time)
-      | #"W" => NormalDelete.deleteByDfa (app, count, Cursor.nextWORD, time)
+      | #"W" => NormalDelete.deleteWORD (app, count, time)
       | #"b" => NormalDelete.deleteByDfa (app, count, Cursor.prevWord, time)
       | #"B" => NormalDelete.deleteByDfa (app, count, Cursor.prevWORD, time)
       | #"e" =>
@@ -347,7 +347,7 @@ struct
       | #"j" => NormalYankDelete.deleteLineDown (app, count, time)
       | #"k" => NormalYankDelete.deleteLineBack (app, count, time)
       | #"w" => NormalYankDelete.deleteWord (app, count, time)
-      | #"W" => NormalYankDelete.deleteByDfa (app, count, Cursor.nextWORD, time)
+      | #"W" => NormalYankDelete.deleteWORD (app, count, time)
       | #"b" => NormalYankDelete.deleteByDfa (app, count, Cursor.prevWord, time)
       | #"B" => NormalYankDelete.deleteByDfa (app, count, Cursor.prevWORD, time)
       | #"e" =>

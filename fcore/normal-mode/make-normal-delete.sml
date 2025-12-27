@@ -341,6 +341,20 @@ struct
         deleteAndFinish (app, cursorIdx, length, buffer, time)
       end
 
+  fun deleteWORD (app as {buffer, ...}: app_type, count, time) =
+    if #textLength buffer = 1 then
+      NormalFinish.clearMode app
+    else
+      let
+        val {buffer, cursorIdx, ...} = app
+
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val high = Cursor.nextWORDForDelete (buffer, cursorIdx, count)
+        val length = high - cursorIdx
+      in
+        deleteAndFinish (app, cursorIdx, length, buffer, time)
+      end
+
   fun deleteByDfa (app as {buffer, ...}: app_type, count, fMove, time) =
     if #textLength buffer = 1 then
       NormalFinish.clearMode app
