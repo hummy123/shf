@@ -132,6 +132,40 @@ struct
          val fStart = Folder.foldNext
        end)
 
+  (* This is the same as StartOfNextWord, except for the `isFinal` function.
+   * The difference is that the `isFinal` function here considers
+   * the state where any character goes to a newline,
+   * to be a final state.
+   * This is because, in Vim, the 'w' motion will move past a newline
+   * when that newline is preceded by a non-newline character.
+   * However, the 'dw' motion deletes until that newline 
+   * (not including the newline itself).
+   * It is easier, less fragile, and perhaps clearer,
+   * to implement the difference using a transition table like this
+   * than convoluted if-statements. *)
+  structure StartOfNextWordForDelete =
+    MakeNextDfaLoop
+      (struct
+         val startState = startState
+
+         structure Folder =
+           MakeCharFolderNext
+             (struct
+                val startState = startState
+                val tables = tables
+
+                fun isFinal currentState =
+                  currentState = alphaToPunct orelse currentState = punctToAlpha
+                  orelse currentState = spaceToAlpha
+                  orelse currentState = spaceToPunct
+                  orelse currentState = chrToNewline
+
+                fun finish x = x
+              end)
+
+         val fStart = Folder.foldNext
+       end)
+
   structure EndOfPrevWord =
     MakePrevDfaLoop
       (struct
@@ -232,6 +266,7 @@ struct
 
   (* w *)
   val startOfNextWord = StartOfNextWord.next
+  val startOfNextWordForDelete = StartOfNextWordForDelete.next
   (* ge *)
   val endOfPrevWord = EndOfPrevWord.prev
   (* b *)

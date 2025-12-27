@@ -60,6 +60,7 @@ struct
 
   (* equivalent of vi's 'w' command *)
   val nextWord = ViWordDfa.startOfNextWord
+  val nextWordForDelete = ViWordDfa.startOfNextWordForDelete
 
   (* equivalent of vi's 'W' command *)
   val nextWORD = ViCapsWordDfa.startOfNextWORD
