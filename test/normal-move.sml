@@ -754,6 +754,18 @@ struct
              (* assert *)
              Expect.isTrue (#cursorIdx app = 4)
            end)
+    , test "moves cursor to character after newline" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "hello\nworld\nagain\n"
+          val app = AppWith.idx (app, 0)
+
+          (* act *)
+          val app = TestUtils.update (app, CHAR_EVENT #"w")
+        in
+          (* assert *)
+          Expect.isTrue (#cursorIdx app = 6)
+        end)
     ]
 
   val WMove = describe "move motion 'W'"

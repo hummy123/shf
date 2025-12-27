@@ -33,6 +33,9 @@ struct
 
       val low =
         if Cursor.isOnNewlineAfterChr (buffer, low) then low - 1 else low
+
+      val buffer =
+        if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
     in
       finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
     end
@@ -323,6 +326,52 @@ struct
             (app, newCursorIdx, buffer, time, initialMsg)
         end
     end
+
+  fun deleteWord (app as {buffer, ...}: app_type, count, time) =
+    if #textLength buffer = 1 then
+      NormalFinish.clearMode app
+    else
+      let
+        val {buffer, cursorIdx, ...} = app
+
+        val buffer = LineGap.goToIdx (cursorIdx, buffer)
+        val high = Cursor.nextWord (buffer, cursorIdx, count)
+        val buffer = LineGap.goToIdx (high, buffer)
+      in
+        (* The Cursor.nextWord skips newlines in some cases,
+         * which makes sense for the 'w' move motion.
+         * However, we sometimes don't want to skip newlines when deleting.
+         * For example, when 'dw' is used on the last word in a line,
+         * the 'w' motion would go to the first character of the next line
+         * but the 'dw' motion should delete until the newline. *)
+        if high >= #textLength buffer then
+          let
+            val finish = #textLength buffer - 1
+            val buffer = LineGap.goToIdx (finish, buffer)
+            val length =
+              if Cursor.isCursorAtStartOfLine (buffer, finish) then
+                finish - cursorIdx
+              else
+                high - cursorIdx
+          in
+            deleteAndFinish (app, cursorIdx, length, buffer, time)
+          end
+        else if Cursor.isCursorAtStartOfLine (buffer, high) then
+          deleteAndFinish (app, cursorIdx, high - cursorIdx, buffer, time)
+        else
+          let
+            val beforeHigh = high - 1
+            val buffer = LineGap.goToIdx (beforeHigh, buffer)
+            val high =
+              if
+                Cursor.isCursorAtStartOfLine (buffer, beforeHigh)
+                andalso beforeHigh <> cursorIdx
+              then beforeHigh
+              else high
+          in
+            deleteAndFinish (app, cursorIdx, high - cursorIdx, buffer, time)
+          end
+      end
 
   fun deleteByDfa (app as {buffer, ...}: app_type, count, fMove, time) =
     if #textLength buffer = 1 then

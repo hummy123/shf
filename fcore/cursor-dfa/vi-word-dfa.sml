@@ -16,8 +16,11 @@ struct
   val newlineToNewline: Word8.word = 0w9
   val chrToNewline: Word8.word = 0w10
 
-  val alphaToPunct: Word8.word = 0w11
-  val punctToAlpha: Word8.word = 0w12
+  val newlineToAlpha: Word8.word = 0w11
+  val newlineToPunct: Word8.word = 0w12
+
+  val alphaToPunct: Word8.word = 0w13
+  val punctToAlpha: Word8.word = 0w14
 
   fun makeStart i =
     let
@@ -63,10 +66,10 @@ struct
     let
       val chr = Char.chr i
     in
-      if Char.isAlphaNum chr orelse chr = #"_" then startAlpha
+      if Char.isAlphaNum chr orelse chr = #"_" then newlineToAlpha
       else if chr = #"\n" then newlineToNewline
       else if Char.isSpace chr then startSpace
-      else startPunct
+      else newlineToPunct
     end
 
   val startTable = Vector.tabulate (255, makeStart)
@@ -99,6 +102,9 @@ struct
     , newlineTable
     , newlineTable
     , newlineTable
+
+    , startAlphaTable
+    , startPunctTable
     ]
 
   structure StartOfNextWord =
@@ -117,6 +123,8 @@ struct
                   orelse currentState = spaceToAlpha
                   orelse currentState = spaceToPunct
                   orelse currentState = newlineToNewline
+                  orelse currentState = newlineToAlpha
+                  orelse currentState = newlineToPunct
 
                 fun finish x = x
               end)
