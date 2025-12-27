@@ -5,27 +5,52 @@ struct
   val startSpaceState: Word8.word = 0w2
   val nonBlankAfterSpaceState: Word8.word = 0w3
   val spaceAfterNonBlankState = 0w4
+  val startNewline: Word8.word = 0w5
+  val newlineToNewline: Word8.word = 0w6
+  val chrToNewline: Word8.word = 0w07
 
   fun makeStart i =
-    let val chr = Char.chr i
-    in if Char.isSpace chr then startSpaceState else startNonBlankState
+    let
+      val chr = Char.chr i
+    in
+      if chr = #"\n" then startNewline
+      else if Char.isSpace chr then startSpaceState
+      else startNonBlankState
     end
 
   fun makeStartNonBlankState i =
-    let val chr = Char.chr i
-    in if Char.isSpace chr then spaceAfterNonBlankState else startNonBlankState
+    let
+      val chr = Char.chr i
+    in
+      if chr = #"\n" then chrToNewline
+      else if Char.isSpace chr then spaceAfterNonBlankState
+      else startNonBlankState
     end
 
   fun makeStartSpace i =
-    let val chr = Char.chr i
-    in if Char.isSpace chr then startSpaceState else nonBlankAfterSpaceState
+    let
+      val chr = Char.chr i
+    in
+      if chr = #"\n" then chrToNewline
+      else if Char.isSpace chr then startSpaceState
+      else nonBlankAfterSpaceState
     end
 
   fun makeNonBlankAfterSpace i =
     let
       val chr = Char.chr i
     in
-      if Char.isSpace chr then spaceAfterNonBlankState
+      if chr = #"\n" then chrToNewline
+      else if Char.isSpace chr then spaceAfterNonBlankState
+      else nonBlankAfterSpaceState
+    end
+
+  fun makeStartNewline i =
+    let
+      val chr = Char.chr i
+    in
+      if chr = #"\n" then newlineToNewline
+      else if Char.isSpace chr then startSpaceState
       else nonBlankAfterSpaceState
     end
 
@@ -34,6 +59,7 @@ struct
   val startSpaceTable = Vector.tabulate (255, makeStartSpace)
   val nonBlankAfterSpaceTable = Vector.tabulate (255, makeNonBlankAfterSpace)
   val spaceAfterNonBlankTable = nonBlankAfterSpaceTable
+  val newlineTable = Vector.tabulate (255, makeStartNewline)
 
   val tables =
    #[ startTable
@@ -41,6 +67,9 @@ struct
     , startSpaceTable
     , nonBlankAfterSpaceTable
     , spaceAfterNonBlankTable
+    , newlineTable
+    , newlineTable
+    , newlineTable
     ]
 
   structure StartOfNextWORD =
@@ -55,8 +84,31 @@ struct
                 val tables = tables
 
                 fun finish x = x
+
                 fun isFinal currentState =
                   currentState = nonBlankAfterSpaceState
+                  orelse currentState = newlineToNewline
+              end)
+
+         val fStart = Folder.foldNext
+       end)
+
+  structure StartOfNextWORDForDelete =
+    MakeNextDfaLoop
+      (struct
+         val startState = startState
+
+         structure Folder =
+           MakeCharFolderNext
+             (struct
+                val startState = startState
+                val tables = tables
+
+                fun finish x = x
+
+                fun isFinal currentState =
+                  currentState = nonBlankAfterSpaceState
+                  orelse currentState = chrToNewline
               end)
 
          val fStart = Folder.foldNext
@@ -74,6 +126,7 @@ struct
                 val tables = tables
 
                 fun finish x = x
+
                 fun isFinal currentState =
                   currentState = nonBlankAfterSpaceState
               end)
@@ -87,7 +140,11 @@ struct
          val startState = startState
          val tables = tables
 
-         fun isFinal currentState = currentState = spaceAfterNonBlankState
+         fun isFinal currentState =
+           currentState = spaceAfterNonBlankState
+           orelse currentState = chrToNewline
+           orelse currentState = newlineToNewline
+
          fun finish idx = idx + 1
        end)
 
@@ -105,13 +162,17 @@ struct
          val fStart = StartOfCurrentWORDFolder.foldPrev
        end)
 
+  fun endOfCurrentWORDFolderIsFinal currentState =
+    currentState = spaceAfterNonBlankState orelse currentState = chrToNewline
+
   structure EndOfCurrentWORDFolder =
     MakeCharFolderNext
       (struct
          val startState = startState
          val tables = tables
 
-         fun isFinal currentState = currentState = spaceAfterNonBlankState
+         val isFinal = endOfCurrentWORDFolderIsFinal
+
          fun finish idx =
            Int.max (0, idx - 1)
        end)
@@ -134,8 +195,8 @@ struct
                 val startState = startState
                 val tables = tables
 
-                fun isFinal currentState =
-                  currentState = spaceAfterNonBlankState
+                val isFinal = endOfCurrentWORDFolderIsFinal
+
                 fun finish idx = idx
               end)
 
@@ -151,6 +212,7 @@ struct
 
   (* W *)
   val startOfNextWORD = StartOfNextWORD.next
+  val startOfNextWORDForDelete = StartOfNextWORDForDelete.next
   (* gE *)
   val endOfPrevWORD = EndOfPrevWORD.prev
   (* B *)

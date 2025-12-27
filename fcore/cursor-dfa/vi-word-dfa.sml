@@ -181,6 +181,9 @@ struct
                   currentState = alphaToPunct orelse currentState = punctToAlpha
                   orelse currentState = spaceToAlpha
                   orelse currentState = spaceToPunct
+                  orelse currentState = newlineToNewline
+                  orelse currentState = newlineToAlpha
+                  orelse currentState = newlineToPunct
 
                 fun finish x = x
               end)

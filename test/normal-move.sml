@@ -782,19 +782,21 @@ struct
         in
           Expect.isTrue (chr = #"w")
         end)
-    , test "moves cursor past newline when next WORD is after newline" (fn _ =>
-        let
-          (* arrange *)
-          val app = TestUtils.init "hello \n\n\n world\n"
+    , test
+        "moves cursor to first char-after-newline \
+        \when cursor is on last word of line \
+        \and there is another line after this one"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "hello \n\n\n world\n"
 
-          (* act *)
-          val app = TestUtils.update (app, CHAR_EVENT #"W")
-
-          (* assert *)
-          val cursorChr = getChr app
-        in
-          Expect.isTrue (cursorChr = #"w")
-        end)
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"W")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 7)
+           end)
     , test "does not break on punctuation when cursor is on alphanumeric char"
         (fn _ =>
            (* vi's definition of 'WORD' instead of 'word' *)
