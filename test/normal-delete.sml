@@ -4581,6 +4581,46 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test
+        "deletes alpha word when cursor is on alpha char \
+        \and alpha word is surrounded by punctuation chars"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "#hello#\n"
+             val app = AppWith.idx (app, 3)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "daw")
+
+             (* assert *)
+             val expectedIdx = 1
+             val expectedString = "##\n"
+             val actualString = LineGap.toString buffer
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
+           end)
+    , test
+        "deletes punctuation word when cursor is on punctuation char \
+        \and punctuation word is surrounded by alpha chars"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "h#%&(e\n"
+             val app = AppWith.idx (app, 3)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "daw")
+
+             (* assert *)
+             val expectedIdx = 1
+             val expectedString = "he\n"
+             val actualString = LineGap.toString buffer
+           in
+             Expect.isTrue
+               (expectedString = actualString andalso expectedIdx = cursorIdx)
+           end)
     ]
 
   val tests =

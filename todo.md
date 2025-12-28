@@ -1,7 +1,7 @@
 # To-do list
 
 - Add tests for:
-- Test delete-around-word/WORD
+- Test delete-around-WORD
   - Delete-around-word has tests for when cursor is on space (needs tests for alpha and punctuation too)
 - Reimple `%` motion and `d%` motion.
   - They should both search for the next character in any pair, the same way in Vim
