@@ -209,14 +209,47 @@ struct
 
   val toPrevChr = ToPrevChr.foldPrev
 
+  structure NextPairChr =
+    MakeIfCharFolderNext
+      (struct
+         type env = unit
+
+        fun isPairChr chr =
+          chr = #"(" orelse chr = #")" orelse 
+          chr = #"[" orelse chr = #"]" orelse
+          chr = #"{" orelse chr = #"}" orelse
+          chr = #"<" orelse chr = #">"
+
+        fun loop (strPos, str, absIdx, stl) =
+          if strPos = String.size str then
+            case stl of
+              str :: stl => loop (0, str, absIdx, stl)
+            | [] => ~1
+          else
+            let
+              val chr = String.sub (str, strPos)
+            in
+              if isPairChr chr then
+                absIdx
+              else
+                loop (strPos + 1, str, absIdx + 1, stl)
+            end
+
+         fun fStart (strPos, str, _, absIdx, stl, _, _) =
+           loop (strPos, str, absIdx, stl)
+       end)
+
+  fun nextPairChr (lineGap, cursorIdx) =
+    NextPairChr.foldNext (lineGap, cursorIdx, ())
+
   fun helpMatchPairNext
-    (strPos, str, absIdx, stl, origIdx, openChr, openNum, closeChr, closeNum) =
+    (strPos, str, absIdx, stl, openChr, openNum, closeChr, closeNum) =
     if strPos = String.size str then
       case stl of
         hd :: tl =>
           helpMatchPairNext
-            (0, hd, absIdx, tl, origIdx, openChr, openNum, closeChr, closeNum)
-      | [] => origIdx
+            (0, hd, absIdx, tl, openChr, openNum, closeChr, closeNum)
+      | [] => ~1
     else
       let
         val chr = String.sub (str, strPos)
@@ -231,7 +264,6 @@ struct
             , str
             , absIdx + 1
             , stl
-            , origIdx
             , openChr
             , openNum
             , closeChr
@@ -240,7 +272,7 @@ struct
       end
 
   fun helpMatchPairPrev
-    (strPos, str, absIdx, stl, origIdx, openChr, openNum, closeChr, closeNum) =
+    (strPos, str, absIdx, stl, openChr, openNum, closeChr, closeNum) =
     if strPos < 0 then
       case stl of
         hd :: tl =>
@@ -249,13 +281,12 @@ struct
             , hd
             , absIdx
             , tl
-            , origIdx
             , openChr
             , openNum
             , closeChr
             , closeNum
             )
-      | [] => origIdx
+      | [] => ~1
     else
       let
         val chr = String.sub (str, strPos)
@@ -270,7 +301,6 @@ struct
             , str
             , absIdx - 1
             , stl
-            , origIdx
             , openChr
             , openNum
             , closeChr
@@ -286,7 +316,6 @@ struct
           , shd
           , cursorIdx + 1
           , rightStrings
-          , cursorIdx
           , #"("
           , 1
           , #")"
@@ -298,7 +327,6 @@ struct
           , shd
           , cursorIdx - 1
           , leftStrings
-          , cursorIdx
           , #"("
           , 0
           , #")"
@@ -310,7 +338,6 @@ struct
           , shd
           , cursorIdx + 1
           , rightStrings
-          , cursorIdx
           , #"["
           , 1
           , #"]"
@@ -322,7 +349,6 @@ struct
           , shd
           , cursorIdx - 1
           , leftStrings
-          , cursorIdx
           , #"["
           , 0
           , #"]"
@@ -334,7 +360,6 @@ struct
           , shd
           , cursorIdx + 1
           , rightStrings
-          , cursorIdx
           , #"{"
           , 1
           , #"}"
@@ -346,7 +371,6 @@ struct
           , shd
           , cursorIdx - 1
           , leftStrings
-          , cursorIdx
           , #"{"
           , 0
           , #"}"
@@ -358,7 +382,6 @@ struct
           , shd
           , cursorIdx + 1
           , rightStrings
-          , cursorIdx
           , #"<"
           , 1
           , #">"
@@ -370,13 +393,12 @@ struct
           , shd
           , cursorIdx - 1
           , leftStrings
-          , cursorIdx
           , #"<"
           , 0
           , #">"
           , 1
           )
-    | _ => cursorIdx
+    | _ => ~1
 
   fun matchPair (lineGap: LineGap.t, cursorIdx) =
     let

@@ -398,46 +398,57 @@ struct
 
       (* move LineGap and buffer to start of line *)
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val cursorIdx = Cursor.matchPair (buffer, cursorIdx)
+      val cursorIdx = Cursor.nextPairChr (buffer, cursorIdx)
     in
-      let
-        val buffer = LineGap.goToIdx (cursorIdx, buffer)
-        val visualScrollColumn =
-          TextScroll.getScrollColumn
-            (buffer, cursorIdx, windowWidth, prevScrollColumn)
+      if cursorIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val cursorIdx = Cursor.matchPair (buffer, cursorIdx)
+        in
+          if cursorIdx = ~1 then
+            NormalFinish.clearMode app
+          else
+            let
+              val buffer = LineGap.goToIdx (cursorIdx, buffer)
+              val visualScrollColumn =
+                TextScroll.getScrollColumn
+                  (buffer, cursorIdx, windowWidth, prevScrollColumn)
 
-        val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
-        val startLine =
-          TextScroll.getStartLine
-            (prevLineNumber, cursorLine, windowHeight, #lineLength buffer)
+              val cursorLine = LineGap.idxToLineNumber (cursorIdx, buffer)
+              val startLine =
+                TextScroll.getStartLine
+                  (prevLineNumber, cursorLine, windowHeight, #lineLength buffer)
 
-        val buffer = LineGap.goToLine (startLine, buffer)
+              val buffer = LineGap.goToLine (startLine, buffer)
 
-        val drawMsg = NormalModeTextBuilder.build
-          ( startLine
-          , cursorIdx
-          , buffer
-          , windowWidth
-          , windowHeight
-          , searchList
-          , visualScrollColumn
-          )
-        val drawMsg = Vector.concat drawMsg
-        val drawMsg = DrawMsg.DRAW_TEXT drawMsg
-        val drawMsg = [MailboxType.DRAW drawMsg]
-      in
-        NormalModeWith.bufferAndCursorIdx
-          ( app
-          , buffer
-          , cursorIdx
-          , NORMAL_MODE ""
-          , startLine
-          , searchList
-          , drawMsg
-          , bufferModifyTime
-          , visualScrollColumn
-          )
-      end
+              val drawMsg = NormalModeTextBuilder.build
+                ( startLine
+                , cursorIdx
+                , buffer
+                , windowWidth
+                , windowHeight
+                , searchList
+                , visualScrollColumn
+                )
+              val drawMsg = Vector.concat drawMsg
+              val drawMsg = DrawMsg.DRAW_TEXT drawMsg
+              val drawMsg = [MailboxType.DRAW drawMsg]
+            in
+              NormalModeWith.bufferAndCursorIdx
+                ( app
+                , buffer
+                , cursorIdx
+                , NORMAL_MODE ""
+                , startLine
+                , searchList
+                , drawMsg
+                , bufferModifyTime
+                , visualScrollColumn
+                )
+            end
+        end
     end
 
   fun firstNonSpaceChr (app: app_type) =

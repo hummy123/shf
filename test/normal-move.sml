@@ -1752,21 +1752,39 @@ struct
           (* assert *)
           Expect.isTrue (getChr app = #"<")
         end)
-    (* testing that % on a non-pair character is a no-op *)
-    , test "does not move when cursor is on a non-pair-character" (fn _ =>
-        let
-          (* arrange *)
-          val app = TestUtils.init "hello, world\n"
-          val app = AppWith.idx (app, 5)
-          val oldIdx = #cursorIdx app
+    , test
+        "does not move when cursor is on a non-pair-character, \
+        \and there is no pair-character where the cursor is at or after the cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "he()o, world\n"
+             val app = AppWith.idx (app, 5)
+             val oldIdx = #cursorIdx app
 
-          (* act *)
-          val app = TestUtils.update (app, CHAR_EVENT #"%")
-          val newIdx = #cursorIdx app
-        in
-          (* assert *)
-          Expect.isTrue (newIdx = oldIdx)
-        end)
+             (* act *)
+             val app = TestUtils.update (app, CHAR_EVENT #"%")
+             val newIdx = #cursorIdx app
+           in
+             (* assert *)
+             Expect.isTrue (newIdx = oldIdx)
+           end)
+    , test
+        "moves cursor when the cursor is not on a \
+        \pair-character, but there is a pair-character \
+        \after the cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "he()o world\n"
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {cursorIdx, ...} = TestUtils.update (app, CHAR_EVENT #"%")
+           in
+             (* assert *)
+             Expect.isTrue (cursorIdx = 3)
+           end)
     ]
 
   (* movements which use multiple chars *)
