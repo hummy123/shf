@@ -1132,36 +1132,45 @@ struct
   fun deletePair (app: app_type, time) =
     let
       val {cursorIdx, buffer, dfa, ...} = app
-      val otherIdx = Cursor.matchPair (buffer, cursorIdx)
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val otherIdx = Cursor.nextPairChr (buffer, cursorIdx)
     in
-      if otherIdx = cursorIdx then
+      if otherIdx = ~1 then
         NormalFinish.clearMode app
       else
         let
-          val low = Int.min (cursorIdx, otherIdx)
-          val high = Int.max (cursorIdx, otherIdx)
-          val length = high - low + 1
-
-          val buffer = LineGap.goToIdx (high, buffer)
-          val initialMsg = Fn.initMsgs (low, length, buffer)
-
-          val buffer = LineGap.delete (low, length, buffer)
-          val (buffer, searchList) = SearchList.build (buffer, dfa)
-
-          val buffer = LineGap.goToIdx (low, buffer)
-
-          val low =
-            if Cursor.isCursorAtStartOfLine (buffer, low) then
-              (* we may have deleted the last character of this current line,
-               * and if we did, we have to move the cursor back by 1 *)
-              Int.max (low - 1, 0)
-            else
-              low
-
-          val buffer = LineGap.goToIdx (low, buffer)
+          val buffer = LineGap.goToIdx (otherIdx, buffer)
+          val otherIdx = Cursor.matchPair (buffer, otherIdx)
         in
-          NormalFinish.buildTextAndClear
-            (app, buffer, low, searchList, initialMsg, time)
+          if otherIdx = ~1 then
+            NormalFinish.clearMode app
+          else
+            let
+              val low = Int.min (cursorIdx, otherIdx)
+              val high = Int.max (cursorIdx, otherIdx)
+              val length = high - low + 1
+
+              val buffer = LineGap.goToIdx (high, buffer)
+              val initialMsg = Fn.initMsgs (low, length, buffer)
+
+              val buffer = LineGap.delete (low, length, buffer)
+              val (buffer, searchList) = SearchList.build (buffer, dfa)
+
+              val buffer = LineGap.goToIdx (low, buffer)
+
+              val low =
+                if Cursor.isCursorAtStartOfLine (buffer, low) then
+                  (* we may have deleted the last character of this current line,
+                   * and if we did, we have to move the cursor back by 1 *)
+                  Int.max (low - 1, 0)
+                else
+                  low
+
+              val buffer = LineGap.goToIdx (low, buffer)
+            in
+              NormalFinish.buildTextAndClear
+                (app, buffer, low, searchList, initialMsg, time)
+            end
         end
     end
 end
