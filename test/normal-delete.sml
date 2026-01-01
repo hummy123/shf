@@ -4786,6 +4786,295 @@ struct
            end)
     ]
 
+  val pairDelete = describe "delete motion 'd%' (delete pair)"
+    [ test
+        "deletes from cursor to matching ) \
+        \when cursor is on ("
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "(hello)\n"
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+             val expectedIdx = 0
+           in
+             Expect.isTrue
+               (actualString = expectedString andalso cursorIdx = expectedIdx)
+           end)
+    , test
+        "deletes from cursor to matching ( \
+        \when cursor is on )"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "(hello)\n"
+             val app = AppWith.idx (app, 6)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+             (* assert *)
+             val expectedString = "\n"
+             val expectedIdx = 0
+             val actualString = LineGap.toString buffer
+           in
+             Expect.isTrue
+               (actualString = expectedString andalso cursorIdx = expectedIdx)
+           end)
+    (* testing that cursor deletes at correct level of nesting *)
+    , test "deletes to outermouse ) when cursor is on outermost (" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "(((hello)))\n"
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to outermost ( when cursor is on outermost )" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "(((hello)))\n"
+          val app = AppWith.idx (app, 10)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to middle ) when cursor is on middle (" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "(((hello)))\n"
+          val app = AppWith.idx (app, 1)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "()\n"
+          val expectedIdx = 1
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to middle ( when cursor is on middle )" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "(((hello)))\n"
+          val app = AppWith.idx (app, 9)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "()\n"
+          val expectedIdx = 1
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to innermost ) when cursor is on innermost (" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "(((hello)))\n"
+          val app = AppWith.idx (app, 2)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "(())\n"
+          val expectedIdx = 2
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to innermost ( when cursor is on innermost )" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "(((hello)))\n"
+          val app = AppWith.idx (app, 8)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "(())\n"
+          val expectedIdx = 2
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    (* testing different pair combinations *)
+    , test "deletes to next ] when cursor is on [" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "[hello]\n"
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to preceding [ when cursur is on ]" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "[hello]\n"
+          val app = AppWith.idx (app, 6)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to next } when cursor is on {" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "{hello}\n"
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to preceding { when cursur is on }" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "{hello}\n"
+          val app = AppWith.idx (app, 6)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to next > when cursor is on <" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "<hello>\n"
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test "deletes to preceding < when cursur is on >" (fn _ =>
+        let
+          (* arrange *)
+          val app = TestUtils.init "<hello>\n"
+          val app = AppWith.idx (app, 6)
+
+          (* act *)
+          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+          (* assert *)
+          val expectedString = "\n"
+          val expectedIdx = 0
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue
+            (actualString = expectedString andalso cursorIdx = expectedIdx)
+        end)
+    , test
+        "does not delete when cursor is on a non-pair-character, \
+        \and there is no pair-character where the cursor is at or after the cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "he()o, world\n"
+             val app = AppWith.idx (app, 5)
+             val oldBuffer = #buffer app
+             val oldIdx = #cursorIdx app
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "d%")
+             val newBuffer = #buffer app
+             val newIdx = #cursorIdx app
+
+             (* assert *)
+             val oldString = LineGap.toString oldBuffer
+             val newString = LineGap.toString newBuffer
+           in
+             (* assert *)
+             Expect.isTrue (newString = oldString andalso newIdx = oldIdx)
+           end)
+    , test
+        "deletes from cursor to matching pair \
+        \when cursor is not on a pair-character \
+        \but there is a pair-character after it"
+        (fn _ =>
+           let
+             (* arrange *)
+             val app = TestUtils.init "he()o world\n"
+             val app = AppWith.idx (app, 0)
+
+             (* act *)
+             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "d%")
+
+             (* assert *)
+             val expectedString = "o world\n"
+             val expectedIdx = 0
+             val actualString = LineGap.toString buffer
+           in
+             (* assert *)
+             Expect.isTrue
+               (actualString = expectedString andalso cursorIdx = expectedIdx)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -4815,5 +5104,6 @@ struct
     , diWDelete
     , dawDelete
     , daWDelete
+    , pairDelete
     ]
 end
