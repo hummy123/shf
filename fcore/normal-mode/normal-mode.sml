@@ -222,14 +222,18 @@ struct
       case chr of
         #"w" => NormalDelete.deleteInsideWord (app, time)
       | #"W" => NormalDelete.deleteInsideWORD (app, time)
-      | #"(" => NormalDelete.deleteInsideChrOpen (app, chr, time)
-      | #"[" => NormalDelete.deleteInsideChrOpen (app, chr, time)
-      | #"{" => NormalDelete.deleteInsideChrOpen (app, chr, time)
-      | #"<" => NormalDelete.deleteInsideChrOpen (app, chr, time)
-      | #")" => NormalDelete.deleteInsideChrClose (app, chr, time)
-      | #"]" => NormalDelete.deleteInsideChrClose (app, chr, time)
-      | #"}" => NormalDelete.deleteInsideChrClose (app, chr, time)
-      | #">" => NormalDelete.deleteInsideChrClose (app, chr, time)
+
+      | #"(" => NormalDelete.deleteInsidePair (app, #"(", #")", time)
+      | #")" => NormalDelete.deleteInsidePair (app, #"(", #")", time)
+
+      | #"[" => NormalDelete.deleteInsidePair (app, #"[", #"]", time)
+      | #"]" => NormalDelete.deleteInsidePair (app, #"[", #"]", time)
+
+      | #"{" => NormalDelete.deleteInsidePair (app, #"{", #"}", time)
+      | #"}" => NormalDelete.deleteInsidePair (app, #"{", #"}", time)
+
+      | #"<" => NormalDelete.deleteInsidePair (app, #"<", #">", time)
+      | #">" => NormalDelete.deleteInsidePair (app, #"<", #">", time)
       | _ => NormalFinish.clearMode app
 
     fun parseDeleteAround (app, chr, time) =

@@ -1035,6 +1035,51 @@ struct
       deleteAndFinish (app, low, length, buffer, time)
     end
 
+  fun deleteInsidePair (app: app_type, openChr, closeChr, time) =
+    let
+      val {buffer, cursorIdx, dfa, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val nextIdx =
+        Cursor.toCloseChrNext
+          (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
+    in
+      if nextIdx = ~1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val buffer = LineGap.goToIdx (nextIdx, buffer)
+          val matchIdx = Cursor.matchPair (buffer, nextIdx)
+        in
+          if matchIdx = ~1 then
+            NormalFinish.clearMode app
+          else
+            let
+              val low = Int.min (nextIdx, matchIdx)
+              val high = Int.max (nextIdx, matchIdx)
+            in
+              if high = low + 1 then
+                NormalFinish.clearMode app
+              else
+                let
+                  val deleteLow = low + 1
+                  val length = high - deleteLow
+
+                  val buffer = LineGap.goToIdx (high, buffer)
+                  val initialMsg = Fn.initMsgs (deleteLow, length, buffer)
+
+                  val buffer = LineGap.delete (deleteLow, length, buffer)
+                  val (buffer, searchList) = SearchList.build (buffer, dfa)
+
+                  val buffer = LineGap.goToIdx (low, buffer)
+                in
+                  NormalFinish.buildTextAndClear
+                    (app, buffer, low, searchList, initialMsg, time)
+                end
+            end
+        end
+    end
+
   fun finishAfterDeleteInside (app: app_type, origLow, high, time) =
     if origLow = high then
       NormalFinish.clearMode app
