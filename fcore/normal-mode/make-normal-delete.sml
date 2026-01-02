@@ -1035,143 +1035,140 @@ struct
       deleteAndFinish (app, low, length, buffer, time)
     end
 
+  fun finishDeletingInsidePair (app, buffer, cursorIdx, otherIdx, dfa, time) =
+    let
+      val low = Int.min (cursorIdx, otherIdx)
+      val high = Int.max (cursorIdx, otherIdx)
+    in
+      if high = low + 1 then
+        NormalFinish.clearMode app
+      else
+        let
+          val deleteLow = low + 1
+          val length = high - deleteLow
+
+          val buffer = LineGap.goToIdx (high, buffer)
+          val initialMsg = Fn.initMsgs (deleteLow, length, buffer)
+
+          val buffer = LineGap.delete (deleteLow, length, buffer)
+          val (buffer, searchList) = SearchList.build (buffer, dfa)
+
+          val buffer = LineGap.goToIdx (low, buffer)
+        in
+          NormalFinish.buildTextAndClear
+            (app, buffer, low, searchList, initialMsg, time)
+        end
+    end
+
   fun deleteInsidePair (app: app_type, openChr, closeChr, time) =
     let
       val {buffer, cursorIdx, dfa, ...} = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
-      val nextIdx =
-        Cursor.toCloseChrNext
-          (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
+      val cursorChr = LineGap.sub (cursorIdx, buffer)
     in
-      if nextIdx = ~1 then
-        NormalFinish.clearMode app
+      if cursorChr = openChr orelse cursorChr = closeChr then
+        let
+          val otherIdx = Cursor.matchPair (buffer, cursorIdx)
+        in
+          finishDeletingInsidePair (app, buffer, cursorIdx, otherIdx, dfa, time)
+        end
       else
         let
-          val buffer = LineGap.goToIdx (nextIdx, buffer)
-          val matchIdx = Cursor.matchPair (buffer, nextIdx)
+          val nextIdx =
+            Cursor.toCloseChrNext
+              (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
         in
-          if matchIdx = ~1 then
+          if nextIdx = ~1 then
             NormalFinish.clearMode app
           else
             let
-              val low = Int.min (nextIdx, matchIdx)
-              val high = Int.max (nextIdx, matchIdx)
+              val buffer = LineGap.goToIdx (nextIdx, buffer)
+              val matchIdx = Cursor.matchPair (buffer, nextIdx)
             in
-              if high = low + 1 then
+              if matchIdx = ~1 then
                 NormalFinish.clearMode app
               else
-                let
-                  val deleteLow = low + 1
-                  val length = high - deleteLow
-
-                  val buffer = LineGap.goToIdx (high, buffer)
-                  val initialMsg = Fn.initMsgs (deleteLow, length, buffer)
-
-                  val buffer = LineGap.delete (deleteLow, length, buffer)
-                  val (buffer, searchList) = SearchList.build (buffer, dfa)
-
-                  val buffer = LineGap.goToIdx (low, buffer)
-                in
-                  NormalFinish.buildTextAndClear
-                    (app, buffer, low, searchList, initialMsg, time)
-                end
+                finishDeletingInsidePair
+                  (app, buffer, nextIdx, matchIdx, dfa, time)
             end
         end
     end
 
-  fun finishAfterDeleteInside (app: app_type, origLow, high, time) =
-    if origLow = high then
-      NormalFinish.clearMode app
-    else
-      let
-        val {cursorIdx, buffer, dfa, ...} = app
-        val low = origLow + 1
-        val length = high - low
-
-        val buffer = LineGap.goToIdx (high, buffer)
-        val initialMsg = Fn.initMsgs (low, length, buffer)
-
-        val buffer = LineGap.delete (low, length, buffer)
-        val (buffer, searchList) = SearchList.build (buffer, dfa)
-
-        val buffer = LineGap.goToIdx (origLow, buffer)
-      in
-        NormalFinish.buildTextAndClear
-          (app, buffer, origLow, searchList, initialMsg, time)
-      end
-
-  fun deleteInsideChrOpen (app: app_type, chr, time) =
+  fun finishDeleteAroundPair (app, buffer, chr1Idx, chr2Idx, time) =
     let
-      val {cursorIdx, buffer, ...} = app
+      val low = Int.min (chr1Idx, chr2Idx)
+      val high = Int.max (chr1Idx, chr2Idx) + 1
+      val length = high - low
 
-      val start = cursorIdx + 1
-      val buffer = LineGap.goToIdx (start, buffer)
-
-      val origLow = Cursor.toPrevChr (buffer, start, {findChr = chr, count = 1})
-      val buffer = LineGap.goToIdx (origLow, buffer)
-      val high = Cursor.matchPair (buffer, origLow)
-    in
-      finishAfterDeleteInside (app, origLow, high, time)
-    end
-
-  fun deleteInsideChrClose (app: app_type, chr, time) =
-    let
-      val {cursorIdx, buffer, ...} = app
-
-      val start = Int.max (cursorIdx - 1, 0)
-      val buffer = LineGap.goToIdx (start, buffer)
-
-      val high = Cursor.toNextChr (buffer, start, {findChr = chr, count = 1})
-      val buffer = LineGap.goToIdx (high, buffer)
-      val origLow = Cursor.matchPair (buffer, high)
-    in
-      finishAfterDeleteInside (app, origLow, high, time)
-    end
-
-  fun finishDeleteAroundChr (app, low, high, buffer, time) =
-    let
-      val length = high - low + 1
       val buffer = LineGap.goToIdx (high, buffer)
       val initialMsg = Fn.initMsgs (low, length, buffer)
-
       val buffer = LineGap.delete (low, length, buffer)
+
       val buffer = LineGap.goToIdx (low, buffer)
       val low =
-        if Cursor.isCursorAtStartOfLine (buffer, low) then Int.max (low - 1, 0)
-        else low
+        if Cursor.isOnNewlineAfterChr (buffer, low) then low - 1 else low
+      val buffer = LineGap.goToIdx (low, buffer)
     in
       finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
     end
 
-  fun deleteAroundChrOpen (app: app_type, chr, time) =
+  fun finishDeletingPair (app, buffer, cursorIdx, otherIdx, dfa, time) =
     let
-      val {cursorIdx, buffer, ...} = app
+      val low = Int.min (cursorIdx, otherIdx)
+      val high = Int.max (cursorIdx, otherIdx)
+      val length = high - low + 1
 
-      val start = cursorIdx + 1
-      val buffer = LineGap.goToIdx (start, buffer)
+      val buffer = LineGap.goToIdx (high, buffer)
+      val initialMsg = Fn.initMsgs (low, length, buffer)
 
-      val low = Cursor.toPrevChr (buffer, start, {findChr = chr, count = 1})
+      val buffer = LineGap.delete (low, length, buffer)
+      val (buffer, searchList) = SearchList.build (buffer, dfa)
+
       val buffer = LineGap.goToIdx (low, buffer)
-      val high = Cursor.matchPair (buffer, low)
+
+      val low =
+        if Cursor.isCursorAtStartOfLine (buffer, low) then
+          (* we may have deleted the last character of this current line,
+           * and if we did, we have to move the cursor back by 1 *)
+          Int.max (low - 1, 0)
+        else
+          low
+
+      val buffer = LineGap.goToIdx (low, buffer)
     in
-      if low = high then NormalFinish.clearMode app
-      else finishDeleteAroundChr (app, low, high, buffer, time)
+      NormalFinish.buildTextAndClear
+        (app, buffer, low, searchList, initialMsg, time)
     end
 
-  fun deleteAroundChrClose (app: app_type, chr, time) =
+  fun deleteAroundPair (app: app_type, openChr, closeChr, time) =
     let
-      val {cursorIdx, buffer, ...} = app
+      val {buffer, cursorIdx, dfa, ...} = app
 
-      val start = Int.max (cursorIdx - 1, 0)
-      val buffer = LineGap.goToIdx (start, buffer)
-
-      val high = Cursor.toNextChr (buffer, start, {findChr = chr, count = 1})
-      val buffer = LineGap.goToIdx (high, buffer)
-      val low = Cursor.matchPair (buffer, high)
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val cursorChr = LineGap.sub (cursorIdx, buffer)
     in
-      if low = high then NormalFinish.clearMode app
-      else finishDeleteAroundChr (app, low, high, buffer, time)
+      if cursorChr = closeChr orelse cursorChr = openChr then
+        let val pairIdx = Cursor.matchPair (buffer, cursorIdx)
+        in finishDeletingPair (app, buffer, cursorIdx, pairIdx, dfa, time)
+        end
+      else
+        let
+          val nextIdx =
+            Cursor.toCloseChrNext
+              (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
+        in
+          if nextIdx = ~1 then
+            NormalFinish.clearMode app
+          else
+            let
+              val buffer = LineGap.goToIdx (nextIdx, buffer)
+              val matchIdx = Cursor.matchPair (buffer, nextIdx)
+            in
+              if matchIdx = ~1 then NormalFinish.clearMode app
+              else finishDeleteAroundPair (app, buffer, nextIdx, matchIdx, time)
+            end
+        end
     end
 
   fun deletePair (app: app_type, time) =
@@ -1187,35 +1184,8 @@ struct
           val buffer = LineGap.goToIdx (otherIdx, buffer)
           val otherIdx = Cursor.matchPair (buffer, otherIdx)
         in
-          if otherIdx = ~1 then
-            NormalFinish.clearMode app
-          else
-            let
-              val low = Int.min (cursorIdx, otherIdx)
-              val high = Int.max (cursorIdx, otherIdx)
-              val length = high - low + 1
-
-              val buffer = LineGap.goToIdx (high, buffer)
-              val initialMsg = Fn.initMsgs (low, length, buffer)
-
-              val buffer = LineGap.delete (low, length, buffer)
-              val (buffer, searchList) = SearchList.build (buffer, dfa)
-
-              val buffer = LineGap.goToIdx (low, buffer)
-
-              val low =
-                if Cursor.isCursorAtStartOfLine (buffer, low) then
-                  (* we may have deleted the last character of this current line,
-                   * and if we did, we have to move the cursor back by 1 *)
-                  Int.max (low - 1, 0)
-                else
-                  low
-
-              val buffer = LineGap.goToIdx (low, buffer)
-            in
-              NormalFinish.buildTextAndClear
-                (app, buffer, low, searchList, initialMsg, time)
-            end
+          if otherIdx = ~1 then NormalFinish.clearMode app
+          else finishDeletingPair (app, buffer, cursorIdx, otherIdx, dfa, time)
         end
     end
 end

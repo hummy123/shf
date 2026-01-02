@@ -240,14 +240,19 @@ struct
       case chr of
         #"w" => NormalDelete.deleteAroundWord (app, time)
       | #"W" => NormalDelete.deleteAroundWORD (app, time)
-      | #"(" => NormalDelete.deleteAroundChrOpen (app, chr, time)
-      | #"[" => NormalDelete.deleteAroundChrOpen (app, chr, time)
-      | #"{" => NormalDelete.deleteAroundChrOpen (app, chr, time)
-      | #"<" => NormalDelete.deleteAroundChrOpen (app, chr, time)
-      | #")" => NormalDelete.deleteAroundChrClose (app, chr, time)
-      | #"]" => NormalDelete.deleteAroundChrClose (app, chr, time)
-      | #"}" => NormalDelete.deleteAroundChrClose (app, chr, time)
-      | #">" => NormalDelete.deleteAroundChrClose (app, chr, time)
+
+
+      | #"(" => NormalDelete.deleteAroundPair (app, #"(", #")", time)
+      | #")" => NormalDelete.deleteAroundPair (app, #"(", #")", time)
+
+      | #"[" => NormalDelete.deleteAroundPair (app, #"[", #"]", time)
+      | #"]" => NormalDelete.deleteAroundPair (app, #"[", #"]", time)
+
+      | #"{" => NormalDelete.deleteAroundPair (app, #"{", #"}", time)
+      | #"}" => NormalDelete.deleteAroundPair (app, #"{", #"}", time)
+
+      | #"<" => NormalDelete.deleteAroundPair (app, #"<", #">", time)
+      | #">" => NormalDelete.deleteAroundPair (app, #"<", #">", time)
       | _ => NormalFinish.clearMode app
 
     fun parseDeleteTerminal (str, count, app, chrCmd, time) =
@@ -317,26 +322,37 @@ struct
       case chr of
         #"w" => NormalYankDelete.deleteInsideWord (app, time)
       | #"W" => NormalYankDelete.deleteInsideWORD (app, time)
-      | #"(" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
-      | #"[" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
-      | #"{" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
-      | #"<" => NormalYankDelete.deleteInsideChrOpen (app, chr, time)
-      | #")" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
-      | #"]" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
-      | #"}" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
-      | #">" => NormalYankDelete.deleteInsideChrClose (app, chr, time)
+
+      | #"(" => NormalYankDelete.deleteInsidePair (app, #"(", #")", time)
+      | #")" => NormalYankDelete.deleteInsidePair (app, #"(", #")", time)
+
+      | #"[" => NormalYankDelete.deleteInsidePair (app, #"[", #"]", time)
+      | #"]" => NormalYankDelete.deleteInsidePair (app, #"[", #"]", time)
+
+      | #"{" => NormalYankDelete.deleteInsidePair (app, #"{", #"}", time)
+      | #"}" => NormalYankDelete.deleteInsidePair (app, #"{", #"}", time)
+
+      | #"<" => NormalYankDelete.deleteInsidePair (app, #"<", #">", time)
+      | #">" => NormalYankDelete.deleteInsidePair (app, #"<", #">", time)
       | _ => NormalFinish.clearMode app
 
     fun parseDeleteAround (app, chr, time) =
       case chr of
-        #"(" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
-      | #"[" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
-      | #"{" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
-      | #"<" => NormalYankDelete.deleteAroundChrOpen (app, chr, time)
-      | #")" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
-      | #"]" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
-      | #"}" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
-      | #">" => NormalYankDelete.deleteAroundChrClose (app, chr, time)
+        #"w" => NormalYankDelete.deleteAroundWord (app, time)
+      | #"W" => NormalYankDelete.deleteAroundWORD (app, time)
+
+
+      | #"(" => NormalYankDelete.deleteAroundPair (app, #"(", #")", time)
+      | #")" => NormalYankDelete.deleteAroundPair (app, #"(", #")", time)
+
+      | #"[" => NormalYankDelete.deleteAroundPair (app, #"[", #"]", time)
+      | #"]" => NormalYankDelete.deleteAroundPair (app, #"[", #"]", time)
+
+      | #"{" => NormalYankDelete.deleteAroundPair (app, #"{", #"}", time)
+      | #"}" => NormalYankDelete.deleteAroundPair (app, #"{", #"}", time)
+
+      | #"<" => NormalYankDelete.deleteAroundPair (app, #"<", #">", time)
+      | #">" => NormalYankDelete.deleteAroundPair (app, #"<", #">", time)
       | _ => NormalFinish.clearMode app
 
     fun parseDeleteTerminal (str, count, app, chrCmd, time) =

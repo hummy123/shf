@@ -1,9 +1,7 @@
 # To-do list
 
 - Add tests for:
-- Reimplement `di<symbol>` and `da<symbol>`
-  - They should search for the next char in the specific pair, the same way in Vim
-  - Add tests for both
+  - `di<symbol>` and `da<symbol>`
 
   Afterwards, add tests for yanking.
 

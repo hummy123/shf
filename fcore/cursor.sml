@@ -260,7 +260,7 @@ struct
              end
 
          fun fStart (strPos, str, _, absIdx, stl, _, {openChr, closeChr}) =
-           loop (strPos, str, absIdx, stl, openChr, closeChr, 0)
+           loop (strPos + 1, str, absIdx + 1, stl, openChr, closeChr, 0)
        end)
 
   val toCloseChrNext = ToCloseChrNext.foldNext
