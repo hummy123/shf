@@ -209,31 +209,52 @@ struct
 
   val toPrevChr = ToPrevChr.foldPrev
 
+  structure ToEitherChrNext =
+    MakeIfCharFolderNext
+      (struct
+         type env = {chr1: char, chr2: char}
+
+         fun loop (strPos, str, absIdx, stl, chr1, chr2) =
+           if strPos = String.size str then
+             case stl of
+               str :: stl => loop (0, str, absIdx, stl, chr1, chr2)
+             | [] => ~1
+           else
+             let
+               val chr = String.sub (str, strPos)
+             in
+               if chr = chr1 orelse chr = chr2 then absIdx
+               else loop (strPos + 1, str, absIdx + 1, stl, chr1, chr2)
+             end
+
+         fun fStart (strPos, str, _, absIdx, stl, _, {chr1, chr2}) =
+           loop (strPos, str, absIdx, stl, chr1, chr2)
+       end)
+
+  val toEitherChrNext = ToEitherChrNext.foldNext
+
   structure NextPairChr =
     MakeIfCharFolderNext
       (struct
          type env = unit
 
-        fun isPairChr chr =
-          chr = #"(" orelse chr = #")" orelse 
-          chr = #"[" orelse chr = #"]" orelse
-          chr = #"{" orelse chr = #"}" orelse
-          chr = #"<" orelse chr = #">"
+         fun isPairChr chr =
+           chr = #"(" orelse chr = #")" orelse chr = #"[" orelse chr = #"]"
+           orelse chr = #"{" orelse chr = #"}" orelse chr = #"<"
+           orelse chr = #">"
 
-        fun loop (strPos, str, absIdx, stl) =
-          if strPos = String.size str then
-            case stl of
-              str :: stl => loop (0, str, absIdx, stl)
-            | [] => ~1
-          else
-            let
-              val chr = String.sub (str, strPos)
-            in
-              if isPairChr chr then
-                absIdx
-              else
-                loop (strPos + 1, str, absIdx + 1, stl)
-            end
+         fun loop (strPos, str, absIdx, stl) =
+           if strPos = String.size str then
+             case stl of
+               str :: stl => loop (0, str, absIdx, stl)
+             | [] => ~1
+           else
+             let
+               val chr = String.sub (str, strPos)
+             in
+               if isPairChr chr then absIdx
+               else loop (strPos + 1, str, absIdx + 1, stl)
+             end
 
          fun fStart (strPos, str, _, absIdx, stl, _, _) =
            loop (strPos, str, absIdx, stl)
@@ -312,92 +333,28 @@ struct
     case String.sub (shd, strIdx) of
       #"(" =>
         helpMatchPairNext
-          ( strIdx + 1
-          , shd
-          , cursorIdx + 1
-          , rightStrings
-          , #"("
-          , 1
-          , #")"
-          , 0
-          )
+          (strIdx + 1, shd, cursorIdx + 1, rightStrings, #"(", 1, #")", 0)
     | #")" =>
         helpMatchPairPrev
-          ( strIdx - 1
-          , shd
-          , cursorIdx - 1
-          , leftStrings
-          , #"("
-          , 0
-          , #")"
-          , 1
-          )
+          (strIdx - 1, shd, cursorIdx - 1, leftStrings, #"(", 0, #")", 1)
     | #"[" =>
         helpMatchPairNext
-          ( strIdx + 1
-          , shd
-          , cursorIdx + 1
-          , rightStrings
-          , #"["
-          , 1
-          , #"]"
-          , 0
-          )
+          (strIdx + 1, shd, cursorIdx + 1, rightStrings, #"[", 1, #"]", 0)
     | #"]" =>
         helpMatchPairPrev
-          ( strIdx - 1
-          , shd
-          , cursorIdx - 1
-          , leftStrings
-          , #"["
-          , 0
-          , #"]"
-          , 1
-          )
+          (strIdx - 1, shd, cursorIdx - 1, leftStrings, #"[", 0, #"]", 1)
     | #"{" =>
         helpMatchPairNext
-          ( strIdx + 1
-          , shd
-          , cursorIdx + 1
-          , rightStrings
-          , #"{"
-          , 1
-          , #"}"
-          , 0
-          )
+          (strIdx + 1, shd, cursorIdx + 1, rightStrings, #"{", 1, #"}", 0)
     | #"}" =>
         helpMatchPairPrev
-          ( strIdx - 1
-          , shd
-          , cursorIdx - 1
-          , leftStrings
-          , #"{"
-          , 0
-          , #"}"
-          , 1
-          )
+          (strIdx - 1, shd, cursorIdx - 1, leftStrings, #"{", 0, #"}", 1)
     | #"<" =>
         helpMatchPairNext
-          ( strIdx + 1
-          , shd
-          , cursorIdx + 1
-          , rightStrings
-          , #"<"
-          , 1
-          , #">"
-          , 0
-          )
+          (strIdx + 1, shd, cursorIdx + 1, rightStrings, #"<", 1, #">", 0)
     | #">" =>
         helpMatchPairPrev
-          ( strIdx - 1
-          , shd
-          , cursorIdx - 1
-          , leftStrings
-          , #"<"
-          , 0
-          , #">"
-          , 1
-          )
+          (strIdx - 1, shd, cursorIdx - 1, leftStrings, #"<", 0, #">", 1)
     | _ => ~1
 
   fun matchPair (lineGap: LineGap.t, cursorIdx) =
