@@ -1140,66 +1140,60 @@ struct
       finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
     end
 
-  fun finishDeletingPair (app, buffer, cursorIdx, otherIdx, dfa, time) =
-    let
-      val low = Int.min (cursorIdx, otherIdx)
-      val high = Int.max (cursorIdx, otherIdx)
-      val length = high - low + 1
-
-      val buffer = LineGap.goToIdx (high, buffer)
-      val initialMsg = Fn.initMsgs (low, length, buffer)
-
-      val buffer = LineGap.delete (low, length, buffer)
-      val (buffer, searchList) = SearchList.build (buffer, dfa)
-
-      val buffer = LineGap.goToIdx (low, buffer)
-
-      val low =
-        if Cursor.isCursorAtStartOfLine (buffer, low) then
-          (* we may have deleted the last character of this current line,
-           * and if we did, we have to move the cursor back by 1 *)
-          Int.max (low - 1, 0)
-        else
-          low
-
-      val buffer = LineGap.goToIdx (low, buffer)
-    in
-      NormalFinish.buildTextAndClear
-        (app, buffer, low, searchList, initialMsg, time)
-    end
-
   fun deleteAroundPair (app: app_type, openChr, closeChr, time) =
     let
-      val {buffer, cursorIdx, dfa, ...} = app
+      val {buffer, cursorIdx, ...} = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorChr = LineGap.sub (cursorIdx, buffer)
     in
       if cursorChr = closeChr orelse cursorChr = openChr then
         let val pairIdx = Cursor.matchPair (buffer, cursorIdx)
-        in finishDeletingPair (app, buffer, cursorIdx, pairIdx, dfa, time)
+        in finishDeleteAroundPair (app, buffer, cursorIdx, pairIdx, time)
         end
       else
         let
-          val nextIdx =
-            Cursor.toNextChr (buffer, cursorIdx, {findChr = openChr, count = 1})
+          val prevIdx =
+            Cursor.toOpenChrPrev
+              (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
         in
-          if nextIdx = ~1 then
-            NormalFinish.clearMode app
-          else
+          if prevIdx = ~1 then
+            (* we are not in a pair, so try to find openChr after cursor *)
             let
-              val buffer = LineGap.goToIdx (nextIdx, buffer)
-              val matchIdx = Cursor.matchPair (buffer, nextIdx)
+              val nextIdx =
+                Cursor.toNextChr
+                  (buffer, cursorIdx, {findChr = openChr, count = 1})
+            in
+              if nextIdx = ~1 then
+                NormalFinish.clearMode app
+              else
+                let
+                  val buffer = LineGap.goToIdx (nextIdx, buffer)
+                  val matchIdx = Cursor.matchPair (buffer, nextIdx)
+                in
+                  if matchIdx = ~1 then
+                    NormalFinish.clearMode app
+                  else
+                    finishDeleteAroundPair
+                      (app, buffer, nextIdx, matchIdx, time)
+                end
+            end
+          else
+            (* we are on a pair-character, so check if pair
+             * is balanced and delete if it is *)
+            let
+              val buffer = LineGap.goToIdx (prevIdx, buffer)
+              val matchIdx = Cursor.matchPair (buffer, prevIdx)
             in
               if matchIdx = ~1 then NormalFinish.clearMode app
-              else finishDeleteAroundPair (app, buffer, nextIdx, matchIdx, time)
+              else finishDeleteAroundPair (app, buffer, prevIdx, matchIdx, time)
             end
         end
     end
 
   fun deletePair (app: app_type, time) =
     let
-      val {cursorIdx, buffer, dfa, ...} = app
+      val {cursorIdx, buffer, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val otherIdx = Cursor.nextPairChr (buffer, cursorIdx)
     in
@@ -1211,7 +1205,7 @@ struct
           val otherIdx = Cursor.matchPair (buffer, otherIdx)
         in
           if otherIdx = ~1 then NormalFinish.clearMode app
-          else finishDeletingPair (app, buffer, cursorIdx, otherIdx, dfa, time)
+          else finishDeleteAroundPair (app, buffer, cursorIdx, otherIdx, time)
         end
     end
 end
