@@ -5151,6 +5151,82 @@ struct
            end)
     ]
 
+  val daParenDelete = describe "delete motion 'da('"
+    [ test "does not delete when there is no ( after the cursor" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = " ( ) hello\n"
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, 7)
+
+          (* act *)
+          val {buffer, ...} = TestUtils.updateMany (app, "da(")
+
+          (* assert *)
+          val expectedString = originalString
+          val actualString = LineGap.toString buffer
+        in
+          Expect.isTrue (expectedString = actualString)
+        end)
+    , test
+        "deletes pair after cursor when there is a pair \
+        \before the cursor and after the cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = " ( abc ) xyz ( def )\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 9)
+
+             (* act *)
+             val {buffer, ...} = TestUtils.updateMany (app, "da(")
+
+             (* assert *)
+             val expectedString = " ( abc ) xyz \n"
+             val actualString = LineGap.toString buffer
+           in
+             Expect.isTrue (expectedString = actualString)
+           end)
+    , test
+        "deletes outer parens when cursor is in \
+        \outer paren, and there is an inner paren after cursor"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "( ( hello ) )\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 1)
+
+             (* act *)
+             val {buffer, ...} = TestUtils.updateMany (app, "da(")
+
+             (* assert *)
+             val expectedString = "\n"
+             val actualString = LineGap.toString buffer
+           in
+             Expect.isTrue (expectedString = actualString)
+           end)
+    , test
+        "deletes inner parren when cursor is in inner paren-pair, \
+        \and there is an outer paren above this inner paren"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "( ( hello ) )\n"
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, 5)
+
+             (* act *)
+             val {buffer, ...} = TestUtils.updateMany (app, "da(")
+
+             (* assert *)
+             val expectedString = "(  )\n"
+             val actualString = LineGap.toString buffer
+           in
+             Expect.isTrue (expectedString = actualString)
+           end)
+    ]
+
   val tests =
     [ dhDelete
     , dlDelete
@@ -5182,5 +5258,6 @@ struct
     , daWDelete
     , pairDelete
     , diParenDelete
+    , daParenDelete
     ]
 end
