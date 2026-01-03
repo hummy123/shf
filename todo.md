@@ -1,7 +1,7 @@
 # To-do list
 
 - Add tests for:
-  - `di<symbol>` and `da<symbol>`
+  - `da<symbol>`
 
   Afterwards, add tests for yanking.
 

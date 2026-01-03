@@ -209,61 +209,69 @@ struct
 
   val toPrevChr = ToPrevChr.foldPrev
 
-  structure ToCloseChrNext =
-    MakeIfCharFolderNext
+  structure ToOpenChrPrev =
+    MakeIfCharFolderPrev
       (struct
          type env = {openChr: char, closeChr: char}
 
-         fun loop (strPos, str, absIdx, stl, openChr, closeChr, openCount) =
-           if strPos = String.size str then
+         fun loop (strPos, str, absIdx, stl, openChr, closeChr, closeCount) =
+           if strPos < 0 then
              case stl of
                str :: stl =>
-                 loop (0, str, absIdx, stl, openChr, closeChr, openCount)
+                 loop
+                   ( String.size str - 1
+                   , str
+                   , absIdx
+                   , stl
+                   , openChr
+                   , closeChr
+                   , closeCount
+                   )
              | [] => ~1
            else
              let
                val chr = String.sub (str, strPos)
              in
                if chr = openChr then
-                 loop
-                   ( strPos + 1
-                   , str
-                   , absIdx + 1
-                   , stl
-                   , openChr
-                   , closeChr
-                   , openCount + 1
-                   )
-               else if chr = closeChr then
-                 if openCount = 0 then
+                 if closeCount = 0 then
                    absIdx
                  else
                    loop
-                     ( strPos + 1
+                     ( strPos - 1
                      , str
-                     , absIdx + 1
+                     , absIdx - 1
                      , stl
                      , openChr
                      , closeChr
-                     , openCount - 1
+                     , closeCount - 1
                      )
-               else
+               else if chr = closeChr then
                  loop
-                   ( strPos + 1
+                   ( strPos - 1
                    , str
-                   , absIdx + 1
+                   , absIdx - 1
                    , stl
                    , openChr
                    , closeChr
-                   , openCount
+                   , closeCount + 1
+                   )
+               else
+                 loop
+                   ( strPos - 1
+                   , str
+                   , absIdx - 1
+                   , stl
+                   , openChr
+                   , closeChr
+                   , closeCount
                    )
              end
 
          fun fStart (strPos, str, _, absIdx, stl, _, {openChr, closeChr}) =
-           loop (strPos + 1, str, absIdx + 1, stl, openChr, closeChr, 0)
+           loop (strPos, str, absIdx, stl, openChr, closeChr, 0)
        end)
 
-  val toCloseChrNext = ToCloseChrNext.foldNext
+  val toOpenChrPrev = ToOpenChrPrev.foldPrev
 
   structure NextPairChr =
     MakeIfCharFolderNext

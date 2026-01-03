@@ -1068,29 +1068,56 @@ struct
       val cursorChr = LineGap.sub (cursorIdx, buffer)
     in
       if cursorChr = openChr orelse cursorChr = closeChr then
+        (* cursor is at pair, so match and delete *)
         let
           val otherIdx = Cursor.matchPair (buffer, cursorIdx)
         in
-          finishDeletingInsidePair (app, buffer, cursorIdx, otherIdx, dfa, time)
-        end
-      else
-        let
-          val nextIdx =
-            Cursor.toCloseChrNext
-              (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
-        in
-          if nextIdx = ~1 then
+          if otherIdx = ~1 then
             NormalFinish.clearMode app
           else
+            finishDeletingInsidePair
+              (app, buffer, cursorIdx, otherIdx, dfa, time)
+        end
+      else
+        (* check to see if we are inside pair *)
+        let
+          val prevIdx =
+            Cursor.toOpenChrPrev
+              (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
+        in
+          if prevIdx = ~1 then
+            (* no openChr before cursor, so check after cursor *)
             let
-              val buffer = LineGap.goToIdx (nextIdx, buffer)
-              val matchIdx = Cursor.matchPair (buffer, nextIdx)
+              val nextIdx =
+                Cursor.toNextChr
+                  (buffer, cursorIdx, {findChr = openChr, count = 1})
             in
-              if matchIdx = ~1 then
+              if nextIdx = ~1 then
+                NormalFinish.clearMode app
+              else
+                let
+                  val buffer = LineGap.goToIdx (nextIdx, buffer)
+                  val matchIdx = Cursor.matchPair (buffer, nextIdx)
+                in
+                  if matchIdx = ~1 then
+                    NormalFinish.clearMode app
+                  else
+                    finishDeletingInsidePair
+                      (app, buffer, nextIdx, matchIdx, dfa, time)
+                end
+            end
+          else
+            (* there is an openChr before cursor, so match it,
+             * and if there is a match, then delete *)
+            let
+              val buffer = LineGap.goToIdx (prevIdx, buffer)
+              val otherIdx = Cursor.matchPair (buffer, prevIdx)
+            in
+              if otherIdx = ~1 then
                 NormalFinish.clearMode app
               else
                 finishDeletingInsidePair
-                  (app, buffer, nextIdx, matchIdx, dfa, time)
+                  (app, buffer, prevIdx, otherIdx, dfa, time)
             end
         end
     end
@@ -1155,8 +1182,7 @@ struct
       else
         let
           val nextIdx =
-            Cursor.toCloseChrNext
-              (buffer, cursorIdx, {openChr = openChr, closeChr = closeChr})
+            Cursor.toNextChr (buffer, cursorIdx, {findChr = openChr, count = 1})
         in
           if nextIdx = ~1 then
             NormalFinish.clearMode app
