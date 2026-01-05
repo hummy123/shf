@@ -1,3 +1,4 @@
 # To-do list
 
-- Add yank commands like yh/yj/yk/yl as well and then add tests for yanking.
+- Implement `yh` motion.
+  - Implemented. Add tests for it next (based on tests for 'dh' motion).

@@ -461,11 +461,8 @@ struct
 
     fun parseYankTerminal (str, count, app, chrCmd, time) =
       case chrCmd of
-      (* motions like yh / yj / yk / yl are not really needed.
-       * Vim supports them, but I never use them.
-       * I also don't need yx (yank a character and then remove it)
-       * because I never do that. *)
-        #"y" => NormalYank.yankLine (app, count)
+        #"h" => NormalYank.yankLeft (app, count)
+      | #"y" => NormalYank.yankLine (app, count)
       | #"0" => NormalYank.yankToStartOfLine app
       | #"w" => NormalYank.yankWhenMovingForward (app, Cursor.nextWord, count)
       | #"W" => NormalYank.yankWhenMovingForward (app, Cursor.nextWORD, count)

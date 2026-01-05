@@ -4,6 +4,24 @@ struct
   open DrawMsg
   open MailboxType
 
+  fun yankLeft (app: app_type, count) =
+    let
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+      val min = Cursor.vi0 (buffer, cursorIdx)
+      val low = Cursor.viH (buffer, cursorIdx, 1)
+
+      val low = Int.max (min, low)
+      val length = cursorIdx - low
+      val str = LineGap.substring (low, length, buffer)
+
+      val msg = YANK str
+      val mode = NORMAL_MODE ""
+    in
+      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+    end
+
   fun yankLine (app: app_type, count) =
     let
       val {buffer, cursorIdx, ...} = app
