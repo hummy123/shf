@@ -10,7 +10,7 @@ struct
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val min = Cursor.vi0 (buffer, cursorIdx)
-      val low = Cursor.viH (buffer, cursorIdx, 1)
+      val low = Cursor.viH (buffer, cursorIdx, count)
 
       val low = Int.max (min, low)
       val length = cursorIdx - low

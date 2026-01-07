@@ -1,4 +1,3 @@
 # To-do list
 
-- Implement `yh` motion.
-  - Implemented. Add tests for it next (based on tests for 'dh' motion).
+- Implement `yl` motion and add tests for it.

@@ -70,5 +70,6 @@ test/regex-tests.sml
 test/test-utils.sml
 test/normal-move.sml
 test/normal-delete.sml
+test/normal-yank.sml
 test/regression.sml
 test/test.sml

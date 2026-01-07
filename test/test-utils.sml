@@ -24,4 +24,34 @@ struct
     in
       loop (0, app)
     end
+
+  fun expectYank (app: AppType.app_type, expectedString) =
+    let
+      open MailboxType
+      open DrawMsg
+      open Railroad
+      open Railroad.Test
+
+      fun loop (hd :: tl) =
+            (case hd of
+               DRAW (YANK actualString) =>
+                 if actualString = expectedString then
+                   Expect.isTrue (actualString = expectedString)
+                 else
+                   let
+                     val () = print
+                       ("expectedString = [" ^ expectedString ^ "]\n")
+                     val () = print ("actualString = [" ^ actualString ^ "]\n")
+                     val () = print "\n"
+                   in
+                     Expect.isTrue (actualString = expectedString)
+                   end
+             | _ => loop tl)
+        | loop ([]) =
+            let val () = print "no string yanked\n"
+            in Expect.isTrue false
+            end
+    in
+      loop (#msgs app)
+    end
 end

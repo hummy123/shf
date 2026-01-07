@@ -5,13 +5,13 @@ struct
 
   fun main () =
     let
-      val tests =
-        List.concat
-          [ NormalMove.tests
-          , NormalDelete.tests
-          , Regression.tests
-          , RegexTests.tests
-          ]
+      val tests = List.concat
+        [ NormalMove.tests
+        , NormalDelete.tests
+        , NormalYank.tests
+        , Regression.tests
+        , RegexTests.tests
+        ]
       val tests = concat tests
     in
       runWithConfig [Configuration.PrintPassed false] tests
