@@ -33,7 +33,7 @@ struct
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
-      val endOfLineIdx = Cursor.viDlr (buffer, cursorIdx, 1)
+      val endOfLineIdx = Cursor.viDlr (buffer, cursorIdx, 1) + 1
       val high = Cursor.viL (buffer, cursorIdx, count)
       val high = Int.min (high, endOfLineIdx)
       val length = high - cursorIdx
