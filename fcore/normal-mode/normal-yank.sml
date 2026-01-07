@@ -4,6 +4,14 @@ struct
   open DrawMsg
   open MailboxType
 
+  fun finish (app, buffer, yankedString) =
+    let
+      val msgs = [DRAW (YANK yankedString)]
+      val mode = NORMAL_MODE ""
+    in
+      NormalModeWith.modeAndBuffer (app, buffer, mode, msgs)
+    end
+
   fun yankLeft (app: app_type, count) =
     let
       val {buffer, cursorIdx, ...} = app
@@ -15,11 +23,25 @@ struct
       val low = Int.max (min, low)
       val length = cursorIdx - low
       val str = LineGap.substring (low, length, buffer)
-
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
+    end
+
+  fun yankRight (app: app_type, count) =
+    let
+      val {buffer, cursorIdx, ...} = app
+
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val max = Cursor.viDlr (buffer, cursorIdx, 1)
+      val high = Cursor.viL (buffer, cursorIdx, count)
+      val high = Int.max (high, max)
+      val length = high - cursorIdx
+
+      val buffer = LineGap.goToIdx (high, buffer)
+      val str = LineGap.substring (cursorIdx, length, buffer)
+    in
+      finish (app, buffer, str)
     end
 
   fun yankLine (app: app_type, count) =
@@ -35,11 +57,8 @@ struct
       val buffer = LineGap.goToIdx (high, buffer)
       val length = high - low
       val str = LineGap.substring (low, length, buffer)
-
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankToStartOfLine (app: app_type) =
@@ -51,11 +70,8 @@ struct
 
       val length = cursorIdx - low
       val str = LineGap.substring (low, length, buffer)
-
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankWhenMovingBack (app: app_type, fMove, count) =
@@ -67,11 +83,8 @@ struct
 
       val length = cursorIdx - low
       val str = LineGap.substring (low, length, buffer)
-
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankWhenMovingBackPlusOne (app: app_type, fMove, count) =
@@ -83,11 +96,8 @@ struct
 
       val length = (cursorIdx + 1) - low
       val str = LineGap.substring (low, length, buffer)
-
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankWhenMovingForward (app: app_type, fMove, count) =
@@ -100,11 +110,8 @@ struct
       val buffer = LineGap.goToIdx (high, buffer)
       val length = high - cursorIdx
       val str = LineGap.substring (cursorIdx, length, buffer)
-
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankToFirstNonSpaceChr (app: app_type) =
@@ -122,22 +129,17 @@ struct
         let
           val length = cursorIdx - otherIdx + 1
           val buffer = LineGap.goToIdx (otherIdx, buffer)
-
           val str = LineGap.substring (otherIdx, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
       else if cursorIdx < otherIdx then
         (* yanking forward from cursorIdx *)
         let
           val length = otherIdx - cursorIdx
           val str = LineGap.substring (cursorIdx, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
       else
         NormalFinish.clearMode app
@@ -153,11 +155,8 @@ struct
 
       val length = finishIdx - cursorIdx
       val str = LineGap.substring (cursorIdx, length, buffer)
-
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankToMatchingPair (app: app_type) =
@@ -175,11 +174,8 @@ struct
 
           val buffer = LineGap.goToIdx (high, buffer)
           val str = LineGap.substring (low, length, buffer)
-
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
     end
 
@@ -194,12 +190,9 @@ struct
         let
           val length = high - cursorIdx
           val buffer = LineGap.goToIdx (high, buffer)
-
           val str = LineGap.substring (cursorIdx, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
     end
 
@@ -213,12 +206,9 @@ struct
       else
         let
           val length = cursorIdx - low
-
           val str = LineGap.substring (low, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
     end
 
@@ -232,10 +222,8 @@ struct
 
         val buffer = LineGap.goToIdx (high, buffer)
         val str = LineGap.substring (low, length, buffer)
-        val msg = YANK str
-        val mode = NORMAL_MODE ""
       in
-        NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+        finish (app, buffer, str)
       end
     else
       let
@@ -262,10 +250,8 @@ struct
           val length = newCursorIdx - cursorIdx + 1
           val buffer = LineGap.goToIdx (newCursorIdx, buffer)
           val str = LineGap.substring (cursorIdx, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
     end
 
@@ -283,10 +269,8 @@ struct
           val length = newCursorIdx - cursorIdx
           val buffer = LineGap.goToIdx (newCursorIdx, buffer)
           val str = LineGap.substring (cursorIdx, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
     end
 
@@ -303,10 +287,8 @@ struct
         let
           val length = cursorIdx - newCursorIdx
           val str = LineGap.substring (newCursorIdx, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
     end
 
@@ -324,10 +306,8 @@ struct
           val newCursorIdx = newCursorIdx + 1
           val length = cursorIdx - newCursorIdx
           val str = LineGap.substring (newCursorIdx, length, buffer)
-          val msg = YANK str
-          val mode = NORMAL_MODE ""
         in
-          NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+          finish (app, buffer, str)
         end
     end
 
@@ -338,12 +318,9 @@ struct
 
       val high = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
       val buffer = LineGap.goToIdx (high, buffer)
-
       val str = LineGap.substring (0, high, buffer)
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankInsideWord (app: app_type) =
@@ -358,11 +335,9 @@ struct
       val length = high - low
 
       val str = LineGap.substring (low, length, buffer)
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
       if str = "\n" then NormalFinish.clearMode app
-      else NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      else finish (app, buffer, str)
     end
 
   fun yankInsideWORD (app: app_type) =
@@ -377,21 +352,17 @@ struct
       val length = high - low
 
       val str = LineGap.substring (low, length, buffer)
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
       if str = "\n" then NormalFinish.clearMode app
-      else NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      else finish (app, buffer, str)
     end
 
   fun finishAfterYankInside (app: app_type, low, high, buffer) =
     let
       val length = high - low
       val str = LineGap.substring (low, length, buffer)
-      val msg = YANK str
-      val mode = NORMAL_MODE ""
     in
-      NormalModeWith.modeAndBuffer (app, buffer, mode, [DRAW msg])
+      finish (app, buffer, str)
     end
 
   fun yankInsideChrOpen (app: app_type, chr) =
