@@ -44,6 +44,61 @@ struct
       finish (app, buffer, str)
     end
 
+  fun yankLineUp (app: app_type, count) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val cursorLineNumber =
+        if Cursor.isNextChrEndOfLine (buffer, cursorIdx) then
+          LineGap.idxToLineNumber (cursorIdx + 1, buffer)
+        else
+          LineGap.idxToLineNumber (cursorIdx, buffer)
+      val newCursorLineNumber = Int.max (cursorLineNumber - count, 0)
+    in
+      if cursorLineNumber = 0 then
+        NormalFinish.clearMode app
+      else if newCursorLineNumber = 0 then
+        let
+          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1)
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
+
+          val endOfLine =
+            if Cursor.isCursorAtStartOfLine (buffer, endOfLine) then
+              endOfLine + 1
+            else
+              endOfLine + 2
+
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
+          val str = LineGap.substring (0, endOfLine, buffer)
+        in
+          finish (app, buffer, str)
+        end
+      else
+        let
+          val endOfLine = Cursor.viDlr (buffer, cursorIdx, 1)
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
+          val endsOnNewline = Cursor.isCursorAtStartOfLine (buffer, endOfLine)
+
+          val endOfLine = if endsOnNewline then endOfLine else endOfLine + 1
+
+          val newCursorLineNumber =
+            if endsOnNewline andalso endOfLine = #textLength buffer - 1 then
+              newCursorLineNumber - 1
+            else
+              newCursorLineNumber
+          val buffer = LineGap.goToLine (newCursorLineNumber, buffer)
+
+          val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
+          val length = endOfLine - lineIdx
+
+          val buffer = LineGap.goToIdx (endOfLine, buffer)
+          val str = LineGap.substring (lineIdx, length, buffer)
+        in
+          finish (app, buffer, str)
+        end
+    end
+
   fun yankLine (app: app_type, count) =
     let
       val {buffer, cursorIdx, ...} = app

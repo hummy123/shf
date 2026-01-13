@@ -1,3 +1,3 @@
 # To-do list
-
-- Implement 'yj' and 'yk' and add tests for them
+- Add tests for 'yk' motion
+- Implement 'yj' motion and add tests for it

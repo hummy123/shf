@@ -462,6 +462,7 @@ struct
     fun parseYankTerminal (str, count, app, chrCmd, time) =
       case chrCmd of
         #"h" => NormalYank.yankLeft (app, count)
+      | #"k" => NormalYank.yankLineUp (app, count)
       | #"l" => NormalYank.yankRight (app, count)
       | #"y" => NormalYank.yankLine (app, count)
       | #"0" => NormalYank.yankToStartOfLine app
