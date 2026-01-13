@@ -265,7 +265,7 @@ struct
        * so their implementation differs from
        * other cursor motions *)
       | #"j" => NormalDelete.deleteLineDown (app, count, time)
-      | #"k" => NormalDelete.deleteLineBack (app, count, time)
+      | #"k" => NormalDelete.deleteLineUp (app, count, time)
       | #"w" => NormalDelete.deleteWord (app, count, time)
       | #"W" => NormalDelete.deleteWORD (app, count, time)
       | #"b" => NormalDelete.deleteByDfa (app, count, Cursor.prevWord, time)
@@ -365,7 +365,7 @@ struct
        * so their implementation differs from
        * other cursor motions *)
       | #"j" => NormalYankDelete.deleteLineDown (app, count, time)
-      | #"k" => NormalYankDelete.deleteLineBack (app, count, time)
+      | #"k" => NormalYankDelete.deleteLineUp (app, count, time)
       | #"w" => NormalYankDelete.deleteWord (app, count, time)
       | #"W" => NormalYankDelete.deleteWORD (app, count, time)
       | #"b" => NormalYankDelete.deleteByDfa (app, count, Cursor.prevWord, time)

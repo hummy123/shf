@@ -584,7 +584,7 @@ struct
         end
     end
 
-  fun finishDeleteLineBack (app, buffer, lineIdx, length, endOfLine, time) =
+  fun finishDeleteLineUp (app, buffer, lineIdx, length, endOfLine, time) =
     if endOfLine >= #textLength buffer - 2 then
       (* deleting from last line *)
       let
@@ -632,7 +632,7 @@ struct
         finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
       end
 
-  fun deleteLineBack (app: app_type, count, time) =
+  fun deleteLineUp (app: app_type, count, time) =
     let
       val {buffer, cursorIdx, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -662,7 +662,7 @@ struct
             else
               endOfLine + 2
         in
-          finishDeleteLineBack (app, buffer, 0, endOfLine, endOfLine, time)
+          finishDeleteLineUp (app, buffer, 0, endOfLine, endOfLine, time)
         end
       else
         let
@@ -686,7 +686,7 @@ struct
           val lineIdx = LineGap.lineNumberToIdx (newCursorLineNumber, buffer)
           val length = endOfLine - lineIdx
         in
-          finishDeleteLineBack (app, buffer, lineIdx, length, endOfLine, time)
+          finishDeleteLineUp (app, buffer, lineIdx, length, endOfLine, time)
         end
     end
 
