@@ -93,7 +93,7 @@ struct
           val length = endOfLine - lineIdx
 
           val buffer = LineGap.goToIdx (endOfLine, buffer)
-          val str = LineGap.substring (lineIdx, length, buffer)
+          val str = LineGap.substring (lineIdx + 1, length, buffer)
         in
           finish (app, buffer, str)
         end

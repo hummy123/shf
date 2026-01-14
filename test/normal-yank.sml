@@ -206,5 +206,176 @@ struct
            end)
     ]
 
-  val tests = [yhYank, ylYank]
+  val ykYank = describe "yank motion 'yk'"
+    [ test "does not yank when cursor is on first line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val originalIdx = 0
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val app = TestUtils.updateMany (app, "yk")
+        in
+          (* assert *)
+          TestUtils.expectNoYank app
+        end)
+    , test
+        "yanks first two lines \
+        \when there are two lines and cursor is on second line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 6
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yk")
+
+             (* assert *)
+             val expectedString = "hello\nworld\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks last two lines when there are three lines in the buffer \
+        \and cursor is on third line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\nagain\n"
+             val originalIdx = 15
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yk")
+
+             (* assert *)
+             val expectedString = "world\nagain\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks whole buffer when on last line \
+        \and count is greater than number of lines"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\nagain\n"
+             val originalIdx = 15
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "33yk")
+
+             (* assert *)
+             val expectedString = originalString
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks newline and preceding line when cursor is second line \
+        \and second line contains only a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\n\nagain\n"
+             val originalIdx = 6
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yk")
+
+             (* assert *)
+             val expectedString = "hello\n\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks just newline and line above when cursor is on third line \
+        \and third line contains only a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString =
+               "hello\n\
+               \world\n\
+               \\n\
+               \trello\n\
+               \brillo\n"
+             val originalIdx = 12
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yk")
+
+             (* assert *)
+             val expectedString = "world\n\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks second and third lines when cursor is on \
+        \last non-newline character of third line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\n\nagain\n"
+             val originalString =
+               "hello\n\
+               \world\n\
+               \trello\n\
+               \brillo\n"
+             val originalIdx = 17
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yk")
+
+             (* assert *)
+             val expectedString = "world\ntrello\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks last two lines when cursor is on last line \
+        \and last line only has a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString =
+               "hello\n\
+               \world\n\
+               \\n"
+             val originalIdx = String.size originalString - 1
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yk")
+
+             (* assert *)
+             val expectedString = "world\n\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    ]
+
+  val tests = [yhYank, ylYank, ykYank]
 end

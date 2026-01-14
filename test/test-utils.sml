@@ -54,4 +54,18 @@ struct
     in
       loop (#msgs app)
     end
+
+  fun expectNoYank (app: AppType.app_type) =
+    let
+      open MailboxType
+      open DrawMsg
+      open Railroad
+      open Railroad.Test
+
+      fun loop (DRAW (YANK _) :: _) = Expect.isTrue false
+        | loop (hd :: tl) = loop tl
+        | loop ([]) = Expect.isTrue true
+    in
+      loop (#msgs app)
+    end
 end
