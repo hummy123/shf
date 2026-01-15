@@ -15,7 +15,7 @@ struct
   fun isEmpty t =
     case t of
       LEAF (_, sizes) => Vector.length sizes = 0
-    | _ => false
+    | BRANCH (_, sizes) => Vector.length sizes = 0
 
   val empty = LEAF (#[], #[])
 
@@ -363,4 +363,45 @@ struct
                   LEAF (items, sizes)
                 end
             end
+     | BRANCH (nodes, sizes) =>
+         if cursorIdx < Vector.sub (sizes, 0) then
+           (* we want to split first node from rest *)
+           splitLeft (cursorIdx, Vector.sub (nodes, 0))
+         else if cursorIdx > Vector.sub (sizes, Vector.length sizes - 1) then
+           (* split point is after this subtree,
+            * so return this subtree unchanged *)
+           tree
+         else
+           (* we want to split from somewhere in middle *)
+           let
+             val idx = BinSearch.equalOrMore (cursorIdx, sizes)
+             val prevSize =
+               if idx = 0 then
+                 0
+               else
+                 Vector.sub (sizes, idx - 1)
+             val child = 
+               splitLeft (cursorIdx - prevSize, Vector.sub (nodes, idx))
+
+              val sizes = VectorSlice.slice (sizes, 0, SOME idx)
+              val nodes = VectorSlice.slice (nodes, 0, SOME idx)
+           in
+             if isEmpty child then
+               let
+                 val sizes = VectorSlice.vector sizes
+                 val nodes = VectorSlice.vector nodes
+               in
+                 BRANCH (nodes, sizes)
+               end
+             else
+               let
+                 val childSize = VectorSlice.full #[getFinishIdx child + prevSize]
+                 val sizes =VectorSlice.concat [sizes, childSize]
+
+                 val childNode = VectorSlice.full #[child]
+                 val nodes = VectorSlice.concat [nodes, childNode]
+               in
+                 BRANCH (nodes, sizes)
+               end
+           end
 end
