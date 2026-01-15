@@ -1,4 +1,4 @@
-structure NormalMove =
+structure NormalMoveTests =
 struct
   open Railroad
   open Railroad.Test

@@ -1,4 +1,4 @@
-structure NormalDelete =
+structure NormalDeleteTests =
 struct
   open Railroad
   open Railroad.Test

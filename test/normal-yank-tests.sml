@@ -1,4 +1,4 @@
-structure NormalYank =
+structure NormalYankTests =
 struct
   open Railroad
   open Railroad.Test

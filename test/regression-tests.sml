@@ -1,4 +1,4 @@
-structure Regression =
+structure RegressionTests =
 struct
   open Railroad
   open Railroad.Test

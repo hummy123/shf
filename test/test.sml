@@ -6,10 +6,11 @@ struct
   fun main () =
     let
       val tests = List.concat
-        [ NormalMove.tests
-        , NormalDelete.tests
-        , NormalYank.tests
-        , Regression.tests
+        [ NormalMoveTests.tests
+        , NormalDeleteTests.tests
+        , NormalYankTests.tests
+        , PersistentVectorTests.tests
+        , RegressionTests.tests
         , RegexTests.tests
         ]
       val tests = concat tests

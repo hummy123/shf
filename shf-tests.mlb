@@ -66,10 +66,11 @@ $(SML_LIB)/basis/mlton.mlb
 shell/exception-logger.sml
 test/Railroad/src/railroad.mlb
 
+test/persistent-vector-tests.sml
 test/regex-tests.sml
 test/test-utils.sml
-test/normal-move.sml
-test/normal-delete.sml
-test/normal-yank.sml
-test/regression.sml
+test/normal-move-tests.sml
+test/normal-delete-tests.sml
+test/normal-yank-tests.sml
+test/regression-tests.sml
 test/test.sml
