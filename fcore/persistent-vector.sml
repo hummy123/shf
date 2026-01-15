@@ -404,4 +404,61 @@ struct
                  BRANCH (nodes, sizes)
                end
            end
+
+  (* functions only for testing *)
+  fun fromListLoop (lst, acc) =
+    case lst of
+      {start, finish} :: tl =>
+        let
+          val acc = append (start, finish, acc)
+        in
+          fromListLoop (tl, acc)
+        end
+    | [] => acc
+
+  fun fromList coords = fromListLoop (coords, empty)
+
+  fun toListLoop (tree, acc) =
+    case tree of
+      BRANCH (nodes, _) =>
+        let
+          fun branchLoop (pos, acc) =
+            if pos = Vector.length nodes then
+              acc
+            else
+              let
+                val acc = toListLoop (Vector.sub (nodes, pos), acc)
+              in
+                branchLoop (pos + 1, acc)
+              end
+        in
+          branchLoop (0, acc)
+        end
+    | LEAF (items, _)  =>
+        let
+          fun itemLoop (pos, acc, offset) =
+            if pos = Vector.length items then
+              acc
+            else
+              let
+                val {start, finish} = Vector.sub (items, pos)
+                val item = {start = start + offset, finish = finish + offset}
+              in
+                itemLoop (pos + 1, item :: acc, offset)
+              end
+
+          val offset =
+            case acc of
+              {finish, ...} :: _ => finish
+            | [] => 0
+        in
+          itemLoop (0, acc, offset)
+        end
+
+  fun toList tree = 
+    let
+      val result = toListLoop (tree, [])
+    in
+      List.rev result
+    end
 end
