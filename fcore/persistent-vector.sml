@@ -327,4 +327,40 @@ struct
         else
           loopPrevMatch (start, finish, tree, count - 1)
       end
+
+    fun splitLeft (cursorIdx, tree) =
+      case tree of
+        LEAF (items, sizes) =>
+          if Vector.length items = 0 then
+            (* if tree is empty, then just return tree *)
+            tree
+          else 
+            let
+              val {start, ...} = Vector.sub (items, 0)
+            in
+              (* if all items are after cursorIdx,
+               * then we want to return an empty tree,
+               * splitting everything *)
+              if cursorIdx < start then
+                empty
+              else if cursorIdx > Vector.sub (sizes, Vector.length sizes - 1) then
+                (* if all items are before cursorIdx,
+                 * then we want to return the same tree,
+                 * splitting nothing *)
+                tree
+              else
+                (* we want to split from somewhere in middle, keeping left *)
+                let
+                  val idx = BinSearch.equalOrMore (cursorIdx, sizes)
+                  val idx = SOME idx
+
+                  val items = VectorSlice.slice (items, 0, idx)
+                  val items = VectorSlice.vector items
+
+                  val sizes = VectorSlice.slice (sizes, 0, idx)
+                  val sizes = VectorSlice.vector sizes
+                in
+                  LEAF (items, sizes)
+                end
+            end
 end
