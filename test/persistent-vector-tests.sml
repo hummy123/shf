@@ -165,5 +165,31 @@ struct
            end)
     ]
 
-  val tests = [appendTests, toListTests]
+  val splitLeftTests = describe "PersistentVector.splitLeft"
+    [test "returns same vector when split idx is greater than any idx in vector"
+       (fn _ =>
+          let
+            (* arrange *)
+            val inputList =
+              [ {start = 1, finish = 1}
+              , {start = 2, finish = 2}
+              , {start = 3, finish = 3}
+              , {start = 4, finish = 4}
+              , {start = 5, finish = 5}
+              , {start = 6, finish = 6}
+              , {start = 7, finish = 7}
+              , {start = 8, finish = 8}
+              ]
+            val pv = PersistentVector.fromList inputList
+
+            (* act *)
+            val pv = PersistentVector.splitLeft (9, pv)
+
+            (* assert *)
+            val outputList = PersistentVector.toList pv
+          in
+            Expect.isTrue (inputList = outputList)
+          end)]
+
+  val tests = [appendTests, toListTests, splitLeftTests]
 end
