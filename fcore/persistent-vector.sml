@@ -364,46 +364,49 @@ struct
                 end
             end
      | BRANCH (nodes, sizes) =>
-         if splitIdx < Vector.sub (sizes, 0) then
-           (* we want to split first node from rest *)
-           splitLeft (splitIdx, Vector.sub (nodes, 0))
-         else if splitIdx > Vector.sub (sizes, Vector.length sizes - 1) then
-           (* split point is after this subtree,
-            * so return this subtree unchanged *)
+         if Vector.length nodes = 0 then
            tree
-         else
-           (* we want to split from somewhere in middle *)
-           let
-             val idx = BinSearch.equalOrMore (splitIdx, sizes)
-             val prevSize =
-               if idx = 0 then
-                 0
+         else 
+           if splitIdx < Vector.sub (sizes, 0) then
+             (* we want to split first node from rest *)
+             splitLeft (splitIdx, Vector.sub (nodes, 0))
+           else if splitIdx > Vector.sub (sizes, Vector.length sizes - 1) then
+             (* split point is after this subtree,
+              * so return this subtree unchanged *)
+             tree
+           else
+             (* we want to split from somewhere in middle *)
+             let
+               val idx = BinSearch.equalOrMore (splitIdx, sizes)
+               val prevSize =
+                 if idx = 0 then
+                   0
+                 else
+                   Vector.sub (sizes, idx - 1)
+               val child = 
+                 splitLeft (splitIdx - prevSize, Vector.sub (nodes, idx))
+
+                val sizes = VectorSlice.slice (sizes, 0, SOME idx)
+                val nodes = VectorSlice.slice (nodes, 0, SOME idx)
+             in
+               if isEmpty child then
+                 let
+                   val sizes = VectorSlice.vector sizes
+                   val nodes = VectorSlice.vector nodes
+                 in
+                   BRANCH (nodes, sizes)
+                 end
                else
-                 Vector.sub (sizes, idx - 1)
-             val child = 
-               splitLeft (splitIdx - prevSize, Vector.sub (nodes, idx))
+                 let
+                   val childSize = VectorSlice.full #[getFinishIdx child + prevSize]
+                   val sizes =VectorSlice.concat [sizes, childSize]
 
-              val sizes = VectorSlice.slice (sizes, 0, SOME idx)
-              val nodes = VectorSlice.slice (nodes, 0, SOME idx)
-           in
-             if isEmpty child then
-               let
-                 val sizes = VectorSlice.vector sizes
-                 val nodes = VectorSlice.vector nodes
-               in
-                 BRANCH (nodes, sizes)
-               end
-             else
-               let
-                 val childSize = VectorSlice.full #[getFinishIdx child + prevSize]
-                 val sizes =VectorSlice.concat [sizes, childSize]
-
-                 val childNode = VectorSlice.full #[child]
-                 val nodes = VectorSlice.concat [nodes, childNode]
-               in
-                 BRANCH (nodes, sizes)
-               end
-           end
+                   val childNode = VectorSlice.full #[child]
+                   val nodes = VectorSlice.concat [nodes, childNode]
+                 in
+                   BRANCH (nodes, sizes)
+                 end
+             end
 
   (* When we split in this function,
    * we always want to update the sizes vector
@@ -462,6 +465,40 @@ struct
                 BRANCH (nodes, sizes)
               end
           end
+    | LEAF (items, sizes) =>
+        if Vector.length items = 0 then
+          tree
+        else
+          if splitIdx > Vector.sub (sizes, Vector.length sizes - 1) then
+            empty
+          else if splitIdx < Vector.sub (sizes, 0) then
+            tree
+          else
+            let
+              val idx = BinSearch.equalOrMore (splitIdx, sizes)
+              val {start, finish} = Vector.sub (items, idx)
+              val idx =
+                if splitIdx >= start then
+                  idx + 1
+                else
+                  idx
+            in
+              if idx >= Vector.length items then
+                empty
+              else
+                let
+                  val len = Vector.length items - idx
+                  val itemsSlice = VectorSlice.slice (items, idx, SOME len)
+                  val items = VectorSlice.map 
+                    (fn {start, finish} => 
+                      {start = start - splitIdx, finish = finish - splitIdx}
+                    ) 
+                    itemsSlice
+                  val sizes = Vector.map #finish items
+                in
+                  LEAF (items, sizes)
+                end
+            end
 
   (* functions only for testing *)
   fun fromListLoop (lst, acc) =
