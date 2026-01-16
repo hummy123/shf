@@ -443,7 +443,7 @@ struct
               else
                 let
                   val nodes = VectorSlice.vector nodesSlice
-                  val sizes = VectorSlice.map (fn el => el - prevSize) sizesSlice
+                  val sizes = VectorSlice.map (fn el => el - oldChildSize) sizesSlice
                 in
                   BRANCH (nodes, sizes)
                 end
@@ -487,11 +487,16 @@ struct
                 empty
               else
                 let
+                  val prevSize =
+                    if idx > 0 then
+                      Vector.sub (sizes, idx - 1)
+                    else
+                      0
                   val len = Vector.length items - idx
                   val itemsSlice = VectorSlice.slice (items, idx, SOME len)
                   val items = VectorSlice.map 
                     (fn {start, finish} => 
-                      {start = start - splitIdx, finish = finish - splitIdx}
+                      {start = start - prevSize, finish = finish - prevSize}
                     ) 
                     itemsSlice
                   val sizes = Vector.map #finish items
