@@ -166,30 +166,123 @@ struct
     ]
 
   val splitLeftTests = describe "PersistentVector.splitLeft"
-    [test "returns same vector when split idx is greater than any idx in vector"
-       (fn _ =>
-          let
-            (* arrange *)
-            val inputList =
-              [ {start = 1, finish = 1}
-              , {start = 2, finish = 2}
-              , {start = 3, finish = 3}
-              , {start = 4, finish = 4}
-              , {start = 5, finish = 5}
-              , {start = 6, finish = 6}
-              , {start = 7, finish = 7}
-              , {start = 8, finish = 8}
-              ]
-            val pv = PersistentVector.fromList inputList
+    [ test
+        "returns same vector when split idx is greater than any idx in vector"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 5}
+               , {start = 6, finish = 6}
+               , {start = 7, finish = 7}
+               , {start = 8, finish = 8}
+               ]
+             val pv = PersistentVector.fromList inputList
 
-            (* act *)
-            val pv = PersistentVector.splitLeft (9, pv)
+             (* act *)
+             val pv = PersistentVector.splitLeft (9, pv)
 
-            (* assert *)
-            val outputList = PersistentVector.toList pv
-          in
-            Expect.isTrue (inputList = outputList)
-          end)]
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+           in
+             Expect.isTrue (inputList = outputList)
+           end)
+    , test "removes last element when split idx is = to last element" (fn _ =>
+        let
+          (* arrange *)
+          val inputList =
+            [ {start = 1, finish = 1}
+            , {start = 2, finish = 2}
+            , {start = 3, finish = 3}
+            , {start = 4, finish = 4}
+            , {start = 5, finish = 5}
+            , {start = 6, finish = 6}
+            , {start = 7, finish = 7}
+            , {start = 8, finish = 8}
+            ]
+          val pv = PersistentVector.fromList inputList
+
+          (* act *)
+          val pv = PersistentVector.splitLeft (8, pv)
+
+          (* assert *)
+          val outputList = PersistentVector.toList pv
+          val expectedOutput =
+            [ {start = 1, finish = 1}
+            , {start = 2, finish = 2}
+            , {start = 3, finish = 3}
+            , {start = 4, finish = 4}
+            , {start = 5, finish = 5}
+            , {start = 6, finish = 6}
+            , {start = 7, finish = 7}
+            ]
+        in
+          Expect.isTrue (outputList = expectedOutput)
+        end)
+    , test "removes all elements when split idx = first element" (fn _ =>
+        let
+          (* arrange *)
+          val inputList =
+            [ {start = 1, finish = 1}
+            , {start = 2, finish = 2}
+            , {start = 3, finish = 3}
+            , {start = 4, finish = 4}
+            , {start = 5, finish = 5}
+            , {start = 6, finish = 6}
+            , {start = 7, finish = 7}
+            , {start = 8, finish = 8}
+            ]
+          val pv = PersistentVector.fromList inputList
+
+          (* act *)
+          val pv = PersistentVector.splitLeft (1, pv)
+
+          (* assert *)
+          val outputList = PersistentVector.toList pv
+          val expectedOutput = []
+        in
+          Expect.isTrue (outputList = expectedOutput)
+        end)
+    , test
+        "removes element whose start and finish is in range \
+        \of the split idx, and removes all elements after it too"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 155}
+               , {start = 200, finish = 200}
+               , {start = 210, finish = 210}
+               , {start = 220, finish = 220}
+               , {start = 230, finish = 230}
+               , {start = 240, finish = 240}
+               , {start = 250, finish = 250}
+               ]
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.splitLeft (7, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
+    ]
 
   val tests = [appendTests, toListTests, splitLeftTests]
 end
