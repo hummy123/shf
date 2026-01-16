@@ -450,13 +450,16 @@ struct
             else
               let
                 val newChildSize = getFinishIdx child
-                val difference = oldChildSize - newChildSize
                 val sizes = Vector.tabulate (VectorSlice.length sizesSlice + 1,
                   fn i =>
                     if i = 0 then
                       newChildSize
                     else
-                      VectorSlice.sub (sizesSlice, i - 1) - difference
+                      let
+                        val el = VectorSlice.sub (sizesSlice, i - 1)
+                      in
+                        el - oldChildSize + newChildSize
+                      end
                 )
 
                 val child = VectorSlice.full #[child]
