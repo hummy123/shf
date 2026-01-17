@@ -57,6 +57,15 @@ struct
       BRANCH (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
     | LEAF (_, sizes) => Vector.sub (sizes, Vector.length sizes - 1)
 
+  fun getStartIdx t =
+    case t of
+      BRANCH (nodes, _) => getStartIdx (Vector.sub (nodes,  0))
+    | LEAF (items, _) => 
+        if Vector.length items = 0 then
+          0
+        else
+          #start (Vector.sub (items, 0))
+
   fun helpAppend (start, finish, tree) =
     case tree of
       BRANCH (nodes, sizes) =>
@@ -535,6 +544,44 @@ struct
     | LEAF (_, _) => counter + 1
 
   fun countDepth tree = countDepthLoop (0, tree)
+
+  fun merge (left, right) = raise Fail "unimplemennted"
+
+  fun delete (start, finish, tree) =
+    let
+      val matchAfterFinish = nextMatch (finish, tree, 1)
+      val left = splitRight (start, tree)
+    in
+      if  matchAfterFinish = ~1 then
+        (* there is no match after 'finish', so just split left. 
+         * No need to decrement or split right, 
+         * because the right vector would be empty. *)
+        left
+      else
+        let
+          val right = splitRight (finish, tree)
+        in
+          if isEmpty right then
+            left
+          else
+            let
+              val leftSize = getFinishIdx left
+              val rightStartRelative = getStartIdx right
+
+              val rightStartAbsolute = leftSize + rightStartRelative
+              val difference = matchAfterFinish - rightStartAbsolute
+            in
+              if difference = 0 then
+                merge (left, right)
+              else
+                let
+                  val right = decrementBy (difference, right)
+                in
+                  merge (left, right)
+                end
+            end
+        end
+    end
 
   (* functions only for testing *)
   fun fromListLoop (lst, acc) =
