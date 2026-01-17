@@ -547,18 +547,45 @@ struct
 
   fun merge (left, right) = raise Fail "unimplemennted"
 
-  fun delete (start, finish, tree) =
+  fun delete (start, length, tree) =
     let
+      val finish = start + length
+      val matchBeforeStart = prevMatch (start, tree,  1)
       val matchAfterFinish = nextMatch (finish, tree, 1)
-      val left = splitLeft (start, tree)
     in
-      if matchAfterFinish = ~1 then
+      if matchBeforeStart = ~1 andalso matchAfterFinish = ~1 then
+        empty
+      else if matchAfterFinish = ~1 then
         (* there is no match after 'finish', so just split left. 
          * No need to decrement or split right, 
          * because the right vector would be empty. *)
-        left
+        splitLeft (start, tree)
+      else if matchBeforeStart  = ~1 then
+        (* We don't want to use left split
+         * because there are no elements 
+         * before the deletion range's 'start'.
+         * So we make a right split and then decrement it. *)
+        let
+          val right = splitRight (finish, tree)
+        in
+          if isEmpty right then
+            empty
+          else
+            let
+              val startIdx = getStartIdx right
+              val difference = matchAfterFinish  - startIdx
+            in
+              if difference = 0 then
+                right
+              else if isEmpty right then
+                empty
+              else
+                decrementBy (difference, right)
+            end
+        end
       else
         let
+          val left = splitLeft (start, tree)
           val right = splitRight (finish, tree)
         in
           if isEmpty right then
