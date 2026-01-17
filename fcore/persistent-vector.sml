@@ -508,6 +508,27 @@ struct
                 end
             end
 
+  fun decrementBy (decBy, tree) =
+    case tree of
+      BRANCH (nodes, sizes) =>
+        let
+          val child = decrementBy (decBy, Vector.sub (nodes, 0))
+          val nodes = Vector.update (nodes, 0, child)
+          val sizes = Vector.map (fn sz => sz - decBy) sizes
+        in
+          BRANCH (nodes, sizes)
+        end
+    | LEAF (items, sizes) =>
+        let
+          val items = Vector.map 
+            (fn {start, finish} =>
+              {start = start - decBy, finish = finish - decBy}
+            ) items
+          val sizes = Vector.map #finish items
+        in
+          LEAF (items, sizes)
+        end
+
   (* functions only for testing *)
   fun fromListLoop (lst, acc) =
     case lst of
