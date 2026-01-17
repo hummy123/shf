@@ -550,9 +550,9 @@ struct
   fun delete (start, finish, tree) =
     let
       val matchAfterFinish = nextMatch (finish, tree, 1)
-      val left = splitRight (start, tree)
+      val left = splitLeft (start, tree)
     in
-      if  matchAfterFinish = ~1 then
+      if matchAfterFinish = ~1 then
         (* there is no match after 'finish', so just split left. 
          * No need to decrement or split right, 
          * because the right vector would be empty. *)
