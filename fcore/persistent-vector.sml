@@ -529,6 +529,13 @@ struct
           LEAF (items, sizes)
         end
 
+  fun countDepthLoop (counter, tree) =
+    case tree of
+      BRANCH (nodes, _) => countDepthLoop (counter + 1, Vector.sub (nodes, 0))
+    | LEAF (_, _) => counter + 1
+
+  fun countDepth tree = countDepthLoop (0, tree)
+
   (* functions only for testing *)
   fun fromListLoop (lst, acc) =
     case lst of
