@@ -671,14 +671,37 @@ struct
             val difference = newChildSize - oldChildSize
 
             val nodes = Vector.update (nodes, 0, child)
-            val sizes = 
-              Vector.map (fn el => el + difference)
+            val sizes = Vector.map (fn el => el + difference) sizes
           in
             BRANCH (nodes, sizes)
           end
       | LEAF _ =>
           raise Fail "PersistentVector.mergeWhenRightDepthIsGreater: \
           \reached LEAF before (curDepth = leftDepth)"
+
+  fun mergeWhenLeftDepthIsGreater (left, right, rightDepth, curDepth) =
+    if rightDepth = curDepth then
+      mergeSameDepth (left, right)
+    else
+      case left of
+        BRANCH (nodes, sizes) =>
+          let
+            val lastIdx = Vector.length sizes - 1
+            val child = mergeWhenLeftDepthIsGreater 
+              (Vector.sub (nodes, lastIdx), right, rightDepth, curDepth + 1)
+
+            val oldChildSize = Vector.sub (sizes, lastIdx)
+            val newChildSize = getFinishIdx child
+            val difference = newChildSize - oldChildSize
+
+            val nodes = Vector.update (nodes, lastIdx, child)
+            val sizes = Vector.map (fn el => el + difference) sizes
+          in
+            BRANCH (nodes, sizes)
+          end
+      | LEAF _ =>
+          raise Fail "PersistentVector.mergeWhenLeftDepthIsGreater: \
+          \reached LEAF before (curDepth = rightDepth)"
 
   fun merge (left, right) = 
     let
