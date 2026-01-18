@@ -548,67 +548,77 @@ struct
   fun merge (left, right) = raise Fail "unimplemennted"
 
   fun delete (start, length, tree) =
-    let
-      val finish = start + length
-      val matchBeforeStart = prevMatch (start, tree,  1)
-      val matchAfterFinish = nextMatch (finish, tree, 1)
-    in
-      if matchBeforeStart = ~1 andalso matchAfterFinish = ~1 then
-        empty
-      else if matchAfterFinish = ~1 then
-        (* there is no match after 'finish', so just split left. 
-         * No need to decrement or split right, 
-         * because the right vector would be empty. *)
-        splitLeft (start, tree)
-      else if matchBeforeStart  = ~1 then
-        (* We don't want to use left split
-         * because there are no elements 
-         * before the deletion range's 'start'.
-         * So we make a right split and then decrement it. *)
-        let
-          val right = splitRight (finish, tree)
-        in
-          if isEmpty right then
-            empty
+    if isEmpty tree then
+      empty
+    else
+      let
+        val finish = start + length
+        val matchBeforeStart = prevMatch (start, tree,  1)
+        val matchBeforeStart =
+          if matchBeforeStart >= start then
+            ~1
           else
-            let
-              val startIdx = getStartIdx right
-              val difference = matchAfterFinish  - startIdx
-            in
-              if difference = 0 then
-                right
-              else if isEmpty right then
-                empty
-              else
-                decrementBy (difference, right)
-            end
-        end
-      else
-        let
-          val left = splitLeft (start, tree)
-          val right = splitRight (finish, tree)
-        in
-          if isEmpty right then
-            left
-          else
-            let
-              val leftSize = getFinishIdx left
-              val rightStartRelative = getStartIdx right
+            matchBeforeStart
+        val matchAfterFinish = nextMatch (finish, tree, 1)
+      in
+        if matchBeforeStart = ~1 andalso matchAfterFinish = ~1 then
+          empty
+        else if matchAfterFinish = ~1 then
+          (* there is no match after 'finish', so just split left. 
+           * No need to decrement or split right, 
+           * because the right vector would be empty. *)
+          splitLeft (start, tree)
+        else if matchBeforeStart = ~1 then
+          (* We don't want to use left split
+           * because there are no elements 
+           * before the deletion range's 'start'.
+           * So we make a right split and then decrement it. *)
+          let
+            val right = splitRight (finish, tree)
+          in
+            if isEmpty right then
+              empty
+            else
+              let
+                val startIdx = getStartIdx right
+                val shouldBeStartIdx = matchAfterFinish - length
+                val difference = startIdx - shouldBeStartIdx
+              in
+                if difference = 0 then
+                  right
+                else if isEmpty right then
+                  empty
+                else
+                  decrementBy (difference, right)
+              end
+          end
+        else
+          let
+            val left = splitLeft (start, tree)
+            val right = splitRight (finish, tree)
+          in
+            if isEmpty right then
+              left
+            else
+              let
+                val leftSize = getFinishIdx left
+                val rightStartRelative = getStartIdx right
+                val rightStartAbsolute = leftSize + rightStartRelative
 
-              val rightStartAbsolute = leftSize + rightStartRelative
-              val difference = matchAfterFinish - rightStartAbsolute
-            in
-              if difference = 0 then
-                merge (left, right)
-              else
-                let
-                  val right = decrementBy (difference, right)
-                in
+                val shouldBeStartIdx = matchAfterFinish - length
+                val difference = rightStartAbsolute - shouldBeStartIdx
+              in
+                if difference = 0 then
                   merge (left, right)
-                end
-            end
-        end
-    end
+                else
+                  let
+                    val right = decrementBy (difference, right)
+                  in
+                    merge (left, right)
+                  end
+              end
+          end
+      end
 
   (* functions only for testing *)
   fun fromListLoop (lst, acc) =

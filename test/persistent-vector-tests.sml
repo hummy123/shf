@@ -342,6 +342,39 @@ struct
            in
              Expect.isTrue (outputList = expectedOutput)
            end)
+    , test
+        "decrements subsequent elements correctly \
+        \when deletion range is before first element to middle element"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 50, finish = 50}
+               , {start = 60, finish = 60}
+               , {start = 70, finish = 70}
+               , {start = 80, finish = 80}
+               ]
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.delete (0, 3, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 1}
+               , {start = 47, finish = 47}
+               , {start = 57, finish = 57}
+               , {start = 67, finish = 67}
+               , {start = 77, finish = 77}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
     ]
 
   val tests = [appendTests, toListTests, splitLeftTests, deleteTests]
