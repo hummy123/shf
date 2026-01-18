@@ -545,7 +545,124 @@ struct
 
   fun countDepth tree = countDepthLoop (0, tree)
 
-  fun merge (left, right) = raise Fail "unimplemennted"
+  fun countLeftmostLeaf tree =
+    case tree of
+      LEAF (items, _) => Vector.length items
+    | BRANCH (nodes, _) => countLeftmostLeaf (Vector.sub (nodes, 0))
+
+  fun countRightmostLeaf tree =
+    case tree of
+      LEAF (items, _) => Vector.length items
+    | BRANCH (nodes, _) =>
+        countRightmostLeaf (Vector.sub (nodes, Vector.length nodes - 1))
+
+  fun popLeftmostLeaf tree =
+    case tree of
+      LEAF (items, sizes) =>
+        {leafItems = items, leafSizes = sizes, child = empty}
+    | BRANCH (nodes, sizes) =>
+        let
+          val oldChildSize = Vector.sub (sizes, 0)
+          val {leafItems, leafSizes, child} = 
+            popLeftmostLeaf (Vector.sub (nodes, 0))
+        in
+          if isEmpty child then
+            if Vector.length nodes = 1 then
+              {leafItems = leafItems, leafSizes = leafSizes, child = empty}
+            else
+              let
+                val len = Vector.length sizes - 1
+                val sizes = VectorSlice.slice (sizes, 1, SOME len)
+                val sizes = VectorSlice.map (fn el => el - oldChildSize) sizes
+
+                val nodes = VectorSlice.slice (nodes, 1, SOME len)
+                val nodes = VectorSlice.vector nodes
+                val child = BRANCH (nodes, sizes)
+              in
+                {leafItems = leafItems, leafSizes = leafSizes, child = child}
+              end
+          else
+            let
+              val newChildSize = getFinishIdx child
+              val difference = oldChildSize - newChildSize
+
+              val nodes = Vector.update (nodes, 0, child)
+              val sizes = Vector.map (fn el => el - difference) sizes
+              val child = BRANCH (nodes, sizes)
+            in
+              {leafItems = leafItems, leafSizes = leafSizes, child = child}
+            end
+        end
+
+  fun mergeSameDepth (left, right) =
+    case (left, right) of
+      (LEAF (leftItems, leftSizes), LEAF (rightItems, rightSizes)) =>
+        if Vector.length leftItems + Vector.length rightItems <= maxSize then
+          let
+            val offset = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+            val newVecLen = Vector.length leftItems + Vector.length rightItems
+            val items = Vector.tabulate (newVecLen,
+              fn i =>
+                if i < Vector.length leftItems then
+                  Vector.sub (leftItems, i)
+                else
+                  let
+                    val {start, finish} = 
+                      Vector.sub (rightItems, i - Vector.length leftItems) 
+                  in
+                    {start = start + offset, finish = finish + offset}
+                  end
+            )
+            val sizes = Vector.map #finish items
+          in
+            LEAF (items, sizes)
+          end
+        else
+          let
+            val leftMaxSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+            val rightMaxSize = Vector.sub (rightSizes, Vector.length rightSizes - 1)
+            val parentSizes = #[leftMaxSize, rightMaxSize + leftMaxSize]
+            val parentNodes = #[left, right]
+          in
+            BRANCH (parentNodes, parentSizes)
+          end
+      | (BRANCH (leftNodes, leftSizes), BRANCH (rightNodes, rightSizes)) => 
+          if Vector.length leftNodes + Vector.length rightNodes <= maxSize then
+            let
+              val offset = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+              val nodes = Vector.concat [leftNodes, rightNodes]
+
+              val sizes = Vector.tabulate (Vector.length nodes, 
+                fn i =>
+                  if i < Vector.length leftSizes then
+                    Vector.sub (leftSizes, i)
+                  else
+                    Vector.sub (rightSizes, i - Vector.length leftSizes) + offset
+              )
+            in
+              BRANCH (nodes, sizes)
+            end
+          else
+            let
+              val leftMaxSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
+              val rightMaxSize = Vector.sub (rightSizes, Vector.length rightSizes - 1)
+              val parentSizes = #[leftMaxSize, rightMaxSize + leftMaxSize]
+              val parentNodes = #[left, right]
+            in
+              BRANCH (parentNodes, parentSizes)
+            end
+      | _ => 
+          raise Fail "PersistentVector.mergeSameDepth: \
+          \left and right should both be BRANCH or both be LEAF \
+          \but one is BRANCH and one is LEAF"
+
+  fun merge (left, right) = 
+  let
+    val leftDepth = countDepth left
+    val rightDepth = countDepth right
+  in
+    if leftDepth = rightDepth then
+      mergeSameDepth (left, right)
 
   fun delete (start, length, tree) =
     if isEmpty tree then
