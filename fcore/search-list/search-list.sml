@@ -128,4 +128,64 @@ struct
         )
     else
       (buffer, PersistentVector.empty)
+
+  fun insertUntilMatch
+    (idx, buffer, searchList, dfa, curState, startPos, prevFinalPos) =
+    if idx = #textLength buffer then
+      if prevFinalPos < 0 then
+        (buffer, searchList)
+      else if PersistentVector.isInRange (prevFinalPos, searchList) then
+        (buffer, searchList)
+      else
+        let
+          val searchList =
+            PersistentVector.insertMatchKeepingAbsoluteInddices
+              (startPos, prevFinalPos, searchList)
+        in
+          (buffer, searchList)
+        end
+    else
+      let
+        val buffer = LineGap.goToIdx (idx, buffer)
+        val chr = LineGap.sub (idx, buffer)
+        val newState = Dfa.nextState (dfa, curState, chr)
+        val prevFinalPos =
+          if Dfa.isFinal (dfa, newState) then idx else prevFinalPos
+      in
+        if Dfa.isDead newState then
+          if prevFinalPos = ~1 then
+            (* no match found: restart search from `startPos + 1` *)
+            insertUntilMatch
+              (startPos + 1, buffer, searchList, dfa, 0, startPos + 1, ~1)
+          else if PersistentVector.isInRange (prevFinalPos, searchList) then
+            (* already have this match so don't insert it *)
+            (buffer, searchList)
+          else
+            (* new match. Insert and continue *)
+            let
+              val searchList =
+                PersistentVector.insertMatchKeepingAbsoluteInddices
+                  (startPos, prevFinalPos, searchList)
+              val newStart = prevFinalPos + 1
+            in
+              insertUntilMatch
+                (newStart, buffer, searchList, dfa, 0, newStart, ~1)
+            end
+        else
+          (* continue *)
+          insertUntilMatch
+            (idx + 1, buffer, searchList, dfa, newState, startPos, prevFinalPos)
+      end
+
+  fun deleteBufferAndSearchList (start, length, buffer, searchList, dfa) =
+    let
+      val buffer = LineGap.delete (start, length, buffer)
+      val searchList = PersistentVector.delete (start, length, searchList)
+
+      val {start = prevStart, ...} =
+        PersistentVector.helpPrevMatch (start, searchList, 0)
+      val prevStart = prevStart + 1
+    in
+      insertUntilMatch (prevStart, buffer, searchList, dfa, 0, prevStart, ~1)
+    end
 end
