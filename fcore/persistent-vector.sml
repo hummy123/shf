@@ -656,13 +656,42 @@ struct
           \left and right should both be BRANCH or both be LEAF \
           \but one is BRANCH and one is LEAF"
 
-  fun merge (left, right) = 
-  let
-    val leftDepth = countDepth left
-    val rightDepth = countDepth right
-  in
-    if leftDepth = rightDepth then
+  fun mergeWhenRightDepthIsGreater (left, right, leftDepth, curDepth) =
+    if curDepth = leftDepth then
       mergeSameDepth (left, right)
+    else
+      case right of
+        BRANCH (nodes, sizes) =>
+          let
+            val child = mergeWhenRightDepthIsGreater
+              (left, Vector.sub (nodes, 0), leftDepth, curDepth + 1)
+
+            val oldChildSize = Vector.sub (sizes, 0)
+            val newChildSize = getFinishIdx child
+            val difference = newChildSize - oldChildSize
+
+            val nodes = Vector.update (nodes, 0, child)
+            val sizes = 
+              Vector.map (fn el => el + difference)
+          in
+            BRANCH (nodes, sizes)
+          end
+      | LEAF _ =>
+          raise Fail "PersistentVector.mergeWhenRightDepthIsGreater: \
+          \reached LEAF before (curDepth = leftDepth)"
+
+  fun merge (left, right) = 
+    let
+      val leftDepth = countDepth left
+      val rightDepth = countDepth right
+    in
+      if leftDepth = rightDepth then
+        mergeSameDepth (left, right)
+      else if leftDepth < rightDepth then
+        mergeWhenRightDepthIsGreater (left, right, leftDepth, 0)
+      else
+        mergeWhenLeftDepthIsGreater (left, right, rightDepth, 0)
+    end
 
   fun delete (start, length, tree) =
     if isEmpty tree then
