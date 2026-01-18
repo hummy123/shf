@@ -722,13 +722,20 @@ struct
     else
       let
         val finish = start + length
+
         val matchBeforeStart = prevMatch (start, tree,  1)
         val matchBeforeStart =
           if matchBeforeStart >= start then
             ~1
           else
             matchBeforeStart
+
         val matchAfterFinish = nextMatch (finish, tree, 1)
+        val matchAfterFinish =
+          if matchAfterFinish < finish then
+            ~1
+          else 
+            matchAfterFinish
       in
         if matchBeforeStart = ~1 andalso matchAfterFinish = ~1 then
           empty
@@ -788,6 +795,36 @@ struct
               end
           end
       end
+
+  (* Usually, when inserting, we want the absolute metadata 
+   * to be adjusted appropriately. 
+   * An insertion should cause the absolute metadata to increment.
+   * However, we sometimes want to insert a match without adjusting
+   * the absolute metadata in this way. 
+   * We want to do this when deleting some part of the buffer
+   * would cause a new match to be found, for example. *)
+  fun insertMatchKeepingAbsoluteInddices (start, finish, tree) =
+    let
+      val matchAfterFinish = nextMatch (finish, tree, 1)
+    in
+      if matchAfterFinish <= finish then
+        (* no match after the 'finish', so we just append *)
+        append (start, finish, tree)
+      else
+        let
+          val left = splitLeft (start, tree)
+          val right = splitRight (finish, tree)
+
+          val left = append (start, finish, tree)
+
+          val rightStartRelative = getStartIdx right
+          val rightStartAbsolute = rightStartRelative + finish
+          val difference = rightStartAbsolute - matchAfterFinish
+          val right = decrementBy (difference, right)
+        in
+          merge (left, right)
+        end
+    end
 
   (* functions only for testing *)
   fun fromListLoop (lst, acc) =
