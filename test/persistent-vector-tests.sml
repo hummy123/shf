@@ -375,6 +375,119 @@ struct
            in
              Expect.isTrue (outputList = expectedOutput)
            end)
+    , test
+        "decrements subsequent elements correctly \
+        \when deletion range is between two elements, \
+        \but deletes no elements"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 3}
+               , {start = 15, finish = 19}
+               , {start = 35, finish = 39}
+               ]
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.delete (21, 3, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 3}
+               , {start = 15, finish = 19}
+               , {start = 32, finish = 36}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
+    , test "deletes element when deletion range is inside that element" (fn _ =>
+        let
+          (* arrange *)
+          val inputList =
+            [ {start = 1, finish = 3}
+            , {start = 15, finish = 19}
+            , {start = 35, finish = 39}
+            ]
+          val pv = PersistentVector.fromList inputList
+
+          (* act *)
+          val pv = PersistentVector.delete (17, 1, pv)
+
+          (* assert *)
+          val outputList = PersistentVector.toList pv
+          val expectedOutput =
+            [{start = 1, finish = 3}, {start = 34, finish = 38}]
+        in
+          Expect.isTrue (outputList = expectedOutput)
+        end)
+    , test
+        "returns preceding elements when \
+        \deletion range starts in middle and deletes to end of vector"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 5}
+               , {start = 6, finish = 6}
+               , {start = 7, finish = 7}
+               , {start = 8, finish = 8}
+               ]
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.delete (5, 9, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
+    , test
+        "deletes middle elements and decrements subsequent elements \
+        \when deletion range starts after first element \
+        \and ends before last element"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 5}
+               , {start = 60, finish = 60}
+               , {start = 70, finish = 70}
+               , {start = 80, finish = 80}
+               ]
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.delete (3, 3, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 57, finish = 57}
+               , {start = 67, finish = 67}
+               , {start = 77, finish = 77}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
     ]
 
   val tests = [appendTests, toListTests, splitLeftTests, deleteTests]
