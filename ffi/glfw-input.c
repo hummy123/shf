@@ -40,3 +40,29 @@ void setKeyCallback(GLFWwindow *window) {
   glfwSetKeyCallback(window, keyCallback);
 }
 
+// gamepad code
+GLFWgamepadstate state;
+float* axes;
+int axesCount = -1;
+
+void getGamepadState(int joystickID) {
+  if (glfwGetGamepadState(joystickID, &state)) {
+    axes = glfwGetJoystickAxes(joystickID, &axesCount);
+  }
+}
+
+float getLeftJoystickXAxisState() {
+  if (axesCount >= 2) {
+    return axes[0];
+  } else {
+    return 99.0;
+  }
+}
+
+float getLeftJoystickYAxisState() {
+  if (axesCount >= 2) {
+    return axes[1];
+  } else {
+    return 99.0;
+  }
+}

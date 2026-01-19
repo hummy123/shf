@@ -52,4 +52,12 @@ struct
   val (KEY_ARROW_DOWN, _) =
     _symbol "KEY_ARROW_DOWN" public : ( unit -> int ) * ( int -> unit );
   val KEY_ARROW_DOWN = KEY_ARROW_DOWN ()
+
+  val getGamepadState =
+    _import "getGamepadState" public : int -> unit;
+
+  val getLeftJoystickXAxisState =
+    _import "getLeftJoystickXAxisState" public : unit -> Real32.real;
+  val getLeftJoystickYAxisState =
+    _import "getLeftJoystickYAxisState" public : unit -> Real32.real;
 end
