@@ -5,12 +5,37 @@ struct
   fun isInDeadZone (x, y) =
     x < 0.1 andalso x > ~0.1 andalso y < 0.1 andalso y > ~0.1
 
-  (* todo: also query L2 and R2, and handle them *)
-  fun axisToDir (x, y) =
-    if isInDeadZone (x, y) then CENTRE
-    else if abs x > abs y then if x > 0.0 then RIGHT else LEFT
-    else if y > 0.0 then DOWN
-    else UP
+  fun axisToDir (x, y, l2, r2) =
+    if isInDeadZone (x, y) then 
+      (* analogue is in dead zone, so only query L2 and R2 *)
+      if r2 < 0.3 andalso l2 < 0.3 then
+        CENTRE
+      else if abs r2 > abs l2 then 
+        R2 
+      else 
+        L2
+    else 
+      let
+        val ax = abs x
+        val ay = abs y
+        val al2 = abs l2
+        val ar2 = abs r2
+      in
+        if ax > ay andalso ax > al2 andalso ax > ar2 then
+          if x > 0.0 then
+            RIGHT
+          else
+            LEFT
+        else if ay > ax andalso ay > al2 andalso ay > ar2 then
+          if y > 0.0 then
+            DOWN
+          else
+            UP
+        else if al2 > ax andalso al2 > ay andalso al2 > ar2 then
+          L2
+        else
+          R2
+      end
 
   fun getGamepadState () =
     Input.getGamepadState 0 <> 0 orelse Input.getGamepadState 1 <> 0
@@ -34,14 +59,14 @@ struct
 
     open InputMsg
 
-    fun handleTrianglePressed (x, y) =
+    fun handleTrianglePressed (x, y, l2, r2) =
       if !(#trianglePressed state) then
         ()
       else
         let
           val () = #trianglePressed state := true
           val chr =
-            case axisToDir (x, y) of
+            case axisToDir (x, y, l2, r2) of
               CENTRE => #"a"
             | UP => #"e"
             | RIGHT => #"i"
@@ -53,14 +78,14 @@ struct
           InputMailbox.append (CHAR_EVENT chr)
         end
 
-    fun handleCirclePressed (x, y) =
+    fun handleCirclePressed (x, y, l2, r2) =
       if !(#circlePressed state) then
         ()
       else
         let
           val () = #circlePressed state := true
           val chr =
-            case axisToDir (x, y) of
+            case axisToDir (x, y, l2, r2) of
               CENTRE => #"b"
             | UP => #"f"
             | RIGHT => #"j"
@@ -72,14 +97,14 @@ struct
           InputMailbox.append (CHAR_EVENT chr)
         end
 
-    fun handleCrossPressed (x, y) =
+    fun handleCrossPressed (x, y, l2, r2) =
       if !(#crossPressed state) then
         ()
       else
         let
           val () = #crossPressed state := true
         in
-          case axisToDir (x, y) of
+          case axisToDir (x, y, l2, r2) of
             CENTRE => InputMailbox.append (CHAR_EVENT #"c")
           | UP => InputMailbox.append (CHAR_EVENT #"g")
           | RIGHT => InputMailbox.append (CHAR_EVENT #"k")
@@ -91,14 +116,14 @@ struct
               raise Fail "glfw-gamepad.sml: 77\n"
         end
 
-    fun handleSquarePressed (x, y) =
+    fun handleSquarePressed (x, y, l2, r2) =
       if !(#squarePressed state) then
         ()
       else
         let
           val () = #squarePressed state := true
         in
-          case axisToDir (x, y) of
+          case axisToDir (x, y, l2, r2) of
             CENTRE => InputMailbox.append (CHAR_EVENT #"d")
           | UP => InputMailbox.append (CHAR_EVENT #"h")
           | RIGHT => InputMailbox.append (CHAR_EVENT #"l")
@@ -118,6 +143,9 @@ struct
         val xAxis = Input.getLeftJoystickXAxisState ()
         val yAxis = Input.getLeftJoystickYAxisState ()
 
+        val r2 = (Input.getR2State () + 1.0) / 2.0
+        val l2 = (Input.getL2State () + 1.0) / 2.0
+
         val crossPressed = Input.isCrossButtonPressed ()
         val circlePressed = Input.isCircleButtonPressed ()
         val squarePressed = Input.isSquareButtonPressed ()
@@ -130,22 +158,22 @@ struct
         val () =
           if crossPressed = 0 then #crossPressed state := false
           else if !(#crossPressed state) then ()
-          else handleCrossPressed (xAxis, yAxis)
+          else handleCrossPressed (xAxis, yAxis, l2, r2)
 
         val () =
           if circlePressed = 0 then #circlePressed state := false
           else if !(#circlePressed state) then ()
-          else handleCirclePressed (xAxis, yAxis)
+          else handleCirclePressed (xAxis, yAxis, l2, r2)
 
         val () =
           if squarePressed = 0 then #squarePressed state := false
           else if !(#squarePressed state) then ()
-          else handleSquarePressed (xAxis, yAxis)
+          else handleSquarePressed (xAxis, yAxis, l2, r2)
 
         val () =
           if trianglePressed = 0 then #trianglePressed state := false
           else if !(#trianglePressed state) then ()
-          else handleTrianglePressed (xAxis, yAxis)
+          else handleTrianglePressed (xAxis, yAxis, l2, r2)
 
         val () =
           if r1Pressed = 0 then

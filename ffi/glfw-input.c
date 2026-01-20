@@ -70,6 +70,14 @@ float getLeftJoystickYAxisState() {
   }
 }
 
+float getL2State() {
+  return axes[2];
+}
+
+float getR2State() {
+  return axes[5];
+}
+
 int isCrossButtonPressed() {
   return state.buttons[GLFW_GAMEPAD_BUTTON_CROSS];
 }

@@ -74,4 +74,9 @@ struct
     _import "isR1ButtonPressed" public : unit -> int;
   val isL1ButtonPressed =
     _import "isL1ButtonPressed" public : unit -> int;
+
+  val getR2State =
+    _import "getR2State" public : unit -> Real32.real;
+  val getL2State =
+    _import "getL2State" public : unit -> Real32.real;
 end
