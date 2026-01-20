@@ -219,9 +219,16 @@ struct
           else if !(#l1Pressed state) then
             ()
           else
-            let val () = InputMailbox.append KEY_BACKSPACE
+            let val () = InputMailbox.append InputMsg.KEY_BACKSPACE
             in #l1Pressed state := true
             end
+
+        val () =
+          (* if l2 and r2 are both pressed, then send escape event *)
+          if l2 > 0.3 andalso r2 > 0.3 then
+            InputMailbox.append InputMsg.KEY_ESC
+          else
+            ()
       in
         ()
       end
