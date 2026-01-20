@@ -148,14 +148,24 @@ struct
           else handleTrianglePressed (xAxis, yAxis)
 
         val () =
-          if r1Pressed = 0 then #r1Pressed state := false
-          else if !(#r1Pressed state) then ()
-          else InputMailbox.append (CHAR_EVENT #" ")
+          if r1Pressed = 0 then
+            #r1Pressed state := false
+          else if !(#r1Pressed state) then
+            ()
+          else
+            let val () = InputMailbox.append (CHAR_EVENT #" ")
+            in #r1Pressed state := true
+            end
 
         val () =
-          if l1Pressed = 0 then #l1Pressed state := false
-          else if !(#l1Pressed state) then ()
-          else InputMailbox.append KEY_BACKSPACE
+          if l1Pressed = 0 then
+            #l1Pressed state := false
+          else if !(#l1Pressed state) then
+            ()
+          else
+            let val () = InputMailbox.append KEY_BACKSPACE
+            in #l1Pressed state := false
+            end
       in
         ()
       end
