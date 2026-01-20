@@ -66,3 +66,27 @@ float getLeftJoystickYAxisState() {
     return 99.0;
   }
 }
+
+int isCrossButtonPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_CROSS];
+}
+
+int isCircleButtonPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_CIRCLE];
+}
+
+int isSquareButtonPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_SQUARE];
+}
+
+int isTriangleButtonPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_TRIANGLE];
+}
+
+int isR1ButtonPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER];
+}
+
+int isL1ButtonPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER];
+}

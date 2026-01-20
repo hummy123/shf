@@ -53,6 +53,7 @@ struct
     _symbol "KEY_ARROW_DOWN" public : ( unit -> int ) * ( int -> unit );
   val KEY_ARROW_DOWN = KEY_ARROW_DOWN ()
 
+  (* gamepad bindings below *)
   val getGamepadState =
     _import "getGamepadState" public : int -> unit;
 
@@ -60,4 +61,17 @@ struct
     _import "getLeftJoystickXAxisState" public : unit -> Real32.real;
   val getLeftJoystickYAxisState =
     _import "getLeftJoystickYAxisState" public : unit -> Real32.real;
+
+  val isCrossButtonPressed =
+    _import "isCrossButtonPressed" public : unit -> int;
+  val isCircleButtonPressed =
+    _import "isCircleButtonPressed" public : unit -> int;
+  val isSquareButtonPressed =
+    _import "isSquareButtonPressed" public : unit -> int;
+  val isTriangleButtonPressed =
+    _import "isTriangleButtonPressed" public : unit -> int;
+  val isR1ButtonPressed =
+    _import "isR1ButtonPressed" public : unit -> int;
+  val isL1ButtonPressed =
+    _import "isL1ButtonPressed" public : unit -> int;
 end
