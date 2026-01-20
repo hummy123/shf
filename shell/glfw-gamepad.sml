@@ -164,7 +164,7 @@ struct
             ()
           else
             let val () = InputMailbox.append KEY_BACKSPACE
-            in #l1Pressed state := false
+            in #l1Pressed state := true
             end
       in
         ()
