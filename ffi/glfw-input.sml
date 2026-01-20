@@ -55,7 +55,7 @@ struct
 
   (* gamepad bindings below *)
   val getGamepadState =
-    _import "getGamepadState" public : int -> unit;
+    _import "getGamepadState" public : int -> int;
 
   val getLeftJoystickXAxisState =
     _import "getLeftJoystickXAxisState" public : unit -> Real32.real;

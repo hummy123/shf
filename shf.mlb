@@ -82,6 +82,7 @@ shell/draw-mailbox.sml
 
 shell/exception-logger.sml
 shell/updater.sml
+shell/glfw-gamepad.sml
 shell/gl-shaders.sml
 shell/gl-draw.sml
 shell/shell.sml

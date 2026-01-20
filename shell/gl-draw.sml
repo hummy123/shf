@@ -145,28 +145,6 @@ struct
       updateLoop (0, InputMailbox.getMessagesAndClear (), app)
   end
 
-fun getGamepadState () =
-  let
-    val () = Input.getGamepadState 0
-    val () = Input.getGamepadState 1
-    val () = Input.getGamepadState 2
-    val () = Input.getGamepadState 3
-    val () = Input.getGamepadState 4
-    val () = Input.getGamepadState 5
-    val () = Input.getGamepadState 6
-    val () = Input.getGamepadState 7
-    val () = Input.getGamepadState 8
-    val () = Input.getGamepadState 9
-    val () = Input.getGamepadState 10
-    val () = Input.getGamepadState 11
-    val () = Input.getGamepadState 12
-    val () = Input.getGamepadState 13
-    val () = Input.getGamepadState 14
-    val () = Input.getGamepadState 15
-  in
-    ()
-  end
-
   fun helpLoop (app, shellState as {window, ...}: t) =
     case Glfw.windowShouldClose window of
       false =>
@@ -176,13 +154,7 @@ fun getGamepadState () =
           val _ = Gles3.clearColor (0.89, 0.89, 0.89, 1.0)
           val _ = Gles3.clear ()
 
-          val () = getGamepadState ()
-          val xAxis = Input.getLeftJoystickXAxisState ()
-          val yAxis = Input.getLeftJoystickYAxisState ()
-          val () = print ("x axis = " ^ Real32.toString xAxis ^ "\n")
-          val () = print ("y axis = " ^ Real32.toString yAxis ^ "\n")
-          val () = print "\n"
-
+          val () = GlfwGamepad.query ()
           val app = update app
           val _ = draw shellState
 

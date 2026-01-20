@@ -45,9 +45,12 @@ GLFWgamepadstate state;
 float* axes;
 int axesCount = -1;
 
-void getGamepadState(int joystickID) {
-  if (glfwGetGamepadState(joystickID, &state)) {
+int getGamepadState(int joystickID) {
+  if (glfwJoystickIsGamepad(joystickID) && glfwGetGamepadState(joystickID, &state)) {
     axes = glfwGetJoystickAxes(joystickID, &axesCount);
+    return 1;
+  } else {
+    return 0;
   }
 }
 
