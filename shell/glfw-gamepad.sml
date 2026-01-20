@@ -6,15 +6,12 @@ struct
     x < 0.1 andalso x > ~0.1 andalso y < 0.1 andalso y > ~0.1
 
   fun axisToDir (x, y, l2, r2) =
-    if isInDeadZone (x, y) then 
+    if isInDeadZone (x, y) then
       (* analogue is in dead zone, so only query L2 and R2 *)
-      if r2 < 0.3 andalso l2 < 0.3 then
-        CENTRE
-      else if abs r2 > abs l2 then 
-        R2 
-      else 
-        L2
-    else 
+      if r2 < 0.3 andalso l2 < 0.3 then CENTRE
+      else if abs r2 > abs l2 then R2
+      else L2
+    else
       let
         val ax = abs x
         val ay = abs y
@@ -22,15 +19,9 @@ struct
         val ar2 = abs r2
       in
         if ax > ay andalso ax > al2 andalso ax > ar2 then
-          if x > 0.0 then
-            RIGHT
-          else
-            LEFT
+          if x > 0.0 then RIGHT else LEFT
         else if ay > ax andalso ay > al2 andalso ay > ar2 then
-          if y > 0.0 then
-            DOWN
-          else
-            UP
+          if y > 0.0 then DOWN else UP
         else if al2 > ax andalso al2 > ay andalso al2 > ar2 then
           L2
         else
@@ -55,9 +46,11 @@ struct
       , trianglePressed = ref false
       , r1Pressed = ref false
       , l1Pressed = ref false
+      , shiftChr = ref false
       }
 
-    open InputMsg
+    fun appendChr chr =
+      (InputMailbox.append (InputMsg.CHAR_EVENT chr); #shiftChr state := false)
 
     fun handleTrianglePressed (x, y, l2, r2) =
       if !(#trianglePressed state) then
@@ -66,16 +59,26 @@ struct
         let
           val () = #trianglePressed state := true
           val chr =
-            case axisToDir (x, y, l2, r2) of
-              CENTRE => #"a"
-            | UP => #"e"
-            | RIGHT => #"i"
-            | DOWN => #"m"
-            | LEFT => #"q"
-            | L2 => #"u"
-            | R2 => #"y"
+            if !(#shiftChr state) then
+              case axisToDir (x, y, l2, r2) of
+                CENTRE => #"A"
+              | UP => #"E"
+              | RIGHT => #"I"
+              | DOWN => #"M"
+              | LEFT => #"Q"
+              | L2 => #"U"
+              | R2 => #"Y"
+            else
+              case axisToDir (x, y, l2, r2) of
+                CENTRE => #"a"
+              | UP => #"e"
+              | RIGHT => #"i"
+              | DOWN => #"m"
+              | LEFT => #"q"
+              | L2 => #"u"
+              | R2 => #"y"
         in
-          InputMailbox.append (CHAR_EVENT chr)
+          appendChr chr
         end
 
     fun handleCirclePressed (x, y, l2, r2) =
@@ -85,16 +88,26 @@ struct
         let
           val () = #circlePressed state := true
           val chr =
-            case axisToDir (x, y, l2, r2) of
-              CENTRE => #"b"
-            | UP => #"f"
-            | RIGHT => #"j"
-            | DOWN => #"n"
-            | LEFT => #"r"
-            | L2 => #"v"
-            | R2 => #"z"
+            if !(#shiftChr state) then
+              case axisToDir (x, y, l2, r2) of
+                CENTRE => #"B"
+              | UP => #"F"
+              | RIGHT => #"J"
+              | DOWN => #"N"
+              | LEFT => #"R"
+              | L2 => #"V"
+              | R2 => #"Z"
+            else
+              case axisToDir (x, y, l2, r2) of
+                CENTRE => #"b"
+              | UP => #"f"
+              | RIGHT => #"j"
+              | DOWN => #"n"
+              | LEFT => #"r"
+              | L2 => #"v"
+              | R2 => #"z"
         in
-          InputMailbox.append (CHAR_EVENT chr)
+          appendChr chr
         end
 
     fun handleCrossPressed (x, y, l2, r2) =
@@ -104,16 +117,24 @@ struct
         let
           val () = #crossPressed state := true
         in
-          case axisToDir (x, y, l2, r2) of
-            CENTRE => InputMailbox.append (CHAR_EVENT #"c")
-          | UP => InputMailbox.append (CHAR_EVENT #"g")
-          | RIGHT => InputMailbox.append (CHAR_EVENT #"k")
-          | DOWN => InputMailbox.append (CHAR_EVENT #"o")
-          | LEFT => InputMailbox.append (CHAR_EVENT #"s")
-          | L2 => InputMailbox.append (CHAR_EVENT #"w")
-          | R2 =>
-              (* todo: either shift or enter *)
-              raise Fail "glfw-gamepad.sml: 77\n"
+          if !(#shiftChr state) then
+            case axisToDir (x, y, l2, r2) of
+              CENTRE => appendChr #"U"
+            | UP => appendChr #"U"
+            | RIGHT => appendChr #"U"
+            | DOWN => appendChr #"U"
+            | LEFT => appendChr #"U"
+            | L2 => appendChr #"U"
+            | R2 => InputMailbox.append InputMsg.KEY_ENTER
+          else
+            case axisToDir (x, y, l2, r2) of
+              CENTRE => appendChr #"c"
+            | UP => appendChr #"g"
+            | RIGHT => appendChr #"k"
+            | DOWN => appendChr #"o"
+            | LEFT => appendChr #"s"
+            | L2 => appendChr #"w"
+            | R2 => InputMailbox.append InputMsg.KEY_ENTER
         end
 
     fun handleSquarePressed (x, y, l2, r2) =
@@ -123,16 +144,24 @@ struct
         let
           val () = #squarePressed state := true
         in
-          case axisToDir (x, y, l2, r2) of
-            CENTRE => InputMailbox.append (CHAR_EVENT #"d")
-          | UP => InputMailbox.append (CHAR_EVENT #"h")
-          | RIGHT => InputMailbox.append (CHAR_EVENT #"l")
-          | DOWN => InputMailbox.append (CHAR_EVENT #"p")
-          | LEFT => InputMailbox.append (CHAR_EVENT #"t")
-          | L2 => InputMailbox.append (CHAR_EVENT #"x")
-          | R2 =>
-              (* todo: either shift or enter *)
-              raise Fail "glfw-gamepad.sml: 87\n"
+          if !(#shiftChr state) then
+            case axisToDir (x, y, l2, r2) of
+              CENTRE => appendChr #"U"
+            | UP => appendChr #"U"
+            | RIGHT => appendChr #"U"
+            | DOWN => appendChr #"U"
+            | LEFT => appendChr #"U"
+            | L2 => appendChr #"U"
+            | R2 => #shiftChr state := true
+          else
+            case axisToDir (x, y, l2, r2) of
+              CENTRE => appendChr #"d"
+            | UP => appendChr #"h"
+            | RIGHT => appendChr #"l"
+            | DOWN => appendChr #"p"
+            | LEFT => appendChr #"t"
+            | L2 => appendChr #"x"
+            | R2 => #shiftChr state := true
         end
   in
     fun handleIfJoystickIsPresent () =
@@ -167,7 +196,6 @@ struct
 
         val () =
           if squarePressed = 0 then #squarePressed state := false
-          else if !(#squarePressed state) then ()
           else handleSquarePressed (xAxis, yAxis, l2, r2)
 
         val () =
@@ -181,7 +209,7 @@ struct
           else if !(#r1Pressed state) then
             ()
           else
-            let val () = InputMailbox.append (CHAR_EVENT #" ")
+            let val () = InputMailbox.append (InputMsg.CHAR_EVENT #" ")
             in #r1Pressed state := true
             end
 
