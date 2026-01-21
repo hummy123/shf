@@ -75,6 +75,15 @@ struct
   val isL1ButtonPressed =
     _import "isL1ButtonPressed" public : unit -> int;
 
+  val isDpadUpButtonPressed =
+    _import "isDpadUpButtonPressed" public : unit -> int;
+  val isDpadDownButtonPressed =
+    _import "isDpadDownButtonPressed" public : unit -> int;
+  val isDpadLeftButtonPressed =
+    _import "isDpadLeftButtonPressed" public : unit -> int;
+  val isDpadRightButtonPressed =
+    _import "isDpadRightButtonPressed" public : unit -> int;
+
   val getR2State =
     _import "getR2State" public : unit -> Real32.real;
   val getL2State =

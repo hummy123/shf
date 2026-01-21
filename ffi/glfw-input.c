@@ -101,3 +101,19 @@ int isR1ButtonPressed() {
 int isL1ButtonPressed() {
   return state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER];
 }
+
+int isDpadUpPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP];
+}
+
+int isDpadDownPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN];
+}
+
+int isDpadLeftPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT];
+}
+
+int isDpadRightPressed() {
+  return state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT];
+}
