@@ -2,6 +2,8 @@ structure GlfwGamepad =
 struct
   datatype mode =
     PENDING
+  (* we need to wait for all keys to be released after pressing a button *)
+  | WAIT_FOR_KEY_RELEASE
   | TRIANGLE
   | TRIANGLE_CIRCLE
   | CIRCLE
@@ -23,7 +25,7 @@ struct
     , squarePressed: bool
     }
 
-  fun setToPendingAndUnshifted (gamepadState: gamepad_state) =
+  fun releaseKeysAndUnshift (gamepadState: gamepad_state) =
     let
       val
         { mode = _
@@ -34,7 +36,7 @@ struct
         , squarePressed
         } = gamepadState
     in
-      { mode = PENDING
+      { mode = WAIT_FOR_KEY_RELEASE
       , shiftChr = false
       , trianglePressed = false
       , circlePressed = false
@@ -42,6 +44,33 @@ struct
       , squarePressed = false
       }
     end
+
+  fun onWaitForKeyRelease
+    ( gamepadState: gamepad_state
+    , trianglePressed
+    , circlePressed
+    , crossPressed
+    , squarePressed
+    , actions
+    ) =
+    if
+      trianglePressed orelse circlePressed orelse crossPressed
+      orelse squarePressed
+    then
+      (gamepadState, actions)
+    else
+      let
+        val newState =
+          { mode = PENDING
+          , shiftChr = #shiftChr gamepadState
+          , trianglePressed = false
+          , circlePressed = false
+          , crossPressed = false
+          , squarePressed = false
+          }
+      in
+        (newState, actions)
+      end
 
   fun onPendingMode
     ( state: gamepad_state
@@ -125,28 +154,28 @@ struct
     ) =
     if trianglePressed then
       let
-        val newState = setToPendingAndUnshifted gamepadState
+        val newState = releaseKeysAndUnshift gamepadState
         val actions = IM.CHAR_EVENT #"a" :: actions
       in
         (newState, actions)
       end
     else if circlePressed then
       let
-        val newState = setToPendingAndUnshifted gamepadState
+        val newState = releaseKeysAndUnshift gamepadState
         val actions = IM.CHAR_EVENT #"b" :: actions
       in
         (newState, actions)
       end
     else if crossPressed then
       let
-        val newState = setToPendingAndUnshifted gamepadState
+        val newState = releaseKeysAndUnshift gamepadState
         val actions = IM.CHAR_EVENT #"c" :: actions
       in
         (newState, actions)
       end
     else if squarePressed then
       let
-        val newState = setToPendingAndUnshifted gamepadState
+        val newState = releaseKeysAndUnshift gamepadState
         val actions = IM.CHAR_EVENT #"d" :: actions
       in
         (newState, actions)
@@ -171,6 +200,15 @@ struct
       case #mode gamepadState of
         PENDING =>
           onPendingMode
+            ( gamepadState
+            , trianglePressed
+            , circlePressed
+            , crossPressed
+            , squarePressed
+            , actions
+            )
+      | WAIT_FOR_KEY_RELEASE =>
+          onWaitForKeyRelease
             ( gamepadState
             , trianglePressed
             , circlePressed
@@ -208,7 +246,7 @@ struct
         val crossPressed = Input.isCrossButtonPressed () <> 0
         val squarePressed = Input.isSquareButtonPressed () <> 0
         val l1Pressed = Input.isL1ButtonPressed () <> 0
-        val r1Pressed = Input.isL1ButtonPressed () <> 0
+        val r1Pressed = Input.isR1ButtonPressed () <> 0
       in
         handleButtons
           ( gamepadState
