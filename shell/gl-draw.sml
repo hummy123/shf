@@ -129,24 +129,22 @@ struct
       loop (0, DrawMailbox.getMessagesAndClear (), shellState)
   end
 
-  local
-    fun updateLoop (pos, msgVec, app) =
-      if pos = Vector.length msgVec then
-        app
-      else
-        let
-          val msg = Vector.sub (msgVec, pos)
-          val app = Updater.update (app, msg)
-        in
-          updateLoop (pos + 1, msgVec, app)
-        end
-  in
-    fun update app =
-      updateLoop (0, InputMailbox.getMessagesAndClear (), app)
-  end
+  fun updateLoop (pos, msgVec, app) =
+    if pos = Vector.length msgVec then
+      app
+    else
+      let
+        val msg = Vector.sub (msgVec, pos)
+        val app = Updater.update (app, msg)
+      in
+        updateLoop (pos + 1, msgVec, app)
+      end
 
-  fun helpLoop (app, shellState as {window, ...}: t) =
-    case Glfw.windowShouldClose window of
+  fun update app =
+    updateLoop (0, InputMailbox.getMessagesAndClear (), app)
+
+  fun helpLoop (app, shellState: t, gamepad) =
+    case Glfw.windowShouldClose (#window shellState) of
       false =>
         let
           val shellState = consumeDrawEvents shellState
@@ -154,19 +152,34 @@ struct
           val _ = Gles3.clearColor (0.89, 0.89, 0.89, 1.0)
           val _ = Gles3.clear ()
 
-          val () = GlfwGamepad.query ()
+          (* one update reacting to gamepad events *)
+          val (gamepad, actions) = GlfwGamepad.query gamepad
+          val app = updateLoop (0, Vector.fromList actions, app)
+
+          (* one update reacting to keyboard events *)
           val app = update app
           val _ = draw shellState
 
-          val _ = Glfw.swapBuffers window
+          val _ = Glfw.swapBuffers (#window shellState)
           val _ = Glfw.waitEvents ()
         in
-          helpLoop (app, shellState)
+          helpLoop (app, shellState, gamepad)
         end
     | true => Glfw.terminate ()
 
   fun loop (app, window) =
-    let val shellState = create window
-    in helpLoop (app, shellState)
+    let
+      val shellState = create window
+
+      val gamepad: GlfwGamepad.gamepad_state =
+        { mode = GlfwGamepad.PENDING
+        , shiftChr = false
+        , trianglePressed = false
+        , circlePressed = false
+        , crossPressed = false
+        , squarePressed = false
+        }
+    in
+      helpLoop (app, shellState, gamepad)
     end
 end
