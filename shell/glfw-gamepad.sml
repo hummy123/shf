@@ -23,6 +23,26 @@ struct
     , squarePressed: bool
     }
 
+  fun setToPendingAndUnshifted (gamepadState: gamepad_state) =
+    let
+      val
+        { mode = _
+        , shiftChr = _
+        , trianglePressed
+        , circlePressed
+        , crossPressed
+        , squarePressed
+        } = gamepadState
+    in
+      { mode = PENDING
+      , shiftChr = false
+      , trianglePressed = false
+      , circlePressed = false
+      , crossPressed = false
+      , squarePressed = false
+      }
+    end
+
   fun onPendingMode
     ( state: gamepad_state
     , trianglePressed
@@ -95,6 +115,45 @@ struct
         (newState, actions)
       end
 
+  fun onTriangleMode
+    ( gamepadState
+    , trianglePressed
+    , circlePressed
+    , crossPressed
+    , squarePressed
+    , actions
+    ) =
+    if trianglePressed then
+      let
+        val newState = setToPendingAndUnshifted gamepadState
+        val actions = IM.CHAR_EVENT #"a" :: actions
+      in
+        (newState, actions)
+      end
+    else if circlePressed then
+      let
+        val newState = setToPendingAndUnshifted gamepadState
+        val actions = IM.CHAR_EVENT #"b" :: actions
+      in
+        (newState, actions)
+      end
+    else if crossPressed then
+      let
+        val newState = setToPendingAndUnshifted gamepadState
+        val actions = IM.CHAR_EVENT #"c" :: actions
+      in
+        (newState, actions)
+      end
+    else if squarePressed then
+      let
+        val newState = setToPendingAndUnshifted gamepadState
+        val actions = IM.CHAR_EVENT #"d" :: actions
+      in
+        (newState, actions)
+      end
+    else
+      (gamepadState, actions)
+
   fun handleButtons
     ( gamepadState
     , trianglePressed
@@ -112,6 +171,15 @@ struct
       case #mode gamepadState of
         PENDING =>
           onPendingMode
+            ( gamepadState
+            , trianglePressed
+            , circlePressed
+            , crossPressed
+            , squarePressed
+            , actions
+            )
+      | TRIANGLE =>
+          onTriangleMode
             ( gamepadState
             , trianglePressed
             , circlePressed
