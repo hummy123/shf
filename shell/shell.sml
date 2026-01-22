@@ -89,7 +89,7 @@ struct
 
       val () = registerCallbacks window
     in
-      GlDraw.loop (app, window)
+      GlfwLoop.loop (app, window)
     end
 end
 

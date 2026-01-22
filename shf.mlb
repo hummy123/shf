@@ -85,4 +85,5 @@ shell/updater.sml
 shell/glfw-gamepad.sml
 shell/gl-shaders.sml
 shell/gl-draw.sml
+shell/glfw-loop.sml
 shell/shell.sml

@@ -2,17 +2,10 @@ structure GlDraw =
 struct
   open DrawMsg
 
-  (* The name doesn't make it clear, but this structure
-   * couples GLFW and OpenGL.
-   * I'm not sure if I will use native windowing systems
-   * or other graphics APIs at a later stage,
-   * but the current priority is GLFW + OpenGL. 
-   * *)
   type t =
     { textVertexBuffer: Word32.word
     , textProgram: Word32.word
     , textDrawLength: int
-    , window: MLton.Pointer.t
     }
 
   fun createShader (shaderType, shaderString) =
@@ -34,7 +27,7 @@ struct
       program
     end
 
-  fun create window =
+  fun create () =
     let
       (* create vertex buffer, program, etc. for text. *)
       val textVertexBuffer = Gles3.createBuffer ()
@@ -66,14 +59,12 @@ struct
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
       , textDrawLength = 0
-      , window = window
       }
     end
 
-  fun uploadText (shellState: t, vec) =
+  fun uploadText (drawState: t, vec) =
     let
-      val {textVertexBuffer, textProgram, textDrawLength = _, window} =
-        shellState
+      val {textVertexBuffer, textProgram, textDrawLength = _} = drawState
 
       val _ = Gles3.bufferData (vec, Vector.length vec, Gles3.STATIC_DRAW)
       val newTextDrawLength = Vector.length vec div 6
@@ -81,105 +72,11 @@ struct
       { textVertexBuffer = textVertexBuffer
       , textProgram = textProgram
       , textDrawLength = newTextDrawLength
-      , window = window
       }
     end
 
   fun draw (drawObject: t) =
-    let
-      val {textVertexBuffer, textDrawLength, textProgram, window = _} =
-        drawObject
-    in
-      Gles3.drawArrays (Gles3.TRIANGLES, 0, textDrawLength)
-    end
-
-  fun yank (shellState: t, str) =
-    let
-      (* print when text is yanked *)
-      val msg = "|" ^ String.toCString str ^ "|\n"
-      val () = print msg
-      val () = Glfw.setClipboardString (#window shellState, str)
-    in
-      shellState
-    end
-
-  fun consumeDrawEvent (shellState, msg) =
-    let
-      val {textVertexBuffer, textProgram, window, textDrawLength = _, ...} =
-        shellState
-    in
-      case msg of
-        DRAW_TEXT textVec => uploadText (shellState, textVec)
-      | YANK str => yank (shellState, str)
-    end
-
-  local
-    fun loop (pos, msgVec, shellState) =
-      if pos = Vector.length msgVec then
-        shellState
-      else
-        let
-          val msg = Vector.sub (msgVec, pos)
-          val shellState = consumeDrawEvent (shellState, msg)
-        in
-          loop (pos + 1, msgVec, shellState)
-        end
-  in
-    fun consumeDrawEvents shellState =
-      loop (0, DrawMailbox.getMessagesAndClear (), shellState)
-  end
-
-  fun updateLoop (pos, msgVec, app) =
-    if pos = Vector.length msgVec then
-      app
-    else
-      let
-        val msg = Vector.sub (msgVec, pos)
-        val app = Updater.update (app, msg)
-      in
-        updateLoop (pos + 1, msgVec, app)
-      end
-
-  fun update app =
-    updateLoop (0, InputMailbox.getMessagesAndClear (), app)
-
-  fun helpLoop (app, shellState: t, gamepad) =
-    case Glfw.windowShouldClose (#window shellState) of
-      false =>
-        let
-          val shellState = consumeDrawEvents shellState
-
-          val _ = Gles3.clearColor (0.89, 0.89, 0.89, 1.0)
-          val _ = Gles3.clear ()
-
-          (* one update reacting to gamepad events *)
-          val (gamepad, actions) = GlfwGamepad.query gamepad
-          val app = updateLoop (0, Vector.fromList actions, app)
-
-          (* one update reacting to keyboard events *)
-          val app = update app
-          val _ = draw shellState
-
-          val _ = Glfw.swapBuffers (#window shellState)
-          val _ = Glfw.waitEvents ()
-        in
-          helpLoop (app, shellState, gamepad)
-        end
-    | true => Glfw.terminate ()
-
-  fun loop (app, window) =
-    let
-      val shellState = create window
-
-      val gamepad: GlfwGamepad.gamepad_state =
-        { mode = GlfwGamepad.PENDING
-        , shiftChr = false
-        , trianglePressed = false
-        , circlePressed = false
-        , crossPressed = false
-        , squarePressed = false
-        }
-    in
-      helpLoop (app, shellState, gamepad)
+    let val {textVertexBuffer, textDrawLength, textProgram} = drawObject
+    in Gles3.drawArrays (Gles3.TRIANGLES, 0, textDrawLength)
     end
 end
