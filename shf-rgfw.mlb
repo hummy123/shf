@@ -1,0 +1,10 @@
+$(SML_LIB)/basis/basis.mlb
+
+(* IMPERATIVE SHELL *)
+$(SML_LIB)/basis/mlton.mlb
+ann
+  "allowFFI true"
+in
+  ffi/rgfw-export.sml
+end
+shell/rgfw-loop.sml

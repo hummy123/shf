@@ -1,5 +1,5 @@
 #!/bin/sh
-mlton -const 'Exn.keepHistory true' -link-opt "-lX11 -lXrandr -lGL -lm" \
+mlton -const 'Exn.keepHistory true' -link-opt "-lX11 -lXrandr -lGL" \
   -export-header ffi/export.h \
-  shf-tests.mlb \
+  shf-rgfw.mlb \
   ffi/rgfw-export.c
