@@ -4,5 +4,8 @@ run_debug:
 run:
 	./build-unix.sh && ./shf
 
+rgfw:
+	./build-unix-rgfw-debug-.sh && ./shf-rgfw
+
 tests:
 	mlton -const "Exn.keepHistory true" shf-tests.mlb && ./shf-tests

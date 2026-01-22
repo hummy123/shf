@@ -17,7 +17,11 @@ void closeWindow(RGFW_window* window) {
 }
 
 bool shouldCloseWindow(RGFW_window* window) {
-  return RGFW_window_shouldClose(window) != 0;
+  if (RGFW_window_shouldClose(window)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void swapBuffers(RGFW_window* window) {
