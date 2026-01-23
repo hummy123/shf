@@ -10,7 +10,7 @@ struct
   val shouldCloseWindow =
     _import "shouldCloseWindow" public : window -> bool;
   val swapBuffers =
-    _import "swapBuffers" public : window -> unit;
+    _import "swapBuffers" public reentrant : window -> unit;
   val writeClipboard =
     _import "writeClipboard" public : string * int -> unit;
 end
