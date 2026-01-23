@@ -7,6 +7,9 @@ struct
       let
         val _ = Gles3.clearColor (0.89, 0.89, 0.89, 1.0)
         val _ = Gles3.clear ()
+
+        val app = Updater.update app
+
         val () = Rgfw.swapBuffers window
       in
         loop (window, app)

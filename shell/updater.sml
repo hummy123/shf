@@ -11,7 +11,7 @@ struct
       hd :: tl => let val () = sendMsg hd in sendMsgs tl end
     | [] => ()
 
-  fun update (app: AppType.app_type, inputMsg) =
+  fun updateOne (app: AppType.app_type, inputMsg) =
     let
       val time = Time.now ()
 
@@ -30,4 +30,18 @@ struct
     in
       app
     end
+
+  fun updateLoop (pos, msgVec, app) =
+    if pos = Vector.length msgVec then
+      app
+    else
+      let
+        val msg = Vector.sub (msgVec, pos)
+        val app = updateOne (app, msg)
+      in
+        updateLoop (pos + 1, msgVec, app)
+      end
+
+  fun update app =
+    updateLoop (0, InputMailbox.getMessagesAndClear (), app)
 end

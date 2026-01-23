@@ -1,5 +1,5 @@
-#ifndef __SHF_RGFW_ML_H__
-#define __SHF_RGFW_ML_H__
+#ifndef __SHF_ML_H__
+#define __SHF_ML_H__
 
 /* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -132,23 +132,23 @@ typedef Pointer Objptr;
 
 #endif /* _MLTON_EXPORT_H_ */
 
-#if !defined(PART_OF_SHF_RGFW) && \
-    !defined(STATIC_LINK_SHF_RGFW) && \
-    !defined(DYNAMIC_LINK_SHF_RGFW)
-#define PART_OF_SHF_RGFW
+#if !defined(PART_OF_SHF) && \
+    !defined(STATIC_LINK_SHF) && \
+    !defined(DYNAMIC_LINK_SHF)
+#define PART_OF_SHF
 #endif
 
-#if defined(PART_OF_SHF_RGFW)
+#if defined(PART_OF_SHF)
 #define MLLIB_PRIVATE(x) PRIVATE x
 #define MLLIB_PUBLIC(x) PUBLIC x
-#elif defined(STATIC_LINK_SHF_RGFW)
+#elif defined(STATIC_LINK_SHF)
 #define MLLIB_PRIVATE(x)
 #define MLLIB_PUBLIC(x) PUBLIC x
-#elif defined(DYNAMIC_LINK_SHF_RGFW)
+#elif defined(DYNAMIC_LINK_SHF)
 #define MLLIB_PRIVATE(x)
 #define MLLIB_PUBLIC(x) EXTERNAL x
 #else
-#error Must specify linkage for shf_rgfw
+#error Must specify linkage for shf
 #define MLLIB_PRIVATE(x)
 #define MLLIB_PUBLIC(x)
 #endif
@@ -157,6 +157,9 @@ typedef Pointer Objptr;
 extern "C" {
 #endif
 
+MLLIB_PUBLIC(void mltonFramebufferSizeCallback (Int32 x0, Int32 x1);)
+MLLIB_PUBLIC(void mltonCharCallback (Word32 x0);)
+MLLIB_PUBLIC(void mltonKeyCallback (Int32 x0, Int32 x1, Int32 x2, Int32 x3);)
 
 #undef MLLIB_PRIVATE
 #undef MLLIB_PUBLIC
@@ -165,4 +168,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __SHF_RGFW_ML_H__ */
+#endif /* __SHF_ML_H__ */

@@ -37,20 +37,6 @@ struct
   fun consumeEvents (drawState, window) =
     consumeEventsLoop (0, DrawMailbox.getMessagesAndClear (), drawState, window)
 
-  fun updateLoop (pos, msgVec, app) =
-    if pos = Vector.length msgVec then
-      app
-    else
-      let
-        val msg = Vector.sub (msgVec, pos)
-        val app = Updater.update (app, msg)
-      in
-        updateLoop (pos + 1, msgVec, app)
-      end
-
-  fun update app =
-    updateLoop (0, InputMailbox.getMessagesAndClear (), app)
-
   fun helpLoop (app, drawState, window, gamepad) =
     case Glfw.windowShouldClose window of
       false =>
@@ -62,10 +48,10 @@ struct
 
           (* one update reacting to gamepad events *)
           val (gamepad, actions) = GlfwGamepad.query gamepad
-          val app = updateLoop (0, Vector.fromList actions, app)
+          val app = Updater.updateLoop (0, Vector.fromList actions, app)
 
           (* one update reacting to keyboard events *)
-          val app = update app
+          val app = Updater.update app
           val _ = GlDraw.draw drawState
 
           val _ = Glfw.swapBuffers window
