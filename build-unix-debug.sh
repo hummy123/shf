@@ -1,6 +1,6 @@
 #!/bin/sh
 mlton -const 'Exn.keepHistory true' -link-opt "$(pkg-config --cflags glfw3) $(pkg-config --static --libs glfw3)" \
-  -export-header ffi/export.h \
+  -export-header ffi/glfw-export.h \
   shf.mlb \
   ffi/glad.c \
   ffi/glfw-export.c \
