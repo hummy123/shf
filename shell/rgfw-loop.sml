@@ -33,8 +33,10 @@ struct
       Rgfw.closeWindow window
     else
       let
-        val _ = Gles3.clearColor (0.89, 0.89, 0.89, 1.0)
-        val _ = Gles3.clear ()
+        val () = Gles3.clearColor (0.89, 0.89, 0.89, 1.0)
+        val () = Gles3.clear ()
+
+        val () = Rgfw.pollEvents ()
 
         val app = Updater.update app
 
@@ -66,6 +68,21 @@ struct
     fun ioToLineGap (io, acc) = loop (io, acc, false)
   end
 
+  fun escapeCallback () =
+    let
+      val () = print "73\n"
+    in
+      InputMailbox.append InputMsg.KEY_ESC
+    end
+
+  fun registerCallbacks () =
+    let
+      val () = Rgfw.exportEscapeCallback escapeCallback 
+      val () = Rgfw.setKeyCallback ()
+    in
+      ()
+    end
+
   fun main () =
     let
       val window = Rgfw.createWindow ("shf", 0, 0, 1920, 1080)
@@ -74,7 +91,9 @@ struct
       (* load file intol gap buffer and create initial app *)
       val io = TextIO.openIn "temp.txt"
       val lineGap = ioToLineGap (io, LineGap.empty)
-      val _ = TextIO.closeIn io
+      val () = TextIO.closeIn io
+
+      val () = registerCallbacks ()
 
       val app = AppType.init (lineGap, 1920, 1080, Time.now ())
       val drawState = GlDraw.create ()

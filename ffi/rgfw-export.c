@@ -7,6 +7,7 @@
 #include "RGFW.h"
 #include <GLES3/gl3.h>
 #include <stdbool.h>
+#include "mlton-rgfw-export.h"
 
 RGFW_window* createWindow(char* title, int x, int y, int width, int height) {
   return RGFW_createWindow(title, x, y, width, height, RGFW_windowCenter | RGFW_windowOpenGL);
@@ -16,7 +17,7 @@ void closeWindow(RGFW_window* window) {
   RGFW_window_close(window);
 }
 
-bool shouldCloseWindow(RGFW_window* window) {
+Bool shouldCloseWindow(RGFW_window* window) {
   if (RGFW_window_shouldClose(window)) {
     return true;
   } else {
@@ -30,6 +31,22 @@ void swapBuffers(RGFW_window* window) {
 
 void writeClipboard(char* string, int stringSize) {
   RGFW_writeClipboard(string, stringSize);
+}
+
+void keyCallback(RGFW_window* window, unsigned char key, unsigned char symbol, unsigned char keymod, unsigned char repeated, unsigned char pressed) {
+  if (pressed || repeated) {
+    if (key == RGFW_escape) {
+      mltonEscape();
+    }
+  }
+}
+
+void setKeyCallback() {
+  RGFW_setKeyCallback(keyCallback);
+}
+
+void pollEvents() {
+  RGFW_pollEvents();
 }
 
 // OpenGL constants used below
