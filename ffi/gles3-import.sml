@@ -29,8 +29,8 @@ struct
   val DYNAMIC_DRAW = DYNAMIC_DRAW ()
 
   (* OpenGL functions used. *)
-  val loadGlad = _import "loadGlad" public : unit -> unit;
   val viewport = _import "viewport" public : int * int -> unit;
+  val enableDepthTest = _import "enableDepthTest" : unit -> unit;
 
   val createBuffer = _import "createBuffer" public : unit -> buffer;
   val bindBuffer = _import "bindBuffer" public : buffer -> unit;

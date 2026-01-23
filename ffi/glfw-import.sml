@@ -21,4 +21,5 @@ struct
   val waitEvents = _import "waitEvents" public reentrant : unit -> unit;
   val swapBuffers = _import "swapBuffers" public : window -> unit;
   val setClipboardString = _import "setClipboardString" public : window * string -> unit;
+  val loadGlad = _import "loadGlad" public : unit -> unit;
 end

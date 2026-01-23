@@ -5,6 +5,7 @@ $(SML_LIB)/basis/mlton.mlb
 ann
   "allowFFI true"
 in
-  ffi/rgfw-export.sml
+  ffi/rgfw-import.sml
+  ffi/gles3-import.sml
 end
 shell/rgfw-loop.sml

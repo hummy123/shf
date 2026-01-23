@@ -4,5 +4,4 @@ mlton -const 'Exn.keepHistory true' -link-opt "$(pkg-config --cflags glfw3) $(pk
   shf.mlb \
   ffi/glad.c \
   ffi/glfw-export.c \
-  ffi/gles3-export.c \
   ffi/glfw-input.c

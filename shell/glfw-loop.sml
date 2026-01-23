@@ -170,7 +170,8 @@ struct
       val _ = Glfw.windowHint (Glfw.DEPRECATED (), Glfw.FALSE ())
       val window = Glfw.createWindow (1920, 1080, "shf")
       val _ = Glfw.makeContextCurrent window
-      val _ = Gles3.loadGlad ()
+      val _ = Glfw.loadGlad ()
+      val _ = Gles3.enableDepthTest ()
 
       (* load file intol gap buffer and create initial app *)
       val io = TextIO.openIn "temp.txt"
