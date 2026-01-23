@@ -18,7 +18,7 @@ void closeWindow(RGFW_window* window) {
   RGFW_window_close(window);
 }
 
-Bool shouldCloseWindow(RGFW_window* window) {
+bool shouldCloseWindow(RGFW_window* window) {
   if (RGFW_window_shouldClose(window)) {
     return true;
   } else {
