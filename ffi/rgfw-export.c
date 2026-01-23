@@ -35,8 +35,10 @@ void writeClipboard(char* string, int stringSize) {
 
 void keyCallback(RGFW_window* window, unsigned char key, unsigned char symbol, unsigned char keymod, unsigned char repeated, unsigned char pressed) {
   if (pressed || repeated) {
-    if (key == RGFW_escape) {
-      mltonEscape();
+    switch (key) { 
+      case RGFW_escape:
+	mltonEscape();
+	break;
     }
   }
 }
