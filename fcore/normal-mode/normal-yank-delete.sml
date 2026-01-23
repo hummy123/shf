@@ -6,7 +6,7 @@ structure NormalYankDelete =
 
        fun initMsgs (low, length, buffer) =
          let
-           val str = LineGap.substring (low, length, buffer)
+           val str = LineGap.substring (low, length + 1, buffer)
            val msg = YANK str
          in
            [DRAW msg]
