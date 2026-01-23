@@ -1,6 +1,6 @@
 #!/bin/sh
 mlton -link-opt "$(pkg-config --cflags glfw3) $(pkg-config --static --libs glfw3)" \
-  -export-header ffi/glfw-export.h \
+  -export-header ffi/mlton-glfw-export.h \
   shf.mlb \
   ffi/glad.c \
   ffi/glfw-export.c \
