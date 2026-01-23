@@ -47,21 +47,6 @@ void keyCallback(RGFW_window* window, unsigned char key, unsigned char symbol, u
         mltonEnter();
         break;
 
-      case RGFW_backtick:
-      case RGFW_0:
-      case RGFW_1:
-      case RGFW_2:
-      case RGFW_3:
-      case RGFW_4:
-      case RGFW_5:
-      case RGFW_6:
-      case RGFW_7:
-      case RGFW_8:
-      case RGFW_9:
-      case RGFW_minus:
-      case RGFW_equal:
-      case RGFW_tab:
-      case RGFW_space:
       case RGFW_a:
       case RGFW_b:
       case RGFW_c:
@@ -88,14 +73,6 @@ void keyCallback(RGFW_window* window, unsigned char key, unsigned char symbol, u
       case RGFW_x:
       case RGFW_y:
       case RGFW_z:
-      case RGFW_period:
-      case RGFW_comma:
-      case RGFW_slash:
-      case RGFW_bracket:
-      case RGFW_closeBracket:
-      case RGFW_semicolon:
-      case RGFW_apostrophe:
-      case RGFW_backSlash:
 	if (keymod == RGFW_modShift) {
 	  mltonChar(toupper((char)key));
 	  break;
@@ -103,7 +80,186 @@ void keyCallback(RGFW_window* window, unsigned char key, unsigned char symbol, u
 	  mltonChar((char)key);
 	  break;
 	}
-    }
+
+       // These two don't have "shifted versions"
+       // so no need to turn to upper case
+       case RGFW_tab:
+       case RGFW_space:
+	  mltonChar((char)key);
+	  break;
+
+      // Have to "shift" symbols manually
+      // because toupper(char) does not produce
+      // the desired character
+      case RGFW_backtick:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('~');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+      case RGFW_0:
+	if (keymod == RGFW_modShift) {
+	  mltonChar(')');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_1:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('!');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_2:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('@');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_3:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('#');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_4:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('$');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_5:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('%');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_6:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('^');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_7:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('&');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_8:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('*');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_9:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('(');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_minus:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('_');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_equal:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('+');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_period:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('>');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_comma:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('<');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_slash:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('?');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_bracket:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('{');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_closeBracket:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('}');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_semicolon:
+	if (keymod == RGFW_modShift) {
+	  mltonChar(':');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_apostrophe:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('"');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+       case RGFW_backSlash:
+	if (keymod == RGFW_modShift) {
+	  mltonChar('|');
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
+     }
   }
 }
 
