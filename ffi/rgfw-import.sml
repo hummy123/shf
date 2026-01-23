@@ -11,6 +11,8 @@ struct
     _import "shouldCloseWindow" public : window -> bool;
   val swapBuffers =
     _import "swapBuffers" public : window -> unit;
+  val enableVsync =
+    _import "enableVsync" public : window -> unit;
   val pollEvents =
     _import "pollEvents" public reentrant : unit -> unit;
 

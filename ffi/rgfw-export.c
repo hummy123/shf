@@ -30,6 +30,11 @@ void swapBuffers(RGFW_window* window) {
   RGFW_window_swapBuffers_OpenGL(window);
 }
 
+void enableVsync(RGFW_window* window) {
+  // A swap interval of 1 will enable vsync
+  RGFW_window_swapInterval_OpenGL(window, 1);
+}
+
 void writeClipboard(char* string, int stringSize) {
   RGFW_writeClipboard(string, stringSize);
 }

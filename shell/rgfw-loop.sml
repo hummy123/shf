@@ -98,6 +98,7 @@ struct
   fun main () =
     let
       val window = Rgfw.createWindow ("shf", 0, 0, 1920, 1080)
+      val () = Rgfw.enableVsync window
       val () = Gles3.enableDepthTest ()
 
       (* load file intol gap buffer and create initial app *)
