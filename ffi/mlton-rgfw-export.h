@@ -83,7 +83,6 @@ typedef Vector(Char32_t) String32_t;
 typedef Vector(Char32_t) String32;
 
 typedef Int32_t Bool_t;
-typedef Int32_t Bool;
 typedef String8_t NullString8_t;
 typedef String8_t NullString8;
 
