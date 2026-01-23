@@ -1,6 +1,34 @@
 structure RgfwLoop =
 struct
-  fun loop (window, app) =
+  fun yank string =
+    Rgfw.writeClipboard (string, String.size string)
+
+  fun consumeEvent (drawState, window, msg) =
+    let
+      open DrawMsg
+
+      val {textVertexBuffer, textProgram, textDrawLength = _, ...} = drawState
+    in
+      case msg of
+        DRAW_TEXT textVec => GlDraw.uploadText (drawState, textVec)
+      | YANK str => (yank str; drawState)
+    end
+
+  fun consumeEventsLoop (pos, msgVec, drawState, window) =
+    if pos = Vector.length msgVec then
+      drawState
+    else
+      let
+        val msg = Vector.sub (msgVec, pos)
+        val drawState = consumeEvent (drawState, window, msg)
+      in
+        consumeEventsLoop (pos + 1, msgVec, drawState, window)
+      end
+
+  fun consumeEvents (drawState, window) =
+    consumeEventsLoop (0, DrawMailbox.getMessagesAndClear (), drawState, window)
+
+  fun loop (window, app, drawState) =
     if Rgfw.shouldCloseWindow window then
       Rgfw.closeWindow window
     else
@@ -10,9 +38,10 @@ struct
 
         val app = Updater.update app
 
+        val () = GlDraw.draw drawState
         val () = Rgfw.swapBuffers window
       in
-        loop (window, app)
+        loop (window, app, drawState)
       end
 
   local
@@ -46,9 +75,11 @@ struct
       val io = TextIO.openIn "temp.txt"
       val lineGap = ioToLineGap (io, LineGap.empty)
       val _ = TextIO.closeIn io
+
       val app = AppType.init (lineGap, 1920, 1080, Time.now ())
+      val drawState = GlDraw.create ()
     in
-      loop (window, app)
+      loop (window, app, drawState)
     end
 end
 

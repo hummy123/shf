@@ -28,6 +28,10 @@ void swapBuffers(RGFW_window* window) {
   RGFW_window_swapBuffers_OpenGL(window);
 }
 
+void writeClipboard(char* string, int stringSize) {
+  RGFW_writeClipboard(string, stringSize);
+}
+
 // OpenGL constants used below
 unsigned int VERTEX_SHADER = GL_VERTEX_SHADER;
 unsigned int FRAGMENT_SHADER = GL_FRAGMENT_SHADER;

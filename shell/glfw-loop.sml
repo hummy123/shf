@@ -1,7 +1,5 @@
 structure GlfwLoop =
 struct
-  open DrawMsg
-
   fun yank (window, str) =
     let
       (* print when text is yanked
@@ -16,6 +14,8 @@ struct
 
   fun consumeEvent (drawState, window, msg) =
     let
+      open DrawMsg
+
       val {textVertexBuffer, textProgram, textDrawLength = _, ...} = drawState
     in
       case msg of
