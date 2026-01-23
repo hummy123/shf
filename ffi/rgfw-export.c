@@ -7,6 +7,7 @@
 #include "RGFW.h"
 #include <GLES3/gl3.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include "mlton-rgfw-export.h"
 
 RGFW_window* createWindow(char* title, int x, int y, int width, int height) {
@@ -39,12 +40,84 @@ void keyCallback(RGFW_window* window, unsigned char key, unsigned char symbol, u
       case RGFW_escape:
 	mltonEscape();
 	break;
+      case RGFW_backSpace:
+	mltonBackspace();
+	break;
+      case RGFW_enter:
+        mltonEnter();
+        break;
+
+      case RGFW_backtick:
+      case RGFW_0:
+      case RGFW_1:
+      case RGFW_2:
+      case RGFW_3:
+      case RGFW_4:
+      case RGFW_5:
+      case RGFW_6:
+      case RGFW_7:
+      case RGFW_8:
+      case RGFW_9:
+      case RGFW_minus:
+      case RGFW_equal:
+      case RGFW_tab:
+      case RGFW_space:
+      case RGFW_a:
+      case RGFW_b:
+      case RGFW_c:
+      case RGFW_d:
+      case RGFW_e:
+      case RGFW_f:
+      case RGFW_g:
+      case RGFW_h:
+      case RGFW_i:
+      case RGFW_j:
+      case RGFW_k:
+      case RGFW_l:
+      case RGFW_m:
+      case RGFW_n:
+      case RGFW_o:
+      case RGFW_p:
+      case RGFW_q:
+      case RGFW_r:
+      case RGFW_s:
+      case RGFW_t:
+      case RGFW_u:
+      case RGFW_v:
+      case RGFW_w:
+      case RGFW_x:
+      case RGFW_y:
+      case RGFW_z:
+      case RGFW_period:
+      case RGFW_comma:
+      case RGFW_slash:
+      case RGFW_bracket:
+      case RGFW_closeBracket:
+      case RGFW_semicolon:
+      case RGFW_apostrophe:
+      case RGFW_backSlash:
+	if (keymod == RGFW_modShift) {
+	  mltonChar(toupper((char)key));
+	  break;
+	} else {
+	  mltonChar((char)key);
+	  break;
+	}
     }
   }
 }
 
 void setKeyCallback() {
   RGFW_setKeyCallback(keyCallback);
+}
+
+void resizeCallback(RGFW_window* window, int width, int height) {
+  glViewport(0, 0, width, height);
+  mltonResize(width, height);
+}
+
+void setResizeCallback() {
+  RGFW_setWindowResizedCallback(resizeCallback);
 }
 
 void pollEvents() {

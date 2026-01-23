@@ -157,6 +157,10 @@ extern "C" {
 #endif
 
 MLLIB_PUBLIC(void mltonEscape ();)
+MLLIB_PUBLIC(void mltonBackspace ();)
+MLLIB_PUBLIC(void mltonEnter ();)
+MLLIB_PUBLIC(void mltonChar (Word8 x0);)
+MLLIB_PUBLIC(void mltonResize (Int32 x0, Int32 x1);)
 
 #undef MLLIB_PRIVATE
 #undef MLLIB_PUBLIC

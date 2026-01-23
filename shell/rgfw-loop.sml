@@ -3,7 +3,7 @@ struct
   fun yank string =
     Rgfw.writeClipboard (string, String.size string)
 
-  fun consumeEvent (drawState, window, msg) =
+  fun consumeEvent (drawState, msg) =
     let
       open DrawMsg
 
@@ -14,19 +14,19 @@ struct
       | YANK str => (yank str; drawState)
     end
 
-  fun consumeEventsLoop (pos, msgVec, drawState, window) =
+  fun consumeEventsLoop (pos, msgVec, drawState) =
     if pos = Vector.length msgVec then
       drawState
     else
       let
         val msg = Vector.sub (msgVec, pos)
-        val drawState = consumeEvent (drawState, window, msg)
+        val drawState = consumeEvent (drawState, msg)
       in
-        consumeEventsLoop (pos + 1, msgVec, drawState, window)
+        consumeEventsLoop (pos + 1, msgVec, drawState)
       end
 
-  fun consumeEvents (drawState, window) =
-    consumeEventsLoop (0, DrawMailbox.getMessagesAndClear (), drawState, window)
+  fun consumeEvents drawState =
+    consumeEventsLoop (0, DrawMailbox.getMessagesAndClear (), drawState)
 
   fun loop (window, app, drawState) =
     if Rgfw.shouldCloseWindow window then
@@ -40,6 +40,7 @@ struct
 
         val app = Updater.update app
 
+        val drawState = consumeEvents drawState
         val () = GlDraw.draw drawState
         val () = Rgfw.swapBuffers window
       in
@@ -68,17 +69,28 @@ struct
     fun ioToLineGap (io, acc) = loop (io, acc, false)
   end
 
-  fun escapeCallback () =
-    let
-      val () = print "73\n"
-    in
-      InputMailbox.append InputMsg.KEY_ESC
-    end
+  fun escapeCallback () = InputMailbox.append InputMsg.KEY_ESC
+
+  fun backspaceCallback () = InputMailbox.append InputMsg.KEY_BACKSPACE
+
+  fun enterCallback () = InputMailbox.append InputMsg.KEY_ENTER
+
+  fun charCallback chr =
+    InputMailbox.append (InputMsg.CHAR_EVENT chr)
+
+  fun resizeCallback (width, height) =
+    InputMailbox.append (InputMsg.RESIZE_EVENT (width, height))
 
   fun registerCallbacks () =
     let
-      val () = Rgfw.exportEscapeCallback escapeCallback 
+      val () = Rgfw.exportEscapeCallback escapeCallback
+      val () = Rgfw.exportBackspaceCallback backspaceCallback
+      val () = Rgfw.exportEnterCallback enterCallback
+      val () = Rgfw.exportCharCallback charCallback
       val () = Rgfw.setKeyCallback ()
+
+      val () = Rgfw.exportResizeCallback resizeCallback
+      val () = Rgfw.setResizeCallback ()
     in
       ()
     end

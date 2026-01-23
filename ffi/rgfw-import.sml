@@ -19,6 +19,17 @@ struct
 
   val exportEscapeCallback =
     _export "mltonEscape" public : (unit -> unit) -> unit;
+  val exportBackspaceCallback =
+    _export "mltonBackspace" public : (unit -> unit) -> unit;
+  val exportEnterCallback =
+    _export "mltonEnter" public : (unit -> unit) -> unit;
+  val exportCharCallback =
+    _export "mltonChar" public : (char -> unit) -> unit;
   val setKeyCallback =
     _import "setKeyCallback" public : unit -> unit;
+    
+  val exportResizeCallback =
+    _export "mltonResize" public : (int * int -> unit) -> unit;
+  val setResizeCallback =
+    _import "setResizeCallback" public : unit -> unit;
 end
