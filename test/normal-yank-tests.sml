@@ -377,5 +377,58 @@ struct
            end)
     ]
 
-  val tests = [yhYank, ylYank, ykYank]
+  val yjYank = describe "yank motion 'yj'"
+    [ test "does not yank any text when cursor is on last line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\nworld\n"
+          val originalIdx = String.size originalString - 3
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val app = TestUtils.updateMany (app, "yj")
+        in
+          (* assert *)
+          TestUtils.expectNoYank app
+        end)
+    , test "does not yank when there is only one line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\n"
+          val originalIdx = 0
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val app = TestUtils.updateMany (app, "yj")
+        in
+          (* assert *)
+          TestUtils.expectNoYank app
+        end)
+    , test
+        "yanks first two lines when cursor is on first line \
+        \and there are at least two lines"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yj")
+
+             (* assert *)
+             val expectedString = originalString
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+        ]
+
+  val tests = [yhYank, ylYank, ykYank, yjYank]
 end
