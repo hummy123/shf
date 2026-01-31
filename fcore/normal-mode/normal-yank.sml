@@ -99,6 +99,73 @@ struct
         end
     end
 
+  fun yankLineDown (app: app_type, count) =
+    let
+      val {buffer, cursorIdx, ...} = app
+      val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
+      val startIdx = Cursor.vi0 (buffer, cursorIdx)
+      val buffer = LineGap.goToIdx (startIdx, buffer)
+
+      val startLine =
+        if Cursor.isCursorAtStartOfLine (buffer, startIdx) then
+          LineGap.idxToLineNumber (startIdx, buffer)
+        else
+          LineGap.idxToLineNumber (startIdx + 1, buffer)
+      val endLine = startLine + count + 1
+
+      val buffer = LineGap.goToLine (endLine, buffer)
+      val endLineIdx = LineGap.lineNumberToIdx (endLine, buffer)
+      val buffer = LineGap.goToIdx (endLineIdx - 1, buffer)
+
+      (* get "real" endLine by not considering newline after non-newline *)
+      val endLine =
+        if Cursor.isOnNewlineAfterChr (buffer, endLineIdx - 1) then
+          LineGap.idxToLineNumber (endLineIdx - 1, buffer)
+        else
+          LineGap.idxToLineNumber (endLineIdx, buffer)
+    in
+      if endLineIdx = #textLength buffer andalso endLine = startLine then
+        (* cursor is already on last line so don't yank *)
+        NormalFinish.clearMode app
+      else
+        let
+          val buffer = LineGap.goToIdx (endLineIdx, buffer)
+
+          (* right now, endLineIdx may be on a newline.
+           * If it is, we want to delete that newline too,
+           * and in that case, we increment by 1 to do so. 
+           * However, we don't want to delete the last newline in the file
+           * so we don't increment in that case. 
+           * Edge case: if the startIdx also begins after a newline
+           * then it is okay for us to delete the newline at the end of the file
+           * because there will already be a newline at the end of the file
+           * after the deletion. *)
+          val endsOnNewline = Cursor.isCursorAtStartOfLine (buffer, endLineIdx)
+
+          val buffer = LineGap.goToIdx (startIdx, buffer)
+          val startsAfterNewline =
+            startIdx > 0 andalso Cursor.isPrevChrStartOfLine (buffer, startIdx)
+
+          val endLineIdx =
+            if endsOnNewline then
+              if endLineIdx = #textLength buffer - 1 then
+                if startsAfterNewline then endLineIdx + 1 else endLineIdx
+              else
+                endLineIdx + 1
+            else
+              endLineIdx
+
+          val length = endLineIdx - startIdx
+
+          (* perform the actual yank *)
+          val buffer = LineGap.goToIdx (endLineIdx, buffer)
+          val str = LineGap.substring (startIdx, length, buffer)
+        in
+          finish (app, buffer, str)
+        end
+    end
+
   fun yankLine (app: app_type, count) =
     let
       val {buffer, cursorIdx, ...} = app
