@@ -130,13 +130,7 @@ struct
         NormalFinish.clearMode app
       else
         let
-          val buffer = LineGap.goToIdx (endLineIdx, buffer)
-          val endLineIdx =
-            if Cursor.isCursorAtStartOfLine (buffer, endLineIdx) then
-              endLineIdx + 1
-            else
-              endLineIdx
-
+          val endLineIdx = endLineIdx + 1
           val length = endLineIdx - startIdx
 
           (* perform the actual yank *)

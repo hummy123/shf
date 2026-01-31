@@ -549,29 +549,26 @@ struct
         let
           val buffer = LineGap.goToIdx (endLineIdx, buffer)
 
-          (* right now, endLineIdx may be on a newline.
-           * If it is, we want to delete that newline too,
-           * and in that case, we increment by 1 to do so. 
+          (* endLineIdx is on a newline because it was retrieved 
+           * by calling the `LineGap.lineNumberToIdx` function, 
+           * which always returns the idx of a line break.
+           * Since that is the case, we want to delete that newline too,
+           * and we increment by 1 to do so. 
            * However, we don't want to delete the last newline in the file
            * so we don't increment in that case. 
            * Edge case: if the startIdx also begins after a newline
            * then it is okay for us to delete the newline at the end of the file
            * because there will already be a newline at the end of the file
            * after the deletion. *)
-          val endsOnNewline = Cursor.isCursorAtStartOfLine (buffer, endLineIdx)
-
           val buffer = LineGap.goToIdx (startIdx, buffer)
           val startsAfterNewline =
             startIdx > 0 andalso Cursor.isPrevChrStartOfLine (buffer, startIdx)
 
           val endLineIdx =
-            if endsOnNewline then
-              if endLineIdx = #textLength buffer - 1 then
-                if startsAfterNewline then endLineIdx + 1 else endLineIdx
-              else
-                endLineIdx + 1
+            if endLineIdx = #textLength buffer - 1 then
+              if startsAfterNewline then endLineIdx + 1 else endLineIdx
             else
-              endLineIdx
+              endLineIdx + 1
 
           val length = endLineIdx - startIdx
 
