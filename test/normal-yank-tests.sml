@@ -528,5 +528,127 @@ struct
         end)
     ]
 
-  val tests = [yhYank, ylYank, ykYank, yjYank]
+  val yyYank = describe "yank motion 'yy'"
+    [ test
+        "yanks last line when there is more than one line \
+        \and cursor is on last line"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = String.size originalString - 3
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yy")
+
+             (* assert *)
+             val expectedString = "world\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test "yanks whole buffer when buffer consists of one line" (fn _ =>
+        let
+          (* arrange *)
+          val originalString = "hello\n"
+          val originalIdx = 0
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          (* act *)
+          val app = TestUtils.updateMany (app, "yy")
+
+          (* assert *)
+          val expectedString = originalString
+        in
+          TestUtils.expectYank (app, expectedString)
+        end)
+    , test
+        "yanks first line when cursor is on first line \
+        \and there are only two lines"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yy")
+
+             (* assert *)
+             val expectedString = "hello\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks whole file when cursor is on first line \
+        \and a count is given which is greater than \
+        \the number of total lines"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "33yy")
+
+             (* assert *)
+             val expectedString = originalString
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks whole file when cursor is on first line, \
+        \count given is greater than number of lines, \
+        \and the file does not end with a newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "hello\nworld"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "33yy")
+
+             (* assert *)
+             val expectedString = originalString
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    , test
+        "yanks just newline when cursor is on a line \
+        \that contains only a single newline"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalString = "\nhello\nworld\n"
+             val originalIdx = 0
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             (* act *)
+             val app = TestUtils.updateMany (app, "yy")
+
+             (* assert *)
+             val expectedString = "\n"
+           in
+             TestUtils.expectYank (app, expectedString)
+           end)
+    ]
+
+  val tests = [yhYank, ylYank, ykYank, yjYank, yyYank]
 end
