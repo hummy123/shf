@@ -203,9 +203,13 @@ struct
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val high = fMove (buffer, cursorIdx, count)
-      val high = if high = #textLength buffer then high - 1 else high
+      val beforeHigh = high - 1
+      val buffer = LineGap.goToIdx (beforeHigh, buffer)
 
-      val buffer = LineGap.goToIdx (high, buffer)
+      val high =
+        if Cursor.isOnNewlineAfterChr (buffer, beforeHigh) then beforeHigh
+        else high
+
       val length = high - cursorIdx
       val str = LineGap.substring (cursorIdx, length, buffer)
     in

@@ -650,6 +650,20 @@ struct
            end)
     ]
 
+  fun yankSeconWordAlpha (pos, expectedString) =
+    let
+      (* arrange *)
+      val originalString = "hello world again\n"
+      val app = TestUtils.init originalString
+      val app = AppWith.idx (app, pos)
+
+      (* act *)
+      val app = TestUtils.updateMany (app, "yw")
+    in
+      (* assert *)
+      TestUtils.expectYank (app, expectedString)
+    end
+
   val ywYank = describe "yank motion 'yw'"
     [ test "yanks last character when cursor is on last character of line"
         (fn _ =>
@@ -669,70 +683,34 @@ struct
            in
              TestUtils.expectYank (app, expectedString)
            end)
-    , test "deletes second word as expected when there are three words" (fn _ =>
-        let
-          (* arrange *)
-          val originalString = "hello world again\n"
-
-          val app = TestUtils.init originalString
-
-          (* all the different positions the cursor can be
-           * on the second word *)
-          val app1 = AppWith.idx (app, 6)
-          val app2 = AppWith.idx (app, 7)
-          val app3 = AppWith.idx (app, 8)
-          val app4 = AppWith.idx (app, 9)
-          val app5 = AppWith.idx (app, 10)
-
-          (* act *)
-          val newApp1 = TestUtils.updateMany (app1, "yw")
-          val newApp2 = TestUtils.updateMany (app2, "yw")
-          val newApp3 = TestUtils.updateMany (app3, "yw")
-          val newApp4 = TestUtils.updateMany (app4, "yw")
-          val newApp5 = TestUtils.updateMany (app5, "yw")
-
-          (* assert *)
-          val expectedString1 = "hello again\n"
-          val expectedString2 = "hello wagain\n"
-          val expectedString3 = "hello woagain\n"
-          val expectedString4 = "hello woragain\n"
-          val expectedString5 = "hello worlagain\n"
-
-          val actualString1 = LineGap.toString (#buffer newApp1)
-          val actualString2 = LineGap.toString (#buffer newApp2)
-          val actualString3 = LineGap.toString (#buffer newApp3)
-          val actualString4 = LineGap.toString (#buffer newApp4)
-          val actualString5 = LineGap.toString (#buffer newApp5)
-
-          val stringsAreExpected =
-            expectedString1 = actualString1
-            andalso expectedString2 = actualString2
-            andalso expectedString3 = actualString3
-            andalso expectedString4 = actualString4
-            andalso expectedString5 = actualString5
-
-          val expectedCursor1 = 6
-          val expectedCursor2 = 7
-          val expectedCursor3 = 8
-          val expectedCursor4 = 9
-          val expectedCursor5 = 10
-
-          val actualCursor1 = #cursorIdx newApp1
-          val actualCursor2 = #cursorIdx newApp2
-          val actualCursor3 = #cursorIdx newApp3
-          val actualCursor4 = #cursorIdx newApp4
-          val actualCursor5 = #cursorIdx newApp5
-
-          val cursorsAreExpected =
-            expectedCursor1 = actualCursor1
-            andalso expectedCursor2 = actualCursor2
-            andalso expectedCursor3 = actualCursor3
-            andalso expectedCursor4 = actualCursor4
-            andalso expectedCursor5 = actualCursor5
-        in
-          Expect.isTrue (stringsAreExpected andalso cursorsAreExpected)
-        end)
-    , test "does not delete newline following word" (fn _ =>
+    , test
+        "yanks from second word up to (and excluding) third word \
+        \when cursor is on first character of second word"
+        (fn _ => yankSeconWordAlpha (6, "world "))
+    , test
+        "yanks from second character of second word \
+        \up to (and excluding) third word \
+        \when cursor is on second character of second word"
+        (fn _ => yankSeconWordAlpha (7, "orld "))
+    , test
+        "yanks from third character of second word \
+        \up to (and excluding) third word \
+        \when cursor is on third character of second word"
+        (fn _ => yankSeconWordAlpha (8, "rld "))
+    , test
+        "yanks from fourth character of second word \
+        \up to (and excluding) third word \
+        \when cursor is on fourth character of second word"
+        (fn _ => yankSeconWordAlpha (9, "ld "))
+    , test
+        "yanks from fifth character of second word \
+        \up to (and excluding) third word \
+        \when cursor is on fifth character of second word"
+        (fn _ => yankSeconWordAlpha (10, "d "))
+    , test
+        "yanks space when cursor is on space preceding an alpha char"
+        (fn _ => yankSeconWordAlpha (11, " "))
+    , test "does not yank newline when cursor is on last word of line" (fn _ =>
         let
           (* arrange *)
           val originalString = "hello\nworld\nagain\n"
