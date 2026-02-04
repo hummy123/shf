@@ -707,8 +707,7 @@ struct
         \up to (and excluding) third word \
         \when cursor is on fifth character of second word"
         (fn _ => yankSeconWordAlpha (10, "d "))
-    , test
-        "yanks space when cursor is on space preceding an alpha char"
+    , test "yanks space when cursor is on space preceding an alpha char"
         (fn _ => yankSeconWordAlpha (11, " "))
     , test "does not yank newline when cursor is on last word of line" (fn _ =>
         let
@@ -718,21 +717,15 @@ struct
           val app = AppWith.idx (app, 0)
 
           (* act *)
-          val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "yw")
+          val app = TestUtils.updateMany (app, "yw")
 
           (* assert *)
-          val expectedString = "\nworld\nagain\n"
-          val expectedCursor = 0
-
-          val actualString = LineGap.toString buffer
-
-          val stringIsExpected = expectedString = actualString
-          val cursorIsExpected = expectedCursor = cursorIdx
+          val expectedString = "hello"
         in
-          Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+          TestUtils.expectYank (app, expectedString)
         end)
     , test
-        "deletes until first punctuation char when on an alpha char \
+        "yanks until first punctuation char when on an alpha char \
         \and there is no space between alpha and punctuation"
         (fn _ =>
            let
@@ -741,21 +734,15 @@ struct
              val app = TestUtils.init originalString
 
              (* act *)
-             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "yw")
+             val app = TestUtils.updateMany (app, "yw")
 
              (* assert *)
-             val expectedString = "!world!again\n"
-             val expectedCursor = 0
-
-             val actualString = LineGap.toString buffer
-
-             val stringIsExpected = expectedString = actualString
-             val cursorIsExpected = expectedCursor = cursorIdx
+             val expectedString = "hello"
            in
-             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+             TestUtils.expectYank (app, expectedString)
            end)
     , test
-        "deletes until first alpha char when on punctuation \
+        "yanks until first alpha char when on punctuation \
         \and there is no space between punctuation and alpha"
         (fn _ =>
            let
@@ -764,21 +751,15 @@ struct
              val app = TestUtils.init originalString
 
              (* act *)
-             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "yw")
+             val app = TestUtils.updateMany (app, "yw")
 
              (* assert *)
-             val expectedString = "QWERTY#!\n"
-             val expectedCursor = 0
-
-             val actualString = LineGap.toString buffer
-
-             val stringIsExpected = expectedString = actualString
-             val cursorIsExpected = expectedCursor = cursorIdx
+             val expectedString = "!#%&"
            in
-             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+             TestUtils.expectYank (app, expectedString)
            end)
     , test
-        "deletes until first alpha char \
+        "yanks until first alpha char (exluding) \
         \when cursor is on space and next char is alpha"
         (fn _ =>
            let
@@ -788,20 +769,15 @@ struct
              val app = AppWith.idx (app, 1)
 
              (* act *)
-             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "yw")
+             val app = TestUtils.updateMany (app, "yw")
 
              (* assert *)
-             val expectedString = "hello\n"
-             val actualString = LineGap.toString buffer
-             val expectedCursor = 1
-
-             val stringIsExpected = expectedString = actualString
-             val cursorIsExpected = expectedCursor = cursorIdx
+             val expectedString = " "
            in
-             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+             TestUtils.expectYank (app, expectedString)
            end)
     , test
-        "deletes until first alpha char \
+        "yanks until first alpha char \
         \when cursor is on space, many spaces are ahead, \
         \and first char after spaces is alpha"
         (fn _ =>
@@ -812,20 +788,15 @@ struct
              val app = AppWith.idx (app, 3)
 
              (* act *)
-             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "yw")
+             val app = TestUtils.updateMany (app, "yw")
 
              (* assert *)
-             val expectedString = "h  ello\n"
-             val actualString = LineGap.toString buffer
-             val expectedCursor = 3
-
-             val stringIsExpected = expectedString = actualString
-             val cursorIsExpected = expectedCursor = cursorIdx
+             val expectedString = "           "
            in
-             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+             TestUtils.expectYank (app, expectedString)
            end)
     , test
-        "deletes until first punctuation char \
+        "yanks until first punctuation char \
         \when cursor is on space and next non-space char is punctuation"
         (fn _ =>
            let
@@ -835,20 +806,15 @@ struct
              val app = AppWith.idx (app, 2)
 
              (* act *)
-             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "yw")
+             val app = TestUtils.updateMany (app, "yw")
 
              (* assert *)
-             val expectedString = "! @#$%\n"
-             val actualString = LineGap.toString buffer
-             val expectedCursor = 2
-
-             val stringIsExpected = expectedString = actualString
-             val cursorIsExpected = expectedCursor = cursorIdx
+             val expectedString = "    "
            in
-             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+             TestUtils.expectYank (app, expectedString)
            end)
     , test
-        "deletes last char when on last word \
+        "yanks last char when on last word \
         \and there is no newline after current word"
         (fn _ =>
            let
@@ -857,18 +823,12 @@ struct
              val app = AppWith.idx (app, 6)
 
              (* act *)
-             val {buffer, cursorIdx, ...} = TestUtils.updateMany (app, "yw")
+             val app = TestUtils.updateMany (app, "yw")
 
              (* assert *)
-             val expectedString = "hello "
-             val actualString = LineGap.toString buffer
-
-             val expectedIdx = 5
-
-             val stringIsExpected = expectedString = actualString
-             val cursorIsExpected = cursorIdx = expectedIdx
+             val expectedString = "world"
            in
-             Expect.isTrue (stringIsExpected andalso cursorIsExpected)
+             TestUtils.expectYank (app, expectedString)
            end)
     ]
 
