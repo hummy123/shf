@@ -200,9 +200,10 @@ struct
   fun yankWhenMovingForward (app: app_type, fMove, count) =
     let
       val {buffer, cursorIdx, ...} = app
-
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
+
       val high = fMove (buffer, cursorIdx, count)
+      val high = if high = #textLength buffer then high - 1 else high
 
       val buffer = LineGap.goToIdx (high, buffer)
       val length = high - cursorIdx

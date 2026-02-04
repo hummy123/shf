@@ -68,17 +68,12 @@ struct
         let
           val cursorIdx = Int.max (textLength - 1, 0)
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
+          val cursorIdx =
+            if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then cursorIdx - 1
+            else cursorIdx
         in
-          if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then
-            let
-              val cursorIdx = cursorIdx - 1
-            in
-              NormalFinish.buildTextAndClear
-                (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
-            end
-          else
-            NormalFinish.buildTextAndClear
-              (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
+          NormalFinish.buildTextAndClear
+            (app, buffer, cursorIdx, searchList, [], bufferModifyTime)
         end
       else
         NormalFinish.buildTextAndClear
