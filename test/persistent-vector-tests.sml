@@ -488,6 +488,24 @@ struct
            in
              Expect.isTrue (outputList = expectedOutput)
            end)
+    , test
+        "maintains balance with all leaves at same depth \
+        \when deleting a large portion of nodes in the middle"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList = List.tabulate (228, fn i =>
+               {start = i, finish = i})
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.delete (19, 15, pv)
+
+             (* assert *)
+             val isBalanced = PersistentVector.allLeavesAtSameDepth pv
+           in
+             Expect.isTrue isBalanced
+           end)
     ]
 
   val tests = [appendTests, toListTests, splitLeftTests, deleteTests]

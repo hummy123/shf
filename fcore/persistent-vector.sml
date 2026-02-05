@@ -545,54 +545,9 @@ struct
 
   fun countDepth tree = countDepthLoop (0, tree)
 
-  fun countLeftmostLeaf tree =
-    case tree of
-      LEAF (items, _) => Vector.length items
-    | BRANCH (nodes, _) => countLeftmostLeaf (Vector.sub (nodes, 0))
-
-  fun countRightmostLeaf tree =
-    case tree of
-      LEAF (items, _) => Vector.length items
-    | BRANCH (nodes, _) =>
-        countRightmostLeaf (Vector.sub (nodes, Vector.length nodes - 1))
-
-  fun popLeftmostLeaf tree =
-    case tree of
-      LEAF (items, sizes) =>
-        {leafItems = items, leafSizes = sizes, child = empty}
-    | BRANCH (nodes, sizes) =>
-        let
-          val oldChildSize = Vector.sub (sizes, 0)
-          val {leafItems, leafSizes, child} = 
-            popLeftmostLeaf (Vector.sub (nodes, 0))
-        in
-          if isEmpty child then
-            if Vector.length nodes = 1 then
-              {leafItems = leafItems, leafSizes = leafSizes, child = empty}
-            else
-              let
-                val len = Vector.length sizes - 1
-                val sizes = VectorSlice.slice (sizes, 1, SOME len)
-                val sizes = VectorSlice.map (fn el => el - oldChildSize) sizes
-
-                val nodes = VectorSlice.slice (nodes, 1, SOME len)
-                val nodes = VectorSlice.vector nodes
-                val child = BRANCH (nodes, sizes)
-              in
-                {leafItems = leafItems, leafSizes = leafSizes, child = child}
-              end
-          else
-            let
-              val newChildSize = getFinishIdx child
-              val difference = oldChildSize - newChildSize
-
-              val nodes = Vector.update (nodes, 0, child)
-              val sizes = Vector.map (fn el => el - difference) sizes
-              val child = BRANCH (nodes, sizes)
-            in
-              {leafItems = leafItems, leafSizes = leafSizes, child = child}
-            end
-        end
+  datatype merge_same_depth_result =
+    MERGE_SAME_DEPTH_UPDATE of t
+  | MERGE_SAME_DEPTH_FULL
 
   fun mergeSameDepth (left, right) =
     case (left, right) of
@@ -615,17 +570,10 @@ struct
             )
             val sizes = Vector.map #finish items
           in
-            LEAF (items, sizes)
+            MERGE_SAME_DEPTH_UPDATE (LEAF (items, sizes))
           end
         else
-          let
-            val leftMaxSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
-            val rightMaxSize = Vector.sub (rightSizes, Vector.length rightSizes - 1)
-            val parentSizes = #[leftMaxSize, rightMaxSize + leftMaxSize]
-            val parentNodes = #[left, right]
-          in
-            BRANCH (parentNodes, parentSizes)
-          end
+          MERGE_SAME_DEPTH_FULL
       | (BRANCH (leftNodes, leftSizes), BRANCH (rightNodes, rightSizes)) => 
           if Vector.length leftNodes + Vector.length rightNodes <= maxSize then
             let
@@ -640,68 +588,96 @@ struct
                     Vector.sub (rightSizes, i - Vector.length leftSizes) + offset
               )
             in
-              BRANCH (nodes, sizes)
+              MERGE_SAME_DEPTH_UPDATE (BRANCH (nodes, sizes))
             end
           else
-            let
-              val leftMaxSize = Vector.sub (leftSizes, Vector.length leftSizes - 1)
-              val rightMaxSize = Vector.sub (rightSizes, Vector.length rightSizes - 1)
-              val parentSizes = #[leftMaxSize, rightMaxSize + leftMaxSize]
-              val parentNodes = #[left, right]
-            in
-              BRANCH (parentNodes, parentSizes)
-            end
+            MERGE_SAME_DEPTH_FULL
       | _ => 
           raise Fail "PersistentVector.mergeSameDepth: \
           \left and right should both be BRANCH or both be LEAF \
           \but one is BRANCH and one is LEAF"
 
-  fun mergeWhenRightDepthIsGreater (left, right, leftDepth, curDepth) =
-    if curDepth = leftDepth then
-      mergeSameDepth (left, right)
+  datatype merge_diff_depth_result =
+    MERGE_DIFF_DEPTH_UPDATE of t
+  | MERGE_DIFF_DEPTH_FULL
+
+  fun mergeWhenRightDepthIsGreater (left, right, targetDepth, curDepth) =
+    if curDepth = targetDepth then
+      case mergeSameDepth (left, right) of
+        MERGE_SAME_DEPTH_UPDATE tree => MERGE_DIFF_DEPTH_UPDATE tree
+      | MERGE_SAME_DEPTH_FULL => MERGE_DIFF_DEPTH_FULL
     else
       case right of
         BRANCH (nodes, sizes) =>
-          let
-            val child = mergeWhenRightDepthIsGreater
-              (left, Vector.sub (nodes, 0), leftDepth, curDepth + 1)
+          (case mergeWhenRightDepthIsGreater 
+            (left, Vector.sub (nodes, 0), targetDepth, curDepth + 1) of
+              MERGE_DIFF_DEPTH_UPDATE child =>
+                let
+                  val oldChildSize = Vector.sub (sizes, 0)
+                  val newChildSize = getFinishIdx child
+                  val difference = newChildSize - oldChildSize
 
-            val oldChildSize = Vector.sub (sizes, 0)
-            val newChildSize = getFinishIdx child
-            val difference = newChildSize - oldChildSize
-
-            val nodes = Vector.update (nodes, 0, child)
-            val sizes = Vector.map (fn el => el + difference) sizes
-          in
-            BRANCH (nodes, sizes)
-          end
+                  val nodes = Vector.update (nodes, 0, child)
+                  val sizes = Vector.map (fn el => el + difference) sizes
+                in
+                  MERGE_DIFF_DEPTH_UPDATE (BRANCH (nodes, sizes))
+                end
+            | MERGE_DIFF_DEPTH_FULL =>
+                let
+                  val leftSize = getFinishIdx left
+                  val sizes = Vector.tabulate (Vector.length nodes + 1,
+                    fn i =>
+                      if i = 0 then
+                        leftSize
+                      else
+                        Vector.sub (sizes, i - 1) + leftSize
+                  )
+                  val nodes = Vector.concat [#[left], nodes]
+                in
+                  MERGE_DIFF_DEPTH_UPDATE (BRANCH (nodes, sizes))
+                end)
       | LEAF _ =>
           raise Fail "PersistentVector.mergeWhenRightDepthIsGreater: \
-          \reached LEAF before (curDepth = leftDepth)"
+          \reached LEAF before (curDepth = targetDepth)"
 
-  fun mergeWhenLeftDepthIsGreater (left, right, rightDepth, curDepth) =
-    if rightDepth = curDepth then
-      mergeSameDepth (left, right)
+  fun mergeWhenLeftDepthIsGreater (left, right, targetDepth, curDepth) =
+    if targetDepth = curDepth then
+      case mergeSameDepth (left, right) of
+        MERGE_SAME_DEPTH_UPDATE tree => MERGE_DIFF_DEPTH_UPDATE tree
+      | MERGE_SAME_DEPTH_FULL => MERGE_DIFF_DEPTH_FULL
     else
       case left of
         BRANCH (nodes, sizes) =>
-          let
-            val lastIdx = Vector.length sizes - 1
-            val child = mergeWhenLeftDepthIsGreater 
-              (Vector.sub (nodes, lastIdx), right, rightDepth, curDepth + 1)
+          (case 
+            mergeWhenLeftDepthIsGreater (
+              Vector.sub (nodes, Vector.length nodes - 1),
+              right,
+              targetDepth,
+              curDepth + 1) of
+            MERGE_DIFF_DEPTH_UPDATE  child =>
+              let
+                val lastIdx = Vector.length sizes - 1
+                val oldChildSize = Vector.sub (sizes, lastIdx)
+                val newChildSize = getFinishIdx child
+                val difference = newChildSize - oldChildSize
 
-            val oldChildSize = Vector.sub (sizes, lastIdx)
-            val newChildSize = getFinishIdx child
-            val difference = newChildSize - oldChildSize
-
-            val nodes = Vector.update (nodes, lastIdx, child)
-            val sizes = Vector.map (fn el => el + difference) sizes
-          in
-            BRANCH (nodes, sizes)
-          end
+                val nodes = Vector.update (nodes, lastIdx, child)
+                val sizes = Vector.map (fn el => el + difference) sizes
+              in
+                MERGE_DIFF_DEPTH_UPDATE (BRANCH (nodes, sizes))
+              end
+          | MERGE_DIFF_DEPTH_FULL =>
+              let
+                val maxLeftSize = Vector.sub (sizes, Vector.length sizes - 1)
+                val rightSize = getFinishIdx right + maxLeftSize
+                val sizes = Vector.concat [sizes, #[rightSize]]
+                val nodes = Vector.concat [nodes, #[right]]
+              in
+                MERGE_DIFF_DEPTH_UPDATE (BRANCH (nodes, sizes))
+              end)
       | LEAF _ =>
           raise Fail "PersistentVector.mergeWhenLeftDepthIsGreater: \
-          \reached LEAF before (curDepth = rightDepth)"
+          \reached LEAF before (curDepth = targetDepth)"
 
   fun merge (left, right) = 
     let
@@ -709,18 +685,33 @@ struct
       val rightDepth = countDepth right
     in
       if leftDepth = rightDepth then
-        mergeSameDepth (left, right)
+        case mergeSameDepth (left, right) of
+          MERGE_SAME_DEPTH_UPDATE t => t
+        | MERGE_SAME_DEPTH_FULL =>
+            let
+              val leftSize = getFinishIdx left
+              val sizes = #[leftSize, getFinishIdx right + leftSize]
+              val nodes = #[left, right]
+            in
+              BRANCH (nodes, sizes)
+            end
       else if leftDepth < rightDepth then
         let
           val targetDepth = rightDepth - leftDepth
         in
-          mergeWhenRightDepthIsGreater (left, right, leftDepth, 0)
+          case mergeWhenRightDepthIsGreater 
+            (left, right, targetDepth, 0) of
+              MERGE_DIFF_DEPTH_UPDATE t => t
+            | MERGE_DIFF_DEPTH_FULL => empty
         end
       else
         let
           val targetDepth = leftDepth - rightDepth
         in
-          mergeWhenLeftDepthIsGreater (left, right, rightDepth, 0)
+          case mergeWhenLeftDepthIsGreater 
+            (left, right, targetDepth, 0) of
+              MERGE_DIFF_DEPTH_UPDATE t => t
+            | MERGE_DIFF_DEPTH_FULL => empty
         end
     end
 
@@ -835,27 +826,33 @@ struct
     end
 
   (* functions only for testing *)
-  fun allLeavesAtSameDepth tree =
-    case tree of
-      BRANCH (nodes, _) =>
-        let
-          fun loop (pos, expectedDepth) =
-            if pos = Vector.length nodes then
-              true
+  fun childrenHaveSameDepth (pos, nodes, expectedDepth) =
+    if pos = Vector.length nodes then
+      true
+    else
+      let
+        val node = Vector.sub (nodes, pos)
+      in
+        if allLeavesAtSameDepth node then
+          let
+            val nodeDepth = countDepth node
+          in
+            if nodeDepth = expectedDepth then
+              childrenHaveSameDepth (pos + 1, nodes, expectedDepth)
             else
-              let
-                val node = Vector.sub (nodes, pos)
-                val nodeDepth = countDepth node
-              in
-                if nodeDepth = expectedDepth then
-                  loop (pos + 1, expectedDepth)
-                else
-                  false
-              end
+              false
+          end
+        else
+          false
+      end
 
+  and allLeavesAtSameDepth tree =
+    case tree of
+      BRANCH (nodes, _) => 
+        let
           val expectedDepth = countDepth (Vector.sub (nodes, 0))
         in
-          loop (0, expectedDepth)
+          childrenHaveSameDepth (0, nodes, expectedDepth)
         end
     | LEAF _ => true
 
