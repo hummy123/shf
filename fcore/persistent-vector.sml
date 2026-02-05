@@ -711,9 +711,17 @@ struct
       if leftDepth = rightDepth then
         mergeSameDepth (left, right)
       else if leftDepth < rightDepth then
-        mergeWhenRightDepthIsGreater (left, right, leftDepth, 0)
+        let
+          val targetDepth = rightDepth - leftDepth
+        in
+          mergeWhenRightDepthIsGreater (left, right, leftDepth, 0)
+        end
       else
-        mergeWhenLeftDepthIsGreater (left, right, rightDepth, 0)
+        let
+          val targetDepth = leftDepth - rightDepth
+        in
+          mergeWhenLeftDepthIsGreater (left, right, rightDepth, 0)
+        end
     end
 
   fun delete (start, length, tree) =
@@ -827,6 +835,30 @@ struct
     end
 
   (* functions only for testing *)
+  fun allLeavesAtSameDepth tree =
+    case tree of
+      BRANCH (nodes, _) =>
+        let
+          fun loop (pos, expectedDepth) =
+            if pos = Vector.length nodes then
+              true
+            else
+              let
+                val node = Vector.sub (nodes, pos)
+                val nodeDepth = countDepth node
+              in
+                if nodeDepth = expectedDepth then
+                  loop (pos + 1, expectedDepth)
+                else
+                  false
+              end
+
+          val expectedDepth = countDepth (Vector.sub (nodes, 0))
+        in
+          loop (0, expectedDepth)
+        end
+    | LEAF _ => true
+
   fun fromListLoop (lst, acc) =
     case lst of
       {start, finish} :: tl =>
