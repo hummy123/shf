@@ -814,7 +814,7 @@ struct
           val left = splitLeft (start, tree)
           val right = splitRight (finish, tree)
 
-          val left = append (start, finish, tree)
+          val left = append (start, finish, left)
 
           val rightStartRelative = getStartIdx right
           val rightStartAbsolute = rightStartRelative + finish
