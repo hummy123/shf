@@ -9,12 +9,10 @@ struct
   open DrawMsg
   open MailboxType
 
-  fun finishAfterDeletingBuffer (app: app_type, low, buffer, time, msgs) =
-    let
-      val (buffer, searchList) = SearchList.build (buffer, #dfa app)
-      val buffer = LineGap.goToIdx (low, buffer)
-    in
-      NormalFinish.buildTextAndClear (app, buffer, low, searchList, msgs, time)
+  fun finishAfterDeletingBuffer
+    (app: app_type, low, buffer, searchList, time, msgs) =
+    let val buffer = LineGap.goToIdx (low, buffer)
+    in NormalFinish.buildTextAndClear (app, buffer, low, searchList, msgs, time)
     end
 
   fun deleteAndFinish (app: app_type, low, length, buffer, time) =
@@ -44,18 +42,22 @@ struct
       NormalFinish.buildTextAndClear (app, buffer, low, searchList, msgs, time)
     end
 
-  fun moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx) =
+  fun moveCursorAfterDeletingLines
+    (app, buffer, time, initialMsg, startIdx, searchList) =
     let
       val newEndIdx = #textLength buffer - 1
     in
       if newEndIdx < 0 then
         (* deleted whole file; add newline to the end *)
-        let val buffer = LineGap.append ("\n", buffer)
-        in finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
+        let
+          val buffer = LineGap.append ("\n", buffer)
+        in
+          finishAfterDeletingBuffer
+            (app, 0, buffer, searchList, time, initialMsg)
         end
       else if newEndIdx = 0 then
         (* there is only one char left in the file *)
-        finishAfterDeletingBuffer (app, 0, buffer, time, initialMsg)
+        finishAfterDeletingBuffer (app, 0, buffer, searchList, time, initialMsg)
       else if startIdx >= newEndIdx then
         (* deleted the last part of the file such that the cursor's idx
          * now refers to an index that no longer exists.
@@ -69,24 +71,25 @@ struct
               val newCursorIdx = Cursor.vi0 (buffer, newEndIdx - 1)
             in
               finishAfterDeletingBuffer
-                (app, newCursorIdx, buffer, time, initialMsg)
+                (app, newCursorIdx, buffer, searchList, time, initialMsg)
             end
           else
             let
               val newCursorIdx = Cursor.vi0 (buffer, newEndIdx)
             in
               finishAfterDeletingBuffer
-                (app, newCursorIdx, buffer, time, initialMsg)
+                (app, newCursorIdx, buffer, searchList, time, initialMsg)
             end
         end
       else
-        finishAfterDeletingBuffer (app, startIdx, buffer, time, initialMsg)
+        finishAfterDeletingBuffer
+          (app, startIdx, buffer, searchList, time, initialMsg)
     end
 
   (* equivalent of vi's 'x' command **)
   fun removeChr (app: app_type, count, time) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
     in
       if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
@@ -107,7 +110,8 @@ struct
           val length = high - cursorIdx
 
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
-          val buffer = LineGap.delete (cursorIdx, length, buffer)
+          val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+            (cursorIdx, length, buffer, searchList, dfa)
 
           (* figure out where to place cursor *)
           val buffer = LineGap.goToIdx (lineStart, buffer)
@@ -128,10 +132,11 @@ struct
                   cursorIdx
             in
               finishAfterDeletingBuffer
-                (app, cursorIdx, buffer, time, initialMsg)
+                (app, cursorIdx, buffer, searchList, time, initialMsg)
             end
           else
-            finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
+            finishAfterDeletingBuffer
+              (app, cursorIdx, buffer, searchList, time, initialMsg)
         end
     end
 
@@ -142,7 +147,8 @@ struct
    * though.
    * Our implementation has a different effect for each count. 
    * 1J delettes 1 line break, 2J deletes 2, and so on. *)
-  fun helpRemoveLineBreaks (app, buffer, cursorIdx, count, time) =
+  fun helpRemoveLineBreaks
+    (app, buffer, cursorIdx, count, time, searchList, dfa) =
     if count = 0 then
       (* we don't use Fn.initMsgs in this function.
        * Removing line breaks is a discrete action which doesn't operate
@@ -150,19 +156,24 @@ struct
        * Instead, a single character is deleted at different places. 
        * So it doesn't make any sense to use Fn.initMsgs 
        * which expects a range. *)
-      finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+      finishAfterDeletingBuffer (app, cursorIdx, buffer, searchList, time, [])
     else
       let
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
       in
         if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
           if cursorIdx >= #textLength buffer - 2 then
-            finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+            finishAfterDeletingBuffer
+              (app, cursorIdx, buffer, searchList, time, [])
           else
             (* if the cursor is at a linebreak, delete the linebreak
              * and don't insert a space. *)
-            let val buffer = LineGap.delete (cursorIdx, 1, buffer)
-            in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
+            let
+              val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+                (cursorIdx, 1, buffer, searchList, dfa)
+            in
+              helpRemoveLineBreaks
+                (app, buffer, cursorIdx, count - 1, time, searchList, dfa)
             end
         else
           let
@@ -170,29 +181,37 @@ struct
               Cursor.toNextChr (buffer, cursorIdx, {findChr = #"\n", count = 1})
           in
             if newCursorIdx >= #textLength buffer - 2 then
-              finishAfterDeletingBuffer (app, cursorIdx, buffer, time, [])
+              finishAfterDeletingBuffer
+                (app, cursorIdx, buffer, searchList, time, [])
             else
               let
-                val buffer = LineGap.delete (newCursorIdx, 1, buffer)
+                (* todo: have not implemented search-list-rebuilding 
+                 * for insertions yet *)
+                val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+                  (newCursorIdx, 1, buffer, searchList, dfa)
                 val buffer = LineGap.insert (newCursorIdx, " ", buffer)
               in
                 helpRemoveLineBreaks
-                  (app, buffer, newCursorIdx, count - 1, time)
+                  (app, buffer, newCursorIdx, count - 1, time, searchList, dfa)
               end
           end
       end
 
   fun removeLineBreaks (app: app_type, count, time) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
     in
       if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
         if cursorIdx >= #textLength buffer - 2 then
           NormalFinish.clearMode app
         else
-          let val buffer = LineGap.delete (cursorIdx, 1, buffer)
-          in helpRemoveLineBreaks (app, buffer, cursorIdx, count - 1, time)
+          let
+            val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+              (cursorIdx, 1, buffer, searchList, dfa)
+          in
+            helpRemoveLineBreaks
+              (app, buffer, cursorIdx, count - 1, time, searchList, dfa)
           end
       else
         let
@@ -214,10 +233,14 @@ struct
             NormalFinish.clearMode app
           else
             let
-              val buffer = LineGap.delete (newCursorIdx, 1, buffer)
+              (* todo: have not implemented search-list-rebuilding 
+               * for insertions yet *)
+              val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+                (newCursorIdx, 1, buffer, searchList, dfa)
               val buffer = LineGap.insert (newCursorIdx, " ", buffer)
             in
-              helpRemoveLineBreaks (app, buffer, newCursorIdx, count - 1, time)
+              helpRemoveLineBreaks
+                (app, buffer, newCursorIdx, count - 1, time, searchList, dfa)
             end
         end
     end
@@ -233,6 +256,8 @@ struct
     * The behaviour between the two is equivalent. *)
     if count = 0 then
       let
+        val {searchList, dfa, ...} = app
+
         val low = Int.min (cursorIdx, otherIdx)
         val high = Int.max (cursorIdx, otherIdx)
         val high =
@@ -245,8 +270,8 @@ struct
         val buffer = LineGap.goToIdx (high, buffer)
         val initialMsg = Fn.initMsgs (low, length, buffer)
 
-        val buffer = LineGap.delete (low, length, buffer)
-        val (buffer, searchList) = SearchList.build (buffer, #dfa app)
+        val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+          (low, length, buffer, searchList, dfa)
 
         (* If we have deleted from the buffer so that cursorIdx
         * is no longer a valid idx,
@@ -276,8 +301,10 @@ struct
     in helpDelete (app, buffer, cursorIdx, cursorIdx, count, fMove, time)
     end
 
-  fun finishDeleteByDfa (app, low, high, buffer, time) =
+  fun finishDeleteByDfa (app: app_type, low, high, buffer, time) =
     let
+      val {searchList, dfa, ...} = app
+
       val buffer = LineGap.goToIdx (high, buffer)
       val high =
         (* by default, we have a newline at the end of the buffer.
@@ -295,11 +322,14 @@ struct
 
       val length = high - low
       val initialMsg = Fn.initMsgs (low, length, buffer)
-      val buffer = LineGap.delete (low, length, buffer)
+
+      val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+        (low, length, buffer, searchList, dfa)
 
       (* if we deleted all text in the buffer, 
        * then make sure that we append a newline at the end
-       * so that the buffer contains at least one character *)
+       * so that the buffer contains at least one character.
+       * todo: incrementally update searchList based on insertion *)
       val buffer =
         if #textLength buffer = 0 then LineGap.append ("\n", buffer) else buffer
     in
@@ -318,7 +348,7 @@ struct
               newCursorIdx
         in
           finishAfterDeletingBuffer
-            (app, newCursorIdx, buffer, time, initialMsg)
+            (app, newCursorIdx, buffer, searchList, time, initialMsg)
         end
       else
         let
@@ -327,7 +357,7 @@ struct
             if Cursor.isOnNewlineAfterChr (buffer, low) then low - 1 else low
         in
           finishAfterDeletingBuffer
-            (app, newCursorIdx, buffer, time, initialMsg)
+            (app, newCursorIdx, buffer, searchList, time, initialMsg)
         end
     end
 
@@ -412,7 +442,7 @@ struct
       NormalFinish.clearMode app
     else
       let
-        val {buffer, cursorIdx, ...} = app
+        val {buffer, cursorIdx, searchList, dfa, ...} = app
 
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val low = Cursor.endOfPrevWord (buffer, cursorIdx, count)
@@ -421,14 +451,16 @@ struct
 
         val buffer = LineGap.goToIdx (cursorIdx + 1, buffer)
         val initialMsg = Fn.initMsgs (low, length, buffer)
-        val buffer = LineGap.delete (low, length, buffer)
+        val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+          (low, length, buffer, searchList, dfa)
 
         val buffer = LineGap.goToIdx (low, buffer)
         val newCursorIdx =
           if Cursor.isOnNewlineAfterChr (buffer, low) then Int.max (low - 1, 0)
           else low
       in
-        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
+        finishAfterDeletingBuffer
+          (app, newCursorIdx, buffer, searchList, time, initialMsg)
       end
 
   fun deleteToEndOfPrevWORD (app: app_type, count, time) =
@@ -436,7 +468,7 @@ struct
       NormalFinish.clearMode app
     else
       let
-        val {buffer, cursorIdx, ...} = app
+        val {buffer, cursorIdx, searchList, dfa, ...} = app
 
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
         val low = Cursor.endOfPrevWORD (buffer, cursorIdx, count)
@@ -445,19 +477,21 @@ struct
 
         val buffer = LineGap.goToIdx (cursorIdx + 1, buffer)
         val initialMsg = Fn.initMsgs (low, length, buffer)
-        val buffer = LineGap.delete (low, length, buffer)
+        val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+          (low, length, buffer, searchList, dfa)
 
         val buffer = LineGap.goToIdx (low, buffer)
         val newCursorIdx =
           if Cursor.isOnNewlineAfterChr (buffer, low) then Int.max (low - 1, 0)
           else low
       in
-        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
+        finishAfterDeletingBuffer
+          (app, newCursorIdx, buffer, searchList, time, initialMsg)
       end
 
   fun deleteToEndOfLine (app: app_type, time) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
     in
       if Cursor.isCursorAtStartOfLine (buffer, cursorIdx) then
@@ -472,7 +506,8 @@ struct
 
           val buffer = LineGap.goToIdx (high, buffer)
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
-          val buffer = LineGap.delete (cursorIdx, length, buffer)
+          val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+            (cursorIdx, length, buffer, searchList, dfa)
 
           (* calculate new cursorIdx.
            * Because we deleted the cursor that this line is on,
@@ -486,13 +521,14 @@ struct
             if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then cursorIdx - 1
             else cursorIdx
         in
-          finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
+          finishAfterDeletingBuffer
+            (app, cursorIdx, buffer, searchList, time, initialMsg)
         end
     end
 
   fun deleteLine (app: app_type, count, time) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
@@ -514,15 +550,17 @@ struct
 
       val length = endLineIdx - startIdx
       val initialMsg = Fn.initMsgs (startIdx, length, buffer)
-      val buffer = LineGap.delete (startIdx, length, buffer)
+      val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+        (startIdx, length, buffer, searchList, dfa)
     in
       (* just need to reposition the cursor *)
-      moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx)
+      moveCursorAfterDeletingLines
+        (app, buffer, time, initialMsg, startIdx, searchList)
     end
 
   fun deleteLineDown (app: app_type, count, time) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
       val startIdx = Cursor.vi0 (buffer, cursorIdx)
@@ -579,9 +617,11 @@ struct
           (* perform the actual deletion *)
           val buffer = LineGap.goToIdx (endLineIdx, buffer)
           val initialMsg = Fn.initMsgs (startIdx, length, buffer)
-          val buffer = LineGap.delete (startIdx, length, buffer)
+          val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+            (startIdx, length, buffer, searchList, dfa)
         in
-          moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx)
+          moveCursorAfterDeletingLines
+            (app, buffer, time, initialMsg, startIdx, searchList)
         end
     end
 
@@ -589,12 +629,16 @@ struct
     if endOfLine >= #textLength buffer - 2 then
       (* deleting from last line *)
       let
+        val {searchList, dfa, ...} = app
+
         (* go to first column of previous line *)
         val buffer = LineGap.goToIdx (endOfLine, buffer)
         val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
-        val buffer = LineGap.delete (lineIdx, length, buffer)
+        val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+          (lineIdx, length, buffer, searchList, dfa)
 
         val buffer =
+          (* todo: incrementally rebuild searchList if we are appending *)
           if #textLength buffer = 0 then LineGap.append ("\n", buffer)
           else buffer
 
@@ -611,10 +655,13 @@ struct
         val buffer = LineGap.goToIdx (newCursorIdx, buffer)
         val newCursorIdx = Cursor.vi0 (buffer, newCursorIdx)
       in
-        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
+        finishAfterDeletingBuffer
+          (app, newCursorIdx, buffer, searchList, time, initialMsg)
       end
     else
       let
+        val {searchList, dfa, ...} = app
+
         (* make sure the cursorIdx will be at the first column
          * of current line, after deleting from buffer. *)
         val buffer = LineGap.goToIdx (lineIdx, buffer)
@@ -624,13 +671,16 @@ struct
 
         val buffer = LineGap.goToIdx (endOfLine, buffer)
         val initialMsg = Fn.initMsgs (lineIdx, length, buffer)
-        val buffer = LineGap.delete (lineIdx, length, buffer)
+        val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+          (lineIdx, length, buffer, searchList, dfa)
 
         val buffer =
+          (* todo: incrementally rebuild searchList if we are appending *)
           if #textLength buffer = 0 then LineGap.append ("\n", buffer)
           else buffer
       in
-        finishAfterDeletingBuffer (app, newCursorIdx, buffer, time, initialMsg)
+        finishAfterDeletingBuffer
+          (app, newCursorIdx, buffer, searchList, time, initialMsg)
       end
 
   fun deleteLineUp (app: app_type, count, time) =
@@ -759,7 +809,7 @@ struct
 
   fun deleteToNextChr (app: app_type, count, chr, time) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, dfa, ...} = app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val newCursorIdx =
         Cursor.toNextChr (buffer, cursorIdx, {findChr = chr, count = count})
@@ -771,17 +821,22 @@ struct
           val length = newCursorIdx - cursorIdx + 1
           val buffer = LineGap.goToIdx (newCursorIdx, buffer)
           val initialMsg = Fn.initMsgs (cursorIdx, length, buffer)
-          val buffer = LineGap.delete (cursorIdx, length, buffer)
+          val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+            (cursorIdx, length, buffer, searchList, dfa)
 
           val buffer =
-            if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
+            (* todo: rebuild searchList if 
+             * we are creating new buffer from string *)
+            if #textLength buffer = 0 then LineGap.fromString "\n"
+            else buffer
 
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val cursorIdx =
             if Cursor.isOnNewlineAfterChr (buffer, cursorIdx) then cursorIdx - 1
             else cursorIdx
         in
-          finishAfterDeletingBuffer (app, cursorIdx, buffer, time, initialMsg)
+          finishAfterDeletingBuffer
+            (app, cursorIdx, buffer, searchList, time, initialMsg)
         end
     end
 
@@ -908,7 +963,8 @@ struct
       val buffer = LineGap.goToIdx (newLineEndIdx, buffer)
       val newLineStartIdx = Cursor.vi0 (buffer, newLineEndIdx)
     in
-      finishAfterDeletingBuffer (app, newLineStartIdx, buffer, time, initialMsg)
+      finishAfterDeletingBuffer
+        (app, newLineStartIdx, buffer, searchList, time, initialMsg)
     end
 
   fun helpDeleteToMatch (app: app_type, low, high, time) =
