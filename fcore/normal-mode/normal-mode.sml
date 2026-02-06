@@ -33,9 +33,13 @@ struct
 
           val {cursorIdx = origCursorIdx, dfa, ...} = app
           val buffer = LineGap.goToStart buffer
+
+          (* todo: try updating searchList incrementally 
+           * instead of rebuilding from scratch *)
+          val (buffer, searchList) = SearchList.build (buffer, dfa)
         in
           NormalDelete.finishAfterDeletingBuffer
-            (app, origCursorIdx, buffer, time, [])
+            (app, origCursorIdx, buffer, searchList, time, [])
         end
       else
         let
@@ -59,9 +63,9 @@ struct
   end
 
   local
-    fun loop (cursorIdx, buffer, count) =
+    fun loop (cursorIdx, buffer, searchList, dfa, count) =
       if count = 0 then
-        buffer
+        (buffer, searchList)
       else
         let
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
@@ -71,12 +75,13 @@ struct
           (* delete from buffer *)
           val difference = firstNonSpaceChr - lineStart
           val deleteLength = Int.min (difference, 2)
-          val buffer =
+          val (buffer, searchList) =
             if difference = 0 then
               (* can't dedent as there is no leading space *)
-              buffer
+              (buffer, searchList)
             else
-              LineGap.delete (lineStart, deleteLength, buffer)
+              SearchList.deleteBufferAndSearchList
+                (lineStart, deleteLength, buffer, searchList, dfa)
 
           (* get next line to dedent *)
           val buffer = LineGap.goToIdx (lineStart, buffer)
@@ -86,14 +91,14 @@ struct
 
           val count = if lineEnd = nextLine then 0 else count - 1
         in
-          loop (nextLine, buffer, count)
+          loop (nextLine, buffer, searchList, dfa, count)
         end
   in
     fun dedentLine (app: app_type, count, time) =
       let
         open MailboxType
 
-        val {cursorIdx, buffer, dfa, ...} = app
+        val {cursorIdx, buffer, searchList, dfa, ...} = app
         val buffer = LineGap.goToIdx (cursorIdx, buffer)
 
         val lineStart = Cursor.vi0 (buffer, cursorIdx)
@@ -104,9 +109,12 @@ struct
         val deleteLength = Int.min (difference, 2)
 
         (* delete once *)
-        val buffer =
-          if deleteLength = 0 then buffer
-          else LineGap.delete (lineStart, deleteLength, buffer)
+        val (buffer, searchList) =
+          if deleteLength = 0 then
+            (buffer, searchList)
+          else
+            SearchList.deleteBufferAndSearchList
+              (lineStart, deleteLength, buffer, searchList, dfa)
 
         (* Calculate nextLine and newCursorIdx.
          * The cursorIdx might be past the current line after we dedent.
@@ -117,18 +125,18 @@ struct
         val nextLine = Cursor.viL (buffer, lineEnd, 1)
         val newCursorIdx = Int.min (lineEnd, cursorIdx)
 
-        val buffer =
+        val (buffer, searchList) =
           if lineEnd = nextLine then
             (* at end of file, so we cannot dedent anymore *)
-            buffer
+            (buffer, searchList)
           else
             (* dedent remaining lines specified by count *)
-            loop (nextLine, buffer, count - 1)
+            loop (nextLine, buffer, searchList, dfa, count - 1)
 
         val buffer = LineGap.goToStart buffer
       in
         NormalDelete.finishAfterDeletingBuffer
-          (app, newCursorIdx, buffer, time, [])
+          (app, newCursorIdx, buffer, searchList, time, [])
       end
   end
 

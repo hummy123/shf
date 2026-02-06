@@ -9,8 +9,7 @@ struct
   open DrawMsg
   open MailboxType
 
-  fun finishAfterDeletingBuffer
-    (app: app_type, low, buffer, searchList, time, msgs) =
+  fun finishAfterDeletingBuffer (app, low, buffer, searchList, time, msgs) =
     let val buffer = LineGap.goToIdx (low, buffer)
     in NormalFinish.buildTextAndClear (app, buffer, low, searchList, msgs, time)
     end
@@ -939,7 +938,7 @@ struct
 
   fun deleteToEnd (app: app_type, time) =
     let
-      val {buffer, cursorIdx, ...} = app
+      val {buffer, cursorIdx, searchList, dfa, ...} = app
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val startOfLineIdx = Cursor.vi0 (buffer, cursorIdx)
@@ -948,9 +947,14 @@ struct
       val buffer = LineGap.goToIdx (#textLength buffer, buffer)
       val initialMsg = Fn.initMsgs (startOfLineIdx, length, buffer)
 
-      val buffer = LineGap.delete (startOfLineIdx, length, buffer)
+      val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+        (startOfLineIdx, length, buffer, searchList, dfa)
+
       val buffer =
-        if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
+        (* todo: if we are creating a new buffer from string,
+         * then make sure we update the searchList for it too *)
+        if #textLength buffer = 0 then LineGap.fromString "\n"
+        else buffer
 
       val newLineEndIdx = Int.max (startOfLineIdx - 1, 0)
       val buffer = LineGap.goToIdx (newLineEndIdx, buffer)
@@ -1181,20 +1185,24 @@ struct
 
   fun finishDeleteAroundPair (app, buffer, chr1Idx, chr2Idx, time) =
     let
+      val {searchList, dfa, ...} = app
+
       val low = Int.min (chr1Idx, chr2Idx)
       val high = Int.max (chr1Idx, chr2Idx) + 1
       val length = high - low
 
       val buffer = LineGap.goToIdx (high, buffer)
       val initialMsg = Fn.initMsgs (low, length, buffer)
-      val buffer = LineGap.delete (low, length, buffer)
+
+      val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+        (low, length, buffer, searchList, dfa)
 
       val buffer = LineGap.goToIdx (low, buffer)
       val low =
         if Cursor.isOnNewlineAfterChr (buffer, low) then low - 1 else low
       val buffer = LineGap.goToIdx (low, buffer)
     in
-      finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
+      finishAfterDeletingBuffer (app, low, buffer, searchList, time, initialMsg)
     end
 
   fun deleteAroundPair (app: app_type, openChr, closeChr, time) =
