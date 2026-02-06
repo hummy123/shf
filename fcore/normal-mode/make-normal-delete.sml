@@ -19,9 +19,12 @@ struct
 
   fun deleteAndFinish (app: app_type, low, length, buffer, time) =
     let
+      val {searchList, dfa, ...} = app
+
       val buffer = LineGap.goToIdx (low + length, buffer)
-      val initialMsg = Fn.initMsgs (low, length, buffer)
-      val buffer = LineGap.delete (low, length, buffer)
+      val msgs = Fn.initMsgs (low, length, buffer)
+      val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+        (low, length, buffer, searchList, dfa)
 
       val low =
         if low >= #textLength buffer - 1 then
@@ -36,8 +39,9 @@ struct
 
       val buffer =
         if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
+      val buffer = LineGap.goToIdx (low, buffer)
     in
-      finishAfterDeletingBuffer (app, low, buffer, time, initialMsg)
+      NormalFinish.buildTextAndClear (app, buffer, low, searchList, msgs, time)
     end
 
   fun moveCursorAfterDeletingLines (app, buffer, time, initialMsg, startIdx) =

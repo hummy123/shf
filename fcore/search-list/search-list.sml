@@ -144,6 +144,8 @@ struct
         in
           (buffer, searchList)
         end
+    else if PersistentVector.isInRange (idx, searchList) then
+      (buffer, searchList)
     else
       let
         val buffer = LineGap.goToIdx (idx, buffer)
@@ -157,9 +159,6 @@ struct
             (* no match found: restart search from `startPos + 1` *)
             insertUntilMatch
               (startPos + 1, buffer, searchList, dfa, 0, startPos + 1, ~1)
-          else if PersistentVector.isInRange (prevFinalPos, searchList) then
-            (* already have this match so don't insert it *)
-            (buffer, searchList)
           else
             (* new match. Insert and continue *)
             let
@@ -182,10 +181,11 @@ struct
       val buffer = LineGap.delete (start, length, buffer)
       val searchList = PersistentVector.delete (start, length, searchList)
 
-      val {start = prevStart, ...} =
+      val {finish = searchStart, ...} =
         PersistentVector.helpPrevMatch (start, searchList, 0)
-      val prevStart = prevStart + 1
+      val searchStart = searchStart + 1
     in
-      insertUntilMatch (prevStart, buffer, searchList, dfa, 0, prevStart, ~1)
+      insertUntilMatch
+        (searchStart, buffer, searchList, dfa, 0, searchStart, ~1)
     end
 end
