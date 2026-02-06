@@ -176,6 +176,44 @@ struct
             (idx + 1, buffer, searchList, dfa, newState, startPos, prevFinalPos)
       end
 
+  fun tryExtendingPrevMatch
+    (idx, buffer, searchList, dfa, prevMatchFinish, finalPos, curState) =
+    if idx = #textLength buffer then
+      if finalPos = prevMatchFinish then
+        (* call insertUntilMatch *)
+        0
+      else
+        (* update searchList, replacing prevMatchFinish with finalPos,
+         * and then call insertUntilMatch with new searchList *)
+        0
+    else
+      let
+        val buffer = LineGap.goToIdx (idx, buffer)
+        val chr = LineGap.sub (idx, buffer)
+        val newState = Dfa.nextState (dfa, curState, chr)
+        val finalPos = if Dfa.isFinal (dfa, newState) then idx else finalPos
+      in
+        if Dfa.isDead newState then
+          if finalPos = prevMatchFinish then
+            (* call insertUntilMatch *)
+            0
+          else
+            (* update searchList, replacing prevMatchFinish with finalPos,
+             * and then call insertUntilMatch with new searchList *)
+            0
+        else
+          (* continue *)
+          tryExtendingPrevMatch
+            ( idx + 1
+            , buffer
+            , searchList
+            , dfa
+            , prevMatchFinish
+            , finalPos
+            , newState
+            )
+      end
+
   fun deleteBufferAndSearchList (start, length, buffer, searchList, dfa) =
     let
       val buffer = LineGap.delete (start, length, buffer)
