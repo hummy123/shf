@@ -146,6 +146,21 @@ struct
         end
     else if PersistentVector.isInRange (idx, searchList) then
       (buffer, searchList)
+    else if Dfa.isDead curState then
+      if prevFinalPos = ~1 then
+        (* no match found: restart search from `startPos + 1` *)
+        insertUntilMatch
+          (startPos + 1, buffer, searchList, dfa, 0, startPos + 1, ~1)
+      else
+        (* new match. Insert and continue *)
+        let
+          val searchList =
+            PersistentVector.insertMatchKeepingAbsoluteInddices
+              (startPos, prevFinalPos, searchList)
+          val newStart = prevFinalPos + 1
+        in
+          insertUntilMatch (newStart, buffer, searchList, dfa, 0, newStart, ~1)
+        end
     else
       let
         val buffer = LineGap.goToIdx (idx, buffer)
@@ -154,26 +169,9 @@ struct
         val prevFinalPos =
           if Dfa.isFinal (dfa, newState) then idx else prevFinalPos
       in
-        if Dfa.isDead newState then
-          if prevFinalPos = ~1 then
-            (* no match found: restart search from `startPos + 1` *)
-            insertUntilMatch
-              (startPos + 1, buffer, searchList, dfa, 0, startPos + 1, ~1)
-          else
-            (* new match. Insert and continue *)
-            let
-              val searchList =
-                PersistentVector.insertMatchKeepingAbsoluteInddices
-                  (startPos, prevFinalPos, searchList)
-              val newStart = prevFinalPos + 1
-            in
-              insertUntilMatch
-                (newStart, buffer, searchList, dfa, 0, newStart, ~1)
-            end
-        else
-          (* continue *)
-          insertUntilMatch
-            (idx + 1, buffer, searchList, dfa, newState, startPos, prevFinalPos)
+        (* continue *)
+        insertUntilMatch
+          (idx + 1, buffer, searchList, dfa, newState, startPos, prevFinalPos)
       end
 
   fun tryExtendingPrevMatch
@@ -223,7 +221,10 @@ struct
         PersistentVector.helpPrevMatch (start, searchList, 0)
       val searchStart = searchStart + 1
     in
-      insertUntilMatch
-        (searchStart, buffer, searchList, dfa, 0, searchStart, ~1)
+      if Vector.length dfa = 0 then
+        (buffer, searchList)
+      else
+        insertUntilMatch
+          (searchStart, buffer, searchList, dfa, 0, searchStart, ~1)
     end
 end
