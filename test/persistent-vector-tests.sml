@@ -592,6 +592,31 @@ struct
            in
              Expect.isTrue (outputList = expectedOutput)
            end)
+    , test
+        "removes all subsequent elements when new 'finish' is greater \
+        \than any finish in the vector"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList = List.tabulate (500, fn i =>
+               {start = i, finish = i})
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.extendExistingMatch (5, 999, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 999}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
     ]
 
   val tests =
