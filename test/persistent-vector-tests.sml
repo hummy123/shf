@@ -608,7 +608,8 @@ struct
              (* assert *)
              val outputList = PersistentVector.toList pv
              val expectedOutput =
-               [ {start = 1, finish = 1}
+               [ {start = 0, finish = 0}
+               , {start = 1, finish = 1}
                , {start = 2, finish = 2}
                , {start = 3, finish = 3}
                , {start = 4, finish = 4}
