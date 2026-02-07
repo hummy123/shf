@@ -1,5 +1,5 @@
 # To-do list
-- Make sure that all delete function in make-normal-delete.sml also delete from searchList
+- Address to-do notes in make-normal-delete.sml (update searchList in light of insertion)
 - Add normal-delete tests for each motion, checking that searchList is as expected
 - Add tests for other yank motoins
   - Tests should be based on existing tests for delete-motions, and in the same order.

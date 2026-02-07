@@ -889,16 +889,21 @@ struct
 
   fun deleteToStart (app: app_type, time) : AppType.app_type =
     let
-      val {cursorIdx, buffer, windowWidth, windowHeight, dfa, ...} = app
+      val {cursorIdx, buffer, windowWidth, windowHeight, dfa, searchList, ...} =
+        app
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val cursorIdx = Cursor.viDlrForDelete (buffer, cursorIdx, 1)
 
       val buffer = LineGap.goToIdx (cursorIdx, buffer)
       val initialMsg = Fn.initMsgs (0, cursorIdx, buffer)
 
-      val buffer = LineGap.delete (0, cursorIdx, buffer)
+      val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+        (0, cursorIdx, buffer, searchList, dfa)
+
       val buffer =
-        if #textLength buffer = 0 then LineGap.fromString "\n" else buffer
+        (* todo: adjust searchList if we call SearchList.fromString *)
+        if #textLength buffer = 0 then LineGap.fromString "\n"
+        else buffer
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
       val (buffer, searchList) = SearchList.build (buffer, dfa)
@@ -973,13 +978,13 @@ struct
 
   fun helpDeleteToMatch (app: app_type, low, high, time) =
     let
-      val {buffer, dfa, ...} = app
+      val {buffer, dfa, searchList, ...} = app
       val buffer = LineGap.goToIdx (high, buffer)
       val length = high - low
       val initialMsg = Fn.initMsgs (low, length, buffer)
 
-      val buffer = LineGap.delete (low, length, buffer)
-      val (buffer, searchList) = SearchList.build (buffer, dfa)
+      val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+        (low, length, buffer, searchList, dfa)
 
       val buffer = LineGap.goToIdx (low, buffer)
     in
@@ -1111,8 +1116,8 @@ struct
           val buffer = LineGap.goToIdx (high, buffer)
           val initialMsg = Fn.initMsgs (deleteLow, length, buffer)
 
-          val buffer = LineGap.delete (deleteLow, length, buffer)
-          val (buffer, searchList) = SearchList.build (buffer, dfa)
+          val (buffer, searchList) = SearchList.deleteBufferAndSearchList
+            (deleteLow, length, buffer, #searchList app, dfa)
 
           val buffer = LineGap.goToIdx (low, buffer)
         in
