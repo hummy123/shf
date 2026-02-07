@@ -807,7 +807,7 @@ struct
       val matchAfterFinish = nextMatch (finish, tree, 1)
     in
       if matchAfterFinish <= finish then
-        (* no match after the 'finish', so we just append *)
+        (* no match after the 'finish', so we can just append to 'tree' *)
         append (start, finish, tree)
       else
         let
@@ -818,6 +818,31 @@ struct
 
           val rightStartRelative = getStartIdx right
           val rightStartAbsolute = rightStartRelative + finish
+          val difference = rightStartAbsolute - matchAfterFinish
+          val right = decrementBy (difference, right)
+        in
+          merge (left, right)
+        end
+    end
+
+  fun extendExistingMatch (start, newFinish, tree) =
+    let
+      val matchAfterFinish = nextMatch (newFinish, tree, 1)
+      val left = splitLeft (start, tree)
+      val left = append (start, newFinish, left)
+    in
+      if matchAfterFinish <= newFinish then
+        (* no match after newFinish, so we can return 'left'
+         * which has the newFinish appended *)
+        left
+      else
+        let
+          val right = splitRight (newFinish, tree)
+
+          val leftFinish = getFinishIdx left
+          val rightStartRelative = getStartIdx right
+
+          val rightStartAbsolute = rightStartRelative + leftFinish
           val difference = rightStartAbsolute - matchAfterFinish
           val right = decrementBy (difference, right)
         in

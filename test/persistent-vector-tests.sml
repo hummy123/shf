@@ -45,6 +45,19 @@ struct
       loopInRange lst
     end
 
+  fun printVec pv =
+    let
+      val outputList = PersistentVector.toList pv
+      val str =
+        List.map
+          (fn {start, finish} =>
+             "{start = " ^ Int.toString start ^ ", finish = "
+             ^ Int.toString finish ^ "}") outputList
+      val str = String.concatWith "\n " str ^ "\n"
+    in
+      print str
+    end
+
   val appendTests = describe "PersistentVector.append"
     [ test "contains appended values in range" (fn _ =>
         let
@@ -508,5 +521,84 @@ struct
            end)
     ]
 
-  val tests = [appendTests, toListTests, splitLeftTests, deleteTests]
+  val extendExistingMatchTests = describe "PersistentVector.extendExistingMatch"
+    [ test
+        "leaves subsequent matches untouched \
+        \if their 'finish' is greater than the extended finish"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 5}
+               , {start = 60, finish = 60}
+               , {start = 70, finish = 70}
+               , {start = 80, finish = 80}
+               ]
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.extendExistingMatch (5, 50, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 50}
+               , {start = 60, finish = 60}
+               , {start = 70, finish = 70}
+               , {start = 80, finish = 80}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
+    , test
+        "removes subsequent matches whose 'finish' is less than \
+        \the newly extended element's 'finish'"
+        (fn _ =>
+           let
+             (* arrange *)
+             val inputList =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 5}
+               , {start = 60, finish = 60}
+               , {start = 70, finish = 70}
+               , {start = 80, finish = 80}
+               ]
+             val pv = PersistentVector.fromList inputList
+
+             (* act *)
+             val pv = PersistentVector.extendExistingMatch (5, 75, pv)
+
+             (* assert *)
+             val outputList = PersistentVector.toList pv
+             val expectedOutput =
+               [ {start = 1, finish = 1}
+               , {start = 2, finish = 2}
+               , {start = 3, finish = 3}
+               , {start = 4, finish = 4}
+               , {start = 5, finish = 75}
+               , {start = 80, finish = 80}
+               ]
+           in
+             Expect.isTrue (outputList = expectedOutput)
+           end)
+    ]
+
+  val tests =
+    [ appendTests
+    , toListTests
+    , splitLeftTests
+    , deleteTests
+    , extendExistingMatchTests
+    ]
 end
