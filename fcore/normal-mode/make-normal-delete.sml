@@ -50,6 +50,7 @@ struct
         (* deleted whole file; add newline to the end *)
         let
           val buffer = LineGap.append ("\n", buffer)
+          val (buffer, searchList) = SearchList.build (buffer, #dfa app)
         in
           finishAfterDeletingBuffer
             (app, 0, buffer, searchList, time, initialMsg)
@@ -328,9 +329,14 @@ struct
       (* if we deleted all text in the buffer, 
        * then make sure that we append a newline at the end
        * so that the buffer contains at least one character.
-       * todo: incrementally update searchList based on insertion *)
-      val buffer =
-        if #textLength buffer = 0 then LineGap.append ("\n", buffer) else buffer
+       * *)
+      val (buffer, searchList) =
+        if #textLength buffer = 0 then
+          let val buffer = LineGap.append ("\n", buffer)
+          in SearchList.build (buffer, dfa)
+          end
+        else
+          (buffer, searchList)
     in
       if low >= #textLength buffer - 1 andalso #textLength buffer > 0 then
         (* edge case:
@@ -636,10 +642,13 @@ struct
         val (buffer, searchList) = SearchList.deleteBufferAndSearchList
           (lineIdx, length, buffer, searchList, dfa)
 
-        val buffer =
-          (* todo: incrementally rebuild searchList if we are appending *)
-          if #textLength buffer = 0 then LineGap.append ("\n", buffer)
-          else buffer
+        val (buffer, searchList) =
+          if #textLength buffer = 0 then
+            let val buffer = LineGap.fromString "\n"
+            in SearchList.build (buffer, dfa)
+            end
+          else
+            (buffer, searchList)
 
         (* since we deleted from the last line,
          * we want to place the cursor at the first column
@@ -673,10 +682,13 @@ struct
         val (buffer, searchList) = SearchList.deleteBufferAndSearchList
           (lineIdx, length, buffer, searchList, dfa)
 
-        val buffer =
-          (* todo: incrementally rebuild searchList if we are appending *)
-          if #textLength buffer = 0 then LineGap.append ("\n", buffer)
-          else buffer
+        val (buffer, searchList) =
+          if #textLength buffer = 0 then
+            let val buffer = LineGap.fromString "\n"
+            in SearchList.build (buffer, dfa)
+            end
+          else
+            (buffer, searchList)
       in
         finishAfterDeletingBuffer
           (app, newCursorIdx, buffer, searchList, time, initialMsg)
@@ -823,11 +835,13 @@ struct
           val (buffer, searchList) = SearchList.deleteBufferAndSearchList
             (cursorIdx, length, buffer, searchList, dfa)
 
-          val buffer =
-            (* todo: rebuild searchList if 
-             * we are creating new buffer from string *)
-            if #textLength buffer = 0 then LineGap.fromString "\n"
-            else buffer
+          val (buffer, searchList) =
+            if #textLength buffer = 0 then
+              let val buffer = LineGap.fromString "\n"
+              in SearchList.build (buffer, dfa)
+              end
+            else
+              (buffer, searchList)
 
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val cursorIdx =
@@ -900,10 +914,13 @@ struct
       val (buffer, searchList) = SearchList.deleteBufferAndSearchList
         (0, cursorIdx, buffer, searchList, dfa)
 
-      val buffer =
-        (* todo: adjust searchList if we call SearchList.fromString *)
-        if #textLength buffer = 0 then LineGap.fromString "\n"
-        else buffer
+      val (buffer, searchList) =
+        if #textLength buffer = 0 then
+          let val buffer = LineGap.fromString "\n"
+          in SearchList.build (buffer, dfa)
+          end
+        else
+          (buffer, searchList)
 
       val buffer = LineGap.goToIdx (cursorIdx - 1111, buffer)
       val (buffer, searchList) = SearchList.build (buffer, dfa)
@@ -955,11 +972,13 @@ struct
       val (buffer, searchList) = SearchList.deleteBufferAndSearchList
         (startOfLineIdx, length, buffer, searchList, dfa)
 
-      val buffer =
-        (* todo: if we are creating a new buffer from string,
-         * then make sure we update the searchList for it too *)
-        if #textLength buffer = 0 then LineGap.fromString "\n"
-        else buffer
+      val (buffer, searchList) =
+        if #textLength buffer = 0 then
+          let val buffer = LineGap.fromString "\n"
+          in SearchList.build (buffer, dfa)
+          end
+        else
+          (buffer, searchList)
 
       val newLineEndIdx = Int.max (startOfLineIdx - 1, 0)
       val buffer = LineGap.goToIdx (newLineEndIdx, buffer)
