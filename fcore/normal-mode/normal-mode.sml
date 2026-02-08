@@ -46,6 +46,7 @@ struct
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val lineStart = Cursor.vi0 (buffer, cursorIdx)
 
+          (* todo: update searchList based on insert *)
           val buffer = LineGap.insert (lineStart, "  ", buffer)
 
           val buffer = LineGap.goToIdx (lineStart, buffer)

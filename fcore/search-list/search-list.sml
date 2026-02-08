@@ -215,4 +215,34 @@ struct
         tryExtendingPrevMatch
           (oldStart, buffer, searchList, dfa, ~1, 0, oldStart)
     end
+
+  (* inserts into buffer and searchList both *)
+  fun insert (insIdx, insString, buffer, searchList, dfa) =
+    let
+      val buffer = LineGap.insert (insIdx, insString, buffer)
+
+      (* incremennt existing elements in the searchList after the insIdx
+       * by the length of the string that was just inserted *)
+      val searchList =
+        let
+          val searchListLeft = PersistentVector.splitLeft (insIdx, searchList)
+          val searchListRight = PersistentVector.splitRight (insIdx, searchList)
+          val searchListRight =
+            PersistentVector.incrementBy (String.size insString, searchList)
+        in
+          PersistentVector.merge (searchListLeft, searchListRight)
+        end
+
+      (* start looking for new matches from the previous match *)
+      val oldStart = PersistentVector.prevMatch (insIdx, searchList, 1)
+    in
+      if Vector.length dfa = 0 then
+        (buffer, searchList)
+      else if oldStart >= insIdx orelse oldStart = ~1 then
+        (* no previous match, so try searching for a match from start of buffer *)
+        insertUntilMatch (0, buffer, searchList, dfa, 0, 0, ~1)
+      else
+        tryExtendingPrevMatch
+          (oldStart, buffer, searchList, dfa, ~1, 0, oldStart)
+    end
 end

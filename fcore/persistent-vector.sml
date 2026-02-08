@@ -538,6 +538,27 @@ struct
           LEAF (items, sizes)
         end
 
+  fun incrementBy (incBy, tree) =
+    case tree of
+      BRANCH (nodes, sizes) =>
+        let
+          val child = incrementBy (incBy, Vector.sub (nodes, 0))
+          val nodes = Vector.update (nodes, 0, child)
+          val sizes = Vector.map (fn sz => sz + incBy) sizes
+        in
+          BRANCH (nodes, sizes)
+        end
+    | LEAF (items, sizes) =>
+        let
+          val items = Vector.map 
+            (fn {start, finish} =>
+              {start = start - incBy, finish = finish - incBy}
+            ) items
+          val sizes = Vector.map #finish items
+        in
+          LEAF (items, sizes)
+        end
+
   fun countDepthLoop (counter, tree) =
     case tree of
       BRANCH (nodes, _) => countDepthLoop (counter + 1, Vector.sub (nodes, 0))
