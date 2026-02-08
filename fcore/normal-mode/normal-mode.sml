@@ -26,28 +26,17 @@ struct
     end
 
   local
-    fun loop (app: app_type, cursorIdx, buffer, count, time) =
+    fun loop (app: app_type, cursorIdx, buffer, searchList, count, time) =
       if count = 0 then
-        let
-          open MailboxType
-
-          val {cursorIdx = origCursorIdx, dfa, ...} = app
-          val buffer = LineGap.goToStart buffer
-
-          (* todo: try updating searchList incrementally 
-           * instead of rebuilding from scratch *)
-          val (buffer, searchList) = SearchList.build (buffer, dfa)
-        in
-          NormalDelete.finishAfterDeletingBuffer
-            (app, origCursorIdx, buffer, searchList, time, [])
-        end
+        NormalDelete.finishAfterDeletingBuffer
+          (app, #cursorIdx app, buffer, searchList, time, [])
       else
         let
           val buffer = LineGap.goToIdx (cursorIdx, buffer)
           val lineStart = Cursor.vi0 (buffer, cursorIdx)
 
-          (* todo: update searchList based on insert *)
-          val buffer = LineGap.insert (lineStart, "  ", buffer)
+          val (buffer, searchList) = SearchList.insert
+            (lineStart, " ", buffer, searchList, #dfa app)
 
           val buffer = LineGap.goToIdx (lineStart, buffer)
           val lineEnd = Cursor.viDlr (buffer, lineStart, 1)
@@ -56,11 +45,13 @@ struct
 
           val count = if lineEnd = nextLine then 0 else count - 1
         in
-          loop (app, nextLine, buffer, count, time)
+          loop (app, nextLine, buffer, searchList, count, time)
         end
   in
     fun indnetLine (app: app_type, count, time) =
-      loop (app, #cursorIdx app, #buffer app, count, time)
+      let val {buffer, searchList, cursorIdx, ...} = app
+      in loop (app, cursorIdx, buffer, searchList, count, time)
+      end
   end
 
   local

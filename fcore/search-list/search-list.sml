@@ -226,14 +226,17 @@ struct
       val searchList =
         let
           val searchListLeft = PersistentVector.splitLeft (insIdx, searchList)
-          val searchListRight = PersistentVector.splitRight (insIdx, searchList)
+
+          val insLength = String.size insString
           val searchListRight =
-            PersistentVector.incrementBy (String.size insString, searchList)
+            PersistentVector.splitRight (insIdx + insLength, searchList)
+          val searchListRight = PersistentVector.empty
         in
-          PersistentVector.merge (searchListLeft, searchListRight)
+          if PersistentVector.isEmpty searchListLeft then searchListRight
+          else if PersistentVector.isEmpty searchListRight then searchListLeft
+          else PersistentVector.merge (searchListLeft, searchListRight)
         end
 
-      (* start looking for new matches from the previous match *)
       val oldStart = PersistentVector.prevMatch (insIdx, searchList, 1)
     in
       if Vector.length dfa = 0 then

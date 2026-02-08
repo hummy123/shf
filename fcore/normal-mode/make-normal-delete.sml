@@ -185,11 +185,10 @@ struct
                 (app, cursorIdx, buffer, searchList, time, [])
             else
               let
-                (* todo: have not implemented search-list-rebuilding 
-                 * for insertions yet *)
                 val (buffer, searchList) = SearchList.deleteBufferAndSearchList
                   (newCursorIdx, 1, buffer, searchList, dfa)
-                val buffer = LineGap.insert (newCursorIdx, " ", buffer)
+                val (buffer, searchList) = SearchList.insert
+                  (newCursorIdx, " ", buffer, searchList, dfa)
               in
                 helpRemoveLineBreaks
                   (app, buffer, newCursorIdx, count - 1, time, searchList, dfa)
@@ -233,11 +232,10 @@ struct
             NormalFinish.clearMode app
           else
             let
-              (* todo: have not implemented search-list-rebuilding 
-               * for insertions yet *)
               val (buffer, searchList) = SearchList.deleteBufferAndSearchList
                 (newCursorIdx, 1, buffer, searchList, dfa)
-              val buffer = LineGap.insert (newCursorIdx, " ", buffer)
+              val (buffer, searchList) = SearchList.insert
+                (newCursorIdx, " ", buffer, searchList, dfa)
             in
               helpRemoveLineBreaks
                 (app, buffer, newCursorIdx, count - 1, time, searchList, dfa)

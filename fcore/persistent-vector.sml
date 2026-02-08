@@ -552,7 +552,7 @@ struct
         let
           val items = Vector.map 
             (fn {start, finish} =>
-              {start = start - incBy, finish = finish - incBy}
+              {start = start + incBy, finish = finish + incBy}
             ) items
           val sizes = Vector.map #finish items
         in

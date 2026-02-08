@@ -1,5 +1,5 @@
 # To-do list
-- Address to-do notes in make-normal-delete.sml (update searchList in light of insertion)
+- Add tests for indent, dedent and remove-line-break motions
 - Add normal-delete tests for each motion, checking that searchList is as expected
 - Add tests for other yank motoins
   - Tests should be based on existing tests for delete-motions, and in the same order.
