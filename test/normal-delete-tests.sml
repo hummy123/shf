@@ -4648,6 +4648,72 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test "leaves preceding matches unchhanged" (fn _ =>
+        let
+          (* arrange *)
+          val originalIdx = 12
+          val originalString = "hello world\ntest again\n"
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          val app = TestUtils.updateMany (app, "/hello")
+          val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+          (* act *)
+          val newApp = TestUtils.updateMany (app, "dG")
+
+          (* assert *)
+          val oldSearchList = #searchList app
+          val oldSearchList = PersistentVector.toList oldSearchList
+          val newSearchList = #searchList newApp
+          val newSearchList = PersistentVector.toList newSearchList
+
+          val expectedOldSearchList = [{start = 0, finish = 4}]
+          val expectedNewSearchList = expectedOldSearchList
+
+          val assertion =
+            oldSearchList = expectedOldSearchList
+            andalso newSearchList = expectedNewSearchList
+        in
+          Expect.isTrue assertion
+        end)
+    , test "deletes all matches on deleted line" (fn _ =>
+        let
+          (* arrange *)
+          val originalIdx = 12
+          val originalString = "alpha world\ntest again\n"
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          val app = TestUtils.updateMany (app, "/a")
+          val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+          (* act *)
+          val newApp = TestUtils.updateMany (app, "dG")
+
+          (* assert *)
+          val oldSearchList = #searchList app
+          val oldSearchList = PersistentVector.toList oldSearchList
+          val newSearchList = #searchList newApp
+          val newSearchList = PersistentVector.toList newSearchList
+
+          val expectedOldSearchList =
+            [ {start = 0, finish = 0}
+            , {start = 4, finish = 4}
+            , {start = 17, finish = 17}
+            , {start = 19, finish = 19}
+            ]
+          val expectedNewSearchList =
+            [{start = 0, finish = 0}, {start = 4, finish = 4}]
+
+          val assertion =
+            oldSearchList = expectedOldSearchList
+            andalso newSearchList = expectedNewSearchList
+        in
+          Expect.isTrue assertion
+        end)
     ]
 
   val dggDelete = describe "delete motion 'dgg'"
@@ -4758,6 +4824,45 @@ struct
              Expect.isTrue
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test
+        "deletes all matches on deleted line, \
+        \and decrements subsequent matches"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalIdx = 0
+             val originalString = "alpha world\ntest again\n"
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             val app = TestUtils.updateMany (app, "/a")
+             val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+             (* act *)
+             val newApp = TestUtils.updateMany (app, "dgg")
+
+             (* assert *)
+             val oldSearchList = #searchList app
+             val oldSearchList = PersistentVector.toList oldSearchList
+             val newSearchList = #searchList newApp
+             val newSearchList = PersistentVector.toList newSearchList
+
+             val expectedOldSearchList =
+               [ {start = 0, finish = 0}
+               , {start = 4, finish = 4}
+               , {start = 17, finish = 17}
+               , {start = 19, finish = 19}
+               ]
+             val expectedNewSearchList =
+               [{start = 5, finish = 5}, {start = 7, finish = 7}]
+
+             val assertion =
+               oldSearchList = expectedOldSearchList
+               andalso newSearchList = expectedNewSearchList
+           in
+             Expect.isTrue assertion
            end)
     ]
 
