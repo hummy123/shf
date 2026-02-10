@@ -4,6 +4,21 @@ struct
   open Railroad.Test
   open InputMsg
 
+
+  fun printVec pv =
+    let
+      val outputList = PersistentVector.toList pv
+      val str =
+        List.map
+          (fn {start, finish} =>
+             "{start = " ^ Int.toString start ^ ", finish = "
+             ^ Int.toString finish ^ "}") outputList
+      val str = String.concatWith "\n " str ^ "\n"
+    in
+      print str
+    end
+
+
   val dhDelete = describe "delete motion 'dh'"
     [ test "does not delete when cursor is at index 0" (fn _ =>
         let
@@ -5254,6 +5269,152 @@ struct
              Expect.isTrue
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
+           end)
+    , test "has same searchList when deleting after all matches" (fn _ =>
+        let
+          (* arrange *)
+          val originalIdx = 11
+          val originalString = "hello world again\n"
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          val app = TestUtils.updateMany (app, "/hello")
+          val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+          (* act *)
+          val newApp = TestUtils.updateMany (app, "d$")
+        in
+          (* assert *)
+          Expect.isTrue (#searchList app = #searchList newApp)
+        end)
+    , test "decrements search list when we delete word preceding match" (fn _ =>
+        let
+          (* arrange *)
+          val originalIdx = 0
+          val originalString = "hello\nworld\n"
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          val app = TestUtils.updateMany (app, "/world")
+          val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+          (* act *)
+          val newApp = TestUtils.updateMany (app, "d$")
+
+          (* assert *)
+          val oldSearchList = #searchList app
+          val oldSearchList = PersistentVector.toList oldSearchList
+
+          val newSearchList = #searchList newApp
+          val newSearchList = PersistentVector.toList newSearchList
+
+          val expectedOldSearchList = [{start = 6, finish = 10}]
+          val expectedNewSearchList = [{start = 1, finish = 5}]
+
+          val assertion =
+            oldSearchList = expectedOldSearchList
+            andalso newSearchList = expectedNewSearchList
+        in
+          Expect.isTrue assertion
+        end)
+    , test "recognises new match when there is a match after deletion" (fn _ =>
+        let
+          (* arrange *)
+          val originalIdx = 6
+          val originalString = "hello\nagain\nworld\n"
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          val app = TestUtils.updateMany (app, "/hello\n\nworld")
+          val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+          (* act *)
+          val newApp = TestUtils.updateMany (app, "d$")
+
+          (* assert *)
+          val oldSearchList = #searchList app
+          val oldSearchList = PersistentVector.toList oldSearchList
+          val newSearchList = #searchList newApp
+          val newSearchList = PersistentVector.toList newSearchList
+
+          val expectedOldSearchList = []
+          val expectedNewSearchList = [{start = 0, finish = 11}]
+
+          val assertion =
+            oldSearchList = expectedOldSearchList
+            andalso newSearchList = expectedNewSearchList
+        in
+          Expect.isTrue assertion
+        end)
+    , test
+        "extends existing match when existing match should extend after deletion"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalIdx = 6
+             val originalString = "hello\nworld\n"
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             val app = TestUtils.updateMany (app, "/\n+")
+             val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+             (* act *)
+             val newApp = TestUtils.updateMany (app, "d$")
+
+             (* assert *)
+             val oldSearchList = #searchList app
+             val oldSearchList = PersistentVector.toList oldSearchList
+
+             val newSearchList = #searchList newApp
+             val newSearchList = PersistentVector.toList newSearchList
+
+             val expectedOldSearchList =
+               [{start = 5, finish = 5}, {start = 11, finish = 11}]
+             val expectedNewSearchList = [{start = 5, finish = 6}]
+
+             val assertion =
+               oldSearchList = expectedOldSearchList
+               andalso newSearchList = expectedNewSearchList
+           in
+             Expect.isTrue assertion
+           end)
+    , test
+        "deletes match in search list \
+        \when match no longer exists in buffer after deletion"
+        (fn _ =>
+           let
+             (* arrange *)
+             val originalIdx = 7
+             val originalString = "hello world test again\n"
+
+             val app = TestUtils.init originalString
+             val app = AppWith.idx (app, originalIdx)
+
+             val app = TestUtils.updateMany (app, "/world")
+             val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+             (* act *)
+             val newApp = TestUtils.updateMany (app, "d$")
+
+             (* assert *)
+             val oldSearchList = #searchList app
+             val oldSearchList = PersistentVector.toList oldSearchList
+             val newSearchList = #searchList newApp
+             val newSearchList = PersistentVector.toList newSearchList
+
+             val expectedOldSearchList = [{start = 6, finish = 10}]
+             val expectedNewSearchList = []
+
+             val assertion =
+               oldSearchList = expectedOldSearchList
+               andalso newSearchList = expectedNewSearchList
+           in
+             Expect.isTrue assertion
            end)
     ]
 

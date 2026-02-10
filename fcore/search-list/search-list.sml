@@ -177,9 +177,12 @@ struct
   fun tryExtendingPrevMatch
     (idx, buffer, searchList, dfa, finalPos, curState, start) =
     if idx = #textLength buffer then
-      (* reached end of buffer without finding anything
-       * so return current buffer and searchList *)
-      (buffer, searchList)
+      let
+        val searchList =
+          PersistentVector.extendExistingMatch (start, finalPos, searchList)
+      in
+        (buffer, searchList)
+      end
     else if Dfa.isDead curState then
       let
         val searchList =
