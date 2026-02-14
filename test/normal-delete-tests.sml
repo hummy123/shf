@@ -5793,6 +5793,69 @@ struct
                (actualString = expectedString
                 andalso cursorIdx = expectedCursorIdx)
            end)
+    , test "decrements matches after cursor position" (fn _ =>
+        let
+          (* arrange *)
+          val originalIdx = 6
+          val originalString = "hello world hello\n"
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          val app = TestUtils.updateMany (app, "/hello")
+          val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+          (* act *)
+          val newApp = TestUtils.updateMany (app, "dn")
+
+          (* assert *)
+          val oldSearchList = PersistentVector.toList (#searchList app)
+          val newSearchList = PersistentVector.toList (#searchList newApp)
+
+          val expectedOldSearchList =
+            [{start = 0, finish = 4}, {start = 12, finish = 16}]
+          val expectedNewSearchList =
+            [{start = 0, finish = 4}, {start = 6, finish = 10}]
+
+          val assertion =
+            oldSearchList = expectedOldSearchList
+            andalso newSearchList = expectedNewSearchList
+        in
+          (* assert *)
+          Expect.isTrue assertion
+        end)
+
+    , test "extends match when match should extend after deletion" (fn _ =>
+        let
+          (* arrange *)
+          val originalIdx = 5
+          val originalString = "hello hello\n"
+
+          val app = TestUtils.init originalString
+          val app = AppWith.idx (app, originalIdx)
+
+          val app = TestUtils.updateMany (app, "/(hello)+")
+          val app = AppUpdate.update (app, InputMsg.KEY_ENTER, Time.now ())
+
+          (* act *)
+          val newApp = TestUtils.updateMany (app, "dn")
+
+          (* assert *)
+          val oldSearchList = #searchList app
+          val oldSearchList = PersistentVector.toList oldSearchList
+          val newSearchList = #searchList newApp
+          val newSearchList = PersistentVector.toList newSearchList
+
+          val expectedOldSearchList =
+            [{start = 0, finish = 4}, {start = 6, finish = 10}]
+          val expectedNewSearchList = [{start = 0, finish = 9}]
+
+          val assertion =
+            oldSearchList = expectedOldSearchList
+            andalso newSearchList = expectedNewSearchList
+        in
+          Expect.isTrue assertion
+        end)
     ]
 
   val dNDelete = describe "delete motion 'dN'"
